@@ -56,8 +56,8 @@
 | RB-META | 实体/字段/视图配置、字段名与类型白名单、`FieldTypeRegistry` 单点断言、元数据权限过滤 | FR-META-01..05 | P04 |
 | RB-DATA | 动态 CRUD 全路径、参数绑定与注入防护、字段校验、实体业务规则、性能基线记录 | FR-META-04/05、NFR-SEC-02 | P05 |
 | RB-UI | renderer registry 映射、菜单注册/撤销、loading/empty/error/denied/stale 状态 | FR-META-04、NFR-UX-01 | P06 |
-| RB-PLUGIN-VALID | 包校验正反例、schemaVersion 分派、依赖解析、幂等导入、路径穿越与脚本资源拒绝 | FR-PLUGIN-01..08 | P07 |
-| RB-PLUGIN-LIFE | 生命周期状态机、迁移失败回滚、注册冲突、stale activation、重启恢复、卸载清理（`docs/07` §5 八例必测）；预置 example-inventory 与第三方插件同权：导入→安装→停用→卸载无残留 | FR-PLUGIN-02..07、FR-DEMO-03、NFR-PLUGIN-01 | P08 |
+| RB-PLUGIN-VALID | 包校验正反例、schemaVersion 分派、依赖解析、幂等导入、路径穿越与脚本资源拒绝、上传大小上限、zip-slip、临时目录清理 | FR-PLUGIN-01..08 | P07 |
+| RB-PLUGIN-LIFE | 生命周期状态机、迁移失败回滚、注册冲突、stale activation、重启恢复、卸载清理（`docs/07` §5 八例必测）；迁移 runner（顺序/checksum/重复跳过/越界拒绝，ADR-0005）；预置 example-inventory 与第三方插件同权：导入→安装→停用→卸载无残留 | FR-PLUGIN-02..07、FR-DEMO-03、NFR-PLUGIN-01 | P08 |
 | RB-ISSUE | Issue 状态机合法/非法迁移、规格 Schema 版本审计、退回与关闭原因 | FR-ISSUE-01..06 | P10 |
 | RB-AI | 固定 fixture 生成、输出 Schema 校验、重试上限、非法 JSON/越权 renderer 负例、无模型手工兜底 | FR-ISSUE-03..06 | P11 |
 | RB-E2E | 三条端到端冒烟：动态实体 CRUD、插件生命周期、Issue→规格→骨架→审核→安装；含骨架纯净性（NFR-SKEL-01）与演示库存卸载干净断言 | 场景 A/B/B2/C/D | P12 起 |

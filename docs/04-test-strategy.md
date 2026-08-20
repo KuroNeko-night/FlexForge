@@ -16,10 +16,17 @@
 
 使用测试数据库验证 Controller、应用服务、迁移和事务行为。重点验证动态数据访问、安装失败回滚和权限过滤。
 
+数据库隔离硬规则：
+
+- 集成/E2E 测试只允许连接一次性 schema 或临时容器（Testcontainers/CI service），禁止指向开发库、演示库或任何有数据的库。
+- 破坏性用例（迁移失败、卸载清理、数据删除）只能跑在隔离 fixture 上；测试结束必须清理 schema。
+- 测试配置不读取生产/演示环境变量，不落真实用户数据。
+
 插件运行时额外验证：
 
 - `pluginId`、`pluginVersionId`、`activationId` 的身份和并发约束。
 - 缺失依赖、迁移失败、重复安装和升级回滚。
+- 迁移 runner：脚本顺序、checksum 一致性、重复跳过、越界脚本拒绝（ADR-0005）。
 - 停用/卸载时 disposer 清理菜单、权限、监听器和定时任务。
 - 旧 activation 的 API、异步任务和前端请求返回 `stale_activation`。
 

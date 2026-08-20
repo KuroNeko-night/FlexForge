@@ -50,6 +50,7 @@
 3. `plugin.json.schemaVersion` 与 `RequirementSpec.schemaVersion` 必须随资源保存并可审计；平台只接受已登记版本。MVP 只实现 v1 reader，未知版本返回 `unsupported_schema_version`；新增可选字段为 additive；破坏性变更必须新版本号，并保留旧 reader 至少一个小版本周期。
 4. 数据库结构只经编号迁移变更；迁移必须幂等或明确不可逆，破坏性迁移需要回滚说明（沿用 `docs/repository-maintenance.md`）。
 5. 扩展点契约变更遵循 `docs/extension-points.md` 的 additive/breaking 规则。
+6. 元数据兼容：实体启用且有数据后，字段重命名/类型变更属于 breaking（须迁移方案或 ADR，禁止静默改）；新增字段/视图为 additive。动态记录删除统一为物理删除 + 审计事件，MVP 不做软删除，未来需要时以迁移引入。
 
 ## 5. 模块化与依赖治理
 

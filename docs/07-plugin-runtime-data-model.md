@@ -9,6 +9,7 @@
 | `plugin_dependency` | 版本依赖关系 | `plugin_version_id`、`dependency_id`、`version_range` |
 | `plugin_activation` | 一次安装/启停/升级尝试 | `activation_id`、`plugin_version_id`、`operation`、`status`、`stage`、`error_code`、`requested_by` |
 | `plugin_registration` | 激活期间产生的注册记录 | `activation_id`、`extension_type`、`registration_key`、`payload_json` |
+| `plugin_migration` | 插件版本内已应用的迁移脚本（PluginRuntime runner 记录，非 Flyway） | `plugin_version_id`、`activation_id`、`script_name`、`checksum`、`applied_at` |
 | `plugin_audit_event` | 追加式插件领域事件 | `event_id`、`plugin_id`、`activation_id`、`event_type`、`payload_json`、`occurred_at` |
 
 ## 2. 内存对象
@@ -30,6 +31,7 @@ PluginRuntime
 - 同一 `plugin_version_id` 的校验和内容哈希必须稳定；内容变化必须生成新版本。
 - 同一插件同一时刻只能有一个 `STARTING` 或 `ACTIVE` 激活。
 - 重复提交相同操作应返回已有 `activation_id`，不得重复注册。
+- 迁移幂等：同一 `plugin_version_id` 的已应用脚本（checksum 一致）直接跳过；checksum 变化视为包损坏，拒绝安装（ADR-0005）。
 - `STOPPING`、`UNINSTALLING` 期间的新操作必须排队或明确拒绝。
 - 只有 `ACTIVE` 激活可以服务业务 API；旧激活即使仍有网络请求也必须返回 `stale_activation`。
 

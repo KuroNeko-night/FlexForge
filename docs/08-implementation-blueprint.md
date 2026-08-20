@@ -104,12 +104,19 @@ public interface PluginContext {
   -> 依赖解析
   -> 生成 InstallPreview
   -> 创建 activationId
-  -> 执行受控迁移
+  -> 执行插件迁移（PluginRuntime 内建 runner，非 Flyway，见 ADR-0005）
   -> 注册 metadata/menu/permission/renderer
   -> 状态 ACTIVE
 ```
 
 任意步骤失败：写入失败阶段和错误码，关闭已创建的 `ActivationContext`，回滚事务和注册记录，保留失败审计事件。
+
+插件迁移 runner 规则（ADR-0005）：
+
+- 平台骨架迁移走 Flyway（`classpath:db/migration`）；插件 `migrations/` 不进 Flyway。
+- runner 按 `resources.migrations` 声明顺序执行 `V*__*.sql`，每脚本计算 checksum 并写 `plugin_migration` 记录，与安装同一事务。
+- 脚本只能操作以插件短名前缀命名的对象或插件数据；禁止修改 `sys_*`/`meta_*`/`plugin_*` 平台表结构，越界脚本在 runner 校验层拒绝。
+- 同一版本重复安装跳过已应用且 checksum 一致的脚本；checksum 变化拒绝安装。
 
 ## 4. Level 1 插件格式
 
@@ -150,6 +157,8 @@ example-inventory/
 资源路径必须是包内相对路径，禁止 `..`、绝对路径、脚本文件和未声明文件。renderer 只能引用平台注册的 ID。
 
 `plugins/example-inventory` 与任何第三方包同权：预置但不自动安装；演示脚本只能调用标准导入/安装/启停/卸载 API；禁止在前后端骨架中为其写死菜单、路由、页面或权限。
+
+`migrations/` 只允许 `V<序号>__<名称>.sql` 顺序脚本，由 PluginRuntime runner 执行（规则见 §3.3，ADR-0005）；不允许放入可执行脚本或 Flyway 专用配置。
 
 ## 5. 元数据和动态数据实现取舍
 

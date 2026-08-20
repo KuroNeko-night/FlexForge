@@ -82,7 +82,7 @@
 
 ### 实施内容
 
-- 实现统一 ID、分页、错误响应、request ID 和结构化日志。
+- 实现统一 ID、分页、错误响应、request ID 和结构化日志；本周内冻结口径：内部主键 `bigint`、对外业务 ID 为不透明字符串、`pluginId/pluginVersionId/activationId/requestId` 均为稳定字符串格式；分页默认 `pageSize=20`、上限 `200`，排序字段必须来自白名单。
 - 定义 `ServiceKey`、`PluginContext`、`Registration`、`DomainEvent` 的最小接口。
 - 实现内存 `ServiceRegistry`、`ExtensionRegistry` 和基础事件发布器。
 - 建立审计事件写入端口。
@@ -121,6 +121,7 @@
 - 建立 `meta_entity`、`meta_field`、`meta_view` 及关联迁移。
 - 实现六类字段白名单、字段名规范化、默认值和校验规则；类型映射集中在 `FieldTypeRegistry`，校验、SQL 映射与前端 renderer 选择都从 registry 取，禁止在 Controller/模板中散落字段类型分支。
 - 实现 `MetaRegistry` 查询和缓存失效机制。
+- 元数据变更规则：实体启用且有数据后，字段重命名/类型变更视为 breaking（需要迁移方案或 ADR，禁止静默改）；新增字段/视图配置为 additive，可直接执行。
 - 提供实体、字段、视图配置 API。
 
 ### 验收标准
@@ -130,6 +131,7 @@
 - 普通用户只能读取已启用且有权限的元数据。
 - 元数据变更会产生审计事件，并能让前端重新获取最新版本。
 - 字段类型映射只有 `FieldTypeRegistry` 一处（由测试断言）；未来新增字段类型不需要修改动态 CRUD 主路径。
+- 已有数据的实体字段重命名/类型变更被拒绝或要求明确迁移方案，不会静默改变数据语义。
 
 ## P05：动态数据运行时
 
@@ -138,6 +140,7 @@
 - 实现受控动态实体记录存储和 JSONB 数据访问。
 - 实现字段映射、参数绑定、排序和分页白名单。
 - 实现新增、编辑、删除、详情和查询接口。
+- 删除采用物理删除 + 审计事件；MVP 不实现软删除（未来需要时以迁移引入），不得绕过 `service.data-access` 自行删数据。
 - 接入字段级校验和实体级业务规则。
 
 ### 验收标准
@@ -147,6 +150,7 @@
 - 库存数量小于 0 等非法数据被拒绝。
 - 主要 CRUD 接口在演示数据量下 P95 小于 500 ms。
 - 动态数据读写只经 `service.data-access`；没有为示例实体手写专用 Controller/SQL。
+- 删除操作产生审计事件；`pageSize` 超过 200 被拒绝并返回可诊断错误。
 
 ## P06：前端动态渲染
 
@@ -174,6 +178,8 @@
 - 保存不可变 manifest 和 content hash。
 - 实现依赖解析、安装预览和幂等导入。
 - 校验器按 `plugin.json.schemaVersion` 分派；`contributions` 键与 renderer ID 必须能在 `docs/extension-points.md` 中查到。
+- 实现插件迁移 runner 骨架：`V*__*.sql` 顺序执行、checksum、`plugin_migration` 记录、与安装同事务、重复跳过（ADR-0005）；插件 `migrations/` 不挂入 Flyway。
+- 上传安全基线：单包大小上限 10 MB、zip-slip 防护、解压到临时目录并在校验/导入后清理、非法包隔离不落库。
 
 ### 验收标准
 
@@ -182,12 +188,14 @@
 - 同一内容重复导入不会生成重复版本。
 - 依赖缺失能指出具体插件和版本范围。
 - 未知 `schemaVersion` 返回 `unsupported_schema_version`；登记册外的贡献类型或 renderer ID 被拒绝。
+- 超过大小上限、zip-slip 路径和非 `V*__*.sql` 迁移资源被拒绝，临时目录无残留。
+- 迁移脚本越界修改平台表被 runner 校验拒绝；checksum 变化的同版本重复导入被拒绝。
 
 ## P08：PluginRuntime 生命周期
 
 ### 实施内容
 
-- 建立 `plugin_activation`、`plugin_registration`、`plugin_audit_event`。
+- 建立 `plugin_activation`、`plugin_registration`、`plugin_migration`、`plugin_audit_event`。
 - 实现 `DEFINED/VALIDATED/INSTALLED/STARTING/ACTIVE/STOPPING/STOPPED/FAILED` 状态迁移。
 - 创建 `ActivationContext`，绑定菜单、权限、元数据、renderer 和事件注册。
 - 实现迁移事务、失败回滚、停止清理和 stale activation 拒绝。
@@ -199,6 +207,7 @@
 - 同一插件同一时间只能有一个 STARTING/ACTIVE 激活。
 - 使用旧 activation ID 的请求返回 `stale_activation`，不影响当前版本。
 - 升级失败时 current 版本仍可用。
+- 迁移失败整体回滚且 `plugin_migration` 无残留记录；重复安装跳过已应用脚本。
 
 ## P09：库存示例插件
 
@@ -244,6 +253,8 @@
 - 将确认后的规格转换为 Level 1 插件包。
 - 保存模型、提示词版本、输入规格和输出校验结果。
 - 模型访问收敛在 `ModelPort` 端口，HTTP 与 fixture 两种实现；生成器只依赖端口，不感知具体供应商。
+- 提示词模板按版本文件化（如 `prompts/v1/*.md`），代码中不散落提示词字符串；fixture 与提示词版本一一对应。
+- 模型请求设置超时与取消；模型密钥只经环境变量/`.env` 注入，仓库只提交 `.env.example`（占位值）。
 
 ### 验收标准
 
@@ -252,6 +263,7 @@
 - 非法 JSON、越权 renderer 和未知字段不会生成可安装包。
 - AI 不获得数据库、shell、文件系统或生产发布权限。
 - 切换/新增模型实现不需要修改 Issue、规格 Schema 或生成器主流程。
+- 超时、取消与限流失败返回可诊断错误，任务可回到可操作状态；日志与数据库不保存模型密钥和完整请求头。
 
 ## P12：Agent Issue 端到端闭环
 

@@ -24,7 +24,7 @@ FlexForge：毕业设计"模块化数据管理系统"。主线 = 元数据驱动
 | Issue/AI/生成器 | `docs/09` P10-P12、`docs/03` §6、`docs/02` FR-ISSUE-* | `docs/adr/0002` |
 | 测试/回归/CI | `docs/04-test-strategy.md`、`docs/11-regression-test-plan.md` | `docs/repository-maintenance.md` §3 |
 | 改文档/状态 | `docs/05-documentation-guide.md`、`STATUS.md` | `docs/repository-maintenance.md` §1-2、§8 |
-| 新模块/架构决策/破坏性变更 | `docs/adr/`（含 0003 复审条件、0004 骨架与业务边界）、`docs/10` §5 | `docs/00-feasibility-review.md` |
+| 新模块/架构决策/破坏性变更 | `docs/adr/`（含 0003 复审条件、0004 骨架与业务边界、0005 迁移机制）、`docs/10` §5 | `docs/00-feasibility-review.md` |
 | 原始设想/论文背景 | `FlexForge.md`（历史稿；与 MVP 冲突时以 `docs/` 为准） | — |
 
 阅读规则：
@@ -116,7 +116,7 @@ FlexForge/
 │   ├── 10-engineering-governance.md  11-regression-test-plan.md
 │   ├── coding-standards.md  repository-maintenance.md  project-status.json
 │   ├── extension-points.md     # 扩展点唯一登记册
-│   └── adr/0001-0004
+│   └── adr/0001-0005
 └── .editorconfig / .gitignore
 ```
 

@@ -23,6 +23,7 @@
 - 页面负责组合，通用组件负责复用，API 调用集中在 service 层。
 - 所有异步请求处理 loading、empty、error 和 permission denied 状态。
 - 动态渲染器不得把未经校验的元数据直接当作 HTML 或脚本执行。
+- 禁止对元数据或用户内容使用 `v-html`、`eval`、`new Function`；一切渲染走白名单组件。
 
 ## 4. 注释规范
 
@@ -43,6 +44,8 @@ public void install(PluginPackage pkg) { ... }
 - 日志使用结构化字段，包含 request ID、业务对象 ID 和结果。
 - 严禁记录密码、令牌、完整 Authorization 头、API key 和未脱敏个人信息。
 - 日志级别遵循 `ERROR`（需要处理的失败）、`WARN`（可恢复异常）、`INFO`（关键业务事件）、`DEBUG`（本地诊断）。
+- 时间一律以 UTC 存储（`Instant` / `timestamptz`），对外 JSON 使用 ISO-8601 含时区，前端负责本地化显示；禁止用 `LocalDateTime.now()` 落库。
+- API 错误响应不向客户端泄漏堆栈、SQL 或内部路径；完整堆栈只进服务端日志。
 
 ## 6. 代码审查清单
 

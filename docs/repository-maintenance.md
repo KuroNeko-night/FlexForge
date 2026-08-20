@@ -114,3 +114,13 @@ PR 要求：
 不开 Issue 的情况：当前任务内几分钟可修的小问题、纯错别字/格式、已被需求文档覆盖的内容。
 
 Issue 最小内容：标题；现象/背景；影响（阶段 + FR/NFR 编号）；证据或复现步骤；建议方向；优先级（P0-P3）与标签。暂留问题必须写明"暂留原因 + 复查触发条件"，禁止无限期挂起；P13 开始前与 P14 交付前各清理一次 backlog，逐条注明"已实现 / 已关闭 / 仍保留及理由"。
+
+## 9. 开发环境与运行基线
+
+- **工具链锁定**：JDK 17（LTS）、Node.js LTS、PostgreSQL 14+、Docker；P01 结束时把精确小版本、包管理器和锁文件写进 README 与环境脚本，禁止"最新版"这类浮动版本。
+- **Windows-first**：开发机为 Windows，所有脚本必须可在 PowerShell/pwsh 下执行；脚本读取 `docs/project-status.json` 等 UTF-8 文件必须显式按 UTF-8 读取；仓库统一 LF（`.editorconfig` + `.gitattributes` 已固定）。
+- **密钥纪律**：密钥只经环境变量或 `.env`（已 gitignore）注入；仓库只允许提交 `.env.example`（占位值）；配置文件不得出现真实密钥。
+- **测试数据库隔离**：集成/E2E 测试只允许连接一次性 schema 或临时容器（Testcontainers/CI service），禁止指向开发库、演示库或任何有数据的库；破坏性测试只能跑在隔离 fixture 上。
+- **CI 边界**：GitHub Actions 只运行构建、测试、lint、回归与文档检查；不部署、不发布、不访问生产环境。
+- **仓库体积**：单文件超过 1 MB 不提交（插件包 fixture 使用最小样例）；大附件走 Release 或本地归档。
+- **时间口径**：数据库统一 UTC（`timestamptz`），前端本地化显示，见 `docs/coding-standards.md` §5。
