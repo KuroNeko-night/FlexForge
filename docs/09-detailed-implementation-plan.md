@@ -3,14 +3,16 @@
 **计划基线**：2026-08-20
 **阶段编号**：`P00` - `P14`
 **阶段规则**：前一阶段未达到退出条件，不进入后一阶段；加分项不得阻塞主线。
+**周期口径**：总览表"建议周期"单位为投入天（8 小时/天），按每周 20-25 小时投入折算约 2.5-3 天/周；各阶段的日历目标日期以 `docs/01-project-plan.md` §2.1 倒排表为准（P13 默认不做）。
+**演示脚本分层**：插件生命周期演示（P09 交付：安装→停用→卸载）⊂ 端到端演示（P12 交付：三条主链路 + 骨架纯净性）⊂ 答辩演示（P14 固化：`docs/00-feasibility-review.md` §5 十分钟流程，含离线兜底）。
 
 ## 阶段总览
 
 | ID | 阶段 | 建议周期 | 依赖 | 状态 |
 | --- | --- | --- | --- | --- |
 | P00 | 设计基线冻结 | 1-2 天 | 无 | 已完成 |
-| P01 | 仓库与工程骨架 | 3-5 天 | P00 | 待开始 |
-| P02 | 核心契约与可观测性 | 3-5 天 | P01 | 待开始 |
+| P01 | 仓库与工程骨架 | 6-8 天 | P00 | 待开始 |
+| P02 | 核心契约与可观测性 | 4-6 天 | P01 | 待开始 |
 | P03 | 认证、RBAC 与系统壳 | 5-7 天 | P02 | 待开始 |
 | P04 | 元数据写模型 | 5-7 天 | P02 | 待开始 |
 | P05 | 动态数据运行时 | 5-7 天 | P04 | 待开始 |
@@ -67,7 +69,9 @@
 - 建立静态检查基线并写入 CI：Checkstyle（`FileLength`/`MethodLength`/`CyclomaticComplexity`/`ParameterNumber`/`NestedIfDepth`）、ESLint（`max-lines`/`max-lines-per-function`/`complexity`/`max-params`）、Prettier、ArchUnit 或等价依赖边界测试；硬上限 = error，目标值 = warn，口径以 `docs/coding-standards.md` §7 为准。
 - 添加格式检查、单元测试、依赖边界测试和启动冒烟命令。
 - 增加 `scripts/check-repo-health` 脚本：一条命令完成格式、lint、测试、文件上限与文档链接检查。
-- 建立回归测试骨架：`tests/fixtures/`（含 `violations/` 故意违规样例）、`fixtures.json` 哈希清单；把 `docs/11-regression-test-plan.md` §3 的 R-GOV-01..06 纳入 `check-repo-health`。
+- 建立回归测试骨架：`tests/fixtures/`（含 `violations/` 故意违规样例）、`fixtures.json` 哈希清单；把 `docs/11-regression-test-plan.md` §3 的 R-GOV-02..06 与 R-GOV-01 简化版（脚本导出 lint 阈值并与 `docs/coding-standards.md` §7 比对）纳入 `check-repo-health`；R-GOV-01 完整解析断言在 P02 交付。
+- 增加 `scripts/sync-status`：以 `STATUS.md` 锚点为源单向生成/校验 `docs/project-status.json`，消除人工双写（R-GOV-04 校验保留为门禁）。
+- 确认 AI 模型接口可用性（OpenAI 兼容接口 / 学校环境 / 未定）；未确定时按 fixture 优先策略推进（P11 开发与回归不依赖在线模型），结论写入进度日志。
 
 ### 验收标准
 
@@ -75,7 +79,8 @@
 - `/actuator/health` 或等价健康接口返回成功。
 - 空数据库可以执行 `V001__init.sql`，重复执行不会产生不可解释错误；`database/migrations/` 只含平台骨架表（`sys_*`/`meta_*`/`plugin_*` 等），不含任何业务表。
 - CI 或本地检查能明确报告构建、测试、格式、文件上限和依赖边界结果；用一个临时超限文件和一个非法跨模块依赖样例验证 CI 确实会失败，验证后移除样例。
-- `scripts/check-repo-health` 可输出 R-GOV-01..06 结果；R-GOV-06 对 `tests/fixtures/violations/` 样例稳定报出"门禁已失效"级失败。
+- `scripts/check-repo-health` 可输出 R-GOV-01（简化版）与 R-GOV-02..06 结果；R-GOV-06 对 `tests/fixtures/violations/` 样例稳定报出"门禁已失效"级失败。
+- `scripts/sync-status` 在修改 `STATUS.md` 锚点后可单向生成 JSON，R-GOV-04 校验通过；模型接口可用性结论已记录（或显式标注"待确认"）。
 - 骨架代码本身满足全部硬上限与依赖方向规则。
 
 ## P02：核心契约与可观测性
@@ -88,6 +93,7 @@
 - 建立审计事件写入端口。
 - 把 `docs/extension-points.md` 的 v1 清单落地为代码常量/枚举；`ServiceKey`、`ExtensionPoint` ID、`DomainEventType` 必须使用登记册 ID。
 - 为跨模块公开接口添加 `@PublicApi` / `@ExperimentalApi` 标注。
+- 交付 R-GOV-01 完整版：解析 Checkstyle/ESLint 配置，断言阈值与 `docs/coding-standards.md` §7 完全一致（从 P01 简化版升级）。
 
 ### 验收标准
 
@@ -106,6 +112,8 @@
 - 创建管理员、开发者、普通用户三类角色和最小权限集合。
 - 实现用户、角色、菜单、当前用户接口。
 - 记录登录、权限变化和关键管理操作。
+- 提供最小审计事件查询接口（按时间、操作者、对象过滤），支撑演示流程"查看关键操作审计日志"（`docs/00-feasibility-review.md` §5 步骤 6）。
+- JWT 有效期可配置；演示/开发环境 TTL 覆盖完整演示时长，避免演示中途令牌过期。
 
 ### 验收标准
 
@@ -179,7 +187,7 @@
 - 实现依赖解析、安装预览和幂等导入。
 - 校验器按 `plugin.json.schemaVersion` 分派；`contributions` 键与 renderer ID 必须能在 `docs/extension-points.md` 中查到。
 - 实现插件迁移 runner 骨架：`V*__*.sql` 顺序执行、checksum、`plugin_migration` 记录、与安装同事务、重复跳过（ADR-0005）；插件 `migrations/` 不挂入 Flyway。
-- 上传安全基线：单包大小上限 10 MB、zip-slip 防护、解压到临时目录并在校验/导入后清理、非法包隔离不落库。
+- 上传安全基线：单包压缩大小上限 10 MB、解压后总大小上限 50 MB（防 zip 炸弹）、zip-slip 防护、解压到临时目录并在校验/导入后清理、非法包隔离不落库。
 
 ### 验收标准
 
@@ -188,7 +196,7 @@
 - 同一内容重复导入不会生成重复版本。
 - 依赖缺失能指出具体插件和版本范围。
 - 未知 `schemaVersion` 返回 `unsupported_schema_version`；登记册外的贡献类型或 renderer ID 被拒绝。
-- 超过大小上限、zip-slip 路径和非 `V*__*.sql` 迁移资源被拒绝，临时目录无残留。
+- 超过压缩或解压后大小上限、zip-slip 路径和非 `V*__*.sql` 迁移资源被拒绝，临时目录无残留。
 - 迁移脚本越界修改平台表被 runner 校验拒绝；checksum 变化的同版本重复导入被拒绝。
 
 ## P08：PluginRuntime 生命周期
@@ -252,7 +260,7 @@
 - 实现多轮澄清提示词、输出 Schema 校验和有限重试。
 - 将确认后的规格转换为 Level 1 插件包。
 - 保存模型、提示词版本、输入规格和输出校验结果。
-- 模型访问收敛在 `ModelPort` 端口，HTTP 与 fixture 两种实现；生成器只依赖端口，不感知具体供应商。
+- 模型访问收敛在 `ModelPort` 端口，HTTP 与 fixture 两种实现；生成器只依赖端口，不感知具体供应商。fixture 优先：模型接口未最终确认前，开发与回归只依赖 fixture 端口，在线路径在接口确认后接入。
 - 提示词模板按版本文件化（如 `prompts/v1/*.md`），代码中不散落提示词字符串；fixture 与提示词版本一一对应。
 - 模型请求设置超时与取消；模型密钥只经环境变量/`.env` 注入，仓库只提交 `.env.example`（占位值）。
 
@@ -264,6 +272,7 @@
 - AI 不获得数据库、shell、文件系统或生产发布权限。
 - 切换/新增模型实现不需要修改 Issue、规格 Schema 或生成器主流程。
 - 超时、取消与限流失败返回可诊断错误，任务可回到可操作状态；日志与数据库不保存模型密钥和完整请求头。
+- 每次模型调用与生成尝试均有结构化记录（模型、提示词版本、澄清轮次、重试次数、输出校验结果、耗时）并落库，可通过导出脚本产出论文实验数据集（`docs/12-thesis-experiment-plan.md`）。
 
 ## P12：Agent Issue 端到端闭环
 
@@ -276,7 +285,7 @@
 
 ### 验收标准
 
-- 在干净数据库上连续三次完成完整演示。
+- 在干净数据库上连续三次完成完整演示；各环节实测耗时有记录，作为论文与答辩数据（对照 `docs/00-feasibility-review.md` §5 十分钟目标）。
 - AI 失败、插件验证失败和安装失败都能回到可操作状态。
 - Issue、插件版本、activation 和审计事件可以互相追踪。
 - 人工审核之前不会启用生成插件。
@@ -302,6 +311,7 @@
 - 按 `docs/11-regression-test-plan.md` §2 执行 L4 发布候选全量回归（干净环境重建 + 全量回归包 + 演示脚本），运行证据写入进度日志。
 - 在干净机器验证 Docker Compose 和数据库迁移。
 - 固化演示账号、种子数据、录屏、架构图和故障排查手册。
+- 离线答辩三保险：演示机提前导入全部 Docker 镜像（不依赖现场网络）、模型演示走 fixture 模式、完整演示录屏兜底。
 - 整理论文实验数据和已知限制。
 
 ### 验收标准

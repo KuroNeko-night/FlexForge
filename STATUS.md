@@ -9,7 +9,7 @@ STAGE_STATUS: ready_to_start
 PROJECT_PROGRESS: 5%
 LAST_UPDATED: 2026-08-20
 OWNER: project-maintainer
-NEXT_ACTION: 初始化 backend、frontend、database、plugins、tests、scripts 目录和最小启动骨架，接入 Checkstyle/ESLint/ArchUnit 等质量门禁工具链与最小回归测试骨架（治理自检 + 冒烟）
+NEXT_ACTION: 初始化 backend、frontend、database、plugins、tests、scripts 目录和最小启动骨架，接入 Checkstyle/ESLint/ArchUnit 等质量门禁工具链与最小回归测试骨架（R-GOV-01 简化版 + sync-status 脚本 + 冒烟）；确认 AI 模型接口可用性
 EXIT_GATE: 新环境可按 README 启动前后端与 PostgreSQL，健康检查和 V001 迁移通过
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -57,4 +57,5 @@ BLOCKERS: none
 | 2026-08-20 | P01 | 新增约束即时同步规则：用户明确更改需求/边界/流程时，Agent 同一轮更新唯一归属文档 + STATUS 日志；架构级变更走 ADR；未确认推测不得写入 | `AGENTS.md` §4.14、`docs/05`、`docs/10` §7 |
 | 2026-08-20 | P01 | 封堵实施前高概率坑：插件迁移 runner（ADR-0005）、开发环境基线、元数据兼容与删除语义、上传安全、提示词版本化、UTC/错误脱敏 | `docs/adr/0005`、`docs/07/08/09/10`、`docs/repository-maintenance.md` §9、`docs/coding-standards.md` §5 |
 | 2026-08-20 | P01 | 成本控制：项目结构/文件级索引迁出 AGENTS.md 至 docs/project-index.md（自更新 + 变更注释），AGENTS 只留指针；R-GOV-05 校验索引完整性 | `docs/project-index.md`、`AGENTS.md` §7/§4.15、`docs/11` |
+| 2026-08-20 | P01 | 落地计划评审修复：时间锚点倒排（答辩 2027-05 中旬、中期检查 2027-01、P13 默认不做）；单人审查流程替代团队人工审查；P01 范围重估（R-GOV-01 拆两步 + sync-status 脚本，周期 6-8 天）；论文实验数据前置（新增 docs/12，P11 起落库）；审计查询/JWT TTL/解压后 50MB 上限/离线演示三保险补强 | `docs/01/09/00/11/12`、`AGENTS.md` §2/§6、`docs/repository-maintenance.md` §2.3、`docs/05` |
 

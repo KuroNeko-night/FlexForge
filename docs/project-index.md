@@ -31,6 +31,7 @@ FlexForge/
     ├── 09-detailed-implementation-plan.md P00-P14 阶段计划与验收
     ├── 10-engineering-governance.md   治理基线（红线/缝/契约）
     ├── 11-regression-test-plan.md     回归分层与 R-GOV 自检
+    ├── 12-thesis-experiment-plan.md   论文实验与数据收集计划
     ├── coding-standards.md            编码规范与数值硬约束（§7）
     ├── repository-maintenance.md      仓库/分支/环境/Issue 约束
     ├── extension-points.md            扩展点唯一登记册
@@ -83,6 +84,7 @@ scripts/                check-repo-health 等可重复脚本
 | `docs/09-detailed-implementation-plan.md` | 当前阶段任务与验收 | 按阶段小节读 |
 | `docs/10-engineering-governance.md` | 红线 R1-R9、seam 预留、契约演化 | 后端/契约改动 |
 | `docs/11-regression-test-plan.md` | 回归分层、R-GOV | 测试/CI/门禁任务 |
+| `docs/12-thesis-experiment-plan.md` | 论文指标、数据埋点与导出 | P06 前定稿；P11 起核对埋点 |
 | `docs/coding-standards.md` | 命名、注释、UTC、数值硬约束 | 任何代码 |
 | `docs/repository-maintenance.md` | 分支/PR/环境/迁移/Issue | Git、环境、迁移 |
 | `docs/extension-points.md` | 扩展点登记册 | 新增/使用扩展点 |
@@ -130,7 +132,7 @@ scripts/                check-repo-health 等可重复脚本
 - API：`/api/v1/`；统一响应 `{code, message, requestId, details?}`
 - 分页：默认 `pageSize=20`，上限 `200`；排序白名单
 - 时间：UTC 存储，ISO-8601 出参
-- 插件：`schemaVersion=1`、Level 1 声明式、单包 ≤ 10MB、`minPlatformVersion`
+- 插件：`schemaVersion=1`、Level 1 声明式、单包压缩 ≤ 10MB（解压后 ≤ 50MB）、`minPlatformVersion`
 - 数据删除：物理删除 + 审计；MVP 无软删除
 - 版本：项目 `0.1.0-SNAPSHOT`
 
@@ -147,3 +149,4 @@ scripts/                check-repo-health 等可重复脚本
 | 日期 | 变更 | 原因 |
 | --- | --- | --- |
 | 2026-08-20 | v1.0 建立；项目结构从 AGENTS.md 迁出 | 结构与索引变动频繁，与每轮注入文件分离以降低 token 成本 |
+| 2026-08-20 | 新增长期文档 `docs/12-thesis-experiment-plan.md`（§1/§3 同步登记）；§6 契约速查补解压后大小上限 | 论文实验数据收集前置到 P11 埋点；P07 上传安全基线补强 |

@@ -36,7 +36,7 @@
 
 | 编号 | 验证内容 | 关联需求 | 落地阶段 |
 | --- | --- | --- | --- |
-| R-GOV-01 | 解析 Checkstyle/ESLint 配置，断言文件长度、函数长度、复杂度、参数、嵌套阈值与 `docs/coding-standards.md` §7 **完全一致**；文档改阈值不同步配置（或反向）即失败 | NFR-MAINT-01 | P01 |
+| R-GOV-01 | 解析 Checkstyle/ESLint 配置，断言文件长度、函数长度、复杂度、参数、嵌套阈值与 `docs/coding-standards.md` §7 **完全一致**；文档改阈值不同步配置（或反向）即失败 | NFR-MAINT-01 | P01 简化版（阈值导出比对），P02 完整解析断言 |
 | R-GOV-02 | ArchUnit/import 规则：无循环依赖、无跨模块 `infrastructure` 引用、未标注 `@PublicApi`/`@ExperimentalApi` 的类不被跨模块引用 | NFR-MAINT-01 | P01 骨架，P02 起生效 |
 | R-GOV-03 | 扩展点闭环：代码中 `ServiceKey`/`ExtensionPoint`/`DomainEventType` 常量集合 == `docs/extension-points.md` active 集合；每个 active 扩展点有对应注册-撤销测试；发现未登记常量即失败 | NFR-MAINT-02 | P02 |
 | R-GOV-04 | 状态镜像一致：`STATUS.md` 锚点（stage/status/nextAction/blockers）与 `docs/project-status.json` 完全一致 | STATUS 更新规则、AGENTS.md §5 | P01 |
@@ -90,7 +90,8 @@ tests/fixtures/
 
 ## 7. 落地检查清单
 
-- P01：交付 `tests/`、`tests/fixtures/`、`scripts/check-repo-health`，R-GOV-01..06 可运行。
+- P01：交付 `tests/`、`tests/fixtures/`、`scripts/check-repo-health`、`scripts/sync-status`，R-GOV-01（简化版）与 R-GOV-02..06 可运行。
+- P02：补齐 R-GOV-01 完整解析断言。
 - P02 起：每阶段退出前把对应 RB 包并入 L2/L3 并全绿。
 - P12：RB-E2E 在干净数据库连续三次通过。
 - P14：按 §2 L4 完成发布候选全量回归并记录证据。
