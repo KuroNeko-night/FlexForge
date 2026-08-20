@@ -62,6 +62,8 @@ PR 要求：
 
 ## 3. 质量门禁（CI 阻断项）
 
+CI 入口：`.github/workflows/ci.yml`（push `main` 与 PR 触发）；本地入口：`node scripts/check-repo-health.mjs`。backend/frontend/docker/依赖审计任务在对应文件（构建文件、`package.json`、`Dockerfile`、lockfile）出现后自动激活；密钥扫描（gitleaks）全历史生效。
+
 以下检查在 CI 中执行，任一失败即阻断合并：
 
 1. 格式检查（Prettier / Spotless 或等价工具）。

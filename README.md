@@ -1,5 +1,7 @@
 # FlexForge
 
+[![CI](https://github.com/KuroNeko-night/FlexForge/actions/workflows/ci.yml/badge.svg)](https://github.com/KuroNeko-night/FlexForge/actions/workflows/ci.yml)
+
 FlexForge 是一个面向毕业设计验证的模块化数据管理系统。项目以元数据驱动和插件化为主线，辅以轻量工作流与 AI 需求澄清/代码骨架生成，目标是验证“需求规格 -> 可配置业务模块 -> 测试发布”的闭环是否可行。
 
 ## 当前状态

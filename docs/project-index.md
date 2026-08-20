@@ -18,6 +18,11 @@ FlexForge/
 ├── CONTRIBUTING.md            人的开发流程
 ├── FlexForge.md               早期概念稿（历史，冲突时以 docs/ 为准）
 ├── .editorconfig / .gitattributes / .gitignore
+├── .github/
+│   ├── workflows/ci.yml            CI（仓库卫生、密钥扫描；backend/frontend/docker/audit 条件激活）
+│   └── dependabot.yml              依赖版本更新（actions 周更；npm/maven/docker P01 启用）
+├── scripts/
+│   └── check-repo-health.mjs       本地/CI 仓库健康检查（R-GOV-04/05 + 卫生）
 └── docs/
     ├── 00-feasibility-review.md       可行性评审与 MVP 边界
     ├── 01-project-plan.md             里程碑与变更控制
@@ -153,3 +158,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-20 | v1.0 建立；项目结构从 AGENTS.md 迁出 | 结构与索引变动频繁，与每轮注入文件分离以降低 token 成本 |
 | 2026-08-20 | 新增长期文档 `docs/12-thesis-experiment-plan.md`（§1/§3 同步登记）；§6 契约速查补解压后大小上限 | 论文实验数据收集前置到 P11 埋点；P07 上传安全基线补强 |
 | 2026-08-20 | 新增长期文档 `docs/13-security-baseline.md`（§1/§3 同步登记） | 安全要求此前散落多份文档，建立唯一归属：威胁模型 + S1-S9 红线 + 分域基线 + 阶段映射 |
+| 2026-08-20 | 新增 `.github/`（ci.yml + dependabot.yml）与 `scripts/check-repo-health.mjs`（§1/§3 同步登记） | 编码开始前先立 CI 门禁：R-GOV 基础与卫生检查即时生效，构建类任务条件激活 |
