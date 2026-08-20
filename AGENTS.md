@@ -23,7 +23,7 @@ FlexForge：毕业设计"模块化数据管理系统"。主线 = 元数据驱动
 | 插件/扩展点/PluginRuntime | `docs/extension-points.md`、`docs/adr/0002`、`docs/07`、`docs/08` §3-4 | `docs/06-dsh-reference-study.md` |
 | Issue/AI/生成器 | `docs/09` P10-P12、`docs/03` §6、`docs/02` FR-ISSUE-* | `docs/adr/0002` |
 | 测试/回归/CI | `docs/04-test-strategy.md`、`docs/11-regression-test-plan.md` | `docs/repository-maintenance.md` §3 |
-| 改文档/状态 | `docs/05-documentation-guide.md`、`STATUS.md` | `docs/repository-maintenance.md` §1-2 |
+| 改文档/状态 | `docs/05-documentation-guide.md`、`STATUS.md` | `docs/repository-maintenance.md` §1-2、§8 |
 | 新模块/架构决策/破坏性变更 | `docs/adr/`（含 0003 复审条件、0004 骨架与业务边界）、`docs/10` §5 | `docs/00-feasibility-review.md` |
 | 原始设想/论文背景 | `FlexForge.md`（历史稿；与 MVP 冲突时以 `docs/` 为准） | — |
 
@@ -77,7 +77,29 @@ FlexForge：毕业设计"模块化数据管理系统"。主线 = 元数据驱动
 
 - 修复验证通过后：清除对应 `BLOCKERS` 条目并同步 JSON；进度日志记录解决方案与证据；开过 Issue 的链接修复 commit 并更新 Issue 状态。
 
-## 6. 项目完整结构
+## 6. Git 工作流（提交/分支/PR/Issue 速查）
+
+详细规范见 `docs/repository-maintenance.md` §2/§8，这里只给决策表：
+
+| 场景 | 动作 |
+| --- | --- |
+| 文档/状态/纯文本，不改契约 | 直推 `main`（先跑文档检查） |
+| 单文件行为修复，L1/L2 相关回归通过 | 直推 `main`（改动 ≤ 1 个文件） |
+| 新功能/重构/迁移/契约/依赖/多文件/阶段交付/试验 | 建分支 `feat\|fix\|refactor\|docs\|chore/<name>` → 小步提交 → push → 开 PR |
+| 核心流程或风险改动 | 必须 PR + 至少一次人工审查（AI 意见不算审查）后合并 |
+| P0/P1 缺陷 | 立即修复（`fix/` 分支或单文件直推），不靠只开 Issue 挂起 |
+| P2/P3、暂留想法、技术债、TODO | 先开 Issue（暂留问题写"原因 + 复查触发条件"），代码注释引用 Issue 号 |
+| 阻塞/需人工决策 | 按 §5 记 BLOCKERS，并同步开 Issue 双记 |
+
+提交与推送规则：
+
+- 一个提交一个主题；复杂改动拆成小步提交，**每个提交后仓库仍可构建**；禁止"最后一步才可编译"的一揽子提交。
+- 建议顺序：文档/契约 → 迁移/核心 → API/UI → 测试与状态；新增依赖单独提交。
+- 提交信息 `<type>(<scope>): <summary>`。
+- 每完成一个任务或每次会话结束前 push；禁止 force push `main`。
+- PR 默认 merge commit 保留分批历史；仅单琐碎提交可 squash。
+
+## 7. 项目完整结构
 
 当前（P01 前，文档阶段）：
 
@@ -110,7 +132,7 @@ scripts/    check-repo-health 等可重复脚本
 docs/       同上，随实现持续更新
 ```
 
-## 7. Token 经济
+## 8. Token 经济
 
 - 只读路由表"必读"列；`grep` 章节代替整篇读取；`docs/09` 只读当前阶段小节。
 - `FlexForge.md`、`docs/06`、ADR 只在路由表指向时读。

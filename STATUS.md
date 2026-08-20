@@ -53,4 +53,5 @@ BLOCKERS: none
 | 2026-08-20 | P01 | 冻结"系统骨架不含业务"边界：演示库存与第三方插件同权、可停用/卸载；新增 ADR-0004 与骨架纯净性回归（R-GOV-09） | `docs/adr/0004`、`docs/03` §3.5、`docs/11` |
 | 2026-08-20 | P01 | 建立 GitHub 私有仓库（main 分支）并推送初始基线，origin 已绑定，等待项目启动 | `https://github.com/KuroNeko-night/FlexForge` |
 | 2026-08-20 | P01 | 明确阻塞与问题处理流程（分类→记录→决策分叉→解除）写入 AGENTS.md §5；STATUS 更新规则与 R-GOV-04 同步覆盖 blockers 镜像 | `AGENTS.md` §5、`STATUS.md`、`docs/11` |
+| 2026-08-20 | P01 | 完善 Git 流程：分批提交、直推 main 边界、分支/PR 时机、暂留问题 Issue 规则 | `docs/repository-maintenance.md` §2/§8、`AGENTS.md` §6、`CONTRIBUTING.md` |
 
