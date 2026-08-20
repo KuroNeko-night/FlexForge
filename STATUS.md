@@ -9,7 +9,7 @@ STAGE_STATUS: ready_to_start
 PROJECT_PROGRESS: 5%
 LAST_UPDATED: 2026-08-20
 OWNER: project-maintainer
-NEXT_ACTION: 初始化 backend、frontend、database、plugins、tests、scripts 目录和最小启动骨架，接入 Checkstyle/ESLint/ArchUnit 等质量门禁工具链与最小回归测试骨架（R-GOV-01 简化版 + sync-status 脚本 + 冒烟）；落实安全基线 P01 条目（专用数据库账号、Actuator 收敛、CORS/CSP 基线）；确认 AI 模型接口可用性
+NEXT_ACTION: 初始化 backend、frontend、database、plugins、tests 目录和最小启动骨架（Docker Compose、健康检查、V001 迁移），接入 Checkstyle/ESLint/ArchUnit lint 配置与 R-GOV-01 简化版、violations fixture、sync-status 脚本；落实安全基线 P01 条目；确认 AI 模型接口可用性（CI 骨架已提前就位）
 EXIT_GATE: 新环境可按 README 启动前后端与 PostgreSQL，健康检查和 V001 迁移通过
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -60,4 +60,5 @@ BLOCKERS: none
 | 2026-08-20 | P01 | 落地计划评审修复：时间锚点倒排（答辩 2027-05 中旬、中期检查 2027-01、P13 默认不做）；单人审查流程替代团队人工审查；P01 范围重估（R-GOV-01 拆两步 + sync-status 脚本，周期 6-8 天）；论文实验数据前置（新增 docs/12，P11 起落库）；审计查询/JWT TTL/解压后 50MB 上限/离线演示三保险补强 | `docs/01/09/00/11/12`、`AGENTS.md` §2/§6、`docs/repository-maintenance.md` §2.3、`docs/05` |
 | 2026-08-20 | P01 | 新增应用安全基线 docs/13：威胁模型、S1-S9 安全红线、分域基线（认证/授权/注入/XSS/上传/AI/密钥/供应链/数据库）、P01-P14 阶段落地映射与验证矩阵；QG-8 安全门槛并入阶段通用质量门槛 | `docs/13`、`docs/09`（QG-8/P01）、`AGENTS.md` §3/§4.9、`docs/05`、`docs/project-index.md` |
 | 2026-08-20 | P01 | Mimosa L2 复查处置：安全路由行判定为误报（文档路由指针，非外发指令）但采纳其建议实质——AGENTS §4.12 增补 Agent 密钥外发纪律（不读取/展示/外发凭据、secret 仅环境变量引用、外发未脱敏内容逐次确认）；§3 路由行措辞精确化 | `AGENTS.md` §3/§4.12 |
+| 2026-08-20 | P01 | 编码前提前搭建 CI 骨架：scripts/check-repo-health.mjs（R-GOV-04/05 基础 + 卫生检查，已自测失败路径）、.github/workflows/ci.yml（仓库卫生 + gitleaks 密钥扫描即时生效；backend/frontend/docker-build/dependency-audit 按文件出现条件激活）、Dependabot（actions 周更，其余生态 P01 启用）；经 PR 分支合并 | `scripts/check-repo-health.mjs`、`.github/`、`docs/repository-maintenance.md` §3、`docs/project-index.md` |
 

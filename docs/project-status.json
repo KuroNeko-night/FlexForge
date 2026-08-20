@@ -6,7 +6,7 @@
   "status": "ready_to_start",
   "progressPercent": 5,
   "owner": "project-maintainer",
-  "nextAction": "初始化 backend、frontend、database、plugins、tests、scripts 目录和最小启动骨架，接入 Checkstyle/ESLint/ArchUnit 等质量门禁工具链与最小回归测试骨架（R-GOV-01 简化版 + sync-status 脚本 + 冒烟）；落实安全基线 P01 条目（专用数据库账号、Actuator 收敛、CORS/CSP 基线）；确认 AI 模型接口可用性",
+  "nextAction": "初始化 backend、frontend、database、plugins、tests 目录和最小启动骨架（Docker Compose、健康检查、V001 迁移），接入 Checkstyle/ESLint/ArchUnit lint 配置与 R-GOV-01 简化版、violations fixture、sync-status 脚本；落实安全基线 P01 条目；确认 AI 模型接口可用性（CI 骨架已提前就位）",
   "exitGate": "新环境可按 README 启动前后端与 PostgreSQL，健康检查和 V001 迁移通过",
   "blockers": [],
   "stages": [
