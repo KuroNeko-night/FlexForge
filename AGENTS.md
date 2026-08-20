@@ -22,7 +22,7 @@ FlexForge：毕业设计"模块化数据管理系统"。主线 = 元数据驱动
 | 后端代码 | `docs/coding-standards.md`、`docs/10-engineering-governance.md`、`docs/03-architecture.md`、`docs/08-implementation-blueprint.md`、`docs/02-requirements.md`（找 FR/NFR 编号） | 对应 P 节、相关 `docs/adr/` |
 | 前端代码 | 同上 + `docs/08` §6 | `docs/06-dsh-reference-study.md` §2.7 |
 | 数据库/迁移 | `docs/repository-maintenance.md` §5、`docs/07-plugin-runtime-data-model.md` | 对应 P 节 |
-| 安全相关改动（认证/权限/上传/AI/密钥/CORS） | `docs/13-security-baseline.md` | 对应 P 节、`docs/04` §4 |
+| 安全相关改动（认证/权限/文件上传接口/AI/密钥管理/CORS） | `docs/13-security-baseline.md` | 对应 P 节、`docs/04` §4 |
 | 插件/扩展点/PluginRuntime | `docs/extension-points.md`、`docs/adr/0002`、`docs/07`、`docs/08` §3-4 | `docs/06-dsh-reference-study.md` |
 | Issue/AI/生成器 | `docs/09` P10-P12、`docs/03` §6、`docs/02` FR-ISSUE-* | `docs/adr/0002` |
 | 测试/回归/CI | `docs/04-test-strategy.md`、`docs/11-regression-test-plan.md` | `docs/repository-maintenance.md` §3 |
@@ -49,7 +49,7 @@ FlexForge：毕业设计"模块化数据管理系统"。主线 = 元数据驱动
 9. 任何权限、动态 SQL、插件安装、状态迁移改动都必须有失败路径测试，且满足 `docs/13-security-baseline.md` 的 S1-S9 安全红线。
 10. 需求-实现-测试-文档必须用 FR/NFR 编号关联；变更摘要记录未完成项、假设和下一步。
 11. 进度/状态变更：先更新 `STATUS.md`，再更新计划和代码；`docs/project-status.json` 同步；阶段切换前先跑该阶段退出条件与 L3 阶段回归；阻塞与问题处理按 §5。
-12. 不提交密钥、真实用户数据、未脱敏日志、未经人工审核的 AI 产物。
+12. 不提交密钥、真实用户数据、未脱敏日志、未经人工审核的 AI 产物；不读取、展示或向任何外部服务发送密钥与凭据（secret 只经环境变量引用，不在会话中回显其值），对外发送任何未脱敏内容前必须逐次征得用户确认。
 13. 无法验证的结论必须标注"假设"，禁止伪装成已完成事实。
 14. 约束即时同步：当用户在会话中**明确**更改需求、边界、流程或约束时，必须在同一轮按 §3 路由表找到唯一归属文档并完成最小更新（引用决策内容，可更新本文 AGENTS.md），同步 `STATUS.md` 进度日志，并按 §6 提交推送；架构/契约级变更先写或修订 ADR。未经用户确认的推测、口头暂定意见不得写入约束文档。
 15. 索引与结构分离：项目结构、文件级索引只维护在 `docs/project-index.md`；结构或文档变更时同一轮更新该索引并写变更记录。本文件不保存结构树、只保存指针，以保持稳定与 token 缓存命中率。
