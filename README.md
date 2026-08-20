@@ -6,6 +6,7 @@ FlexForge 是一个面向毕业设计验证的模块化数据管理系统。项�
 
 - 阶段：设计与范围收敛
 - 版本：`0.1.0-SNAPSHOT`
+- 代码仓库：GitHub 私有仓库 [KuroNeko-night/FlexForge](https://github.com/KuroNeko-night/FlexForge)（`main` 分支）
 - 当前结论：技术上可行，但必须以 MVP 为边界，采用模块化单体和轻量运行时插件模型，不在毕业设计阶段实现通用企业级平台。
 - 原始概念稿：[FlexForge.md](./FlexForge.md)
 

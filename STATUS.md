@@ -51,4 +51,5 @@ BLOCKERS: none
 | 2026-08-20 | P01 | 冻结工程质量与扩展治理基线：数值门禁、扩展点登记册、seam 预留清单；P01 任务补充质量工具链 | `docs/10`、`docs/extension-points.md`、`docs/adr/0003` |
 | 2026-08-20 | P01 | 新增回归测试计划（R-GOV 治理自检 + 分层回归）；重写 AGENTS.md 为 Agent 上下文入口/文档路由表 | `docs/11`、`AGENTS.md` |
 | 2026-08-20 | P01 | 冻结"系统骨架不含业务"边界：演示库存与第三方插件同权、可停用/卸载；新增 ADR-0004 与骨架纯净性回归（R-GOV-09） | `docs/adr/0004`、`docs/03` §3.5、`docs/11` |
+| 2026-08-20 | P01 | 建立 GitHub 私有仓库（main 分支）并推送初始基线，origin 已绑定，等待项目启动 | `https://github.com/KuroNeko-night/FlexForge` |
 
