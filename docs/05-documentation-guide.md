@@ -26,6 +26,8 @@
 
 需求变更先改需求文档和计划，再改代码；紧急修复可以先改代码，但必须在同一迭代补齐文档和测试。
 
+约束与治理文档即时同步：用户明确更改需求、边界或流程后，由 Agent 在同一轮更新唯一归属文档（`coding-standards.md`、`docs/10-engineering-governance.md`、`docs/extension-points.md`、`docs/repository-maintenance.md`、`AGENTS.md` 等），并同步 `STATUS.md` 进度日志；架构/契约级变更先写或修订 ADR。未经用户确认的推测不得写入权威文档。
+
 ## 3. 文档格式
 
 - 使用 Markdown，标题层级从 `#` 开始递增。
