@@ -6,7 +6,7 @@
   "status": "in_progress",
   "progressPercent": 8,
   "owner": "project-maintainer",
-  "nextAction": "P01 迭代 1：Maven 多模块后端骨架（flexforge-app/flexforge-common）+ Flyway V001 平台表 + Docker Compose + 健康检查（含 Testcontainers 冒烟测试）；迭代 2：Vue 3 前端骨架与 Checkstyle/ESLint/Prettier/ArchUnit 工具链；迭代 3：sync-status、violations fixture 与 P01 验收验证",
+  "nextAction": "P01 迭代 2：Vue 3 + TS 前端骨架与 Checkstyle/ESLint/Prettier/ArchUnit 工具链（含 R-GOV-01 简化版与 violations fixture 激活）；迭代 3：sync-status 脚本、P01 验收清单逐项验证与阶段收尾",
   "exitGate": "新环境可按 README 启动前后端与 PostgreSQL，健康检查和 V001 迁移通过",
   "blockers": [],
   "stages": [
