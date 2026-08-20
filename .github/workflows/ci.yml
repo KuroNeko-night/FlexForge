@@ -27,6 +27,9 @@ jobs:
 
   secret-scan:
     name: 密钥扫描（gitleaks）
+    permissions:
+      contents: read
+      pull-requests: read # PR 事件下 gitleaks 需要读取 PR commits 做 diff 扫描
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
