@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: flexforge
+  datasource:
+    # 凭据只经环境变量注入，默认值仅限本机开发（docs/13 S4、repository-maintenance §9）
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/flexforge}
+    username: ${DB_USERNAME:flexforge}
+    password: ${DB_PASSWORD:flexforge}
+  flyway:
+    locations: classpath:db/migration
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # 安全基线 docs/13 S9：仅暴露 health，其余端点不对外
+        include: health
