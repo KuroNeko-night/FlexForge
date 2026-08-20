@@ -1,0 +1,40 @@
+# IDE and OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Java / Spring Boot
+backend/**/target/
+*.class
+*.jar
+*.log
+
+# Node / Vue
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+*.tsbuildinfo
+
+# Test and local runtime data
+coverage/
+playwright-report/
+test-results/
+database/data/
+tmp/
+*.local
+
+# Generated AI artifacts and local uploads
+artifacts/generated/
+artifacts/uploads/
+!artifacts/.gitkeep
+

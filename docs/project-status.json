@@ -1,0 +1,30 @@
+{
+  "project": "FlexForge",
+  "updatedAt": "2026-08-20",
+  "currentStageId": "P01",
+  "currentStageName": "仓库与工程骨架",
+  "status": "ready_to_start",
+  "progressPercent": 5,
+  "owner": "project-maintainer",
+  "nextAction": "初始化 backend、frontend、database、plugins、tests、scripts 目录和最小启动骨架，接入 Checkstyle/ESLint/ArchUnit 等质量门禁工具链与最小回归测试骨架（治理自检 + 冒烟）",
+  "exitGate": "新环境可按 README 启动前后端与 PostgreSQL，健康检查和 V001 迁移通过",
+  "blockers": [],
+  "stages": [
+    {"id": "P00", "name": "设计基线冻结", "status": "completed"},
+    {"id": "P01", "name": "仓库与工程骨架", "status": "ready_to_start"},
+    {"id": "P02", "name": "核心契约与可观测性", "status": "pending"},
+    {"id": "P03", "name": "认证、RBAC 与系统壳", "status": "pending"},
+    {"id": "P04", "name": "元数据写模型", "status": "pending"},
+    {"id": "P05", "name": "动态数据运行时", "status": "pending"},
+    {"id": "P06", "name": "前端动态渲染", "status": "pending"},
+    {"id": "P07", "name": "插件包校验与版本存储", "status": "pending"},
+    {"id": "P08", "name": "PluginRuntime 生命周期", "status": "pending"},
+    {"id": "P09", "name": "库存示例插件", "status": "pending"},
+    {"id": "P10", "name": "Issue 与规格 Schema", "status": "pending"},
+    {"id": "P11", "name": "AI 适配器与生成器", "status": "pending"},
+    {"id": "P12", "name": "Agent Issue 端到端闭环", "status": "pending"},
+    {"id": "P13", "name": "加分项与体验优化", "status": "optional"},
+    {"id": "P14", "name": "质量收敛与答辩交付", "status": "pending"}
+  ]
+}
+
