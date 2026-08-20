@@ -18,6 +18,7 @@ FlexForge 是一个面向毕业设计验证的模块化数据管理系统。项�
 - [工程质量与可扩展性治理基线](./docs/10-engineering-governance.md)
 - [回归测试计划](./docs/11-regression-test-plan.md)
 - [论文实验与数据收集计划](./docs/12-thesis-experiment-plan.md)
+- [安全基线](./docs/13-security-baseline.md)
 - [项目索引（文件级定位）](./docs/project-index.md)
 - [扩展点登记册](./docs/extension-points.md)
 - [当前开发状态](./STATUS.md)

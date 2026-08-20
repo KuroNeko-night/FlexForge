@@ -22,6 +22,7 @@ FlexForge：毕业设计"模块化数据管理系统"。主线 = 元数据驱动
 | 后端代码 | `docs/coding-standards.md`、`docs/10-engineering-governance.md`、`docs/03-architecture.md`、`docs/08-implementation-blueprint.md`、`docs/02-requirements.md`（找 FR/NFR 编号） | 对应 P 节、相关 `docs/adr/` |
 | 前端代码 | 同上 + `docs/08` §6 | `docs/06-dsh-reference-study.md` §2.7 |
 | 数据库/迁移 | `docs/repository-maintenance.md` §5、`docs/07-plugin-runtime-data-model.md` | 对应 P 节 |
+| 安全相关改动（认证/权限/上传/AI/密钥/CORS） | `docs/13-security-baseline.md` | 对应 P 节、`docs/04` §4 |
 | 插件/扩展点/PluginRuntime | `docs/extension-points.md`、`docs/adr/0002`、`docs/07`、`docs/08` §3-4 | `docs/06-dsh-reference-study.md` |
 | Issue/AI/生成器 | `docs/09` P10-P12、`docs/03` §6、`docs/02` FR-ISSUE-* | `docs/adr/0002` |
 | 测试/回归/CI | `docs/04-test-strategy.md`、`docs/11-regression-test-plan.md` | `docs/repository-maintenance.md` §3 |
@@ -45,7 +46,7 @@ FlexForge：毕业设计"模块化数据管理系统"。主线 = 元数据驱动
 6. AI 输出只是草稿：必须经过 Schema 校验、人工审阅和自动化测试后才能算完成。
 7. 生成插件只能用声明式资源 + `docs/extension-points.md` 已登记扩展点。
 8. 代码满足 `docs/coding-standards.md` §7 数值硬约束与 `docs/10-engineering-governance.md` 依赖方向；新扩展点先登记、先有消费方、先有注册/撤销测试。
-9. 任何权限、动态 SQL、插件安装、状态迁移改动都必须有失败路径测试。
+9. 任何权限、动态 SQL、插件安装、状态迁移改动都必须有失败路径测试，且满足 `docs/13-security-baseline.md` 的 S1-S9 安全红线。
 10. 需求-实现-测试-文档必须用 FR/NFR 编号关联；变更摘要记录未完成项、假设和下一步。
 11. 进度/状态变更：先更新 `STATUS.md`，再更新计划和代码；`docs/project-status.json` 同步；阶段切换前先跑该阶段退出条件与 L3 阶段回归；阻塞与问题处理按 §5。
 12. 不提交密钥、真实用户数据、未脱敏日志、未经人工审核的 AI 产物。

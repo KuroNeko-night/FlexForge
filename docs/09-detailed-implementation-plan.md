@@ -37,6 +37,7 @@
 - **QG-5 契约同步**：API、错误码、迁移、Schema 变化在同一 PR 同步代码、测试、文档和登记册。
 - **QG-6 状态同步**：`STATUS.md` 与 `docs/project-status.json` 反映真实进度。
 - **QG-7 回归闭环**：本阶段新增能力对应的回归包（`docs/11-regression-test-plan.md` §4）并入并通过；治理自检 R-GOV 无漂移；阶段退出附回归运行证据。
+- **QG-8 安全基线**：本阶段涉及的安全条目满足 `docs/13-security-baseline.md` §2 红线（S1-S9）与 §4 阶段映射；新增攻击面必须有对应失败路径测试。
 
 ## P00：设计基线冻结
 
@@ -72,6 +73,7 @@
 - 建立回归测试骨架：`tests/fixtures/`（含 `violations/` 故意违规样例）、`fixtures.json` 哈希清单；把 `docs/11-regression-test-plan.md` §3 的 R-GOV-02..06 与 R-GOV-01 简化版（脚本导出 lint 阈值并与 `docs/coding-standards.md` §7 比对）纳入 `check-repo-health`；R-GOV-01 完整解析断言在 P02 交付。
 - 增加 `scripts/sync-status`：以 `STATUS.md` 锚点为源单向生成/校验 `docs/project-status.json`，消除人工双写（R-GOV-04 校验保留为门禁）。
 - 确认 AI 模型接口可用性（OpenAI 兼容接口 / 学校环境 / 未定）；未确定时按 fixture 优先策略推进（P11 开发与回归不依赖在线模型），结论写入进度日志。
+- 落实安全基线 P01 条目：专用数据库账号（非超级用户）、Actuator 端点收敛、CORS 基线与 CSP 配置骨架（`docs/13-security-baseline.md` §4）。
 
 ### 验收标准
 
