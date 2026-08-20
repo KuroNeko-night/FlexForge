@@ -3,10 +3,10 @@
   "updatedAt": "2026-08-20",
   "currentStageId": "P01",
   "currentStageName": "仓库与工程骨架",
-  "status": "ready_to_start",
-  "progressPercent": 5,
+  "status": "in_progress",
+  "progressPercent": 8,
   "owner": "project-maintainer",
-  "nextAction": "初始化 backend、frontend、database、plugins、tests 目录和最小启动骨架（Docker Compose、健康检查、V001 迁移），接入 Checkstyle/ESLint/ArchUnit lint 配置与 R-GOV-01 简化版、violations fixture、sync-status 脚本；落实安全基线 P01 条目；确认 AI 模型接口可用性（CI 骨架已提前就位）",
+  "nextAction": "P01 迭代 1：Maven 多模块后端骨架（flexforge-app/flexforge-common）+ Flyway V001 平台表 + Docker Compose + 健康检查（含 Testcontainers 冒烟测试）；迭代 2：Vue 3 前端骨架与 Checkstyle/ESLint/Prettier/ArchUnit 工具链；迭代 3：sync-status、violations fixture 与 P01 验收验证",
   "exitGate": "新环境可按 README 启动前后端与 PostgreSQL，健康检查和 V001 迁移通过",
   "blockers": [],
   "stages": [
