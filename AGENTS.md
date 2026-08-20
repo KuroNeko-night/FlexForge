@@ -17,6 +17,7 @@ FlexForge：毕业设计"模块化数据管理系统"。主线 = 元数据驱动
 | 任务 | 必读 | 按需 |
 | --- | --- | --- |
 | 任何任务 | `STATUS.md` + 本文 | — |
+| 定位文件/模块/项目结构 | `docs/project-index.md`（`grep` 对应节） | — |
 | 后端代码 | `docs/coding-standards.md`、`docs/10-engineering-governance.md`、`docs/03-architecture.md`、`docs/08-implementation-blueprint.md`、`docs/02-requirements.md`（找 FR/NFR 编号） | 对应 P 节、相关 `docs/adr/` |
 | 前端代码 | 同上 + `docs/08` §6 | `docs/06-dsh-reference-study.md` §2.7 |
 | 数据库/迁移 | `docs/repository-maintenance.md` §5、`docs/07-plugin-runtime-data-model.md` | 对应 P 节 |
@@ -49,6 +50,7 @@ FlexForge：毕业设计"模块化数据管理系统"。主线 = 元数据驱动
 12. 不提交密钥、真实用户数据、未脱敏日志、未经人工审核的 AI 产物。
 13. 无法验证的结论必须标注"假设"，禁止伪装成已完成事实。
 14. 约束即时同步：当用户在会话中**明确**更改需求、边界、流程或约束时，必须在同一轮按 §3 路由表找到唯一归属文档并完成最小更新（引用决策内容，可更新本文 AGENTS.md），同步 `STATUS.md` 进度日志，并按 §6 提交推送；架构/契约级变更先写或修订 ADR。未经用户确认的推测、口头暂定意见不得写入约束文档。
+15. 索引与结构分离：项目结构、文件级索引只维护在 `docs/project-index.md`；结构或文档变更时同一轮更新该索引并写变更记录。本文件不保存结构树、只保存指针，以保持稳定与 token 缓存命中率。
 
 ## 5. 阻塞与问题处理流程（发现问题先走这里）
 
@@ -100,41 +102,15 @@ FlexForge：毕业设计"模块化数据管理系统"。主线 = 元数据驱动
 - 每完成一个任务或每次会话结束前 push；禁止 force push `main`。
 - PR 默认 merge commit 保留分批历史；仅单琐碎提交可 squash。
 
-## 7. 项目完整结构
+## 7. 索引与项目结构（按需读，不在本文件维护）
 
-当前（P01 前，文档阶段）：
-
-```text
-FlexForge/
-├── README.md / FlexForge.md（历史概念稿）/ CONTRIBUTING.md / AGENTS.md
-├── STATUS.md                  # 进度锚点
-├── docs/
-│   ├── 00-feasibility-review.md  01-project-plan.md  02-requirements.md
-│   ├── 03-architecture.md  04-test-strategy.md  05-documentation-guide.md
-│   ├── 06-dsh-reference-study.md  07-plugin-runtime-data-model.md
-│   ├── 08-implementation-blueprint.md  09-detailed-implementation-plan.md
-│   ├── 10-engineering-governance.md  11-regression-test-plan.md
-│   ├── coding-standards.md  repository-maintenance.md  project-status.json
-│   ├── extension-points.md     # 扩展点唯一登记册
-│   └── adr/0001-0005
-└── .editorconfig / .gitignore
-```
-
-目标结构（P01 起，以 `docs/repository-maintenance.md` §1 为准）：
-
-```text
-backend/    flexforge-app/common/runtime/auth/system/meta/data/plugin/issue/ai（workflow 可选）
-            每个模块内部：api -> application -> domain -> infrastructure
-frontend/   Vue 3 + TypeScript（core/components/views/dynamic）
-database/   migrations/ + seed/
-plugins/    example-inventory（Level 1 声明式示例）
-tests/      跨模块/E2E/fixtures/（含 violations 违规样例，见 docs/11 §5）
-scripts/    check-repo-health 等可重复脚本
-docs/       同上，随实现持续更新
-```
+- 文件级索引唯一位置：`docs/project-index.md`（项目结构、文档地图、模块→文档映射、被阻断速查、自更新规则）。
+- 需要定位文件/模块时先 `grep` 该索引对应节，不要通读。
+- 结构/目录/文档/模块变化时，按 §4.15 立即更新索引并写变更记录；本文件不复制结构。
 
 ## 8. Token 经济
 
 - 只读路由表"必读"列；`grep` 章节代替整篇读取；`docs/09` 只读当前阶段小节。
+- 文件级定位只读 `docs/project-index.md`，不复制其内容到本文件。
 - `FlexForge.md`、`docs/06`、ADR 只在路由表指向时读。
 - 回复引用 `文件路径 + 章节/行号`，不复制大段原文。

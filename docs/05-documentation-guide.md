@@ -15,6 +15,7 @@
 - `docs/10-engineering-governance.md`：工程质量与可扩展性治理基线（反屎山红线、seam 预留清单、契约演化、质量门禁）。
 - `docs/11-regression-test-plan.md`：回归分层、治理自检（R-GOV）与按阶段交付的回归包。
 - `docs/extension-points.md`：扩展点唯一登记册；任何新扩展点先在此登记。
+- `docs/project-index.md`：文件级索引（项目结构、文档地图、模块→文档映射、被阻断速查）；结构变化即时更新并写变更记录（自更新规则见该文 §7）。
 - `STATUS.md`：开发者查看和更新当前进度的唯一可见锚点。
 - `docs/project-status.json`：与 `STATUS.md` 同步的机器可读状态镜像。
 - `docs/adr/`：不可逆或影响面较大的架构决策。

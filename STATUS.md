@@ -56,4 +56,5 @@ BLOCKERS: none
 | 2026-08-20 | P01 | 完善 Git 流程：分批提交、直推 main 边界、分支/PR 时机、暂留问题 Issue 规则 | `docs/repository-maintenance.md` §2/§8、`AGENTS.md` §6、`CONTRIBUTING.md` |
 | 2026-08-20 | P01 | 新增约束即时同步规则：用户明确更改需求/边界/流程时，Agent 同一轮更新唯一归属文档 + STATUS 日志；架构级变更走 ADR；未确认推测不得写入 | `AGENTS.md` §4.14、`docs/05`、`docs/10` §7 |
 | 2026-08-20 | P01 | 封堵实施前高概率坑：插件迁移 runner（ADR-0005）、开发环境基线、元数据兼容与删除语义、上传安全、提示词版本化、UTC/错误脱敏 | `docs/adr/0005`、`docs/07/08/09/10`、`docs/repository-maintenance.md` §9、`docs/coding-standards.md` §5 |
+| 2026-08-20 | P01 | 成本控制：项目结构/文件级索引迁出 AGENTS.md 至 docs/project-index.md（自更新 + 变更注释），AGENTS 只留指针；R-GOV-05 校验索引完整性 | `docs/project-index.md`、`AGENTS.md` §7/§4.15、`docs/11` |
 
