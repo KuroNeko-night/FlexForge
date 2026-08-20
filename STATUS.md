@@ -38,7 +38,7 @@ BLOCKERS: none
 
 1. 开始阶段：将该阶段 `STAGE_STATUS` 改为 `in_progress`，填写 `NEXT_ACTION`。
 2. 每完成一个可验证任务：更新阶段看板、`PROJECT_PROGRESS` 和下方进度日志。
-3. 遇到阻塞：填写具体问题、影响阶段和下一次复查时间，禁止只写“阻塞”。
+3. 遇到阻塞：`BLOCKERS` 按 `问题 | 影响阶段 | 复查时间` 逐条填写（多条用分号分隔），禁止只写“阻塞”；同时在进度日志记录一条，并同步 `docs/project-status.json` 的 `blockers` 数组。解决后记录解决方案与证据，再清除该条。完整流程见 `AGENTS.md` §5。
 4. 达到退出条件：将阶段改为 `completed`，填写验收证据路径，并把下一阶段设为 `ready_to_start`。
 5. 代码、测试、文档或数据库发生行为变化时，`LAST_UPDATED` 必须同步更新。
 6. `docs/project-status.json` 是给脚本和后续仪表盘读取的镜像，必须与本文件的状态锚点保持一致。
@@ -52,4 +52,5 @@ BLOCKERS: none
 | 2026-08-20 | P01 | 新增回归测试计划（R-GOV 治理自检 + 分层回归）；重写 AGENTS.md 为 Agent 上下文入口/文档路由表 | `docs/11`、`AGENTS.md` |
 | 2026-08-20 | P01 | 冻结"系统骨架不含业务"边界：演示库存与第三方插件同权、可停用/卸载；新增 ADR-0004 与骨架纯净性回归（R-GOV-09） | `docs/adr/0004`、`docs/03` §3.5、`docs/11` |
 | 2026-08-20 | P01 | 建立 GitHub 私有仓库（main 分支）并推送初始基线，origin 已绑定，等待项目启动 | `https://github.com/KuroNeko-night/FlexForge` |
+| 2026-08-20 | P01 | 明确阻塞与问题处理流程（分类→记录→决策分叉→解除）写入 AGENTS.md §5；STATUS 更新规则与 R-GOV-04 同步覆盖 blockers 镜像 | `AGENTS.md` §5、`STATUS.md`、`docs/11` |
 

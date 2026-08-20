@@ -39,7 +39,7 @@
 | R-GOV-01 | 解析 Checkstyle/ESLint 配置，断言文件长度、函数长度、复杂度、参数、嵌套阈值与 `docs/coding-standards.md` §7 **完全一致**；文档改阈值不同步配置（或反向）即失败 | NFR-MAINT-01 | P01 |
 | R-GOV-02 | ArchUnit/import 规则：无循环依赖、无跨模块 `infrastructure` 引用、未标注 `@PublicApi`/`@ExperimentalApi` 的类不被跨模块引用 | NFR-MAINT-01 | P01 骨架，P02 起生效 |
 | R-GOV-03 | 扩展点闭环：代码中 `ServiceKey`/`ExtensionPoint`/`DomainEventType` 常量集合 == `docs/extension-points.md` active 集合；每个 active 扩展点有对应注册-撤销测试；发现未登记常量即失败 | NFR-MAINT-02 | P02 |
-| R-GOV-04 | 状态镜像一致：`STATUS.md` 锚点（stage/status/nextAction）与 `docs/project-status.json` 完全一致 | STATUS 更新规则 | P01 |
+| R-GOV-04 | 状态镜像一致：`STATUS.md` 锚点（stage/status/nextAction/blockers）与 `docs/project-status.json` 完全一致 | STATUS 更新规则、AGENTS.md §5 | P01 |
 | R-GOV-05 | 文档完整：全部 Markdown 相对链接可解析；`README.md` 与 `docs/05-documentation-guide.md` 索引覆盖所有长期文档 | 文档维护指南 | P01 |
 | R-GOV-06 | 门禁防失效（fail-open guard）：`tests/fixtures/violations/` 存放**故意违规**样例（超行数文件、非法跨模块引用）；`scripts/check-repo-health` 对违规样例运行 lint/依赖检查并断言"必须失败且命中预期规则"；若违规样例意外通过，说明门禁被放宽 | NFR-MAINT-01 | P01 |
 | R-GOV-07 | 契约 fixture 回归：`plugin.json` 与 `RequirementSpec` 的合法/非法 fixture 目录在 L2/L3 全部重放，结果稳定 | FR-PLUGIN-01/08、FR-ISSUE-04 | P07、P10 |
