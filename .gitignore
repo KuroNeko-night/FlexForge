@@ -38,3 +38,6 @@ artifacts/generated/
 artifacts/uploads/
 !artifacts/.gitkeep
 
+# Local tooling workspaces
+.mimosa/
+
