@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 文档阶段即生效：R-GOV-04/05 与仓库卫生（scripts/check-repo-health.mjs）
+  repo-health:
+    name: 文档与仓库卫生（R-GOV 基础）
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: check-repo-health
+        run: node scripts/check-repo-health.mjs
+
+  # 密钥扫描：全历史（docs/13 S4、repository-maintenance §4）
+  secret-scan:
+    name: 密钥扫描（gitleaks）
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # P01 backend/ 就位后自动激活；构建工具（Maven/Gradle）由 P01 决定，此处自动检测
+  backend:
+    name: 后端构建与测试
+    if: hashFiles('backend/**/pom.xml', 'backend/**/build.gradle', 'backend/**/build.gradle.kts') != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: 自动检测 Maven/Gradle 并构建
+        run: |
+          if [ -n "$(find backend -name pom.xml -print -quit)" ]; then
+            mvn -B -ntp -f backend verify
+          elif [ -n "$(find backend -name 'build.gradle*' -print -quit)" ]; then
+            chmod +x backend/gradlew 2>/dev/null || true
+            (cd backend && ./gradlew build --no-daemon)
+          else
+            echo "backend/ 存在但未找到构建文件"
+            exit 1
+          fi
+      # P01 确定构建工具与模块布局后：接入 setup-java 缓存与 Checkstyle/ArchUnit 报告上传
+
+  # P01 frontend/ 就位后自动激活；script 名（lint/type-check/test/build）由 P01 固化
+  frontend:
+    name: 前端构建与测试
+    if: hashFiles('frontend/package.json') != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run lint --if-present
+        working-directory: frontend
+      - run: npm run type-check --if-present
+        working-directory: frontend
+      - run: npm test --if-present
+        working-directory: frontend
+      - run: npm run build --if-present
+        working-directory: frontend
+
+  # Dockerfile 就位后自动激活；只验证可构建，不推送（repository-maintenance §9：CI 不发布）
+  docker-build:
+    name: Docker 镜像构建（不推送）
+    if: hashFiles('**/Dockerfile') != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: 构建全部 Dockerfile
+        run: |
+          for f in $(find . -name Dockerfile -not -path './.git/*'); do
+            ctx=$(dirname "$f")
+            echo "构建 $f（context: $ctx）"
+            docker build -t "flexforge-ci:$(basename "$ctx")" "$ctx"
+          done
+
+  # package-lock.json 就位后自动激活；高危即失败，豁免经 npm audit 配置显式登记（docs/13 §3.9）
+  dependency-audit:
+    name: 依赖漏洞审计（npm，high+）
+    if: hashFiles('frontend/package-lock.json') != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - run: npm audit --omit=dev --audit-level=high
+        working-directory: frontend
