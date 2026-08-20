@@ -1,0 +1,41 @@
+# FlexForge 开发环境编排（P01 迭代 1：db + backend；frontend 随迭代 2 加入）
+# 端口只绑定 127.0.0.1，避免向局域网暴露开发环境（docs/13 §3.8）
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_PASSWORD: flexforge-dev-only
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - flexforge-pgdata:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d flexforge"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/flexforge
+      DB_USERNAME: flexforge
+      DB_PASSWORD: flexforge
+    ports:
+      # 宿主端口默认 8088，避免与本机其他 8080 服务冲突；可用 .env 的 BACKEND_PORT 覆盖
+      - "127.0.0.1:${BACKEND_PORT:-8088}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+volumes:
+  flexforge-pgdata:

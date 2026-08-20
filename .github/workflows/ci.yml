@@ -50,19 +50,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: 自动检测 Maven/Gradle 并构建（backend/ 就位前跳过）
+      - name: 构建与测试（Maven Wrapper，backend/ 就位前跳过）
         run: |
           if [ ! -d backend ]; then echo "跳过：backend/ 不存在"; exit 0; fi
-          if [ -n "$(find backend -name pom.xml -print -quit)" ]; then
-            mvn -B -ntp -f backend verify
-          elif [ -n "$(find backend -name 'build.gradle*' -print -quit)" ]; then
-            chmod +x backend/gradlew 2>/dev/null || true
-            (cd backend && ./gradlew build --no-daemon)
-          else
-            echo "backend/ 存在但未找到构建文件"
-            exit 1
-          fi
-      # P01 确定构建工具与模块布局后：接入 setup-java 缓存与 Checkstyle/ArchUnit 报告上传
+          cd backend
+          chmod +x mvnw
+          ./mvnw -B -ntp verify
 
   frontend:
     name: 前端构建与测试
@@ -93,10 +86,10 @@ jobs:
       - name: 构建全部 Dockerfile（Dockerfile 就位前跳过）
         run: |
           found=0
+          # 统一约定：Dockerfile 的 build context 一律为仓库根（backend/Dockerfile 需要访问 database/）
           for f in $(find . -name Dockerfile -not -path './.git/*'); do
-            ctx=$(dirname "$f")
-            echo "构建 $f（context: $ctx）"
-            docker build -t "flexforge-ci:$(basename "$ctx")" "$ctx"
+            echo "构建 $f（context: .）"
+            docker build -f "$f" -t "flexforge-ci:$(dirname "$f" | sed 's|^\./||; s|/|-|g; s|^\.|root|')" .
             found=1
           done
           if [ "$found" -eq 0 ]; then echo "跳过：未发现 Dockerfile"; fi
