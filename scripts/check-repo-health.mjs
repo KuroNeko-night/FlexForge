@@ -15,6 +15,7 @@ import {
   runFrontendGates,
 } from './lib/gates.mjs';
 import { checkLintThresholds } from './lib/rgov-thresholds.mjs';
+import { buildStatusJson, readStatusSnapshot } from './lib/status.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const results = [];
@@ -84,6 +85,7 @@ function checkDocRegistration(files) {
 }
 
 // R-GOV-04：STATUS.md 锚点 + 阶段看板与 project-status.json 完全一致
+// 解析统一走 scripts/lib/status.mjs（sync-status 同源，避免双解析口径漂移）
 function checkStatusMirror() {
   const problems = [];
   let json;
@@ -93,39 +95,30 @@ function checkStatusMirror() {
     record('R-GOV-04', 'fail', [`project-status.json 解析失败: ${e.message}`]);
     return;
   }
-  const status = fs.readFileSync(path.join(ROOT, 'STATUS.md'), 'utf8');
-  const anchor = status.match(/FLEXFORGE_STATUS:BEGIN([\s\S]*?)FLEXFORGE_STATUS:END/);
-  if (!anchor) {
-    record('R-GOV-04', 'fail', ['STATUS.md 缺少 FLEXFORGE_STATUS 锚点块']);
+  let snapshot;
+  try {
+    snapshot = readStatusSnapshot(ROOT);
+  } catch (e) {
+    record('R-GOV-04', 'fail', [e.message]);
     return;
   }
-  const grab = (k) => (anchor[1].match(new RegExp(`${k}: *(.*)`)) || [])[1]?.trim();
-  const blockersRaw = grab('BLOCKERS');
-  const blockersJson = json.blockers ?? [];
-  const blockersAnchor = blockersRaw === 'none' || blockersRaw === undefined
-    ? []
-    : blockersRaw.split(';').map((s) => s.trim()).filter(Boolean);
+  const generated = buildStatusJson(snapshot);
   const pairs = [
-    ['currentStageId', json.currentStageId, grab('CURRENT_STAGE_ID')],
-    ['currentStageName', json.currentStageName, grab('CURRENT_STAGE_NAME')],
-    ['status', json.status, grab('STAGE_STATUS')],
-    ['owner', json.owner, grab('OWNER')],
-    ['nextAction', json.nextAction, grab('NEXT_ACTION')],
-    ['exitGate', json.exitGate, grab('EXIT_GATE')],
-    ['progressPercent', String(json.progressPercent).replace('%', ''), grab('PROJECT_PROGRESS')?.replace('%', '')],
-    ['updatedAt', json.updatedAt, grab('LAST_UPDATED')],
-    ['blockers', JSON.stringify(blockersJson), JSON.stringify(blockersAnchor)],
+    ['currentStageId', json.currentStageId, generated.currentStageId],
+    ['currentStageName', json.currentStageName, generated.currentStageName],
+    ['status', json.status, generated.status],
+    ['owner', json.owner, generated.owner],
+    ['nextAction', json.nextAction, generated.nextAction],
+    ['exitGate', json.exitGate, generated.exitGate],
+    ['progressPercent', String(json.progressPercent), String(generated.progressPercent)],
+    ['updatedAt', json.updatedAt, generated.updatedAt],
+    ['blockers', JSON.stringify(json.blockers ?? []), JSON.stringify(generated.blockers)],
   ];
   for (const [name, a, b] of pairs) {
     if (a !== b) problems.push(`${name}: json=${JSON.stringify(a)} status=${JSON.stringify(b)}`);
   }
-  const board = status.match(/## 阶段看板([\s\S]*?)(?=\n## |$)/)?.[1] || '';
   const jsonStages = (json.stages ?? []).map((s) => `${s.id}|${s.name}|${s.status}`);
-  const statusStages = [];
-  for (const line of board.split('\n')) {
-    const row = line.match(/^\|\s*(P\d+)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|/);
-    if (row) statusStages.push(`${row[1]}|${row[2].trim()}|${row[3].trim()}`);
-  }
+  const statusStages = generated.stages.map((s) => `${s.id}|${s.name}|${s.status}`);
   if (JSON.stringify(jsonStages) !== JSON.stringify(statusStages)) {
     problems.push(`stages: json=${JSON.stringify(jsonStages)} status=${JSON.stringify(statusStages)}`);
   }

@@ -62,6 +62,7 @@ export function runFrontendGates(record) {
   for (const [id, script] of [
     ['FORMAT', 'format:check'],
     ['LINT', 'lint'],
+    ['LINT-TARGETS', 'lint:targets'],
     ['TYPE-CHECK', 'type-check'],
     ['TEST', 'test'],
     ['BUILD', 'build'],
@@ -120,6 +121,7 @@ export function checkRgov02(backend, record) {
     return;
   }
   const report = surefireReport('DependencyBoundaryTest');
+  // 4 = DependencyBoundaryTest 当前规则数；新增/删除 ArchUnit 规则时需同步此断言。
   const ok = backend.ok && report !== null && report.tests === 4 && report.errors === 0 && report.failures === 0;
   record('R-GOV-02', ok ? 'pass' : 'fail',
     ok ? ['ArchUnit 依赖边界 4 条规则通过（common→app、framework 依赖、infrastructure、循环）']
@@ -141,7 +143,10 @@ export function fixtureManifestProblems() {
       problems.push(`fixture 缺失: ${entry.path}`);
       continue;
     }
-    const hash = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+    // Git 按 .gitattributes 统一存储 LF；哈希前规范化行尾，避免 Windows CRLF 工作区
+    // 与 Linux CI 检出内容产生假漂移（docs/11 §5：SHA-256 必须跨平台稳定）。
+    const canonical = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+    const hash = crypto.createHash('sha256').update(canonical).digest('hex');
     if (hash !== entry.sha256) {
       problems.push(`fixture 哈希漂移: ${entry.path} 期望 ${entry.sha256} 实际 ${hash}`);
     }
@@ -185,6 +190,7 @@ export function checkRgov06(backend, record) {
   const manifest = fixtureManifestProblems();
   const frontend = checkFrontendViolationFixture();
   const report = surefireReport('CheckstyleFixtureTest');
+  // 1 = CheckstyleFixtureTest 当前用例数；新增用例时需同步此断言。
   const backendOk = backend.ok && report !== null && report.tests === 1 && report.errors === 0 && report.failures === 0;
   const ok = manifest.length === 0 && frontend.ok && backendOk;
   const detail = [];

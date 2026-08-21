@@ -23,8 +23,16 @@ updates:
     commit-message:
       prefix: "chore(deps)"
 
+  # Dependabot 的 docker 目录不递归：backend/ 与 frontend/ 各有 Dockerfile，需分开声明
   - package-ecosystem: docker
-    directory: /
+    directory: /backend
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(deps)"
+
+  - package-ecosystem: docker
+    directory: /frontend
     schedule:
       interval: weekly
     commit-message:

@@ -32,7 +32,7 @@ cd backend
 .\mvnw.cmd verify   # PowerShell；Git Bash 可用 ./mvnw。含 Testcontainers 启动冒烟（需 Docker）
 ```
 
-本机直跑后端（默认 8080 端口）：复制 `.env.example` 为 `.env` 或导出同名环境变量后执行 `.\mvnw.cmd -pl flexforge-app spring-boot:run`（Git Bash 用 `./mvnw`）。
+本机直跑后端（默认 8080 端口）：复制 `.env.example` 为 `.env` 或导出同名环境变量后执行 `.\mvnw.cmd -pl flexforge-app -am spring-boot:run`（Git Bash 用 `./mvnw`；`-am` 同时构建 common 模块）。
 
 前端源码构建与测试：
 
