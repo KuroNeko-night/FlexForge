@@ -4,9 +4,35 @@
 
 FlexForge 是一个面向毕业设计验证的模块化数据管理系统。项目以元数据驱动和插件化为主线，辅以轻量工作流与 AI 需求澄清/代码骨架生成，目标是验证“需求规格 -> 可配置业务模块 -> 测试发布”的闭环是否可行。
 
+## 快速启动（开发环境）
+
+前置：JDK 17+、Node.js LTS、Docker Desktop（含 Compose）。
+
+```bash
+# 1. 一键启动 PostgreSQL + 后端（首次构建需数分钟拉取依赖）
+docker compose up -d --build
+
+# 2. 健康检查（Compose 宿主端口默认 8088，避免与本机其他 8080 服务冲突；.env 的 BACKEND_PORT 可覆盖）
+curl http://127.0.0.1:8088/actuator/health   # 期望 {"status":"UP"}
+
+# 3. 停止（数据保留在 flexforge-pgdata 卷）
+docker compose down
+```
+
+后端源码构建与测试（Maven 由 Wrapper 锁定为 3.9.16，无需本机安装）：
+
+```bash
+cd backend
+.\mvnw.cmd verify   # PowerShell；Git Bash 可用 ./mvnw。含 Testcontainers 启动冒烟（需 Docker）
+```
+
+本机直跑后端（默认 8080 端口）：复制 `.env.example` 为 `.env` 或导出同名环境变量后执行 `.\mvnw.cmd -pl flexforge-app spring-boot:run`（Git Bash 用 `./mvnw`）。
+
+仓库健康检查（本地与 CI 同一入口）：`node scripts/check-repo-health.mjs`。
+
 ## 当前状态
 
-- 阶段：设计与范围收敛
+- 阶段：P01 仓库与工程骨架（in_progress，迭代 1 后端骨架已完成）
 - 版本：`0.1.0-SNAPSHOT`
 - 代码仓库：GitHub 私有仓库 [KuroNeko-night/FlexForge](https://github.com/KuroNeko-night/FlexForge)（`main` 分支）
 - 当前结论：技术上可行，但必须以 MVP 为边界，采用模块化单体和轻量运行时插件模型，不在毕业设计阶段实现通用企业级平台。

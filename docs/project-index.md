@@ -18,11 +18,19 @@ FlexForge/
 ├── CONTRIBUTING.md            人的开发流程
 ├── FlexForge.md               早期概念稿（历史，冲突时以 docs/ 为准）
 ├── .editorconfig / .gitattributes / .gitignore
+├── .env.example                   环境变量占位（复制重命名后使用，gitignore 已排除真实配置）
 ├── .github/
 │   ├── workflows/ci.yml            CI（仓库卫生、密钥扫描；backend/frontend/docker/audit 条件激活）
 │   └── dependabot.yml              依赖版本更新（actions 周更；npm/maven/docker P01 启用）
+├── docker-compose.yml             开发环境编排（db + backend，宿主端口 127.0.0.1:8088）
 ├── scripts/
 │   └── check-repo-health.mjs       本地/CI 仓库健康检查（R-GOV-04/05 + 卫生）
+├── backend/                        Maven 多模块（Wrapper 锁定 Maven 3.9.16，目标 Java 17）
+│   ├── flexforge-common/           平台常量与基础契约（ApiConstants：API 前缀/分页上限）
+│   └── flexforge-app/              启动、配置、健康检查；含 Testcontainers 启动冒烟
+├── database/
+│   ├── migrations/V001__init.sql   平台骨架表（sys_user/sys_role/sys_user_role）
+│   └── init/                       Compose 首次初始化：应用专用账号
 └── docs/
     ├── 00-feasibility-review.md       可行性评审与 MVP 边界
     ├── 01-project-plan.md             里程碑与变更控制
@@ -159,3 +167,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-20 | 新增长期文档 `docs/12-thesis-experiment-plan.md`（§1/§3 同步登记）；§6 契约速查补解压后大小上限 | 论文实验数据收集前置到 P11 埋点；P07 上传安全基线补强 |
 | 2026-08-20 | 新增长期文档 `docs/13-security-baseline.md`（§1/§3 同步登记） | 安全要求此前散落多份文档，建立唯一归属：威胁模型 + S1-S9 红线 + 分域基线 + 阶段映射 |
 | 2026-08-20 | 新增 `.github/`（ci.yml + dependabot.yml）与 `scripts/check-repo-health.mjs`（§1/§3 同步登记） | 编码开始前先立 CI 门禁：R-GOV 基础与卫生检查即时生效，构建类任务条件激活 |
+| 2026-08-20 | §1 树更新：backend/ 多模块、database/（migrations + init）、docker-compose.yml、.env.example；§2 目标结构对应落地 | P01 迭代 1 后端骨架落地（Boot 4.0.7 + Flyway V001 + Compose 链路验证通过） |

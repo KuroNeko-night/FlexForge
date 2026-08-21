@@ -121,7 +121,7 @@ Issue 最小内容：标题；现象/背景；影响（阶段 + FR/NFR 编号）
 
 ## 9. 开发环境与运行基线
 
-- **工具链锁定**：JDK 17（LTS）、Node.js LTS、PostgreSQL 14+、Docker；P01 结束时把精确小版本、包管理器和锁文件写进 README 与环境脚本，禁止"最新版"这类浮动版本。
+- **工具链锁定**：JDK 17（编译目标 `--release 17`；本机可用 JDK 21 LTS）、Maven 3.9.16（Wrapper 锁定，无需本机安装）、Spring Boot 4.0.7、Node.js LTS、PostgreSQL 17（`postgres:17-alpine`）、Docker Compose；依赖仓库与镜像：Maven 走 `.mvn/settings.xml` 阿里云镜像，Docker 拉取依赖 daemon `registry-mirrors`（本机已配置）。禁止"最新版"这类浮动版本。
 - **Windows-first**：开发机为 Windows，所有脚本必须可在 PowerShell/pwsh 下执行；脚本读取 `docs/project-status.json` 等 UTF-8 文件必须显式按 UTF-8 读取；仓库统一 LF（`.editorconfig` + `.gitattributes` 已固定）。
 - **密钥纪律**：密钥只经环境变量或 `.env`（已 gitignore）注入；仓库只允许提交 `.env.example`（占位值）；配置文件不得出现真实密钥。
 - **测试数据库隔离**：集成/E2E 测试只允许连接一次性 schema 或临时容器（Testcontainers/CI service），禁止指向开发库、演示库或任何有数据的库；破坏性测试只能跑在隔离 fixture 上。

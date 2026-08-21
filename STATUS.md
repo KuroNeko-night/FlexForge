@@ -9,7 +9,7 @@ STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 8%
 LAST_UPDATED: 2026-08-20
 OWNER: project-maintainer
-NEXT_ACTION: P01 迭代 1：Maven 多模块后端骨架（flexforge-app/flexforge-common）+ Flyway V001 平台表 + Docker Compose + 健康检查（含 Testcontainers 冒烟测试）；迭代 2：Vue 3 前端骨架与 Checkstyle/ESLint/Prettier/ArchUnit 工具链；迭代 3：sync-status、violations fixture 与 P01 验收验证
+NEXT_ACTION: P01 迭代 2：Vue 3 + TS 前端骨架与 Checkstyle/ESLint/Prettier/ArchUnit 工具链（含 R-GOV-01 简化版与 violations fixture 激活）；迭代 3：sync-status 脚本、P01 验收清单逐项验证与阶段收尾
 EXIT_GATE: 新环境可按 README 启动前后端与 PostgreSQL，健康检查和 V001 迁移通过
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -19,7 +19,7 @@ BLOCKERS: none
 | 阶段 | 名称 | 状态 | 退出条件 |
 | --- | --- | --- | --- |
 | P00 | 设计基线冻结 | completed | 文档、MVP 边界和 ADR 已冻结 |
-| P01 | 仓库与工程骨架 | ready_to_start | 新环境可启动，健康检查和初始迁移通过 |
+| P01 | 仓库与工程骨架 | in_progress | 新环境可启动，健康检查和初始迁移通过 |
 | P02 | 核心契约与可观测性 | pending | 注册/撤销、统一错误和审计端口通过测试 |
 | P03 | 认证、RBAC 与系统壳 | pending | 三类角色和 JWT 测试通过 |
 | P04 | 元数据写模型 | pending | 实体/字段/视图配置 API 通过验收 |
@@ -62,4 +62,5 @@ BLOCKERS: none
 | 2026-08-20 | P01 | Mimosa L2 复查处置：安全路由行判定为误报（文档路由指针，非外发指令）但采纳其建议实质——AGENTS §4.12 增补 Agent 密钥外发纪律（不读取/展示/外发凭据、secret 仅环境变量引用、外发未脱敏内容逐次确认）；§3 路由行措辞精确化 | `AGENTS.md` §3/§4.12 |
 | 2026-08-20 | P01 | 编码前提前搭建 CI 骨架：scripts/check-repo-health.mjs（R-GOV-04/05 基础 + 卫生检查，已自测失败路径）、.github/workflows/ci.yml（仓库卫生 + gitleaks 密钥扫描即时生效；backend/frontend/docker-build/dependency-audit 按文件出现条件激活）、Dependabot（actions 周更，其余生态 P01 启用）；经 PR 分支合并 | `scripts/check-repo-health.mjs`、`.github/`、`docs/repository-maintenance.md` §3、`docs/project-index.md` |
 | 2026-08-20 | P01 | P01 启动（in_progress）。构建工具决策：Maven + Wrapper、目标 Java 17（本机 JDK 21 编译 `--release 17`，CI 用 JDK 17 验证目标兼容）；P01 按三个迭代交付：后端骨架 → 前端与 lint 工具链 → 状态脚本与验收验证 | `docs/09` P01、`STATUS.md` |
+| 2026-08-20 | P01 | 迭代 1 完成：Maven 多模块骨架（common/app）+ Spring Boot 4.0.7（P00 文档默认 3.x 的实际修正：4.0 已为当前线，3.5 OSS 支持早于答辩到期）+ Flyway V001 平台表 + Dockerfile/Compose + Testcontainers 冒烟 3/3 绿（健康检查、sys_* 表、骨架纯净性）；Compose 全链路验证（db healthy → backend /actuator/health UP）。环境适配：阿里云 Maven 镜像（.mvn/settings.xml）、Docker daemon registry-mirrors、Compose 宿主端口 8088 | `backend/`、`database/`、`docker-compose.yml`、`README.md` 快速启动 |
 
