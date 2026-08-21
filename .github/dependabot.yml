@@ -1,5 +1,5 @@
-# Dependabot 版本更新：github-actions 生态现在即生效；
-# 其余生态在 P01 对应文件就位后解开注释（docs/13 §3.9 依赖供应链基线）。
+# Dependabot 版本更新：P01 起 github-actions/npm/maven/docker 全部启用
+# （docs/13 §3.9 依赖供应链基线）。
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -9,26 +9,23 @@ updates:
     commit-message:
       prefix: "chore(deps)"
 
-  # P01 前端初始化后启用：
-  # - package-ecosystem: npm
-  #   directory: /frontend
-  #   schedule:
-  #     interval: weekly
-  #   commit-message:
-  #     prefix: "chore(deps)"
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(deps)"
 
-  # P01 后端构建工具确定后启用（Maven 示例；Gradle 同理改 ecosystem）：
-  # - package-ecosystem: maven
-  #   directory: /backend
-  #   schedule:
-  #     interval: weekly
-  #   commit-message:
-  #     prefix: "chore(deps)"
+  - package-ecosystem: maven
+    directory: /backend
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(deps)"
 
-  # P01 Dockerfile 就位后启用：
-  # - package-ecosystem: docker
-  #   directory: /
-  #   schedule:
-  #     interval: weekly
-  #   commit-message:
-  #     prefix: "chore(deps)"
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(deps)"
