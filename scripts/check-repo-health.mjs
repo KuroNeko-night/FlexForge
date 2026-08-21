@@ -1,11 +1,20 @@
 #!/usr/bin/env node
-// FlexForge 仓库健康检查（本地与 CI 共用入口，P01 前基础版）
-// 编号对齐 docs/11-regression-test-plan.md §3；R-GOV-01/02/03/06/07/08/09
-// 在 lint 配置、代码与 fixture 就位后逐步启用，未启用项输出 SKIP。
+// FlexForge 仓库健康检查（本地与 CI 共用入口，P01 迭代 2 起全量版）。
+// 一条命令完成：文档/状态镜像检查、格式、前端 lint/type-check/test/build/audit、
+// 后端 verify（Checkstyle + ArchUnit + Testcontainers 冒烟）、R-GOV-01/02/06。
+// 编号对齐 docs/11-regression-test-plan.md §3；未到交付阶段的项输出 SKIP。
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import {
+  checkRgov02,
+  checkRgov06,
+  runBackendVerify,
+  runFrontendGates,
+} from './lib/gates.mjs';
+import { checkLintThresholds } from './lib/rgov-thresholds.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const results = [];
@@ -18,7 +27,7 @@ function workspaceFiles() {
     return execFileSync(
       'git',
       ['ls-files', '--cached', '--others', '--exclude-standard'],
-      { cwd: ROOT, encoding: 'utf8' },
+      { cwd: ROOT, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 },
     )
       .split('\n')
       .filter(Boolean);
@@ -74,7 +83,7 @@ function checkDocRegistration(files) {
     unregistered.length ? unregistered.map((f) => `未在 project-index 登记: ${f}`) : [`${docs.length} 份长期文档全部登记`]);
 }
 
-// R-GOV-04：STATUS.md 锚点与 project-status.json 完全一致
+// R-GOV-04：STATUS.md 锚点 + 阶段看板与 project-status.json 完全一致
 function checkStatusMirror() {
   const problems = [];
   let json;
@@ -84,8 +93,8 @@ function checkStatusMirror() {
     record('R-GOV-04', 'fail', [`project-status.json 解析失败: ${e.message}`]);
     return;
   }
-  const anchor = fs.readFileSync(path.join(ROOT, 'STATUS.md'), 'utf8')
-    .match(/FLEXFORGE_STATUS:BEGIN([\s\S]*?)FLEXFORGE_STATUS:END/);
+  const status = fs.readFileSync(path.join(ROOT, 'STATUS.md'), 'utf8');
+  const anchor = status.match(/FLEXFORGE_STATUS:BEGIN([\s\S]*?)FLEXFORGE_STATUS:END/);
   if (!anchor) {
     record('R-GOV-04', 'fail', ['STATUS.md 缺少 FLEXFORGE_STATUS 锚点块']);
     return;
@@ -93,10 +102,14 @@ function checkStatusMirror() {
   const grab = (k) => (anchor[1].match(new RegExp(`${k}: *(.*)`)) || [])[1]?.trim();
   const blockersRaw = grab('BLOCKERS');
   const blockersJson = json.blockers ?? [];
-  const blockersAnchor = blockersRaw === 'none' || blockersRaw === undefined ? [] : blockersRaw.split(';').map((s) => s.trim()).filter(Boolean);
+  const blockersAnchor = blockersRaw === 'none' || blockersRaw === undefined
+    ? []
+    : blockersRaw.split(';').map((s) => s.trim()).filter(Boolean);
   const pairs = [
     ['currentStageId', json.currentStageId, grab('CURRENT_STAGE_ID')],
+    ['currentStageName', json.currentStageName, grab('CURRENT_STAGE_NAME')],
     ['status', json.status, grab('STAGE_STATUS')],
+    ['owner', json.owner, grab('OWNER')],
     ['nextAction', json.nextAction, grab('NEXT_ACTION')],
     ['exitGate', json.exitGate, grab('EXIT_GATE')],
     ['progressPercent', String(json.progressPercent).replace('%', ''), grab('PROJECT_PROGRESS')?.replace('%', '')],
@@ -106,8 +119,18 @@ function checkStatusMirror() {
   for (const [name, a, b] of pairs) {
     if (a !== b) problems.push(`${name}: json=${JSON.stringify(a)} status=${JSON.stringify(b)}`);
   }
+  const board = status.match(/## 阶段看板([\s\S]*?)(?=\n## |$)/)?.[1] || '';
+  const jsonStages = (json.stages ?? []).map((s) => `${s.id}|${s.name}|${s.status}`);
+  const statusStages = [];
+  for (const line of board.split('\n')) {
+    const row = line.match(/^\|\s*(P\d+)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|/);
+    if (row) statusStages.push(`${row[1]}|${row[2].trim()}|${row[3].trim()}`);
+  }
+  if (JSON.stringify(jsonStages) !== JSON.stringify(statusStages)) {
+    problems.push(`stages: json=${JSON.stringify(jsonStages)} status=${JSON.stringify(statusStages)}`);
+  }
   record('R-GOV-04', problems.length ? 'fail' : 'pass',
-    problems.length ? problems : ['状态镜像一致（stage/status/nextAction/exitGate/progress/updatedAt/blockers）']);
+    problems.length ? problems : ['状态镜像一致（锚点字段 + blockers + 阶段看板）']);
 }
 
 // 卫生检查：大文件、受保护文件、未挂 Issue 号的待办标记（docs/10 R8）
@@ -140,8 +163,17 @@ function checkHygiene(files) {
     problems.length ? problems : ['无 >1MB 文件；无受保护文件被跟踪；.gitignore 覆盖 .env；无未挂 Issue 的标记']);
 }
 
+function checkRgov01() {
+  try {
+    const result = checkLintThresholds(ROOT);
+    record('R-GOV-01', result.status, result.detail);
+  } catch (e) {
+    record('R-GOV-01', 'fail', [`阈值比对执行失败: ${e.message}`]);
+  }
+}
+
 function printSummary() {
-  console.log('== FlexForge check-repo-health（P01 前基础版）==');
+  console.log('== FlexForge check-repo-health（P01 迭代 2 全量版）==');
   for (const r of results) {
     const tag = { pass: 'PASS', fail: 'FAIL', skip: 'SKIP' }[r.status];
     console.log(`[${tag}] ${r.id} ${r.detail[0]}`);
@@ -160,10 +192,17 @@ checkIndexTree(files);
 checkDocRegistration(files);
 checkStatusMirror();
 checkHygiene(files);
-record('R-GOV-01', 'skip', ['lint 阈值比对：P01 lint 配置就位后启用（简化版），P02 升级完整解析断言']);
-record('R-GOV-02', 'skip', ['依赖边界（ArchUnit/import）：后端代码出现后启用（P01 骨架，P02 生效）']);
+checkRgov01();
+const frontendOk = runFrontendGates(record);
+const backend = runBackendVerify(record);
+checkRgov02(backend, record);
+checkRgov06(backend, record);
+if (!frontendOk || (!backend.skipped && !backend.ok)) {
+  record('GATE-SUMMARY', 'fail', ['前端或后端门禁存在失败项，见上方明细']);
+} else {
+  record('GATE-SUMMARY', 'pass', ['前端与后端全部检查通过']);
+}
 record('R-GOV-03', 'skip', ['扩展点常量与登记册比对：代码常量出现后启用（P02）']);
-record('R-GOV-06', 'skip', ['门禁防失效（violations fixture）：lint 配置与违规样例就位后启用（P01）']);
 record('R-GOV-07', 'skip', ['契约 fixture 回放：P07/P10']);
 record('R-GOV-08', 'skip', ['日志脱敏：P02']);
 record('R-GOV-09', 'skip', ['骨架纯净性：P09']);
