@@ -11,7 +11,7 @@
   "blockers": [],
   "stages": [
     {"id": "P00", "name": "设计基线冻结", "status": "completed"},
-    {"id": "P01", "name": "仓库与工程骨架", "status": "ready_to_start"},
+    {"id": "P01", "name": "仓库与工程骨架", "status": "in_progress"},
     {"id": "P02", "name": "核心契约与可观测性", "status": "pending"},
     {"id": "P03", "name": "认证、RBAC 与系统壳", "status": "pending"},
     {"id": "P04", "name": "元数据写模型", "status": "pending"},
