@@ -9,15 +9,21 @@ FlexForge 是一个面向毕业设计验证的模块化数据管理系统。项�
 前置：JDK 17+、Node.js LTS、Docker Desktop（含 Compose）。
 
 ```bash
-# 1. 一键启动 PostgreSQL + 后端（首次构建需数分钟拉取依赖）
+# 1. 一键启动 PostgreSQL + 后端 + 前端（首次构建需数分钟拉取依赖）
 docker compose up -d --build
 
-# 2. 健康检查（Compose 宿主端口默认 8088，避免与本机其他 8080 服务冲突；.env 的 BACKEND_PORT 可覆盖）
-curl http://127.0.0.1:8088/actuator/health   # 期望 {"status":"UP"}
+# 2. 健康检查
+curl http://127.0.0.1:8088/actuator/health   # 后端，期望 {"status":"UP"}
+# 前端：浏览器打开 http://127.0.0.1:5173 ，页面显示“后端服务正常（UP）”
 
-# 3. 停止（数据保留在 flexforge-pgdata 卷）
+# 3. 宿主端口默认 8088/5173（避免与本机其他服务冲突），可复制 .env.example 为 .env 覆盖
+#    BACKEND_PORT / FRONTEND_PORT
+
+# 4. 停止（数据保留在 flexforge-pgdata 卷）
 docker compose down
 ```
+
+> 安全基线（docs/13 §3.8）：前后端走 Vite 同源代理，后端不开 CORS 通配；所有端口只绑定 `127.0.0.1`。
 
 后端源码构建与测试（Maven 由 Wrapper 锁定为 3.9.16，无需本机安装）：
 
@@ -28,7 +34,22 @@ cd backend
 
 本机直跑后端（默认 8080 端口）：复制 `.env.example` 为 `.env` 或导出同名环境变量后执行 `.\mvnw.cmd -pl flexforge-app spring-boot:run`（Git Bash 用 `./mvnw`）。
 
-仓库健康检查（本地与 CI 同一入口）：`node scripts/check-repo-health.mjs`。
+前端源码构建与测试：
+
+```bash
+cd frontend
+npm ci
+npm run dev          # Vite 开发服务器；代理目标默认 http://127.0.0.1:8080
+npm run build        # type-check + 生产构建（preview 模式启用 CSP/安全响应头骨架）
+```
+
+本机直跑前端但后端在 Compose 里时，先导出 `VITE_PROXY_TARGET=http://127.0.0.1:8088` 再执行 `npm run dev`。
+
+仓库健康检查（本地与 CI 同一入口，一条命令完成格式、lint、测试、构建与 R-GOV 门禁）：
+
+```bash
+node scripts/check-repo-health.mjs
+```
 
 ## 当前状态
 

@@ -1,30 +1,89 @@
 {
   "project": "FlexForge",
-  "updatedAt": "2026-08-20",
+  "updatedAt": "2026-08-21",
   "currentStageId": "P01",
   "currentStageName": "仓库与工程骨架",
   "status": "in_progress",
-  "progressPercent": 8,
+  "progressPercent": 12,
   "owner": "project-maintainer",
-  "nextAction": "P01 迭代 2：Vue 3 + TS 前端骨架与 Checkstyle/ESLint/Prettier/ArchUnit 工具链（含 R-GOV-01 简化版与 violations fixture 激活）；迭代 3：sync-status 脚本、P01 验收清单逐项验证与阶段收尾",
+  "nextAction": "P01 收口：推送 feat/p01-frontend-toolchain 分支 → 开 PR → CI 全绿 → 合并 main；合并后按 EXIT_GATE 证据将 P01 置 completed、P02 置 ready_to_start",
   "exitGate": "新环境可按 README 启动前后端与 PostgreSQL，健康检查和 V001 迁移通过",
   "blockers": [],
   "stages": [
-    {"id": "P00", "name": "设计基线冻结", "status": "completed"},
-    {"id": "P01", "name": "仓库与工程骨架", "status": "in_progress"},
-    {"id": "P02", "name": "核心契约与可观测性", "status": "pending"},
-    {"id": "P03", "name": "认证、RBAC 与系统壳", "status": "pending"},
-    {"id": "P04", "name": "元数据写模型", "status": "pending"},
-    {"id": "P05", "name": "动态数据运行时", "status": "pending"},
-    {"id": "P06", "name": "前端动态渲染", "status": "pending"},
-    {"id": "P07", "name": "插件包校验与版本存储", "status": "pending"},
-    {"id": "P08", "name": "PluginRuntime 生命周期", "status": "pending"},
-    {"id": "P09", "name": "库存示例插件", "status": "pending"},
-    {"id": "P10", "name": "Issue 与规格 Schema", "status": "pending"},
-    {"id": "P11", "name": "AI 适配器与生成器", "status": "pending"},
-    {"id": "P12", "name": "Agent Issue 端到端闭环", "status": "pending"},
-    {"id": "P13", "name": "加分项与体验优化", "status": "optional"},
-    {"id": "P14", "name": "质量收敛与答辩交付", "status": "pending"}
+    {
+      "id": "P00",
+      "name": "设计基线冻结",
+      "status": "completed"
+    },
+    {
+      "id": "P01",
+      "name": "仓库与工程骨架",
+      "status": "in_progress"
+    },
+    {
+      "id": "P02",
+      "name": "核心契约与可观测性",
+      "status": "pending"
+    },
+    {
+      "id": "P03",
+      "name": "认证、RBAC 与系统壳",
+      "status": "pending"
+    },
+    {
+      "id": "P04",
+      "name": "元数据写模型",
+      "status": "pending"
+    },
+    {
+      "id": "P05",
+      "name": "动态数据运行时",
+      "status": "pending"
+    },
+    {
+      "id": "P06",
+      "name": "前端动态渲染",
+      "status": "pending"
+    },
+    {
+      "id": "P07",
+      "name": "插件包校验与版本存储",
+      "status": "pending"
+    },
+    {
+      "id": "P08",
+      "name": "PluginRuntime 生命周期",
+      "status": "pending"
+    },
+    {
+      "id": "P09",
+      "name": "库存示例插件",
+      "status": "pending"
+    },
+    {
+      "id": "P10",
+      "name": "Issue 与规格 Schema",
+      "status": "pending"
+    },
+    {
+      "id": "P11",
+      "name": "AI 适配器与生成器",
+      "status": "pending"
+    },
+    {
+      "id": "P12",
+      "name": "Agent Issue 端到端闭环",
+      "status": "pending"
+    },
+    {
+      "id": "P13",
+      "name": "加分项与体验优化",
+      "status": "optional"
+    },
+    {
+      "id": "P14",
+      "name": "质量收敛与答辩交付",
+      "status": "pending"
+    }
   ]
 }
-
