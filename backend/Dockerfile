@@ -4,6 +4,7 @@ WORKDIR /build/backend
 # 先复制构建描述并预取依赖，源码变更时可复用依赖层缓存
 COPY backend/mvnw backend/pom.xml ./
 COPY backend/.mvn ./.mvn
+COPY backend/config ./config
 RUN chmod +x mvnw
 COPY backend/flexforge-common/pom.xml flexforge-common/
 COPY backend/flexforge-app/pom.xml flexforge-app/

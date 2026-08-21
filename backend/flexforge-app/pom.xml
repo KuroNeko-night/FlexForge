@@ -68,6 +68,20 @@
       <artifactId>testcontainers-junit-jupiter</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- 依赖边界测试（R-GOV-02）：ArchUnit 断言模块方向，替代手写 import 扫描 -->
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <version>${archunit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- R-GOV-06 门禁防失效：用与构建相同的 Checkstyle 引擎检查故意违规 fixture -->
+    <dependency>
+      <groupId>com.puppycrawl.tools</groupId>
+      <artifactId>checkstyle</artifactId>
+      <version>${checkstyle.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
