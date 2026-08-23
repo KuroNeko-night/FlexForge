@@ -77,4 +77,5 @@ public void install(PluginPackage pkg) { ... }
 3. 文件长度豁免：文件顶部写 `// SIZE-WAIVER(<issue 号>, <一句话原因>, <评审人>)`（Vue 用 `<!-- SIZE-WAIVER(...) -->`），并在同一 PR 提交对应 lint suppression 配置。每个里程碑复盘时必须重新论证；累计豁免超过 3 处，必须开一个重构 Issue。
 4. 拆分必须按职责拆（拆类、拆组件、拆组合式函数），禁止"文件拆小但函数依旧超长"的假拆分。
 5. 新增代码从第一个提交起即纳入统计；任何阶段结束时不允许存在违反硬上限的新增文件。
+6. 参数个数上限的口径（2026-08-24 裁决，Issue #9）：适用于**方法与显式构造器的参数列表**；record 组件属于数据载体，不计入参数上限。Checkstyle `ParameterNumber` 无法检测 record 紧凑构造器组件（工具盲区），因此：对应 `docs/extension-points.md` 登记载荷的 record 以登记册契约为准由评审核对；非登记载荷的 record 组件数仍应控制在 ≤5，超出须在评审中说明理由。
 
