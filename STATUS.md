@@ -3,14 +3,14 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P01
-CURRENT_STAGE_NAME: 仓库与工程骨架
-STAGE_STATUS: in_progress
-PROJECT_PROGRESS: 12%
-LAST_UPDATED: 2026-08-21
+CURRENT_STAGE_ID: P02
+CURRENT_STAGE_NAME: 核心契约与可观测性
+STAGE_STATUS: ready_to_start
+PROJECT_PROGRESS: 13%
+LAST_UPDATED: 2026-08-23
 OWNER: project-maintainer
-NEXT_ACTION: P01 收口：推送 feat/p01-frontend-toolchain 分支 → 开 PR → CI 全绿 → 合并 main；合并后按 EXIT_GATE 证据将 P01 置 completed、P02 置 ready_to_start
-EXIT_GATE: 新环境可按 README 启动前后端与 PostgreSQL，健康检查和 V001 迁移通过
+NEXT_ACTION: P02 启动：冻结统一契约口径（内部 bigint 主键/对外不透明字符串 ID、分页默认 20 上限 200 白名单排序、稳定错误码 + requestId、结构化日志）→ 内存 ServiceRegistry/ExtensionRegistry 与事件发布器最小实现 + 审计事件端口 → 扩展点登记册落地为代码常量并补注册-撤销测试 → R-GOV-01 完整版（解析 Checkstyle/ESLint 配置断言与 §7 一致）；先处理 Issue #5（ArchUnit infrastructure 规则对齐治理基线）
+EXIT_GATE: 注册/撤销、统一错误和审计端口通过测试
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -19,8 +19,8 @@ BLOCKERS: none
 | 阶段 | 名称 | 状态 | 退出条件 |
 | --- | --- | --- | --- |
 | P00 | 设计基线冻结 | completed | 文档、MVP 边界和 ADR 已冻结 |
-| P01 | 仓库与工程骨架 | in_progress | 新环境可启动，健康检查和初始迁移通过 |
-| P02 | 核心契约与可观测性 | pending | 注册/撤销、统一错误和审计端口通过测试 |
+| P01 | 仓库与工程骨架 | completed | 新环境可启动，健康检查和初始迁移通过 |
+| P02 | 核心契约与可观测性 | ready_to_start | 注册/撤销、统一错误和审计端口通过测试 |
 | P03 | 认证、RBAC 与系统壳 | pending | 三类角色和 JWT 测试通过 |
 | P04 | 元数据写模型 | pending | 实体/字段/视图配置 API 通过验收 |
 | P05 | 动态数据运行时 | pending | 动态实体完成 CRUD 和字段校验 |
@@ -66,4 +66,5 @@ BLOCKERS: none
 | 2026-08-21 | P01 | 迭代 1 交叉审查修复（阶段看板与 README 状态一致）后 PR #3 CI 全绿并合并 main | PR #3（backend/docker/gitleaks/R-GOV/audit 全 pass） |
 | 2026-08-21 | P01 | 迭代 2 完成：frontend Vue3+TS 骨架（Vite 8、ESLint 10 硬/目标双配置、Prettier、Vitest、type-check/build 全绿）+ backend Checkstyle（10.26.1，§7 阈值 error/warn）+ ArchUnit 依赖边界 4 规则 + tests/fixtures violations 与 SHA-256 清单；check-repo-health 升级为全量版：16 pass / 4 skip / 0 fail。门禁防失效负样本：临时 302 行 TS 文件 ESLint 命中 max-lines 失败；临时 common→app 依赖 Maven 报循环引用失败；验证后均移除 | `frontend/`、`backend/config/checkstyle.xml`、`backend/flexforge-app/src/test/*`、`tests/fixtures/`、`scripts/check-repo-health.mjs`、`scripts/lib/` |
 | 2026-08-21 | P01 | 迭代 3 完成：scripts/sync-status 以 STATUS.md 为源单向生成/校验 JSON（--check 通过）；Compose 三服务 db+backend+frontend 全 healthy，前端 200，经前端同源代理 /actuator/health UP；.dockerignore 收敛上下文；README 快速启动覆盖三服务与本机双端启动；Dependabot npm/maven/docker 全启用。AI 模型接口可用性：待确认（未提供 OpenAI 兼容接口或学校环境信息），按 fixture 优先策略推进，P11 开发与回归不依赖在线模型 | `scripts/sync-status.mjs`、`docker-compose.yml`、`README.md`、`.github/dependabot.yml`、`docs/13` §4 P01 |
+| 2026-08-23 | P01 | P01 收口：交叉审查逐条处置（D1/D3/D4/D5 修复进 f885713，D2→Issue #5、D6→Issue #6）后 PR #4 CI 六项全绿（repo-health/gitleaks/前后端构建测试/镜像构建/依赖审计）合并 main（merge 11b22bb）；EXIT_GATE 达成：README 三服务启动全 healthy、/actuator/health UP、V001 迁移 Testcontainers 冒烟通过、门禁负样本（超限文件/循环依赖）验证后移除；P01 置 completed、P02 置 ready_to_start | PR #4、Issue #5、Issue #6、`README.md` 快速启动 |
 

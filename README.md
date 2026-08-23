@@ -53,7 +53,7 @@ node scripts/check-repo-health.mjs
 
 ## 当前状态
 
-- 阶段：P01 仓库与工程骨架（in_progress，迭代 1 后端骨架已完成）
+- 阶段：P02 核心契约与可观测性（ready_to_start；P01 仓库与工程骨架已完成）
 - 版本：`0.1.0-SNAPSHOT`
 - 代码仓库：GitHub 私有仓库 [KuroNeko-night/FlexForge](https://github.com/KuroNeko-night/FlexForge)（`main` 分支）
 - 当前结论：技术上可行，但必须以 MVP 为边界，采用模块化单体和轻量运行时插件模型，不在毕业设计阶段实现通用企业级平台。

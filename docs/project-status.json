@@ -1,13 +1,13 @@
 {
   "project": "FlexForge",
-  "updatedAt": "2026-08-21",
-  "currentStageId": "P01",
-  "currentStageName": "仓库与工程骨架",
-  "status": "in_progress",
-  "progressPercent": 12,
+  "updatedAt": "2026-08-23",
+  "currentStageId": "P02",
+  "currentStageName": "核心契约与可观测性",
+  "status": "ready_to_start",
+  "progressPercent": 13,
   "owner": "project-maintainer",
-  "nextAction": "P01 收口：推送 feat/p01-frontend-toolchain 分支 → 开 PR → CI 全绿 → 合并 main；合并后按 EXIT_GATE 证据将 P01 置 completed、P02 置 ready_to_start",
-  "exitGate": "新环境可按 README 启动前后端与 PostgreSQL，健康检查和 V001 迁移通过",
+  "nextAction": "P02 启动：冻结统一契约口径（内部 bigint 主键/对外不透明字符串 ID、分页默认 20 上限 200 白名单排序、稳定错误码 + requestId、结构化日志）→ 内存 ServiceRegistry/ExtensionRegistry 与事件发布器最小实现 + 审计事件端口 → 扩展点登记册落地为代码常量并补注册-撤销测试 → R-GOV-01 完整版（解析 Checkstyle/ESLint 配置断言与 §7 一致）；先处理 Issue #5（ArchUnit infrastructure 规则对齐治理基线）",
+  "exitGate": "注册/撤销、统一错误和审计端口通过测试",
   "blockers": [],
   "stages": [
     {
@@ -18,12 +18,12 @@
     {
       "id": "P01",
       "name": "仓库与工程骨架",
-      "status": "in_progress"
+      "status": "completed"
     },
     {
       "id": "P02",
       "name": "核心契约与可观测性",
-      "status": "pending"
+      "status": "ready_to_start"
     },
     {
       "id": "P03",
