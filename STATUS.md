@@ -11,7 +11,7 @@ LAST_UPDATED: 2026-08-23
 OWNER: project-maintainer
 NEXT_ACTION: P02 迭代 2：统一错误响应 REST 装配（RestControllerAdvice 稳定错误码 + requestId 过滤器 + 分页白名单参数绑定，全部走 /api/v1）→ 结构化日志与敏感头脱敏（R-GOV-08 激活）→ R-GOV-01 完整版（解析 Checkstyle/ESLint 配置断言与 docs/coding-standards §7 完全一致）→ 验收复核：注册/撤销、统一错误和审计端口
 EXIT_GATE: 注册/撤销、统一错误和审计端口通过测试
-BLOCKERS: none
+BLOCKERS: P1-1 §7"参数个数 ≤5"与 record 组件口径冲突（DomainEvent/AuditEvent 均 6 组件，Checkstyle ParameterNumber 检不出 compact constructor），修复方向需人工裁决：①修订 §7 明确数据载体不计入参数上限（推荐，登记册载荷即 6 字段）或 ②重组契约至 ≤5（breaking，需 ADR+登记册变更）| 影响阶段：P02 收口（不阻塞迭代 2，迭代 2 代码不新增 record）| 复查时间：2026-08-30
 <!-- FLEXFORGE_STATUS:END -->
 
 ## 阶段看板
@@ -70,4 +70,5 @@ BLOCKERS: none
 | 2026-08-23 | P02 | P02 启动（in_progress）。迭代 1 范围冻结：① Issue #5 ArchUnit 修复（跨模块 infrastructure 禁止、同模块允许 + 回归 fixture）；② flexforge-common 契约层（@PublicApi/@ExperimentalApi、ErrorResponse/ErrorCodes、PageQuery/PageResult、ServiceKey/Registration/DomainEvent、AuditEvent 端口、ServiceKeys/ExtensionPoints/DomainEventTypes 登记册常量）；③ 新建 flexforge-runtime 模块（PluginContext、内存 ServiceRegistry/ExtensionRegistry/DomainEventPublisher，注册项绑定 activationId、closeAll 撤销）；④ R-GOV-03 门禁激活（常量 == 登记册 active 集合 + 注册-撤销测试）。统一错误响应 REST 装配、requestId 过滤器、结构化日志脱敏（R-GOV-08）与 R-GOV-01 完整版留迭代 2 | `docs/09` P02、`docs/extension-points.md` v1 |
 | 2026-08-23 | P02 | 迭代 1 完成：Issue #5 经 PR #7 合并（规则对齐 docs/10 §5.2 + CrossModuleInfrastructureRuleTest 双向回归）；契约层与登记册常量落地（R-GOV-03 解析器比对两侧集合）；flexforge-runtime 内存注册表三件套 + 注册-撤销/幂等 close/closeAll 按激活撤销/未登记扩展点拒绝/等值贡献不误删等 21 项测试；ArchUnit 第 5 规则（跨模块仅 @PublicApi/@ExperimentalApi 可引用）+ PublicApiBoundaryRuleTest 防失效；R-GOV-03 门禁激活并经负样本验证（临时未登记常量被拒绝）。本机 check-repo-health 18 pass / 3 skip / 0 fail | PR #7、`backend/flexforge-common|runtime`、`scripts/lib/gates.mjs` |
 | 2026-08-23 | P02 | 流程规则明确（用户指示）：单人审查流程②的交叉审查自本条起必须由**独立子代理**执行（主会话外全新 Agent 缺陷优先审计，主会话不得自审自己写的代码），结论与逐条回应记录到 PR 评论；PR #4/#7/#8 的合并前"交叉审查"为主会话自查，自本条起补正——先用子代理对 P02 迭代 1（PR #7 + #8）补跑一次审计 | `AGENTS.md` §6、`docs/repository-maintenance.md` §2 |
+| 2026-08-23 | P02 | 独立子代理交叉审计 PR #7+#8 完成：**无 P0**；P1-1（§7 参数上限 vs record 6 组件 + Checkstyle 盲区）记 BLOCKERS 待人工裁决并开 Issue；P2-1 ServiceRegistry close/重注册竞态、P2-2 R-GOV-03 常量正则 fail-open（值含数字/下划线被静默跳过）、P2-3 ServiceKey/DomainEvent.type 运行时未校验登记册 ID、P2-4 PageQuery 白名单可 new 绕过且零测试——四项判定为 P02 交付物缺陷，立即最小修复（fix/p02-audit 分支）；P3 六项（byActivation 滞留、放行断言可空转、scripts 不受 lint、文档口径、§1.2 消费方张力、分支中置提交可构建性）开跟踪 Issue 排期 | 审计报告全文见 PR #8 评论区子代理会话、Issue 双记、BLOCKERS |
 
