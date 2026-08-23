@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * ServiceKey ID 常量：与 docs/extension-points.md §2.1 active 集合一一对应，
- * R-GOV-03 门禁自动比对两侧集合，禁止出现未登记常量。
+ * R-GOV-03 门禁自动比对两侧集合，运行时 ServiceRegistry 拒绝未登记 ID。
  */
 @PublicApi
 public final class ServiceKeys {
