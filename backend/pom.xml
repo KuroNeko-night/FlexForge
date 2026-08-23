@@ -67,6 +67,8 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <configuration>
             <release>${maven.compiler.release}</release>
+            <!-- Spring Framework 7 不再从字节码推断参数名，@RequestParam 等依赖 -parameters -->
+            <parameters>true</parameters>
           </configuration>
         </plugin>
         <plugin>
