@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import {
   checkRgov02,
   checkRgov06,
+  checkRgov08,
   runBackendVerify,
   runFrontendGates,
 } from './lib/gates.mjs';
@@ -192,12 +193,12 @@ const backend = runBackendVerify(record);
 checkRgov02(backend, record);
 checkRgov03(backend, record);
 checkRgov06(backend, record);
+checkRgov08(backend, record);
 if (!frontendOk || (!backend.skipped && !backend.ok)) {
   record('GATE-SUMMARY', 'fail', ['前端或后端门禁存在失败项，见上方明细']);
 } else {
   record('GATE-SUMMARY', 'pass', ['前端与后端全部检查通过']);
 }
 record('R-GOV-07', 'skip', ['契约 fixture 回放：P07/P10']);
-record('R-GOV-08', 'skip', ['日志脱敏：P02']);
 record('R-GOV-09', 'skip', ['骨架纯净性：P09']);
 printSummary();

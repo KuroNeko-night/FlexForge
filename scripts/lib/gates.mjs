@@ -128,6 +128,45 @@ export function checkRgov02(backend, record) {
       : ['依赖边界测试失败或报告缺失，禁止带病合并']);
 }
 
+// R-GOV-08（docs/11 §3，P02 激活）：日志脱敏回归测试通过；
+// 测试输出（surefire 报告文本）与固定日志 fixture（tests/fixtures/logs/，如存在）
+// 一并扫描敏感词——密码/JWT/API key/完整 Authorization 头不得出现。
+export function checkRgov08(backend, record) {
+  if (backend.skipped) {
+    record('R-GOV-08', 'skip', ['后端未初始化']);
+    return;
+  }
+  const problems = [];
+  // 包名 com.flexforge.app.web 与 LogMaskingTest 类位置绑定；移动测试类时需同步此路径。
+  const report = surefireReport('LogMaskingTest', 'flexforge-app', 'com.flexforge.app.web');
+  if (report === null || report.tests < 1 || report.errors > 0 || report.failures > 0) {
+    problems.push('日志脱敏测试未通过或报告缺失: LogMaskingTest');
+  }
+  const sensitive = /(Bearer\s+[A-Za-z0-9_-]{10,}|Authorization\s*:|eyJhbGciOi|"password"\s*:|password\s*=\s*\S|api[_-]?key\s*=\s*\S)/i;
+  const reportDir = path.join(BACKEND, 'flexforge-app', 'target', 'surefire-reports');
+  if (fs.existsSync(reportDir)) {
+    for (const file of fs.readdirSync(reportDir).filter((f) => f.endsWith('.txt'))) {
+      const content = fs.readFileSync(path.join(reportDir, file), 'utf8');
+      if (sensitive.test(content)) {
+        problems.push(`测试输出含敏感值: ${file}`);
+      }
+    }
+  }
+  const fixtureDir = path.join(ROOT, 'tests', 'fixtures', 'logs');
+  if (fs.existsSync(fixtureDir)) {
+    for (const file of fs.readdirSync(fixtureDir)) {
+      const content = fs.readFileSync(path.join(fixtureDir, file), 'utf8');
+      if (sensitive.test(content)) {
+        problems.push(`日志 fixture 含敏感值: tests/fixtures/logs/${file}`);
+      }
+    }
+  }
+  record('R-GOV-08', problems.length ? 'fail' : 'pass',
+    problems.length ? problems
+      : ['日志脱敏回归通过（LogMaskingTest：Authorization/JWT/密码不进日志）',
+        '测试输出（surefire 文本）扫描无敏感值；requestId 注入日志模式']);
+}
+
 export function fixtureManifestProblems() {
   const manifestPath = path.join(ROOT, 'tests', 'fixtures', 'fixtures.json');
   const problems = [];

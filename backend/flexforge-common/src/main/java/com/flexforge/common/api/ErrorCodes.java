@@ -30,6 +30,15 @@ public final class ErrorCodes {
     /** 权限不足。 */
     public static final String PERMISSION_DENIED = "permission_denied";
 
+    /** 请求参数校验失败（含分页白名单、非法枚举等 API 边界拒绝）。 */
+    public static final String VALIDATION_ERROR = "validation_error";
+
+    /** 请求的资源不存在。 */
+    public static final String NOT_FOUND = "not_found";
+
+    /** 服务端内部错误（响应消息保持通用，细节只进日志）。 */
+    public static final String INTERNAL_ERROR = "internal_error";
+
     private ErrorCodes() {
     }
 }

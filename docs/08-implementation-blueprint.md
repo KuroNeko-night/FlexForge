@@ -196,7 +196,7 @@ extension.record-action     actionType -> 内置 action handler
 }
 ```
 
-统一错误码至少包括：`invalid_manifest`、`dependency_missing`、`migration_failed`、`registration_failed`、`activation_not_found`、`stale_activation`、`permission_denied`。
+统一错误码至少包括：`invalid_manifest`、`dependency_missing`、`migration_failed`、`registration_failed`、`activation_not_found`、`stale_activation`、`permission_denied`、`validation_error`、`not_found`、`internal_error`（后三个为 P02 统一错误装配引入，代码见 `flexforge-common` `ErrorCodes`）。
 
 ## 8. Definition of Done
 
