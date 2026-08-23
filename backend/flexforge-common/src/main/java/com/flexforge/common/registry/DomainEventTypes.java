@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * DomainEventType ID 常量：与 docs/extension-points.md §2.3 active 集合一一对应，
- * R-GOV-03 门禁自动比对两侧集合。
+ * R-GOV-03 门禁自动比对两侧集合，运行时事件发布器拒绝未登记 type。
  */
 @PublicApi
 public final class DomainEventTypes {

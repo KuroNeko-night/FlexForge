@@ -95,7 +95,7 @@ class ExtensionRegistryTest {
 
     @Test
     void everyRegisteredExtensionPointRoundTrips() {
-        for (String pointId : com.flexforge.common.registry.ExtensionPoints.ALL) {
+        for (String pointId : ExtensionPoints.ALL) {
             Registration registration = registry.register(pointId, "demo", "act-loop");
             assertThat(registry.contributions(pointId)).containsExactly("demo");
             registration.close();

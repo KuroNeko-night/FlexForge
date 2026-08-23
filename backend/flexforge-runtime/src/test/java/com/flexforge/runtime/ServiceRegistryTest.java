@@ -88,6 +88,28 @@ class ServiceRegistryTest {
     }
 
     @Test
+    void unknownServiceKeyIsRejected() {
+        ServiceKey<Object> unknown = ServiceKey.of("service.evil", Object.class);
+
+        assertThatThrownBy(() -> registry.register(unknown, new Object(), "act-001"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("service.evil");
+    }
+
+    @Test
+    void staleCloseDoesNotWipeReRegistration() {
+        Object first = new Object();
+        Registration firstRegistration = registry.register(KEY, first, "act-001");
+        firstRegistration.close();
+        Object second = new Object();
+        registry.register(KEY, second, "act-002");
+
+        // 旧句柄的重复 close 不得移除新注册（审计 P2-1：dispose 身份条件删除）
+        assertThatCode(firstRegistration::close).doesNotThrowAnyException();
+        assertThat(registry.require(KEY)).isSameAs(second);
+    }
+
+    @Test
     void everyRegisteredServiceKeyRoundTrips() {
         for (String id : ServiceKeys.ALL) {
             ServiceKey<Object> key = ServiceKey.of(id, Object.class);

@@ -9,6 +9,9 @@ import java.util.Set;
 /**
  * 统一分页请求（docs/09 P02 契约冻结）：页码从 1 起；pageSize 默认 20、上限 200，
  * 超界在构造时拒绝；排序字段必须来自调用方提供的白名单，sortBy 为 null 表示不排序。
+ *
+ * <p>口径（审计 P2-4）：{@link #of} 是唯一受信入口（白名单在此强制）；规范构造器只强制
+ * 数值边界。P05 动态 SQL 构造处必须对 sortBy 二次强制白名单（防御纵深，docs/13 §4）。
  */
 @PublicApi
 public record PageQuery(int pageNumber, int pageSize, String sortBy, SortDirection sortDirection) {

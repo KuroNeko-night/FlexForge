@@ -90,4 +90,14 @@ class DomainEventPublisherTest {
         assertThatThrownBy(() -> publisher.publish(null))
                 .isInstanceOf(NullPointerException.class);
     }
+
+    @Test
+    void unknownEventTypeIsRejected() {
+        DomainEvent unknown = new DomainEvent("evt-002", "event.evil", "agg-001",
+                Instant.parse("2026-08-23T10:00:00Z"), Map.of(), null);
+
+        assertThatThrownBy(() -> publisher.publish(unknown))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("event.evil");
+    }
 }

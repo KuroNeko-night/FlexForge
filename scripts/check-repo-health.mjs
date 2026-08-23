@@ -10,11 +10,11 @@ import { fileURLToPath } from 'node:url';
 
 import {
   checkRgov02,
-  checkRgov03,
   checkRgov06,
   runBackendVerify,
   runFrontendGates,
 } from './lib/gates.mjs';
+import { checkRgov03 } from './lib/rgov-extension-points.mjs';
 import { checkLintThresholds } from './lib/rgov-thresholds.mjs';
 import { buildStatusJson, readStatusSnapshot } from './lib/status.mjs';
 
