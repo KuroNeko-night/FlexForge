@@ -9,7 +9,7 @@ STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 13%
 LAST_UPDATED: 2026-08-23
 OWNER: project-maintainer
-NEXT_ACTION: P02 迭代 1：先修 Issue #5（ArchUnit infrastructure 规则对齐 docs/10 §5.2 并补同模块回归）→ flexforge-common 契约层（@PublicApi、错误模型、分页白名单、ServiceKey/Registration/DomainEvent、审计端口、登记册 ID 常量）→ 新建 flexforge-runtime（内存 ServiceRegistry/ExtensionRegistry/事件发布器 + 注册-撤销测试）→ R-GOV-03 激活（常量集合 == 登记册 active 集合）
+NEXT_ACTION: P02 迭代 2：统一错误响应 REST 装配（RestControllerAdvice 稳定错误码 + requestId 过滤器 + 分页白名单参数绑定，全部走 /api/v1）→ 结构化日志与敏感头脱敏（R-GOV-08 激活）→ R-GOV-01 完整版（解析 Checkstyle/ESLint 配置断言与 docs/coding-standards §7 完全一致）→ 验收复核：注册/撤销、统一错误和审计端口
 EXIT_GATE: 注册/撤销、统一错误和审计端口通过测试
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -68,4 +68,5 @@ BLOCKERS: none
 | 2026-08-21 | P01 | 迭代 3 完成：scripts/sync-status 以 STATUS.md 为源单向生成/校验 JSON（--check 通过）；Compose 三服务 db+backend+frontend 全 healthy，前端 200，经前端同源代理 /actuator/health UP；.dockerignore 收敛上下文；README 快速启动覆盖三服务与本机双端启动；Dependabot npm/maven/docker 全启用。AI 模型接口可用性：待确认（未提供 OpenAI 兼容接口或学校环境信息），按 fixture 优先策略推进，P11 开发与回归不依赖在线模型 | `scripts/sync-status.mjs`、`docker-compose.yml`、`README.md`、`.github/dependabot.yml`、`docs/13` §4 P01 |
 | 2026-08-23 | P01 | P01 收口：交叉审查逐条处置（D1/D3/D4/D5 修复进 f885713，D2→Issue #5、D6→Issue #6）后 PR #4 CI 六项全绿（repo-health/gitleaks/前后端构建测试/镜像构建/依赖审计）合并 main（merge 11b22bb）；EXIT_GATE 达成：README 三服务启动全 healthy、/actuator/health UP、V001 迁移 Testcontainers 冒烟通过、门禁负样本（超限文件/循环依赖）验证后移除；P01 置 completed、P02 置 ready_to_start | PR #4、Issue #5、Issue #6、`README.md` 快速启动 |
 | 2026-08-23 | P02 | P02 启动（in_progress）。迭代 1 范围冻结：① Issue #5 ArchUnit 修复（跨模块 infrastructure 禁止、同模块允许 + 回归 fixture）；② flexforge-common 契约层（@PublicApi/@ExperimentalApi、ErrorResponse/ErrorCodes、PageQuery/PageResult、ServiceKey/Registration/DomainEvent、AuditEvent 端口、ServiceKeys/ExtensionPoints/DomainEventTypes 登记册常量）；③ 新建 flexforge-runtime 模块（PluginContext、内存 ServiceRegistry/ExtensionRegistry/DomainEventPublisher，注册项绑定 activationId、closeAll 撤销）；④ R-GOV-03 门禁激活（常量 == 登记册 active 集合 + 注册-撤销测试）。统一错误响应 REST 装配、requestId 过滤器、结构化日志脱敏（R-GOV-08）与 R-GOV-01 完整版留迭代 2 | `docs/09` P02、`docs/extension-points.md` v1 |
+| 2026-08-23 | P02 | 迭代 1 完成：Issue #5 经 PR #7 合并（规则对齐 docs/10 §5.2 + CrossModuleInfrastructureRuleTest 双向回归）；契约层与登记册常量落地（R-GOV-03 解析器比对两侧集合）；flexforge-runtime 内存注册表三件套 + 注册-撤销/幂等 close/closeAll 按激活撤销/未登记扩展点拒绝/等值贡献不误删等 21 项测试；ArchUnit 第 5 规则（跨模块仅 @PublicApi/@ExperimentalApi 可引用）+ PublicApiBoundaryRuleTest 防失效；R-GOV-03 门禁激活并经负样本验证（临时未登记常量被拒绝）。本机 check-repo-health 18 pass / 3 skip / 0 fail | PR #7、`backend/flexforge-common|runtime`、`scripts/lib/gates.mjs` |
 
