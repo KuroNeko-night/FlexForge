@@ -27,7 +27,8 @@ FlexForge/
 │   ├── check-repo-health.mjs       一条命令：格式/lint/test/build + R-GOV-01/02/03/04/05/06
 │   ├── sync-status.mjs             STATUS.md → project-status.json 单向生成/校验
 │   └── lib/
-│       ├── gates.mjs              前后端门禁执行层（ComSpec/工具链/R-GOV-02/03/06）
+│       ├── gates.mjs              前后端门禁执行层（ComSpec/工具链/R-GOV-02/06）
+│       ├── rgov-extension-points.mjs R-GOV-03 门禁（登记册常量比对 + 解析器负样本自检，P02）
 │       ├── rgov-thresholds.mjs     R-GOV-01 简化版阈值解析与比对
 │       └── status.mjs              STATUS 锚点/阶段看板单一解析器（R-GOV-04 共用）
 ├── backend/                        Maven 多模块（Wrapper 3.9.16，目标 Java 17）
