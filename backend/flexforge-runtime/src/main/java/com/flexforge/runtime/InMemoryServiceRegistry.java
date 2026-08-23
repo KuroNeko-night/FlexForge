@@ -17,9 +17,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * 内存服务注册表（service.* 扩展点，docs/08 §3）：一个 ServiceKey 同时只允许一个活跃实例；
  * 重复注册失败、close 后可重新注册；closeAll 按激活身份整体撤销（NFR-PLUGIN-01）。
  *
- * <p>并发口径（审计 P2-1）：dispose 在注册表监视器内做身份条件删除——旧注册的 close
- * 只能移除仍属于自己实例的映射，不会误删 close 后重新注册的新实例；register 对
- * "已 close 但 dispose 未执行"的条目直接覆盖而非误报。
+ * <p>并发口径（审计 P2-1 + 复审 P3）：dispose 在注册表监视器内仅移除"当前映射对应的
+ * 注册已非活跃"的条目——close 窗口期重注册（即使同一实例引用）的活跃映射绝不被旧
+ * close 误删；register 对"已 close 但 dispose 未执行"的条目直接覆盖而非误报。
  */
 @PublicApi
 public final class InMemoryServiceRegistry {
@@ -45,8 +45,9 @@ public final class InMemoryServiceRegistry {
         }
         SimpleRegistration registration = new SimpleRegistration(activationId, () -> {
             synchronized (InMemoryServiceRegistry.this) {
+                // 仅移除非活跃映射：即使旧实例引用被重注册，活跃注册的映射也绝不被旧 close 删除
                 ActiveService current = servicesById.get(key.id());
-                if (current != null && current.instance() == instance) {
+                if (current != null && !current.registration().isActive()) {
                     servicesById.remove(key.id());
                 }
             }
