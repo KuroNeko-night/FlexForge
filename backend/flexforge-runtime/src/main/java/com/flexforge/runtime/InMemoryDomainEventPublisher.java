@@ -3,6 +3,7 @@ package com.flexforge.runtime;
 import com.flexforge.common.PublicApi;
 import com.flexforge.common.contract.DomainEvent;
 import com.flexforge.common.contract.Registration;
+import com.flexforge.common.registry.DomainEventTypes;
 
 import java.util.List;
 import java.util.Map;
@@ -43,9 +44,13 @@ public final class InMemoryDomainEventPublisher {
         return registration;
     }
 
-    /** 向全部活跃监听器同步发布事件（注册顺序）。 */
+    /** 向全部活跃监听器同步发布事件（注册顺序）；type 必须为登记册 DomainEventType ID。 */
     public void publish(DomainEvent event) {
         Objects.requireNonNull(event, "event");
+        if (!DomainEventTypes.ALL.contains(event.type())) {
+            throw new IllegalArgumentException(
+                    "unknown domain event type（docs/extension-points.md 未登记）: " + event.type());
+        }
         listeners.forEach(holder -> holder.listener.accept(event));
     }
 
