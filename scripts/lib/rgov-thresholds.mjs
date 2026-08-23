@@ -1,6 +1,7 @@
-// R-GOV-01 简化版（docs/11 §3）：解析 Checkstyle/ESLint 配置中的阈值，
-// 与 docs/coding-standards.md §7 表格比对。docs 是唯一数值来源，任何漂移都报 FAIL。
-// P02 升级为完整解析断言（含注释、suppression 与多文件合并语义）。
+// R-GOV-01 完整版（docs/11 §3，P02）：解析 Checkstyle/ESLint 配置中的阈值，
+// 与 docs/coding-standards.md §7 表格比对；同时执行防削弱检查——
+// suppression 配置、severity=ignore、eslint-disable（未挂 Issue 号）、
+// 目标值配置反向收紧/放宽均判 FAIL。docs 是唯一数值来源，任何漂移都报 FAIL。
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -114,8 +115,10 @@ function eslintBlock(text, blockStart) {
 }
 
 // 直接从配置文本提取：max-lines 规则带对象选项，其余规则兼容 ['error', n] 与 { max: n }。
-function eslintFileMax(block) {
-  const match = block?.match(/'max-lines':\s*\['[a-z]+',\s*\{\s*max:\s*(\d+)/);
+// 级别词按配置角色绑定（复审 P2-2）：hard 配置必须 'error'，targets 配置必须 'warn'；
+// 级别被篡改时解析为 null → 与 docs 不一致 → FAIL。
+function eslintFileMax(block, severity) {
+  const match = block?.match(new RegExp(`'max-lines':\\s*\\['${severity}',\\s*\\{\\s*max:\\s*(\\d+)`));
   return match ? Number.parseInt(match[1], 10) : null;
 }
 
@@ -142,15 +145,15 @@ function parseEslint(root) {
   const vueTarget = eslintBlock(target, "files: ['**/*.vue']");
   return {
     ts: {
-      fileHard: eslintFileMax(tsBlock),
-      fileTarget: eslintFileMax(tsTarget),
+      fileHard: eslintFileMax(tsBlock, 'error'),
+      fileTarget: eslintFileMax(tsTarget, 'warn'),
       method: eslintRuleNumber(tsBlock, 'max-lines-per-function'),
       complexity: eslintRuleNumber(tsBlock, 'complexity'),
       params: eslintRuleNumber(tsBlock, 'max-params'),
     },
     vue: {
-      fileHard: eslintFileMax(vueBlock),
-      fileTarget: eslintFileMax(vueTarget),
+      fileHard: eslintFileMax(vueBlock, 'error'),
+      fileTarget: eslintFileMax(vueTarget, 'warn'),
       complexity: eslintRuleNumber(vueBlock, 'complexity'),
     },
   };
@@ -164,6 +167,53 @@ function compare(prefix, expected, actual, keys) {
     }
   }
   return mismatches;
+}
+
+// 防削弱检查（完整版新增）：门禁不得被 suppression/禁用注释/目标配置反向调整削弱。
+function suppressionProblems(root) {
+  const problems = [];
+  const checkstyle = fs.readFileSync(path.join(root, 'backend', 'config', 'checkstyle.xml'), 'utf8');
+  if (/Suppression/i.test(checkstyle)) {
+    problems.push('checkstyle.xml 含 suppression 配置（豁免需 ADR + Issue 号，禁止静默引入）');
+  }
+  if (/severity\s*=\s*"ignore"/.test(checkstyle)) {
+    problems.push('checkstyle.xml 存在 severity="ignore" 规则');
+  }
+
+  for (const configFile of ['eslint.config.js', 'eslint.config.targets.js']) {
+    const text = fs.readFileSync(path.join(root, 'frontend', configFile), 'utf8');
+    if (text.includes('eslint-disable')) {
+      problems.push(`frontend/${configFile} 含 eslint-disable`);
+    }
+  }
+  const targets = fs.readFileSync(path.join(root, 'frontend', 'eslint.config.targets.js'), 'utf8');
+  for (const rule of ['max-lines', 'max-lines-per-function', 'complexity', 'max-params']) {
+    const quoted = rule.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const match = targets.match(new RegExp(`['"]?${quoted}['"]?:\\s*\\['(error|warn)'`));
+    if (match && match[1] !== 'warn') {
+      problems.push(`frontend/eslint.config.targets.js 的 ${rule} 必须为 warn（目标值不阻断）`);
+    }
+  }
+
+  // 源码中的 eslint-disable 必须逐处挂 Issue 号（与待办标记治理纪律一致）
+  const sourceRoot = path.join(root, 'frontend', 'src');
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (/\.(ts|tsx|vue|js)$/.test(entry.name)) {
+        const lines = fs.readFileSync(full, 'utf8').split('\n');
+        lines.forEach((line, index) => {
+          if (line.includes('eslint-disable') && !/#\d+/.test(line)) {
+            problems.push(`未挂 Issue 号的 eslint-disable: frontend/${path.relative(root, full).replace(/\\/g, '/')}:${index + 1}`);
+          }
+        });
+      }
+    }
+  };
+  walk(sourceRoot);
+  return problems;
 }
 
 export function checkLintThresholds(root) {
@@ -182,6 +232,7 @@ export function checkLintThresholds(root) {
     ]),
     ...compare('ts', docs.ts, eslint.ts, ['fileHard', 'fileTarget', 'method', 'complexity', 'params']),
     ...compare('vue', docs.vue, eslint.vue, ['fileHard', 'fileTarget', 'complexity']),
+    ...suppressionProblems(root),
   ];
 
   if (mismatches.length > 0) {
@@ -196,6 +247,7 @@ export function checkLintThresholds(root) {
       `阈值与 docs/coding-standards.md §7 一致：backend=${docs.backend.fileHard}/${docs.backend.fileTarget},${docs.backend.method},${docs.backend.complexity},${docs.backend.params},${docs.backend.nested}; ` +
         `ts=${docs.ts.fileHard}/${docs.ts.fileTarget},${docs.ts.method},${docs.ts.complexity},${docs.ts.params}; ` +
         `vue=${docs.vue.fileHard}/${docs.vue.fileTarget},${docs.vue.complexity}`,
+      '防削弱检查通过：无 suppression/severity=ignore/eslint-disable，目标值配置保持 warn',
     ],
   };
 }
