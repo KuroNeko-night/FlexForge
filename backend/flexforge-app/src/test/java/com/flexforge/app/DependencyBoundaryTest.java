@@ -1,5 +1,7 @@
 package com.flexforge.app;
 
+import com.flexforge.common.ExperimentalApi;
+import com.flexforge.common.PublicApi;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
@@ -78,4 +80,34 @@ class DependencyBoundaryTest {
     @ArchTest
     static final ArchRule modulesAreFreeOfCycles =
             SlicesRuleDefinition.slices().matching("com.flexforge.(*)..").should().beFreeOfCycles();
+
+    /**
+     * docs/10 §5.4：跨模块只能引用对方标注 @PublicApi（或 @ExperimentalApi）的类型；
+     * 未标注类型被跨模块引用即失败（回归见 {@link PublicApiBoundaryRuleTest}）。
+     */
+    @ArchTest
+    static final ArchRule crossModuleReferencesRequirePublicApi =
+            noClasses().that().resideInAPackage("com.flexforge..")
+                    .should(new ArchCondition<>("引用其他模块未标注 @PublicApi/@ExperimentalApi 的类型") {
+                        @Override
+                        public void check(JavaClass clazz, ConditionEvents events) {
+                            String originModule = moduleOf(clazz);
+                            if (originModule == null) {
+                                return;
+                            }
+                            clazz.getDirectDependenciesFromSelf().forEach(dependency -> {
+                                JavaClass target = dependency.getTargetClass();
+                                String targetModule = moduleOf(target);
+                                boolean crossModule = targetModule != null && !targetModule.equals(originModule);
+                                boolean exposed = target.isAnnotatedWith(PublicApi.class)
+                                        || target.isAnnotatedWith(ExperimentalApi.class);
+                                if (crossModule && !exposed) {
+                                    // noClasses 规则：条件 satisfied 即为违规
+                                    events.add(SimpleConditionEvent.satisfied(clazz, String.format(
+                                            "%s -> %s（%s 模块的未公开类型，docs/10 §5.4 禁止跨模块引用）",
+                                            dependency.getOriginClass().getName(), target.getName(), targetModule)));
+                                }
+                            });
+                        }
+                    });
 }

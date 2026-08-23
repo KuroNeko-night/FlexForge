@@ -1,0 +1,48 @@
+package com.flexforge.common.api;
+
+import com.flexforge.common.ApiConstants;
+import com.flexforge.common.PublicApi;
+
+import java.util.Objects;
+import java.util.Set;
+
+/**
+ * 统一分页请求（docs/09 P02 契约冻结）：页码从 1 起；pageSize 默认 20、上限 200，
+ * 超界在构造时拒绝；排序字段必须来自调用方提供的白名单，sortBy 为 null 表示不排序。
+ */
+@PublicApi
+public record PageQuery(int pageNumber, int pageSize, String sortBy, SortDirection sortDirection) {
+
+    /** 排序方向；默认 ASC。 */
+    @PublicApi
+    public enum SortDirection { ASC, DESC }
+
+    public PageQuery {
+        if (pageNumber < 1) {
+            throw new IllegalArgumentException("pageNumber 必须 >= 1，实际 " + pageNumber);
+        }
+        if (pageSize < 1 || pageSize > ApiConstants.MAX_PAGE_SIZE) {
+            throw new IllegalArgumentException(
+                    "pageSize 必须在 1.." + ApiConstants.MAX_PAGE_SIZE + "，实际 " + pageSize);
+        }
+    }
+
+    /**
+     * 白名单工厂：sortBy 非 null 时必须出现在 allowedSortFields 中，否则拒绝（防动态 SQL 注入面）。
+     */
+    public static PageQuery of(int pageNumber, int pageSize, String sortBy,
+                               SortDirection sortDirection, Set<String> allowedSortFields) {
+        PageQuery query = new PageQuery(pageNumber, pageSize, sortBy,
+                sortBy == null ? SortDirection.ASC : Objects.requireNonNull(sortDirection, "sortDirection"));
+        if (query.sortBy() != null
+                && (allowedSortFields == null || !allowedSortFields.contains(query.sortBy()))) {
+            throw new IllegalArgumentException("sortBy 不在白名单内: " + query.sortBy());
+        }
+        return query;
+    }
+
+    /** 默认首页（页码 1、默认页大小、不排序）。 */
+    public static PageQuery firstPage() {
+        return new PageQuery(1, ApiConstants.DEFAULT_PAGE_SIZE, null, SortDirection.ASC);
+    }
+}

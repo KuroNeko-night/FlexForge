@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// FlexForge 仓库健康检查（本地与 CI 共用入口，P01 迭代 2 起全量版）。
+// FlexForge 仓库健康检查（本地与 CI 共用入口，P02 起全量版）。
 // 一条命令完成：文档/状态镜像检查、格式、前端 lint/type-check/test/build/audit、
-// 后端 verify（Checkstyle + ArchUnit + Testcontainers 冒烟）、R-GOV-01/02/06。
+// 后端 verify（Checkstyle + ArchUnit + Testcontainers 冒烟）、R-GOV-01/02/03/06。
 // 编号对齐 docs/11-regression-test-plan.md §3；未到交付阶段的项输出 SKIP。
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   checkRgov02,
+  checkRgov03,
   checkRgov06,
   runBackendVerify,
   runFrontendGates,
@@ -166,7 +167,7 @@ function checkRgov01() {
 }
 
 function printSummary() {
-  console.log('== FlexForge check-repo-health（P01 迭代 2 全量版）==');
+  console.log('== FlexForge check-repo-health（P02 全量版）==');
   for (const r of results) {
     const tag = { pass: 'PASS', fail: 'FAIL', skip: 'SKIP' }[r.status];
     console.log(`[${tag}] ${r.id} ${r.detail[0]}`);
@@ -189,13 +190,13 @@ checkRgov01();
 const frontendOk = runFrontendGates(record);
 const backend = runBackendVerify(record);
 checkRgov02(backend, record);
+checkRgov03(backend, record);
 checkRgov06(backend, record);
 if (!frontendOk || (!backend.skipped && !backend.ok)) {
   record('GATE-SUMMARY', 'fail', ['前端或后端门禁存在失败项，见上方明细']);
 } else {
   record('GATE-SUMMARY', 'pass', ['前端与后端全部检查通过']);
 }
-record('R-GOV-03', 'skip', ['扩展点常量与登记册比对：代码常量出现后启用（P02）']);
 record('R-GOV-07', 'skip', ['契约 fixture 回放：P07/P10']);
 record('R-GOV-08', 'skip', ['日志脱敏：P02']);
 record('R-GOV-09', 'skip', ['骨架纯净性：P09']);

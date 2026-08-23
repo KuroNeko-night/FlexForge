@@ -8,7 +8,7 @@
 > 需要定位"改哪里、读什么"时，先 `grep` 本文对应节，不要通读。
 > 自更新规则见 §7；阶段进度不写这里（看 `STATUS.md`）。
 
-## 1. 当前结构（P01 迭代 2）
+## 1. 当前结构（P02 迭代 1）
 
 ```text
 FlexForge/
@@ -24,17 +24,18 @@ FlexForge/
 │   └── dependabot.yml              依赖更新（actions/npm/maven/docker 周更，P01 全启用）
 ├── docker-compose.yml             db + backend + frontend，端口只绑 127.0.0.1（8088/5173）
 ├── scripts/
-│   ├── check-repo-health.mjs       一条命令：格式/lint/test/build + R-GOV-01/02/04/05/06
+│   ├── check-repo-health.mjs       一条命令：格式/lint/test/build + R-GOV-01/02/03/04/05/06
 │   ├── sync-status.mjs             STATUS.md → project-status.json 单向生成/校验
 │   └── lib/
-│       ├── gates.mjs              前后端门禁执行层（ComSpec/工具链/R-GOV-02/06）
+│       ├── gates.mjs              前后端门禁执行层（ComSpec/工具链/R-GOV-02/03/06）
 │       ├── rgov-thresholds.mjs     R-GOV-01 简化版阈值解析与比对
 │       └── status.mjs              STATUS 锚点/阶段看板单一解析器（R-GOV-04 共用）
 ├── backend/                        Maven 多模块（Wrapper 3.9.16，目标 Java 17）
 │   ├── config/checkstyle.xml       Checkstyle 阈值（数值唯一来源 docs/coding-standards §7）
 │   ├── Dockerfile                  多阶段构建，非 root 运行
-│   ├── flexforge-common/           平台常量与基础契约（ApiConstants）
-│   └── flexforge-app/              启动、配置、健康检查；Testcontainers 冒烟 + ArchUnit + R-GOV-06 fixture 测试
+│   ├── flexforge-common/           平台契约：ApiConstants/RequestIds/@PublicApi/@ExperimentalApi + contract/api/audit/registry 子包（P02 迭代 1）
+│   ├── flexforge-runtime/          PluginContext + 内存 ServiceRegistry/ExtensionRegistry/事件发布器 + 注册-撤销测试（P02 迭代 1）
+│   └── flexforge-app/              启动、配置、健康检查；Testcontainers 冒烟 + ArchUnit（5 规则）+ R-GOV-06 fixture 测试
 ├── frontend/                       Vue 3 + TS + Vite（P01 骨架）
 │   ├── package.json / package-lock.json
 │   ├── Dockerfile                  Vite dev 镜像（非 root；生产静态服务 P06 引入）
@@ -186,3 +187,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-20 | 新增 `.github/`（ci.yml + dependabot.yml）与 `scripts/check-repo-health.mjs`（§1/§3 同步登记） | 编码开始前先立 CI 门禁：R-GOV 基础与卫生检查即时生效，构建类任务条件激活 |
 | 2026-08-20 | §1 树更新：backend/ 多模块、database/（migrations + init）、docker-compose.yml、.env.example；§2 目标结构对应落地 | P01 迭代 1 后端骨架落地（Boot 4.0.7 + Flyway V001 + Compose 链路验证通过） |
 | 2026-08-21 | §1 树更新：frontend/ Vue3+TS 骨架与工具链、backend/config/checkstyle.xml、tests/fixtures/、scripts/sync-status.mjs 与 scripts/lib/；Compose 三服务；Dependabot 全生态启用 | P01 迭代 2/3：前端骨架、lint/格式/ArchUnit 门禁、R-GOV-01/02/06 激活、状态脚本落地 |
+| 2026-08-23 | §1 树更新：flexforge-runtime 新模块、flexforge-common 四个子包（contract/api/audit/registry）、app ArchUnit 扩至 5 规则；R-GOV-03 门禁激活 | P02 迭代 1：契约层 + 内存注册表 + 登记册常量落地（Issue #5 修复经 PR #7 先行合并） |

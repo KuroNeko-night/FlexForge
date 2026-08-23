@@ -92,13 +92,13 @@ export function runBackendVerify(record) {
   return { ok: r.ok, skipped: false };
 }
 
-function surefireReport(name) {
+function surefireReport(name, module = 'flexforge-app', javaPackage = 'com.flexforge.app') {
   const report = path.join(
     BACKEND,
-    'flexforge-app',
+    module,
     'target',
     'surefire-reports',
-    `TEST-com.flexforge.app.${name}.xml`,
+    `TEST-${javaPackage}.${name}.xml`,
   );
   if (!fs.existsSync(report)) {
     return null;
@@ -121,11 +121,92 @@ export function checkRgov02(backend, record) {
     return;
   }
   const report = surefireReport('DependencyBoundaryTest');
-  // 4 = DependencyBoundaryTest 当前规则数；新增/删除 ArchUnit 规则时需同步此断言。
-  const ok = backend.ok && report !== null && report.tests === 4 && report.errors === 0 && report.failures === 0;
+  // 5 = DependencyBoundaryTest 当前规则数；新增/删除 ArchUnit 规则时需同步此断言。
+  const ok = backend.ok && report !== null && report.tests === 5 && report.errors === 0 && report.failures === 0;
   record('R-GOV-02', ok ? 'pass' : 'fail',
-    ok ? ['ArchUnit 依赖边界 4 条规则通过（common→app、framework 依赖、infrastructure、循环）']
+    ok ? ['ArchUnit 依赖边界 5 条规则通过（common→app、framework 依赖、infrastructure、循环、PublicApi）']
       : ['依赖边界测试失败或报告缺失，禁止带病合并']);
+}
+
+// R-GOV-03：代码常量集合 == docs/extension-points.md active 集合，
+// 且每个 kind 的注册-撤销测试存在且全部通过（docs/11 §3，P02 激活）。
+const RGOV03_KINDS = [
+  ['ServiceKey', 'ServiceKeys.java'],
+  ['ExtensionPoint', 'ExtensionPoints.java'],
+  ['DomainEvent', 'DomainEventTypes.java'],
+];
+
+const RGOV03_REGISTRY_TESTS = [
+  ['ServiceRegistryTest', 'ServiceKey'],
+  ['ExtensionRegistryTest', 'ExtensionPoint'],
+  ['DomainEventPublisherTest', 'DomainEvent'],
+];
+
+function registryActiveIds() {
+  const md = fs.readFileSync(path.join(ROOT, 'docs', 'extension-points.md'), 'utf8');
+  const result = {};
+  for (const [kind, sectionRe] of [
+    ['ServiceKey', /### 2\.1 ServiceKey([\s\S]*?)(?=### 2\.2)/],
+    ['ExtensionPoint', /### 2\.2 ExtensionPoint([\s\S]*?)(?=### 2\.3)/],
+    ['DomainEvent', /### 2\.3 DomainEvent([\s\S]*?)(?=### 2\.4)/],
+  ]) {
+    const body = md.match(sectionRe)?.[1] ?? '';
+    result[kind] = new Set(
+      body.split('\n')
+        .map((line) => line.split('|').map((cell) => cell.trim()))
+        .filter((cells) => cells.length >= 4 && cells[1].startsWith('`'))
+        .filter((cells) => cells[cells.length - 2] === 'active')
+        .map((cells) => cells[1].replace(/`/g, '')),
+    );
+  }
+  return result;
+}
+
+function codeConstantIds() {
+  const result = {};
+  for (const [kind, fileName] of RGOV03_KINDS) {
+    const source = fs.readFileSync(
+      path.join(BACKEND, 'flexforge-common', 'src', 'main', 'java',
+        'com', 'flexforge', 'common', 'registry', fileName),
+      'utf8',
+    );
+    result[kind] = new Set(
+      [...source.matchAll(/public static final String [A-Z_]+ = "([a-z.-]+)"/g)].map((m) => m[1]),
+    );
+  }
+  return result;
+}
+
+export function checkRgov03(backend, record) {
+  if (backend.skipped) {
+    record('R-GOV-03', 'skip', ['后端未初始化']);
+    return;
+  }
+  const problems = [];
+  const counts = [];
+  try {
+    const registry = registryActiveIds();
+    const code = codeConstantIds();
+    for (const kind of Object.keys(registry)) {
+      const registryOnly = [...registry[kind]].filter((id) => !code[kind].has(id));
+      const codeOnly = [...code[kind]].filter((id) => !registry[kind].has(id));
+      if (registryOnly.length > 0) problems.push(`${kind} 登记册有而代码缺失: ${registryOnly.join(', ')}`);
+      if (codeOnly.length > 0) problems.push(`${kind} 代码有而登记册未登记: ${codeOnly.join(', ')}`);
+      counts.push(`${kind} ${registry[kind].size}`);
+    }
+  } catch (e) {
+    record('R-GOV-03', 'fail', [`登记册/常量解析失败: ${e.message}`]);
+    return;
+  }
+  for (const [testName] of RGOV03_REGISTRY_TESTS) {
+    const report = surefireReport(testName, 'flexforge-runtime', 'com.flexforge.runtime');
+    if (report === null || report.tests < 1 || report.errors > 0 || report.failures > 0) {
+      problems.push(`注册-撤销测试未通过或报告缺失: ${testName}`);
+    }
+  }
+  record('R-GOV-03', problems.length ? 'fail' : 'pass',
+    problems.length ? problems
+      : [`常量集合 == 登记册 active（${counts.join(' / ')}）；注册-撤销测试通过（ServiceRegistryTest/ExtensionRegistryTest/DomainEventPublisherTest）`]);
 }
 
 export function fixtureManifestProblems() {
