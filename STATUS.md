@@ -6,10 +6,10 @@
 CURRENT_STAGE_ID: P01
 CURRENT_STAGE_NAME: 仓库与工程骨架
 STAGE_STATUS: in_progress
-PROJECT_PROGRESS: 8%
-LAST_UPDATED: 2026-08-20
+PROJECT_PROGRESS: 12%
+LAST_UPDATED: 2026-08-21
 OWNER: project-maintainer
-NEXT_ACTION: P01 迭代 2：Vue 3 + TS 前端骨架与 Checkstyle/ESLint/Prettier/ArchUnit 工具链（含 R-GOV-01 简化版与 violations fixture 激活）；迭代 3：sync-status 脚本、P01 验收清单逐项验证与阶段收尾
+NEXT_ACTION: P01 收口：推送 feat/p01-frontend-toolchain 分支 → 开 PR → CI 全绿 → 合并 main；合并后按 EXIT_GATE 证据将 P01 置 completed、P02 置 ready_to_start
 EXIT_GATE: 新环境可按 README 启动前后端与 PostgreSQL，健康检查和 V001 迁移通过
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -63,4 +63,7 @@ BLOCKERS: none
 | 2026-08-20 | P01 | 编码前提前搭建 CI 骨架：scripts/check-repo-health.mjs（R-GOV-04/05 基础 + 卫生检查，已自测失败路径）、.github/workflows/ci.yml（仓库卫生 + gitleaks 密钥扫描即时生效；backend/frontend/docker-build/dependency-audit 按文件出现条件激活）、Dependabot（actions 周更，其余生态 P01 启用）；经 PR 分支合并 | `scripts/check-repo-health.mjs`、`.github/`、`docs/repository-maintenance.md` §3、`docs/project-index.md` |
 | 2026-08-20 | P01 | P01 启动（in_progress）。构建工具决策：Maven + Wrapper、目标 Java 17（本机 JDK 21 编译 `--release 17`，CI 用 JDK 17 验证目标兼容）；P01 按三个迭代交付：后端骨架 → 前端与 lint 工具链 → 状态脚本与验收验证 | `docs/09` P01、`STATUS.md` |
 | 2026-08-20 | P01 | 迭代 1 完成：Maven 多模块骨架（common/app）+ Spring Boot 4.0.7（P00 文档默认 3.x 的实际修正：4.0 已为当前线，3.5 OSS 支持早于答辩到期）+ Flyway V001 平台表 + Dockerfile/Compose + Testcontainers 冒烟 3/3 绿（健康检查、sys_* 表、骨架纯净性）；Compose 全链路验证（db healthy → backend /actuator/health UP）。环境适配：阿里云 Maven 镜像（.mvn/settings.xml）、Docker daemon registry-mirrors、Compose 宿主端口 8088 | `backend/`、`database/`、`docker-compose.yml`、`README.md` 快速启动 |
+| 2026-08-21 | P01 | 迭代 1 交叉审查修复（阶段看板与 README 状态一致）后 PR #3 CI 全绿并合并 main | PR #3（backend/docker/gitleaks/R-GOV/audit 全 pass） |
+| 2026-08-21 | P01 | 迭代 2 完成：frontend Vue3+TS 骨架（Vite 8、ESLint 10 硬/目标双配置、Prettier、Vitest、type-check/build 全绿）+ backend Checkstyle（10.26.1，§7 阈值 error/warn）+ ArchUnit 依赖边界 4 规则 + tests/fixtures violations 与 SHA-256 清单；check-repo-health 升级为全量版：16 pass / 4 skip / 0 fail。门禁防失效负样本：临时 302 行 TS 文件 ESLint 命中 max-lines 失败；临时 common→app 依赖 Maven 报循环引用失败；验证后均移除 | `frontend/`、`backend/config/checkstyle.xml`、`backend/flexforge-app/src/test/*`、`tests/fixtures/`、`scripts/check-repo-health.mjs`、`scripts/lib/` |
+| 2026-08-21 | P01 | 迭代 3 完成：scripts/sync-status 以 STATUS.md 为源单向生成/校验 JSON（--check 通过）；Compose 三服务 db+backend+frontend 全 healthy，前端 200，经前端同源代理 /actuator/health UP；.dockerignore 收敛上下文；README 快速启动覆盖三服务与本机双端启动；Dependabot npm/maven/docker 全启用。AI 模型接口可用性：待确认（未提供 OpenAI 兼容接口或学校环境信息），按 fixture 优先策略推进，P11 开发与回归不依赖在线模型 | `scripts/sync-status.mjs`、`docker-compose.yml`、`README.md`、`.github/dependabot.yml`、`docs/13` §4 P01 |
 

@@ -8,29 +8,46 @@
 > 需要定位"改哪里、读什么"时，先 `grep` 本文对应节，不要通读。
 > 自更新规则见 §7；阶段进度不写这里（看 `STATUS.md`）。
 
-## 1. 当前结构（P01 前，文档阶段）
+## 1. 当前结构（P01 迭代 2）
 
 ```text
 FlexForge/
-├── README.md                  项目入口与状态摘要
+├── README.md                  项目入口、快速启动与状态摘要
 ├── STATUS.md                  进度唯一锚点（当前阶段/下一步/阻塞）
 ├── AGENTS.md                  Agent 每轮注入入口（文档路由 + 持久约束）
 ├── CONTRIBUTING.md            人的开发流程
 ├── FlexForge.md               早期概念稿（历史，冲突时以 docs/ 为准）
-├── .editorconfig / .gitattributes / .gitignore
-├── .env.example                   环境变量占位（复制重命名后使用，gitignore 已排除真实配置）
+├── .editorconfig / .gitattributes / .gitignore / .dockerignore
+├── .env.example                   环境变量占位（DB_* 与 Compose 宿主端口；真实配置已被 gitignore 排除）
 ├── .github/
-│   ├── workflows/ci.yml            CI（仓库卫生、密钥扫描；backend/frontend/docker/audit 条件激活）
-│   └── dependabot.yml              依赖版本更新（actions 周更；npm/maven/docker P01 启用）
-├── docker-compose.yml             开发环境编排（db + backend，宿主端口 127.0.0.1:8088）
+│   ├── workflows/ci.yml            CI（repo-health 全量门禁、gitleaks、backend/frontend/docker/audit）
+│   └── dependabot.yml              依赖更新（actions/npm/maven/docker 周更，P01 全启用）
+├── docker-compose.yml             db + backend + frontend，端口只绑 127.0.0.1（8088/5173）
 ├── scripts/
-│   └── check-repo-health.mjs       本地/CI 仓库健康检查（R-GOV-04/05 + 卫生）
-├── backend/                        Maven 多模块（Wrapper 锁定 Maven 3.9.16，目标 Java 17）
-│   ├── flexforge-common/           平台常量与基础契约（ApiConstants：API 前缀/分页上限）
-│   └── flexforge-app/              启动、配置、健康检查；含 Testcontainers 启动冒烟
+│   ├── check-repo-health.mjs       一条命令：格式/lint/test/build + R-GOV-01/02/04/05/06
+│   ├── sync-status.mjs             STATUS.md → project-status.json 单向生成/校验
+│   └── lib/
+│       ├── gates.mjs              前后端门禁执行层（ComSpec/工具链/R-GOV-02/06）
+│       ├── rgov-thresholds.mjs     R-GOV-01 简化版阈值解析与比对
+│       └── status.mjs              STATUS 锚点/阶段看板单一解析器（R-GOV-04 共用）
+├── backend/                        Maven 多模块（Wrapper 3.9.16，目标 Java 17）
+│   ├── config/checkstyle.xml       Checkstyle 阈值（数值唯一来源 docs/coding-standards §7）
+│   ├── Dockerfile                  多阶段构建，非 root 运行
+│   ├── flexforge-common/           平台常量与基础契约（ApiConstants）
+│   └── flexforge-app/              启动、配置、健康检查；Testcontainers 冒烟 + ArchUnit + R-GOV-06 fixture 测试
+├── frontend/                       Vue 3 + TS + Vite（P01 骨架）
+│   ├── package.json / package-lock.json
+│   ├── Dockerfile                  Vite dev 镜像（非 root；生产静态服务 P06 引入）
+│   ├── vite.config.ts              dev 同源代理（CORS 基线）+ preview CSP/安全响应头骨架
+│   ├── eslint.config.js / eslint.config.targets.js   硬上限 error / 建议目标 warn
+│   └── src/                        main.ts / App.vue（健康检查 UI）/ services/health.ts + 单测
 ├── database/
 │   ├── migrations/V001__init.sql   平台骨架表（sys_user/sys_role/sys_user_role）
 │   └── init/                       Compose 首次初始化：应用专用账号
+├── tests/
+│   └── fixtures/
+│       ├── fixtures.json           条目清单 + SHA-256（R-GOV-06 哈希校验）
+│       └── violations/             故意违规样例（超行数/高复杂度/长方法，不参与正常构建）
 └── docs/
     ├── 00-feasibility-review.md       可行性评审与 MVP 边界
     ├── 01-project-plan.md             里程碑与变更控制
@@ -50,7 +67,7 @@ FlexForge/
     ├── repository-maintenance.md      仓库/分支/环境/Issue 约束
     ├── extension-points.md            扩展点唯一登记册
     ├── project-index.md               本文（文件级索引）
-    ├── project-status.json            状态机器镜像
+    ├── project-status.json            状态机器镜像（sync-status 生成）
     └── adr/
         ├── 0001-mvp-architecture.md
         ├── 0002-runtime-plugin-model.md
@@ -168,3 +185,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-20 | 新增长期文档 `docs/13-security-baseline.md`（§1/§3 同步登记） | 安全要求此前散落多份文档，建立唯一归属：威胁模型 + S1-S9 红线 + 分域基线 + 阶段映射 |
 | 2026-08-20 | 新增 `.github/`（ci.yml + dependabot.yml）与 `scripts/check-repo-health.mjs`（§1/§3 同步登记） | 编码开始前先立 CI 门禁：R-GOV 基础与卫生检查即时生效，构建类任务条件激活 |
 | 2026-08-20 | §1 树更新：backend/ 多模块、database/（migrations + init）、docker-compose.yml、.env.example；§2 目标结构对应落地 | P01 迭代 1 后端骨架落地（Boot 4.0.7 + Flyway V001 + Compose 链路验证通过） |
+| 2026-08-21 | §1 树更新：frontend/ Vue3+TS 骨架与工具链、backend/config/checkstyle.xml、tests/fixtures/、scripts/sync-status.mjs 与 scripts/lib/；Compose 三服务；Dependabot 全生态启用 | P01 迭代 2/3：前端骨架、lint/格式/ArchUnit 门禁、R-GOV-01/02/06 激活、状态脚本落地 |

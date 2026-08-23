@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+<!--
+  FlexForge 后端静态检查。数值唯一来源：docs/coding-standards.md §7（R-GOV-01 简化版校验本文件）。
+  硬上限 severity=error 阻断构建；文件长度建议目标 250 用 warning 提示、不阻断。
+  复杂度/参数/嵌套不允许豁免（coding-standards §7 执行规则 2）。
+-->
+<module name="Checker">
+  <property name="charset" value="UTF-8"/>
+  <property name="severity" value="error"/>
+
+  <!-- 单文件长度硬上限 400（§7：后端 Java/Kotlin 400/250） -->
+  <module name="FileLength">
+    <property name="max" value="400"/>
+  </module>
+  <!-- 单文件长度建议目标 250：warn，评审必须说明，不阻断 -->
+  <module name="FileLength">
+    <property name="max" value="250"/>
+    <property name="severity" value="warning"/>
+  </module>
+
+  <module name="TreeWalker">
+    <!-- 方法长度 ≤ 40 行 -->
+    <module name="MethodLength">
+      <property name="max" value="40"/>
+    </module>
+    <!-- 圈复杂度 ≤ 10 -->
+    <module name="CyclomaticComplexity">
+      <property name="max" value="10"/>
+    </module>
+    <!-- 参数个数 ≤ 5 -->
+    <module name="ParameterNumber">
+      <property name="max" value="5"/>
+    </module>
+    <!-- 嵌套深度 ≤ 3 -->
+    <module name="NestedIfDepth">
+      <property name="max" value="3"/>
+    </module>
+  </module>
+</module>

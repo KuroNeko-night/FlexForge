@@ -14,14 +14,21 @@ concurrency:
 
 jobs:
   repo-health:
-    name: 文档与仓库卫生（R-GOV 基础）
+    name: 仓库健康检查（R-GOV + 全量门禁）
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version: lts/*
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      # check-repo-health 内部会 npm ci + mvnw verify（含 Testcontainers），runner 自带 Docker
       - name: check-repo-health
         run: node scripts/check-repo-health.mjs
 
@@ -66,7 +73,8 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: lts/*
-      # P01 lockfile 就位后为 setup-node 增加 npm 缓存（cache-dependency-path: frontend/package-lock.json）
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
       - name: lint / type-check / test / build（frontend/ 就位前跳过）
         run: |
           if [ ! -f frontend/package.json ]; then echo "跳过：frontend/package.json 不存在"; exit 0; fi

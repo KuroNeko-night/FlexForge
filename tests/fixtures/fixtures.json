@@ -1,0 +1,15 @@
+{
+  "updatedAt": "2026-08-21",
+  "entries": [
+    {
+      "path": "violations/frontend-over-limit.ts",
+      "sha256": "724c0d8f56f1c53b26b08875227ca6233c1aa114468f379ceb2d9a2ba360e79b",
+      "purpose": "R-GOV-06：前端 ESLint 门禁防失效样例（超 300 行 + 圈复杂度 >10）"
+    },
+    {
+      "path": "violations/BackendOverLimit.java",
+      "sha256": "ada9bce339fa1ff818b93feb0c4fac5f5ae75b194452525f9a0fae1faad85f4e",
+      "purpose": "R-GOV-06：后端 Checkstyle 门禁防失效样例（超 400 行 + 方法 >40 行）"
+    }
+  ]
+}

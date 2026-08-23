@@ -1,0 +1,11 @@
+# Docker 构建上下文统一为仓库根；只排除构建产物与本地状态，
+# 具体需要的文件由各 Dockerfile 显式 COPY（backend/Dockerfile、frontend/Dockerfile）。
+.git
+.mimosa
+**/node_modules
+**/target
+frontend/dist
+frontend/.vite
+frontend/coverage
+.env
+*.log

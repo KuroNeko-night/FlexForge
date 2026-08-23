@@ -1,4 +1,4 @@
-# FlexForge 开发环境编排（P01 迭代 1：db + backend；frontend 随迭代 2 加入）
+# FlexForge 开发环境编排（P01：db + backend + frontend）
 # 端口只绑定 127.0.0.1，避免向局域网暴露开发环境（docs/13 §3.8）
 services:
   db:
@@ -36,6 +36,25 @@ services:
       timeout: 5s
       retries: 12
       start_period: 30s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      # 容器内同源代理直接指向 backend 服务；宿主侧访问 http://127.0.0.1:5173
+      VITE_PROXY_TARGET: http://backend:8080
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-5173}:5173"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/ | grep -q '<div id=\"app\">'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
 volumes:
   flexforge-pgdata:
