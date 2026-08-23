@@ -36,7 +36,7 @@ FlexForge/
 │   ├── Dockerfile                  多阶段构建，非 root 运行
 │   ├── flexforge-common/           平台契约：ApiConstants/RequestIds/@PublicApi/@ExperimentalApi + contract/api/audit/registry 子包（P02 迭代 1）
 │   ├── flexforge-runtime/          PluginContext + 内存 ServiceRegistry/ExtensionRegistry/事件发布器 + 注册-撤销测试（P02 迭代 1）
-│   └── flexforge-app/              启动、配置、健康检查；Testcontainers 冒烟 + ArchUnit（5 规则）+ R-GOV-06 fixture 测试
+│   └── flexforge-app/              启动、配置、健康检查；web/ 统一错误装配 + requestId 过滤器 + logback 脱敏基线（P02 迭代 2）；Testcontainers 冒烟 + ArchUnit（5 规则）+ R-GOV-06 fixture 测试
 ├── frontend/                       Vue 3 + TS + Vite（P01 骨架）
 │   ├── package.json / package-lock.json
 │   ├── Dockerfile                  Vite dev 镜像（非 root；生产静态服务 P06 引入）
@@ -189,3 +189,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-20 | §1 树更新：backend/ 多模块、database/（migrations + init）、docker-compose.yml、.env.example；§2 目标结构对应落地 | P01 迭代 1 后端骨架落地（Boot 4.0.7 + Flyway V001 + Compose 链路验证通过） |
 | 2026-08-21 | §1 树更新：frontend/ Vue3+TS 骨架与工具链、backend/config/checkstyle.xml、tests/fixtures/、scripts/sync-status.mjs 与 scripts/lib/；Compose 三服务；Dependabot 全生态启用 | P01 迭代 2/3：前端骨架、lint/格式/ArchUnit 门禁、R-GOV-01/02/06 激活、状态脚本落地 |
 | 2026-08-23 | §1 树更新：flexforge-runtime 新模块、flexforge-common 四个子包（contract/api/audit/registry）、app ArchUnit 扩至 5 规则；R-GOV-03 门禁激活 | P02 迭代 1：契约层 + 内存注册表 + 登记册常量落地（Issue #5 修复经 PR #7 先行合并） |
+| 2026-08-24 | §1 树更新：app web/（RequestIdFilter/GlobalExceptionHandler）与 logback-spring.xml；R-GOV-08 门禁激活、R-GOV-01 升级完整版（防削弱检查）；§7 裁决 record 组件不计入参数上限（Issue #9） | P02 迭代 2：REST 统一错误装配 + requestId 全链路 + 日志脱敏；Mimosa 深度扫描 0 findings |

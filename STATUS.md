@@ -9,7 +9,7 @@ STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 13%
 LAST_UPDATED: 2026-08-24
 OWNER: project-maintainer
-NEXT_ACTION: P02 迭代 2：统一错误响应 REST 装配（RestControllerAdvice 稳定错误码 + requestId 过滤器 + 分页白名单参数绑定，全部走 /api/v1）→ 结构化日志与敏感头脱敏（R-GOV-08 激活）→ R-GOV-01 完整版（解析 Checkstyle/ESLint 配置断言与 docs/coding-standards §7 完全一致）→ 验收复核：注册/撤销、统一错误和审计端口
+NEXT_ACTION: P02 出口复核：按 docs/09 P02 验收标准逐项核验（注册/撤销与重复关闭、统一错误+requestId、日志脱敏、扩展点登记闭环、@PublicApi 跨模块、依赖边界）→ 复核通过后将 P02 置 completed、P03 置 ready_to_start（P03 首项：登录/JWT/RBAC 三角色骨架）
 EXIT_GATE: 注册/撤销、统一错误和审计端口通过测试
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -73,4 +73,6 @@ BLOCKERS: none
 | 2026-08-23 | P02 | 独立子代理交叉审计 PR #7+#8 完成：**无 P0**；P1-1（§7 参数上限 vs record 6 组件 + Checkstyle 盲区）记 BLOCKERS 待人工裁决并开 Issue；P2-1 ServiceRegistry close/重注册竞态、P2-2 R-GOV-03 常量正则 fail-open（值含数字/下划线被静默跳过）、P2-3 ServiceKey/DomainEvent.type 运行时未校验登记册 ID、P2-4 PageQuery 白名单可 new 绕过且零测试——四项判定为 P02 交付物缺陷，立即最小修复（fix/p02-audit 分支）；P3 六项（byActivation 滞留、放行断言可空转、scripts 不受 lint、文档口径、§1.2 消费方张力、分支中置提交可构建性）开跟踪 Issue 排期 | 审计报告全文见 PR #8 评论区子代理会话、Issue 双记、BLOCKERS |
 | 2026-08-23 | P02 | 审计 P2 修复完成（fix/p02-audit，Issue #10 勾选 P2-1..P2-4）：ServiceRegistry dispose 改为注册表监视器内身份条件删除（旧 close 不误删新注册、close 窗口期重注册不误报）；R-GOV-03 拆分至 scripts/lib/rgov-extension-points.mjs，常量正则放宽为任意字符串字面量并内置解析器负样本自检（含数字/下划线常量必抓、非 active 行必忽略，每次运行断言）；ServiceRegistry/事件发布器入口拒绝未登记 ID（与 ExtensionRegistry 对称）；PageQueryTest 7 项失败路径（边界/白名单/注入样例/null 方向，含直接 new 不可绕边界断言）。后端 44 tests 绿，check-repo-health 18 pass / 3 skip / 0 fail | Issue #10、`backend/flexforge-runtime`、`scripts/lib/rgov-extension-points.mjs`、`backend/flexforge-common/src/test` |
 | 2026-08-24 | P02 | P1-1 裁决落地（用户选方案①，Issue #9 关闭）：coding-standards §7 新增执行规则 6——参数上限适用于方法与显式构造器参数列表，record 组件（数据载体）不计入；Checkstyle ParameterNumber 对 record 紧凑构造器的盲区以登记册载荷评审核对兜底，非登记载荷 record 仍控制在 ≤5。BLOCKERS 清除，子代理复审追加的 3 项 P3（同引用重注册守卫/名字含数字正则/ALL 覆盖校验）已随 PR #11 be514ab 修复 | `docs/coding-standards.md` §7.6、Issue #9、PR #11 |
+| 2026-08-24 | P02 | Mimosa 密封深度扫描（用户要求，覆盖 main@836808e，即 PR #11 合并后、迭代 2 代码前）：scanId scan-2026-08-23T16-20-09.657Z-828162258b33、seal sha256:a9f28885a01a7fb01af046c0106077be1f2b87d6e8a123a5392344141e3ab444、findingCount=0、依赖摘要 192 包 0 告警（离线 advisory 匹配 0）；证据边界 static_only_no_runtime_execution，按结论纪律不据此宣称项目绝对安全，迭代 2 新增代码不在本次扫描范围 | `~/.mimosa/security-scans/project-6f45a9604730ccc164773b45/`（本机密封产物） |
+| 2026-08-24 | P02 | 迭代 2 完成：app web 统一错误装配（GlobalExceptionHandler：IAE/参数校验→400 validation_error、NoSuchElement→404 not_found、兜底→500 internal_error 通用消息不泄内情）+ RequestIdFilter（X-Request-Id 透传 req-[0-9a-f]{8,64} 或生成、MDC 注入、响应头回传、完成日志不含头/查询串）+ logback-spring 结构化模式（requestId 进每行日志）；ErrorCodes 追加 validation_error/not_found/internal_error（docs/08 §7 同步，additive）；R-GOV-08 门禁激活（LogMaskingTest：Authorization/JWT/密码进日志即失败 + fixtures/logs 敏感词扫描）；R-GOV-01 升级完整版（防削弱：suppression/severity=ignore/eslint-disable 无 Issue 号/目标配置反向调整均 FAIL）；Boot 4 适配：spring-boot-webmvc-test 模块 + maven-compiler -parameters。后端 60 tests 绿（app 27 含 ApiContract 8/LogMasking 1/RequestIdFilter 3），check-repo-health 19 pass / 2 skip / 0 fail | `backend/flexforge-app/src/main|test/.../web/`、`scripts/lib/rgov-thresholds.mjs`、`scripts/lib/gates.mjs`、`docs/08` §7 |
 

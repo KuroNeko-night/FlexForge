@@ -6,7 +6,7 @@
   "status": "in_progress",
   "progressPercent": 13,
   "owner": "project-maintainer",
-  "nextAction": "P02 迭代 2：统一错误响应 REST 装配（RestControllerAdvice 稳定错误码 + requestId 过滤器 + 分页白名单参数绑定，全部走 /api/v1）→ 结构化日志与敏感头脱敏（R-GOV-08 激活）→ R-GOV-01 完整版（解析 Checkstyle/ESLint 配置断言与 docs/coding-standards §7 完全一致）→ 验收复核：注册/撤销、统一错误和审计端口",
+  "nextAction": "P02 出口复核：按 docs/09 P02 验收标准逐项核验（注册/撤销与重复关闭、统一错误+requestId、日志脱敏、扩展点登记闭环、@PublicApi 跨模块、依赖边界）→ 复核通过后将 P02 置 completed、P03 置 ready_to_start（P03 首项：登录/JWT/RBAC 三角色骨架）",
   "exitGate": "注册/撤销、统一错误和审计端口通过测试",
   "blockers": [],
   "stages": [
