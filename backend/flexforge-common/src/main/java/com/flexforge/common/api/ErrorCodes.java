@@ -1,0 +1,35 @@
+package com.flexforge.common.api;
+
+import com.flexforge.common.PublicApi;
+
+/**
+ * 稳定错误码集合（docs/extension-points.md §2.4 / docs/08 §7 基线）：只增、不改名、不删；
+ * 删除或改名是 breaking，需要 ADR。客户端必须容忍未知错误码。
+ */
+@PublicApi
+public final class ErrorCodes {
+
+    /** 插件清单不合法或不可解析。 */
+    public static final String INVALID_MANIFEST = "invalid_manifest";
+
+    /** 插件依赖缺失或版本不满足。 */
+    public static final String DEPENDENCY_MISSING = "dependency_missing";
+
+    /** 插件数据库迁移执行失败。 */
+    public static final String MIGRATION_FAILED = "migration_failed";
+
+    /** 运行时注册（服务/扩展点/监听器）失败。 */
+    public static final String REGISTRATION_FAILED = "registration_failed";
+
+    /** activationId 不存在。 */
+    public static final String ACTIVATION_NOT_FOUND = "activation_not_found";
+
+    /** 使用过期激活身份的请求被拒绝。 */
+    public static final String STALE_ACTIVATION = "stale_activation";
+
+    /** 权限不足。 */
+    public static final String PERMISSION_DENIED = "permission_denied";
+
+    private ErrorCodes() {
+    }
+}

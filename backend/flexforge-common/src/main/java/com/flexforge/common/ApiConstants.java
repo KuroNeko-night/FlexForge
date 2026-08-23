@@ -6,6 +6,7 @@ package com.flexforge.common;
  * <p>数值口径以 docs/09 P02 冻结的契约为准：API 前缀 /api/v1，分页默认 20、上限 200。
  * 新增常量为 additive；改名、删除或改值均为 breaking，需要 ADR（docs/10 §4）。
  */
+@PublicApi
 public final class ApiConstants {
 
     /** REST API 统一版本前缀（docs/extension-points.md §2.4 受控契约）。 */

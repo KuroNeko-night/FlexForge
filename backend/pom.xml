@@ -13,6 +13,7 @@
 
   <modules>
     <module>flexforge-common</module>
+    <module>flexforge-runtime</module>
     <module>flexforge-app</module>
   </modules>
 
@@ -48,6 +49,11 @@
       <dependency>
         <groupId>com.flexforge</groupId>
         <artifactId>flexforge-common</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.flexforge</groupId>
+        <artifactId>flexforge-runtime</artifactId>
         <version>${project.version}</version>
       </dependency>
     </dependencies>
