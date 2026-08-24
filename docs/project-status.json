@@ -6,8 +6,8 @@
   "status": "in_progress",
   "progressPercent": 21,
   "owner": "project-maintainer",
-  "nextAction": "P05 迭代 1 交付（feat/p05-dynamic-data 分支）：存储方案定案回写 docs/03 §4 → V005 data_record 迁移 → flexforge-meta 增量（MetaRegistry.findEntityByName + FieldTypeRegistry.validateValue）→ flexforge-data 模块（service.data-access 单点：实体级记录校验编排 + 白名单 SQL 构造）→ /api/v1/data/{entity} CRUD API（仅启用实体、删除物理删除+审计、pageSize>200 可诊断 400）→ RB-DATA 回归（注入防护负例、非法数据拒绝、P95<500ms 基线、单点断言）→ 子代理交叉审查 → PR 合并",
-  "exitGate": "P04 出口证据：①开发者创建/修改/停用实体与字段（六类字段全量配置 + draft→enabled→disabled→enabled 状态机，MetaApiTest/MetaRulesApiTest）②非法字段名/类型/renderer ID/校验键在 API 边界 400（含 renderer 与类型匹配负例）③USER 仅见 enabled 实体（draft/disabled 一律 404 防存在性泄露；写操作 DEVELOPER-only，USER/ADMIN 403）——\"有权限\"为已声明假设（实体级权限 P05/P06 回访，STATUS 2026-08-24）④元数据写操作全部产生 meta.* 审计事件（SQL 断言，actor=用户名）且写后读即时可见、metaVersion 单调递增（前端比对重拉）⑤字段类型映射仅 FieldTypeRegistry 一处（动态源扫描单点断言；新增类型=契约表加一行+新迁移，动态 CRUD 主路径不改）⑥非 draft 实体五类语义变更（改名/改类型/改必填/改校验/改默认值）400 breaking 且 UPDATE 带 draft 守卫防并发启用绕过（两轮子代理审查 + 复审真值表复核），新增字段/视图 additive；RB-META 四要素覆盖，meta 11 + app 64 tests，合并 5e5ea8b 后 main CI 六项 success、门禁 19 pass / 2 skip / 0 fail",
+  "nextAction": "P05 出口复核（对齐 EXIT_GATE 六项逐项核验 + RB-DATA 覆盖确认 + 合并后 main 门禁证据），通过后置 completed、P06 置 ready_to_start",
+  "exitGate": "P05 验收证据：①P04 创建的实体完成全 CRUD（create/detail/list/patch/delete，DataApiTest 全路径 + 物理删除 SQL 断言）②用户输入不作为 SQL/列名/表名执行（白名单字段+操作符+类型转换、值全参数化；注入样例 400 负例）③qty<0 等非法数据被拒（FR-DEMO-02 示例 + DECIMAL NUMERIC(20,6) 精度防线 + 七负例）④P95<500ms 性能基线（DataPerformanceBaselineTest，实测 5ms 量级）⑤动态读写仅 service.data-access（data_record 字面量单点源扫描断言，无示例实体专用 Controller/SQL）⑥删除产生审计事件 + pageSize>200/page>100000 可诊断 400；RB-DATA 五要素覆盖，data 12 + app 74 tests，合并 49bba9f 后 main CI success",
   "blockers": [],
   "stages": [
     {
