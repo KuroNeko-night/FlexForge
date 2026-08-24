@@ -5,12 +5,12 @@
 <!-- FLEXFORGE_STATUS:BEGIN -->
 CURRENT_STAGE_ID: P04
 CURRENT_STAGE_NAME: 元数据写模型
-STAGE_STATUS: ready_to_start
+STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 18%
 LAST_UPDATED: 2026-08-24
 OWNER: project-maintainer
-NEXT_ACTION: P04 启动：V004 meta_entity/meta_field/meta_view 迁移（平台表，对外 ID 为不透明字符串）→ FieldTypeRegistry 单点（六类字段白名单 + 校验/SQL 映射/renderer ID 契约，登记 service.meta 常量已有）→ 实体/字段/视图配置 API（DEVELOPER 角色，统一错误装配 + 分页白名单）→ MetaRegistry 查询与缓存失效（service.audit 记录元数据变更）→ breaking/additive 变更规则测试（实体启用且有数据后字段改名/改类型拒绝）
-EXIT_GATE: P03 出口证据：三类角色接口与菜单互异（AdminAndAuditApiTest/MenuServiceTest）、过期/无效/缺失 JWT 三段可诊断 401 与无权限 403（AuthFlowTest/AdminAndAuditApiTest）、管理员创建用户+分配角色且普通用户不可改权限、登录/锁定/登出/用户管理全审计可追溯（审计行 SQL 断言 + 查询接口）；RB-AUTH 回归包四项全覆盖；合并后 main 门禁 19 pass / 2 skip / 0 fail
+NEXT_ACTION: P04 迭代 1 交付（feat/p04-meta-write-model 分支）：V004 meta_entity/meta_field/meta_view 迁移 → flexforge-meta 模块（FieldTypeRegistry 单点 + MetaRegistry 查询/缓存/版本失效 + EntityAdminService breaking/additive 规则）→ 实体/字段/视图配置 API（DEVELOPER 写、USER 仅读 enabled）→ RB-META 回归（白名单负例、单点断言、breaking 拒绝、审计行、缓存失效）→ 子代理交叉审查 → PR 合并
+EXIT_GATE: P04 验收证据：六类字段白名单与非法字段名/类型/renderer ID 在 API 边界拒绝（负例测试）；字段类型映射仅 FieldTypeRegistry 一处（源扫描单点断言）；非 draft 实体上改名/改类型/改语义被拒、新增字段与视图 additive 可执行；元数据写操作全部产生审计事件（SQL 断言）；写入后读路径即时可见（缓存失效 + 版本号递增）；USER 仅见 enabled 实体；RB-META 回归并入 CI 并通过
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -22,7 +22,7 @@ BLOCKERS: none
 | P01 | 仓库与工程骨架 | completed | 新环境可启动，健康检查和初始迁移通过 |
 | P02 | 核心契约与可观测性 | completed | 注册/撤销、统一错误和审计端口通过测试 |
 | P03 | 认证、RBAC 与系统壳 | completed | 三类角色和 JWT 测试通过 |
-| P04 | 元数据写模型 | ready_to_start | 实体/字段/视图配置 API 通过验收 |
+| P04 | 元数据写模型 | in_progress | 实体/字段/视图配置 API 通过验收 |
 | P05 | 动态数据运行时 | pending | 动态实体完成 CRUD 和字段校验 |
 | P06 | 前端动态渲染 | pending | 无业务页面代码即可显示动态实体 |
 | P07 | 插件包校验与版本存储 | pending | 合法包可预览，非法包被拒绝 |
@@ -85,3 +85,4 @@ BLOCKERS: none
 | 2026-08-24 | P03 | **P03 出口复核通过，置 completed**：验收四项逐项核验——①三类角色接口与菜单互异（菜单：管理员=工作台+系统管理、开发者=工作台+数据模型、用户=仅工作台；接口：非管理员 403 矩阵）②过期/无效/缺失 JWT 三段可诊断 401 + 无权限 403 permission_denied（均含 requestId）③管理员创建用户+分配角色（事务原子、审计可追溯）、普通用户不可改权限（403 且无残留）④关键写操作审计可追溯（登录/锁定/登出/用户创建/角色变更全落库 + 管理员查询接口过滤分页）；实施内容六项全交付；RB-AUTH 回归包四项覆盖（AuthFlowTest/AdminAndAuditApiTest/MenuServiceTest）；合并后 main 全量门禁 19 pass / 2 skip / 0 fail（后端 104 tests）；docs/13 §3.1.5 接受风险补记（账号 DoS 锁定/时序侧信道，Issue #10 排期）；P04 置 ready_to_start | `docs/09` P03 验收、PR #13/#14、`docs/13` §3.1.5/§7、RB-AUTH |
 | 2026-08-24 | P04 | **GUI 定制需求澄清（用户指示，§4.14 同步）**：「完全可自定义 GUI」的真实含义是插件驱动的部件/布局/美术资产定制，而非可视化拖拽设计器（拖拽仅为历史概念稿 FlexForge.md 远期方向，docs 从未纳入 MVP）。落地：docs/02 新增 FR-PLUGIN-09（插件增删改 GUI 部件）/10（声明式布局，明确不做拖拽设计器）/11（美术资产携带与更换：背景图/图标/动画，经 S6 包校验白名单）；登记册新增 extension.layout 与 extension.theme-asset 两条 **proposed**（载荷草案已列，P06 准备/P07-P08 落地时转 active，R-GOV-03 只比对 active 不受影响）；docs/09 P06 补 layout/theme registry 与验收两条、P07 补美术资产类型白名单校验；docs/08 §6 扩展点清单与澄清口径。不新增阶段、不改变 ADR-0002 声明式模型（资产属声明式静态资源） | `docs/02` FR-PLUGIN-09/10/11、`docs/extension-points.md` §2.2/§4、`docs/09` P06/P07、`docs/08` §6 |
 
+| 2026-08-24 | P04 | P04 启动（in_progress，分支 feat/p04-meta-write-model）。迭代 1 范围冻结：V004 meta_entity/meta_field/meta_view 迁移（平台表，不透明字符串 ID）→ flexforge-meta 模块：FieldTypeRegistry 单点（六类字段白名单 + 校验规则/SQL 映射/内置 renderer ID 契约，extension.field-renderer 的 fieldType→rendererId 映射源）+ MetaRegistry（service.meta 落地：查询/缓存/版本号/失效）+ EntityAdminService（breaking 规则：非 draft 实体禁改名/改类型/改语义，新增字段与视图 additive；P04 以 status!=draft 为 breaking 门，P05 动态数据落地后再细化“有数据”检测——假设已记变更摘要）+ 配置 API（写=DEVELOPER，读=登录用户、USER 仅 enabled）+ RB-META 回归（白名单负例/单点源扫描断言/审计行 SQL 断言/缓存失效即时可见） | `docs/09` P04、FR-META-01..05、RB-META |
