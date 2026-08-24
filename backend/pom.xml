@@ -14,6 +14,8 @@
   <modules>
     <module>flexforge-common</module>
     <module>flexforge-runtime</module>
+    <module>flexforge-auth</module>
+    <module>flexforge-system</module>
     <module>flexforge-app</module>
   </modules>
 
@@ -25,6 +27,7 @@
     <spring-boot.version>4.0.7</spring-boot.version>
     <testcontainers.version>2.0.5</testcontainers.version>
     <archunit.version>1.4.1</archunit.version>
+    <nimbus-jose-jwt.version>10.4.1</nimbus-jose-jwt.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <checkstyle.version>10.26.1</checkstyle.version>
   </properties>
@@ -55,6 +58,21 @@
         <groupId>com.flexforge</groupId>
         <artifactId>flexforge-runtime</artifactId>
         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.flexforge</groupId>
+        <artifactId>flexforge-auth</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.flexforge</groupId>
+        <artifactId>flexforge-system</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.nimbusds</groupId>
+        <artifactId>nimbus-jose-jwt</artifactId>
+        <version>${nimbus-jose-jwt.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

@@ -8,11 +8,15 @@ COPY backend/config ./config
 RUN chmod +x mvnw
 COPY backend/flexforge-common/pom.xml flexforge-common/
 COPY backend/flexforge-runtime/pom.xml flexforge-runtime/
+COPY backend/flexforge-auth/pom.xml flexforge-auth/
+COPY backend/flexforge-system/pom.xml flexforge-system/
 COPY backend/flexforge-app/pom.xml flexforge-app/
 RUN ./mvnw -B -ntp -q dependency:go-offline || true
 COPY database /build/database
 COPY backend/flexforge-common/src flexforge-common/src
 COPY backend/flexforge-runtime/src flexforge-runtime/src
+COPY backend/flexforge-auth/src flexforge-auth/src
+COPY backend/flexforge-system/src flexforge-system/src
 COPY backend/flexforge-app/src flexforge-app/src
 RUN ./mvnw -B -ntp package -DskipTests
 
