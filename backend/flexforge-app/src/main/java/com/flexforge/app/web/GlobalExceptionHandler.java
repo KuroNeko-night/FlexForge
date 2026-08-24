@@ -2,6 +2,7 @@ package com.flexforge.app.web;
 
 import com.flexforge.auth.AccountLockedException;
 import com.flexforge.auth.InvalidCredentialsException;
+import com.flexforge.auth.PermissionDeniedException;
 import com.flexforge.common.RequestIds;
 import com.flexforge.common.api.ErrorCodes;
 import com.flexforge.common.api.ErrorResponse;
@@ -62,6 +63,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({InvalidCredentialsException.class, AccountLockedException.class})
     public ResponseEntity<ErrorResponse> handleAuthRejected(Exception exception) {
         return envelope(HttpStatus.UNAUTHORIZED, ErrorCodes.UNAUTHORIZED, exception.getMessage());
+    }
+
+    /** 服务端角色授权拒绝（S2：@RequireRole 拦截器统一抛出）。 */
+    @ExceptionHandler(PermissionDeniedException.class)
+    public ResponseEntity<ErrorResponse> handlePermissionDenied(PermissionDeniedException exception) {
+        return envelope(HttpStatus.FORBIDDEN, ErrorCodes.PERMISSION_DENIED, exception.getMessage());
     }
 
     @ExceptionHandler(NoSuchElementException.class)
