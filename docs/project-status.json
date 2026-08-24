@@ -1,13 +1,13 @@
 {
   "project": "FlexForge",
   "updatedAt": "2026-08-24",
-  "currentStageId": "P04",
-  "currentStageName": "元数据写模型",
-  "status": "in_progress",
-  "progressPercent": 18,
+  "currentStageId": "P05",
+  "currentStageName": "动态数据运行时",
+  "status": "ready_to_start",
+  "progressPercent": 21,
   "owner": "project-maintainer",
-  "nextAction": "P04 出口复核（对齐 EXIT_GATE 六项逐项核验 + RB-META 覆盖确认 + 合并后 main 门禁证据），通过后置 completed、P05 置 ready_to_start",
-  "exitGate": "P04 验收证据：六类字段白名单与非法字段名/类型/renderer ID 在 API 边界拒绝（负例测试）；字段类型映射仅 FieldTypeRegistry 一处（源扫描单点断言）；非 draft 实体上改名/改类型/改语义被拒、新增字段与视图 additive 可执行；元数据写操作全部产生审计事件（SQL 断言）；写入后读路径即时可见（缓存失效 + 版本号递增）；USER 仅见 enabled 实体；RB-META 回归并入 CI 并通过",
+  "nextAction": "P05 启动：先定动态记录存储方案（docs/03 §4\"受控数据表 vs JSONB\"两选项定案：单 JSONB 记录表 + 元数据映射，架构级结论回写 docs/03 §4）→ V005 动态记录存储迁移 → flexforge-data 模块（service.data-access 单点：字段映射、参数绑定、排序分页白名单、字段级记录校验，全部经 FieldTypeRegistry 契约）→ /api/v1/data/{entity} CRUD API（仅启用实体；删除=物理删除+审计事件；pageSize>200 可诊断拒绝）→ 注入防护负例与 P95<500ms 性能基线（RB-DATA，FR-META-04/05、NFR-SEC-02）",
+  "exitGate": "P04 出口证据：①开发者创建/修改/停用实体与字段（六类字段全量配置 + draft→enabled→disabled→enabled 状态机，MetaApiTest/MetaRulesApiTest）②非法字段名/类型/renderer ID/校验键在 API 边界 400（含 renderer 与类型匹配负例）③USER 仅见 enabled 实体（draft/disabled 一律 404 防存在性泄露；写操作 DEVELOPER-only，USER/ADMIN 403）——\"有权限\"为已声明假设（实体级权限 P05/P06 回访，STATUS 2026-08-24）④元数据写操作全部产生 meta.* 审计事件（SQL 断言，actor=用户名）且写后读即时可见、metaVersion 单调递增（前端比对重拉）⑤字段类型映射仅 FieldTypeRegistry 一处（动态源扫描单点断言；新增类型=契约表加一行+新迁移，动态 CRUD 主路径不改）⑥非 draft 实体五类语义变更（改名/改类型/改必填/改校验/改默认值）400 breaking 且 UPDATE 带 draft 守卫防并发启用绕过（两轮子代理审查 + 复审真值表复核），新增字段/视图 additive；RB-META 四要素覆盖，meta 11 + app 64 tests，合并 5e5ea8b 后 main CI 六项 success、门禁 19 pass / 2 skip / 0 fail",
   "blockers": [],
   "stages": [
     {
@@ -33,12 +33,12 @@
     {
       "id": "P04",
       "name": "元数据写模型",
-      "status": "in_progress"
+      "status": "completed"
     },
     {
       "id": "P05",
       "name": "动态数据运行时",
-      "status": "pending"
+      "status": "ready_to_start"
     },
     {
       "id": "P06",
