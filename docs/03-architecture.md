@@ -94,7 +94,7 @@ MVP 的元数据至少包括：
 - `meta_field`：字段标识、数据类型、必填、默认值和校验规则。
 - `meta_view`：列表列、筛选条件、表单顺序和可见性。
 
-字段类型使用白名单枚举。所有动态查询必须通过字段映射和参数绑定生成，禁止直接拼接用户传入的表名、列名或 SQL 片段。若后期采用动态表结构，必须通过迁移服务执行并保留版本记录；第一版优先使用受控数据表或 JSONB 数据存储降低迁移复杂度。
+字段类型使用白名单枚举。所有动态查询必须通过字段映射和参数绑定生成，禁止直接拼接用户传入的表名、列名或 SQL 片段。**存储定案（2026-08-24，P05）**：第一版采用单 JSONB 记录表 `data_record`（entity_id 外键 + data JSONB + GIN 索引）+ 元数据驱动映射——按实体建表（动态 DDL）方案不采用，理由：配置 API 建实体零 DDL、P04 breaking 规则保护字段语义、过滤/排序经 `FieldTypeRegistry` 类型映射参数化构造（`data->>'field'` + 类型转换），迁移复杂度最低；此结论变更属架构级，需新 ADR。
 
 ## 5. 插件包模型
 
@@ -142,7 +142,11 @@ AI 不直接获得数据库管理员权限、服务器命令权限或生产发�
 | `POST` | `/api/v1/auth/login` | 登录并返回令牌 |
 | `GET` | `/api/v1/meta/entities` | 查询实体元数据 |
 | `POST` | `/api/v1/meta/entities` | 创建实体 |
-| `GET` | `/api/v1/data/{entity}` | 查询动态实体数据 |
+| `GET` | `/api/v1/data/{entity}` | 查询动态实体数据（分页/白名单排序/白名单过滤） |
+| `POST` | `/api/v1/data/{entity}` | 新增动态记录 |
+| `GET` | `/api/v1/data/{entity}/{id}` | 记录详情 |
+| `PATCH` | `/api/v1/data/{entity}/{id}` | 编辑记录（显式 null 清除字段值） |
+| `DELETE` | `/api/v1/data/{entity}/{id}` | 物理删除记录（审计事件） |
 | `POST` | `/api/v1/plugins/validate` | 校验插件包 |
 | `POST` | `/api/v1/plugins/install` | 安装插件 |
 | `POST` | `/api/v1/plugins/{id}/activate` | 启用指定插件版本 |
