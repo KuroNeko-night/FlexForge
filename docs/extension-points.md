@@ -33,7 +33,7 @@
 | ID | 贡献载荷 | 责任模块 | MVP 消费方 | 引入阶段 | 状态 |
 | --- | --- | --- | --- | --- | --- |
 | `extension.navigation` | `{key, title, route, icon, order, permissionKey}` | flexforge-plugin（注册表） | 后端菜单 API、前端菜单 registry | P03 准备，P08 插件注册 | active |
-| `extension.field-renderer` | `{fieldType, rendererId}`；`rendererId` 必须是平台内置 ID | flexforge-meta（类型契约）+ 前端 renderer registry | 前端动态列表/表单/详情 | P04 准备，P06 落地 | active |
+| `extension.field-renderer` | `{fieldType, rendererId}`；`rendererId` 必须是平台内置 ID——P04 起由 `FieldTypeRegistry`（flexforge-meta）落定并校验，内置集 = 六类默认 ID：`text.default` / `integer.default` / `decimal.default` / `date.default` / `enum.default` / `boolean.default` | flexforge-meta（类型契约）+ 前端 renderer registry | 前端动态列表/表单/详情（P04 配置 API 已按此校验） | P04 准备，P06 落地 | active |
 | `extension.record-action` | `{actionType, handlerId, label, permissionKey}`；`handlerId` 必须是平台内置 ID | flexforge-plugin | 前端动态表格动作栏 | P05 准备，P09 示例落地 | active |
 | `extension.layout` | `{key, target, slots: [{name, items: [{key, order}]}]}`；target 为平台登记的页面/容器 key，items 引用部件贡献 key（2026-08-24 需求澄清 FR-PLUGIN-10） | flexforge-plugin（注册表）+ 前端 layout registry | 动态页面/工作台容器 | P06 准备，P07/P08 插件注册 | proposed |
 | `extension.theme-asset` | `{key, kind: background\|icon\|animation, path, scope?}`；path 指向插件包内经 S6 校验的静态资源，scope 缺省全局（FR-PLUGIN-11） | flexforge-plugin（注册表）+ 前端 theme registry | 动态页面外观、菜单图标 | P06 准备，P07/P08 插件注册 | proposed |
@@ -76,3 +76,4 @@ MVP 消费方: <至少一个真实消费方>
 | 2026-08-20 | 建立 MVP v1 登记清单；统一 03/08 文档中的扩展点 ID | additive |
 | 2026-08-24 | P02 出口：v1 清单落地为代码常量（flexforge-common registry 包）与运行时注册表（flexforge-runtime）；§1.2 补充消费方落地前口径；R-GOV-03 门禁强制常量 == active 集合 | additive |
 | 2026-08-24 | GUI 定制需求澄清（用户）：插件驱动部件/布局/美术资产，非拖拽设计器；新增 `extension.layout` 与 `extension.theme-asset` 两条 proposed（FR-PLUGIN-09/10/11），实现 PR 落地时转 active | additive |
+| 2026-08-24 | `extension.field-renderer` 内置 renderer ID 集落定为六类默认 ID（`<type>.default`，FieldTypeRegistry 校验 + P06 前端按 ID 实现组件） | additive |
