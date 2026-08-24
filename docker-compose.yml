@@ -24,6 +24,10 @@ services:
       DB_URL: jdbc:postgresql://db:5432/flexforge
       DB_USERNAME: flexforge
       DB_PASSWORD: flexforge
+      # S4：JWT 密钥与引导管理员密码仅经 .env 注入；AUTH_JWT_SECRET 为空时后端启动失败（fail-fast）
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?请在 .env 设置 AUTH_JWT_SECRET（openssl rand -base64 48）}
+      AUTH_JWT_TTL: ${AUTH_JWT_TTL:-PT8H}
+      FLEXFORGE_BOOTSTRAP_ADMIN_PASSWORD: ${FLEXFORGE_BOOTSTRAP_ADMIN_PASSWORD:-}
     ports:
       # 宿主端口默认 8088，避免与本机其他 8080 服务冲突；可用 .env 的 BACKEND_PORT 覆盖
       - "127.0.0.1:${BACKEND_PORT:-8088}:8080"

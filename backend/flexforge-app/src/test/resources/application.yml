@@ -1,0 +1,5 @@
+# 测试专属配置（不进入生产构件）。生产 JWT 密钥仅经 AUTH_JWT_SECRET 环境变量注入（docs/13 S4）；
+# 此处为低熵测试占位值，仅满足 HS256 >=256bit 长度校验。
+flexforge:
+  auth:
+    jwt-secret: test-only-secret-0123456789abcdef0123456789abcdef

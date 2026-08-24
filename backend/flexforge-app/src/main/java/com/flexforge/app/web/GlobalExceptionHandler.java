@@ -1,5 +1,7 @@
 package com.flexforge.app.web;
 
+import com.flexforge.auth.AccountLockedException;
+import com.flexforge.auth.InvalidCredentialsException;
 import com.flexforge.common.RequestIds;
 import com.flexforge.common.api.ErrorCodes;
 import com.flexforge.common.api.ErrorResponse;
@@ -54,6 +56,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
     public ResponseEntity<ErrorResponse> handleNoResource(Exception exception) {
         return envelope(HttpStatus.NOT_FOUND, ErrorCodes.NOT_FOUND, "请求的资源不存在");
+    }
+
+    /** 登录失败统一消息（防用户枚举，docs/13 §3.1.3）与防暴破锁定（FR-AUTH 验收：可诊断）。 */
+    @ExceptionHandler({InvalidCredentialsException.class, AccountLockedException.class})
+    public ResponseEntity<ErrorResponse> handleAuthRejected(Exception exception) {
+        return envelope(HttpStatus.UNAUTHORIZED, ErrorCodes.UNAUTHORIZED, exception.getMessage());
     }
 
     @ExceptionHandler(NoSuchElementException.class)

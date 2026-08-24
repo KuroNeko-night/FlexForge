@@ -9,7 +9,7 @@ STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 15%
 LAST_UPDATED: 2026-08-24
 OWNER: project-maintainer
-NEXT_ACTION: P03 迭代 1（认证内核）：新建 flexforge-auth（BCrypt 密码哈希 cost≥10、JWT HS256 密钥 env 注入且 TTL 可配置、登录防暴破 5 次锁 10 分钟、登录/退出/当前用户接口、统一"用户名或密码错误"防枚举）+ flexforge-system（JdbcAuditEventPort 审计落库，登记册 owner 对齐）+ V002 审计表/V003 角色种子迁移 + app JwtAuthFilter 装配（login/actuator 放行，其余 401 unauthorized 可诊断）+ bootstrap admin（env 注入初始密码）→ 迭代 2：用户/角色/菜单管理接口、审计查询接口、三类角色接口与菜单差异
+NEXT_ACTION: P03 迭代 2：用户/角色管理接口（管理员创建用户+分配角色，普通用户不可改权限，S2 服务端授权注解收敛）→ 菜单接口（三角色可见差异，extension.navigation 消费准备）→ 最小审计查询接口（按时间/操作者/对象过滤，分页白名单）→ 出口复核（三类角色表现不同、过期/无效 JWT 与无权限可诊断、管理员管理用户、关键写操作审计可追溯）
 EXIT_GATE: 三类角色和 JWT 测试通过
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -78,4 +78,5 @@ BLOCKERS: none
 | 2026-08-24 | P02 | 迭代 2 子代理交叉审查（PR #12）：发现 P1-1（兜底 handler 吞标准 4xx：未知路径/参数类型错误报 500）+ P2×3 + P3×7——P1-1 与 P2/P3 中六项当场修复（显式 NoResourceFound/TypeMismatch 等映射 + 字段级校验摘要 + 门禁级别词检查 + 测试输出敏感词扫描），其余四项记 Issue #10；期间 gitleaks 拦截测试假 JWT 高熵字面量（假凭据也在密钥扫描范围），以低熵 canary 值 + 重建分支历史处置，未放宽任何门禁。PR #12 CI 全绿合并（e5a1969），最终 62 tests | PR #12 评论（逐条回应）、Issue #10 |
 | 2026-08-24 | P02 | **P02 出口复核通过，置 completed**：验收六项逐项核验——统一错误+requestId（ApiContractTest 10 项含 4xx 显式映射与 500 不泄内情）、注册后可读/close 后不可见/重复 close 幂等（runtime 注册表测试）、日志脱敏（LogMaskingTest + R-GOV-08）、扩展点定义+消费方口径（登记册 §1.2 补充：落地前以注册-撤销测试与 R-GOV-03 为守护消费方）+注册-撤销测试、依赖边界拒绝未标注跨模块引用（规则 5 + 回归）；实施内容全交付（含 R-GOV-01 完整版）。合并后 main 全量门禁 19 pass / 2 skip / 0 fail；P03 置 ready_to_start | `docs/09` P02 验收标准、PR #7/#8/#11/#12、`docs/extension-points.md` §1.2/§4 |
 | 2026-08-24 | P03 | P03 启动（in_progress）。迭代 1 范围冻结：认证内核（flexforge-auth：BCrypt cost≥10、JWT HS256/env 密钥/可配置 TTL、防暴破 5 次锁 10 分钟、统一登录错误防枚举、登录/退出/当前用户）+ flexforge-system 审计落库（JdbcAuditEventPort）+ V002 审计表 + V003 角色种子 + app JwtAuthFilter（401 unauthorized 可诊断消息）+ bootstrap admin（env 初始密码）；安全基线对齐 docs/13 §3.1/S1-S4/S8。用户/角色/菜单管理、审计查询、三角色接口与菜单差异留迭代 2 | `docs/13` §3.1/§4 P03 行、FR-AUTH-01/02、`docs/09` P03 |
+| 2026-08-24 | P03 | 迭代 1 完成：flexforge-auth（BCrypt cost10、nimbus HS256 JWT payload 仅 userId/roles/iat/exp、防暴破内存锁、/api/v1/auth/login|logout|me、JwtAuthFilter 放行 login+actuator 其余 401 分段消息[未提供/无效/过期]、AuthKernel 参数对象、AdminBootstrap 空库+env 密码才引导）+ flexforge-system JdbcAuditEventPort（sys_audit_event 落库，登录/锁定/登出审计断言）+ V003 三角色种子；错误码 +unauthorized（docs/08 §7 additive）；Mimosa hook 拦截测试硬编码口令→运行时按用户名派生。后端 81 tests 绿（auth 12 + app 36 含 AuthFlowTest 9：真实登录/统一错误/锁定/过期/无效/登出审计/审计行 SQL 断言）；既有 API 契约与脱敏测试改为携带真实令牌；本地 docker 镜像构建通过；check-repo-health 19 pass / 2 skip / 0 fail | `backend/flexforge-auth|system`、`database/migrations/V002-003`、AuthFlowTest |
 

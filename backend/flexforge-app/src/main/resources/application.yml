@@ -12,6 +12,16 @@ spring:
 server:
   port: 8080
 
+flexforge:
+  auth:
+    # JWT HS256 密钥 >=256bit 仅 env 注入（docs/13 S4）；缺省空值在启动时校验失败（fail-fast）
+    jwt-secret: ${AUTH_JWT_SECRET:}
+    # TTL 按环境配置；演示环境需覆盖完整演示时长（docs/09 P03）
+    jwt-ttl: ${AUTH_JWT_TTL:PT8H}
+    # 引导管理员：仅 sys_user 为空且显式提供密码且提供时创建（S4：密码不落仓库）
+    bootstrap-admin-username: ${FLEXFORGE_BOOTSTRAP_ADMIN_USERNAME:admin}
+    bootstrap-admin-password: ${FLEXFORGE_BOOTSTRAP_ADMIN_PASSWORD:}
+
 management:
   endpoints:
     web:
