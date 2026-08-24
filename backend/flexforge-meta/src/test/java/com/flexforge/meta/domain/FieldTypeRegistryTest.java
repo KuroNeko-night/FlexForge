@@ -148,6 +148,15 @@ class FieldTypeRegistryTest {
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> validateDefault("integer", "11", "{\"max\":10}"))
                 .withMessageContaining("max");
+        // NUMERIC(20,6) 精度防线（P05 审查 P1）：整数位 >14 或小数位 >6 拒绝。
+        // 口径：JSON 浮点经 double 反序列化，约 15 位以上有效数字在边界被拒（安全方向过严）
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> validateDefault("decimal", "1e15", null))
+                .withMessageContaining("NUMERIC(20,6)");
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> validateDefault("decimal", "0.1234567", null))
+                .withMessageContaining("NUMERIC(20,6)");
+        validateDefault("decimal", "12345678901234.5", null);
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> validateDefault("date", "\"01.01.2027\"", null))
                 .withMessageContaining("ISO-8601");

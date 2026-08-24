@@ -65,12 +65,15 @@ public class DynamicRecordService {
                 .orElseThrow(() -> new NoSuchElementException("记录不存在: " + recordId));
     }
 
-    /** 编辑记录（补丁语义：null 清除字段值，合并结果整体校验）。 */
+    /** 编辑记录（补丁语义：null 清除字段值，合并结果整体校验；乐观并发守卫）。 */
     public RecordEntry update(String actor, String entityName, String recordId, JsonNode patch) {
         EntityDefinition entity = requireEnabledEntity(entityName);
         RecordEntry current = detail(entityName, recordId);
         JsonNode merged = RecordValidator.validatePatch(entity, current.data(), patch);
-        if (repository.updateData(recordId, merged) != 1) {
+        if (repository.updateData(recordId, merged, current.updatedAt()) != 1) {
+            if (repository.find(recordId).isPresent()) {
+                throw new IllegalArgumentException("记录已被并发修改，请刷新后重试: " + recordId);
+            }
             throw new NoSuchElementException("记录不存在: " + recordId);
         }
         audit.record(AuditEvents.of(actor, "data.record.update", recordId, "success", clock));

@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS data_record (
 );
 
 CREATE INDEX IF NOT EXISTS idx_data_record_entity ON data_record (entity_id);
--- 过滤路径加速（等值/包含）；范围过滤走 (data->>'f')::type 表达式，演示数据量下足够
+-- 为未来 containment（@>）查询预留；当前 P05 过滤/排序走 data->>'f' 表达式，
+-- 演示数据量下由顺序扫描满足 P95 基线（docs/03 §4 存储定案口径）
 CREATE INDEX IF NOT EXISTS idx_data_record_data ON data_record USING GIN (data jsonb_path_ops);
 
 COMMENT ON TABLE data_record IS '动态实体记录（P05；物理删除+审计，MVP 无软删除，docs/09 P05）';

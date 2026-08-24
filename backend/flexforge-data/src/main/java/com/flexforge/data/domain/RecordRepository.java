@@ -6,6 +6,7 @@ import com.flexforge.common.api.PageResult;
 import com.flexforge.meta.domain.EntityDefinition;
 import tools.jackson.databind.JsonNode;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,8 +23,11 @@ public interface RecordRepository {
 
     Optional<RecordEntry> find(String recordId);
 
-    /** 覆盖记录 data（乐观覆盖整份 JSON）；返回受影响行数（0 = 不存在）。 */
-    int updateData(String recordId, JsonNode data);
+    /**
+     * 乐观覆盖记录 data（以读取时的 updatedAt 为前置条件，关闭并发丢失更新窗口）；
+     * 返回受影响行数（0 = 不存在或已被并发修改）。
+     */
+    int updateData(String recordId, JsonNode data, Instant expectedUpdatedAt);
 
     /** 物理删除；返回受影响行数（0 = 不存在）。 */
     int delete(String recordId);

@@ -62,9 +62,10 @@ public class JdbcRecordRepository implements RecordRepository {
     }
 
     @Override
-    public int updateData(String recordId, JsonNode data) {
-        return jdbc.update("UPDATE data_record SET data = ?::jsonb, updated_at = now() WHERE id = ?",
-                data.toString(), recordId);
+    public int updateData(String recordId, JsonNode data, java.time.Instant expectedUpdatedAt) {
+        return jdbc.update("UPDATE data_record SET data = ?::jsonb, updated_at = now()"
+                        + " WHERE id = ? AND updated_at = ?",
+                data.toString(), recordId, java.sql.Timestamp.from(expectedUpdatedAt));
     }
 
     @Override
@@ -90,7 +91,7 @@ public class JdbcRecordRepository implements RecordRepository {
         String order = orderExpression(entity, page);
         String sql = "SELECT " + COLUMNS + " FROM data_record WHERE " + where
                 + " ORDER BY " + order + (page.sortDirection() == PageQuery.SortDirection.DESC ? " DESC" : " ASC")
-                + " NULLS LAST LIMIT ? OFFSET ?";
+                + " NULLS LAST, id ASC LIMIT ? OFFSET ?";
         args.add(page.pageSize());
         args.add((page.pageNumber() - 1) * page.pageSize());
         List<RecordEntry> items = jdbc.query(sql, row, args.toArray());

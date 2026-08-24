@@ -128,6 +128,7 @@ class DataApiTest {
         postRecordExpecting400("{\"sku\":\"S\",\"qty\":1}", "minLength");
         postRecordExpecting400("{\"sku\":\"SKU-1\",\"qty\":1,\"status\":\"unknown\"}", "options");
         postRecordExpecting400("{\"sku\":\"SKU-1\",\"qty\":1,\"ghost_column\":true}", "未定义字段");
+        postRecordExpecting400("{\"sku\":\"SKU-1\",\"qty\":1,\"unit_price\":1e15}", "NUMERIC(20,6)");
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/data/" + ENTITY)
                         .header("Authorization", userBearer)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -205,6 +206,12 @@ class DataApiTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message")
                         .value(org.hamcrest.Matchers.containsString("200")));
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/data/" + ENTITY)
+                        .queryParam("page", "100001")
+                        .header("Authorization", userBearer))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message")
+                        .value(org.hamcrest.Matchers.containsString("100000")));
     }
 
     @Test

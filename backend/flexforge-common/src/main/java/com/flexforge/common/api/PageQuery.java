@@ -9,6 +9,7 @@ import java.util.Set;
 /**
  * 统一分页请求（docs/09 P02 契约冻结）：页码从 1 起；pageSize 默认 20、上限 200，
  * 超界在构造时拒绝；排序字段必须来自调用方提供的白名单，sortBy 为 null 表示不排序。
+ * 页码上限 1..100000（P05 收紧：拦截 OFFSET int 溢出导致的 500，超界可诊断 400）。
  *
  * <p>口径（审计 P2-4）：{@link #of} 是唯一受信入口（白名单在此强制）；规范构造器只强制
  * 数值边界。P05 动态 SQL 构造处必须对 sortBy 二次强制白名单（防御纵深，docs/13 §4）。
@@ -16,13 +17,17 @@ import java.util.Set;
 @PublicApi
 public record PageQuery(int pageNumber, int pageSize, String sortBy, SortDirection sortDirection) {
 
+    /** 页码硬上限（OFFSET 溢出防线）。 */
+    public static final int MAX_PAGE_NUMBER = 100_000;
+
     /** 排序方向；默认 ASC。 */
     @PublicApi
     public enum SortDirection { ASC, DESC }
 
     public PageQuery {
-        if (pageNumber < 1) {
-            throw new IllegalArgumentException("pageNumber 必须 >= 1，实际 " + pageNumber);
+        if (pageNumber < 1 || pageNumber > MAX_PAGE_NUMBER) {
+            throw new IllegalArgumentException(
+                    "pageNumber 必须在 1.." + MAX_PAGE_NUMBER + "，实际 " + pageNumber);
         }
         if (pageSize < 1 || pageSize > ApiConstants.MAX_PAGE_SIZE) {
             throw new IllegalArgumentException(

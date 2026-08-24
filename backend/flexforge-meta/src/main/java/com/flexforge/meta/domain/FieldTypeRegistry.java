@@ -42,6 +42,12 @@ public final class FieldTypeRegistry {
     /** enum 单个选项长度上限。 */
     public static final int ENUM_OPTION_LENGTH_CAP = 64;
 
+    /** decimal 存储精度（NUMERIC(20,6)）：整数位上限。 */
+    public static final int DECIMAL_INT_DIGITS = 14;
+
+    /** decimal 存储精度（NUMERIC(20,6)）：小数位上限。 */
+    public static final int DECIMAL_SCALE = 6;
+
     private static final Map<String, FieldType> BY_NAME = Map.of(
             "text", FieldType.TEXT,
             "integer", FieldType.INTEGER,
@@ -169,7 +175,7 @@ public final class FieldTypeRegistry {
             case ENUM -> validateEnumDefault(value, rules);
             case BOOLEAN -> {
                 if (!value.isBoolean()) {
-                    throw new IllegalArgumentException("boolean 默认值必须是 true/false");
+                    throw new IllegalArgumentException("boolean 值必须是 true/false");
                 }
             }
         }
@@ -242,52 +248,59 @@ public final class FieldTypeRegistry {
     }
 
     private static void validateTextDefault(JsonNode value, JsonNode rules) {
-        String text = optionAsString(value, "text 默认值");
+        String text = optionAsString(value, "text 值");
         JsonNode minLength = rules == null ? null : rules.get("minLength");
         if (minLength != null && !minLength.isNull() && text.length() < minLength.intValue()) {
-            throw new IllegalArgumentException("text 默认值长度低于 minLength " + minLength.intValue());
+            throw new IllegalArgumentException("text 值长度低于 minLength " + minLength.intValue());
         }
         JsonNode maxLength = rules == null ? null : rules.get("maxLength");
         int max = maxLength != null && !maxLength.isNull() ? maxLength.intValue() : TEXT_LENGTH_CAP;
         if (text.length() > max) {
-            throw new IllegalArgumentException("text 默认值长度超出 maxLength " + max);
+            throw new IllegalArgumentException("text 值长度超出 maxLength " + max);
         }
     }
 
     private static void validateIntegerDefault(JsonNode value, JsonNode rules) {
         if (!value.isInt() && !value.isLong()) {
-            throw new IllegalArgumentException("integer 默认值必须是整数");
+            throw new IllegalArgumentException("integer 值必须是整数");
         }
-        checkRange(value, rules, "integer 默认值");
+        checkRange(value, rules, "integer 值");
     }
 
     private static void validateDecimalDefault(JsonNode value, JsonNode rules) {
         if (!value.isNumber()) {
-            throw new IllegalArgumentException("decimal 默认值必须是数值");
+            throw new IllegalArgumentException("decimal 值必须是数值");
         }
-        checkRange(value, rules, "decimal 默认值");
+        BigDecimal decimal = decimalOf(value);
+        if (decimal.precision() - decimal.scale() > DECIMAL_INT_DIGITS
+                || decimal.scale() > DECIMAL_SCALE) {
+            throw new IllegalArgumentException(
+                    "decimal 值精度超出 NUMERIC(20,6)（整数位至多 " + DECIMAL_INT_DIGITS
+                            + " 位、小数位至多 " + DECIMAL_SCALE + " 位）");
+        }
+        checkRange(value, rules, "decimal 值");
     }
 
     private static void validateDateDefault(JsonNode value) {
         try {
-            LocalDate.parse(optionAsString(value, "date 默认值"));
+            LocalDate.parse(optionAsString(value, "date 值"));
         } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("date 默认值必须是 ISO-8601 日期（yyyy-MM-dd）");
+            throw new IllegalArgumentException("date 值必须是 ISO-8601 日期（yyyy-MM-dd）");
         }
     }
 
     private static void validateEnumDefault(JsonNode value, JsonNode rules) {
         JsonNode options = rules == null ? null : rules.get("options");
         if (options == null || !options.isArray()) {
-            throw new IllegalArgumentException("enum 默认值要求 validation.options 先行提供");
+            throw new IllegalArgumentException("enum 值要求 validation.options 先行提供");
         }
-        String text = optionAsString(value, "enum 默认值");
+        String text = optionAsString(value, "enum 值");
         for (JsonNode option : options) {
             if (text.equals(option.asText())) {
                 return;
             }
         }
-        throw new IllegalArgumentException("enum 默认值不在 options 内: " + text);
+        throw new IllegalArgumentException("enum 值不在 options 内: " + text);
     }
 
     private static void checkRange(JsonNode value, JsonNode rules, String label) {
