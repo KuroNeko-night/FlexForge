@@ -23,10 +23,14 @@ class MenuServiceTest {
     }
 
     @Test
-    void adminSeesWorkbenchAndSystemManagement() {
-        List<String> keys = keys(menuService.menusFor(new AuthPrincipal(1L, List.of("ADMIN"))));
-
-        assertThat(keys).containsExactly("workbench", "system-management");
+    void threeRolesSeeDifferentMenus() {
+        // 扁平角色（无继承）：管理员=工作台+系统管理；开发者=工作台+数据模型；普通用户=仅工作台（验收 1）
+        assertThat(keys(menuService.menusFor(new AuthPrincipal(1L, List.of("ADMIN")))))
+                .containsExactly("workbench", "system-management");
+        assertThat(keys(menuService.menusFor(new AuthPrincipal(2L, List.of("DEVELOPER")))))
+                .containsExactly("workbench", "data-model");
+        assertThat(keys(menuService.menusFor(new AuthPrincipal(3L, List.of("USER")))))
+                .containsExactly("workbench");
     }
 
     @Test

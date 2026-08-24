@@ -125,11 +125,33 @@ class AdminAndAuditApiTest {
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/menus").header("Authorization", userBearer))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.key == 'workbench')].key").value(hasItem("workbench")))
-                .andExpect(jsonPath("$..key").value(not(hasItem("system-management"))));
+                .andExpect(jsonPath("$..key").value(not(hasItem("system-management"))))
+                .andExpect(jsonPath("$..key").value(not(hasItem("data-model"))));
 
+        // 开发者：工作台 + 数据模型（P04 路由占位），无系统管理
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/menus").header("Authorization", developerBearer))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.key == 'data-model')].key").value(hasItem("data-model")))
                 .andExpect(jsonPath("$..key").value(not(hasItem("system-management"))));
+    }
+
+    @Test
+    void assignRolesToMissingUserReturns404() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/system/users/999999/roles")
+                        .header("Authorization", adminBearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"roles\":[\"USER\"]}"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("not_found"));
+    }
+
+    @Test
+    void auditQueryMalformedTimeReturns400() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/system/audit-events")
+                        .header("Authorization", adminBearer)
+                        .queryParam("from", "not-a-date"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("validation_error"));
     }
 
     @Test

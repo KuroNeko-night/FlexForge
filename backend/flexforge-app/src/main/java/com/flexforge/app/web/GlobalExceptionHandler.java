@@ -43,7 +43,8 @@ public class GlobalExceptionHandler {
                 exception.getMessage() == null ? "请求参数不合法" : exception.getMessage());
     }
 
-    @ExceptionHandler({MethodArgumentNotValidException.class, HandlerMethodValidationException.class})
+    @ExceptionHandler({MethodArgumentNotValidException.class, HandlerMethodValidationException.class,
+            org.springframework.validation.BindException.class})
     public ResponseEntity<ErrorResponse> handleBinding(Exception exception) {
         return envelope(HttpStatus.BAD_REQUEST, ErrorCodes.VALIDATION_ERROR, fieldSummary(exception));
     }

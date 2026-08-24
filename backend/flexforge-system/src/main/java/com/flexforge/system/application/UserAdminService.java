@@ -9,7 +9,9 @@ import com.flexforge.common.audit.AuditEventPort;
 import com.flexforge.common.audit.AuditEvents;
 import com.flexforge.system.infrastructure.JdbcUserAdminRepository;
 import com.flexforge.system.infrastructure.UserAdminRecord;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.util.List;
@@ -43,13 +45,18 @@ public class UserAdminService {
         this.clock = clock;
     }
 
+    /** 创建用户（单事务：用户行+角色绑定原子落库，复审 P1-1；审计失败不阻塞已冻结口径）。 */
+    @Transactional
     public UserAdminRecord createUser(long operatorId, String username, String password,
                                       String displayName, List<String> roles) {
         List<String> normalized = validateCreateRequest(username, password, displayName, roles);
-        if (users.usernameExists(username)) {
+        long userId;
+        try {
+            userId = users.insertUser(username, passwordHasher.hash(password), displayName);
+        } catch (DuplicateKeyException e) {
+            // 并发重名：唯一约束兜底转可诊断 400（复审 P2-1）
             throw new IllegalArgumentException("用户名已存在: " + username);
         }
-        long userId = users.insertUser(username, passwordHasher.hash(password), displayName);
         users.replaceRoles(userId, normalized);
         audit.record(AuditEvents.of(resolveActor(operatorId), "user.create", Long.toString(userId),
                 "success", clock));

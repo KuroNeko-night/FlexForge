@@ -22,6 +22,10 @@ public class MenuService {
 
     private static final List<NavigationContribution> BUILTIN_MENUS = List.of(
             new NavigationContribution("workbench", "工作台", "/workbench", "dashboard", 100, null),
+            // 开发者职责入口（docs/02 §1：创建实体/字段/视图配置；路由 P04 落地）——
+            // 使三类角色菜单互异（docs/09 P03 验收 1，复审 P1-2）
+            new NavigationContribution("data-model", "数据模型", "/meta/entities", "database",
+                    500, "DEVELOPER"),
             new NavigationContribution("system-management", "系统管理", "/system/users", "settings",
                     900, "ADMIN"));
 

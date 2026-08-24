@@ -59,12 +59,6 @@ public class JdbcUserAdminRepository {
                 base.status(), roles, base.createdAt()));
     }
 
-    public boolean usernameExists(String username) {
-        Long count = jdbc.queryForObject("SELECT count(*) FROM sys_user WHERE username = ?",
-                Long.class, username);
-        return count != null && count > 0;
-    }
-
     public long insertUser(String username, String passwordHash, String displayName) {
         jdbc.update("INSERT INTO sys_user (username, password_hash, display_name) VALUES (?, ?, ?)",
                 username, passwordHash, displayName);
