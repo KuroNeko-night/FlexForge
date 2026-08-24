@@ -145,7 +145,7 @@ AI 不直接获得数据库管理员权限、服务器命令权限或生产发�
 | `GET` | `/api/v1/data/{entity}` | 查询动态实体数据（分页/白名单排序/白名单过滤） |
 | `POST` | `/api/v1/data/{entity}` | 新增动态记录 |
 | `GET` | `/api/v1/data/{entity}/{id}` | 记录详情 |
-| `PATCH` | `/api/v1/data/{entity}/{id}` | 编辑记录（显式 null 清除字段值） |
+| `PATCH` | `/api/v1/data/{entity}/{id}` | 编辑记录（显式 null 清除字段值；并发冲突返回可诊断 400，updated_at 乐观守卫） |
 | `DELETE` | `/api/v1/data/{entity}/{id}` | 物理删除记录（审计事件） |
 | `POST` | `/api/v1/plugins/validate` | 校验插件包 |
 | `POST` | `/api/v1/plugins/install` | 安装插件 |
