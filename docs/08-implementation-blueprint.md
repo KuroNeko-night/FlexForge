@@ -179,9 +179,11 @@ MVP 使用“受控动态实体表 + JSONB 扩展数据”方案：
 extension.navigation   菜单项和目标实体
 extension.field-renderer    fieldType -> 内置 renderer ID
 extension.record-action     actionType -> 内置 action handler
+extension.layout            页面/工作台槽位与部件编排（proposed，P06/P07 落地）
+extension.theme-asset       背景图/图标/动画等美术资产更换（proposed，P06/P07 落地）
 ```
 
-以上 ID 以 `docs/extension-points.md` 为准。`plugin.json` 的 `contributions.navigation` 映射到 `extension.navigation`，`contributions.renderers` 映射到 `extension.field-renderer`。页面根据服务端返回的实体/视图元数据，使用 renderer registry 选择内置组件。插件停用后，注册表按 `activationId` 清理；页面收到 stale 状态时重新拉取插件清单和元数据。
+以上 ID 以 `docs/extension-points.md` 为准。`plugin.json` 的 `contributions.navigation` 映射到 `extension.navigation`，`contributions.renderers` 映射到 `extension.field-renderer`。页面根据服务端返回的实体/视图元数据，使用 renderer registry 选择内置组件。插件停用后，注册表按 `activationId` 清理；页面收到 stale 状态时重新拉取插件清单和元数据。GUI 定制口径（2026-08-24 澄清）：全部经声明式扩展点（部件/布局/美术资产，FR-PLUGIN-09/10/11），不做可视化拖拽设计器。
 
 ## 7. API 契约
 

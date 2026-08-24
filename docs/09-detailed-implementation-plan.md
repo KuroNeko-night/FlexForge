@@ -167,6 +167,7 @@
 ### 实施内容
 
 - 实现菜单 registry、字段 renderer registry 和动态列表/表单/详情页面；registry key 使用 `extension.navigation`、`extension.field-renderer`、`extension.record-action` 登记册 ID。
+- 实现 layout registry 与 theme registry：消费 `extension.layout` 布局贡献（页面/工作台槽位与部件编排）与 `extension.theme-asset` 美术资产贡献（背景图/图标/动画，FR-PLUGIN-10/11）；缺省布局与平台默认外观兜底，贡献撤销后即时恢复。
 - 支持 loading、empty、error、permission denied 和 stale 元数据状态。
 - 将 API service、页面组合和通用 renderer 分层。
 - 根据实体/视图版本刷新页面，不把元数据当作 HTML 或脚本执行。
@@ -176,6 +177,8 @@
 - 无需新增业务页面代码即可显示 P05 的实体列表和表单。
 - 文本、数字、日期、枚举、布尔字段使用正确内置 renderer。
 - 菜单贡献可注册和撤销，撤销后不残留入口。
+- 布局贡献按声明渲染页面槽位与部件编排，撤销后恢复缺省布局（FR-PLUGIN-10）。
+- 美术资产（背景图/图标/动画）经插件贡献更换即时生效，停用/卸载后恢复平台默认外观（FR-PLUGIN-11）。
 - 浏览器刷新后页面仍能从服务端恢复元数据。
 - 新增一个内置 renderer 只需登记映射，不修改动态列表/表单通用组件主逻辑。
 
@@ -190,6 +193,7 @@
 - 校验器按 `plugin.json.schemaVersion` 分派；`contributions` 键与 renderer ID 必须能在 `docs/extension-points.md` 中查到。
 - 实现插件迁移 runner 骨架：`V*__*.sql` 顺序执行、checksum、`plugin_migration` 记录、与安装同事务、重复跳过（ADR-0005）；插件 `migrations/` 不挂入 Flyway。
 - 上传安全基线：单包压缩大小上限 10 MB、解压后总大小上限 50 MB（防 zip 炸弹）、zip-slip 防护、解压到临时目录并在校验/导入后清理、非法包隔离不落库。
+- 美术资产校验（FR-PLUGIN-11）：`assets/` 静态资源类型白名单（图片 png/svg/webp；动画 css/lottie json 等声明式格式，禁止可执行脚本）、单文件与总量大小上限、路径校验；`extension.theme-asset` 贡献的 path 必须解析到包内已校验资产。
 
 ### 验收标准
 
