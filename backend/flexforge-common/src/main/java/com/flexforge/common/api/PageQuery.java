@@ -31,6 +31,13 @@ public record PageQuery(int pageNumber, int pageSize, String sortBy, SortDirecti
     }
 
     /**
+     * 白名单工厂（排序方向默认 ASC）：sortBy 非 null 时必须出现在 allowedSortFields 中。
+     */
+    public static PageQuery of(int pageNumber, int pageSize, String sortBy, Set<String> allowedSortFields) {
+        return of(pageNumber, pageSize, sortBy, SortDirection.ASC, allowedSortFields);
+    }
+
+    /**
      * 白名单工厂：sortBy 非 null 时必须出现在 allowedSortFields 中，否则拒绝（防动态 SQL 注入面）。
      */
     public static PageQuery of(int pageNumber, int pageSize, String sortBy,

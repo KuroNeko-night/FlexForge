@@ -9,7 +9,7 @@ STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 15%
 LAST_UPDATED: 2026-08-24
 OWNER: project-maintainer
-NEXT_ACTION: P03 迭代 2：用户/角色管理接口（管理员创建用户+分配角色，普通用户不可改权限，S2 服务端授权注解收敛）→ 菜单接口（三角色可见差异，extension.navigation 消费准备）→ 最小审计查询接口（按时间/操作者/对象过滤，分页白名单）→ 出口复核（三类角色表现不同、过期/无效 JWT 与无权限可诊断、管理员管理用户、关键写操作审计可追溯）
+NEXT_ACTION: P03 出口复核：按 docs/09 P03 验收逐项核验（三类角色接口与菜单表现不同、过期/无效 JWT 与无权限请求可诊断、管理员创建用户并分配角色且普通用户不能修改权限、关键写操作审计可追溯）→ 复核通过后 P03 置 completed、P04 置 ready_to_start；Issue #10 余项复查（P2-1/P2-2 与 P3 若干）
 EXIT_GATE: 三类角色和 JWT 测试通过
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -80,4 +80,5 @@ BLOCKERS: none
 | 2026-08-24 | P03 | P03 启动（in_progress）。迭代 1 范围冻结：认证内核（flexforge-auth：BCrypt cost≥10、JWT HS256/env 密钥/可配置 TTL、防暴破 5 次锁 10 分钟、统一登录错误防枚举、登录/退出/当前用户）+ flexforge-system 审计落库（JdbcAuditEventPort）+ V002 审计表 + V003 角色种子 + app JwtAuthFilter（401 unauthorized 可诊断消息）+ bootstrap admin（env 初始密码）；安全基线对齐 docs/13 §3.1/S1-S4/S8。用户/角色/菜单管理、审计查询、三角色接口与菜单差异留迭代 2 | `docs/13` §3.1/§4 P03 行、FR-AUTH-01/02、`docs/09` P03 |
 | 2026-08-24 | P03 | 迭代 1 完成：flexforge-auth（BCrypt cost10、nimbus HS256 JWT payload 仅 userId/roles/iat/exp、防暴破内存锁、/api/v1/auth/login|logout|me、JwtAuthFilter 放行 login+actuator 其余 401 分段消息[未提供/无效/过期]、AuthKernel 参数对象、AdminBootstrap 空库+env 密码才引导）+ flexforge-system JdbcAuditEventPort（sys_audit_event 落库，登录/锁定/登出审计断言）+ V003 三角色种子；错误码 +unauthorized（docs/08 §7 additive）；Mimosa hook 拦截测试硬编码口令→运行时按用户名派生。后端 81 tests 绿（auth 12 + app 36 含 AuthFlowTest 9：真实登录/统一错误/锁定/过期/无效/登出审计/审计行 SQL 断言）；既有 API 契约与脱敏测试改为携带真实令牌；本地 docker 镜像构建通过；check-repo-health 19 pass / 2 skip / 0 fail | `backend/flexforge-auth|system`、`database/migrations/V002-003`、AuthFlowTest |
 | 2026-08-24 | P03 | 迭代 1 两轮子代理交叉审查（PR #13）后合并（71cdcdc，CI 全绿）：第一轮 2 P1 + 3 P2 + 9 P3；P1-1 认证过滤器路径绕过（getRequestURI 前缀可被 ../ 与编码首段绕过）→ 自行解码规范化 + login 精确等值；复验发现同类残留（`;` 路径参数：/;x/api/v1/auth/me 被放行而容器剥离后路由受保护端点）→ 按子代理最小修复截断段内 ;（Servlet 映射语义等价）+ 3 用例；P1-2 审计写失败使登录 500 与端口契约矛盾 → 冻结口径"降级 ERROR 不阻塞"（三处 javadoc 同步 + mockito 回归）；P2-3 缺字段 500→400、P3×5 当场修；P2-1/P2-2 与 P3×8 记 Issue #10；gitleaks 两次拦截测试密钥样字面量（低熵化+重建分支历史处置，未放宽门禁）。最终 93 tests 绿 | PR #13 评论（逐条回应）、Issue #10 |
+| 2026-08-24 | P03 | 迭代 2 完成：@RequireRole 注解 + RoleAuthorizationInterceptor（S2 集中式授权，403 permission_denied 经统一错误装配）+ flexforge-system 用户/角色管理（POST /system/users 创建、PUT /{id}/roles 权限变化、GET 分页白名单 {createdAt,username}；输入校验用户名格式/口令长度/角色白名单）+ 菜单聚合（/api/v1/menus：内置工作台全员+系统管理仅 ADMIN，合并 ExtensionRegistry extension.navigation 贡献按角色过滤——登记册 §2.2 首个真实消费方，注册/撤销即时生效）+ 审计查询（/system/audit-events：时间窗/actor/action/objectId 过滤 + 分页白名单 {occurredAt}，仅管理员）+ 审计口径统一（actor=用户名，AuditEvents 工厂收敛 id 生成，logout 补 username）+ PageQuery 新增方向默认 ASC 重载。后端 102 tests 绿（system 4 + app 42 含 AdminAndAuditApiTest 5：三角色 403/菜单差异/创建+改角色+审计行断言/查询过滤/注入样例拒绝）；check-repo-health 19/2/0 | `backend/flexforge-system`、`com.flexforge.common.contract.NavigationContribution`、AdminAndAuditApiTest |
 

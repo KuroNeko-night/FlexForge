@@ -6,7 +6,7 @@
   "status": "in_progress",
   "progressPercent": 15,
   "owner": "project-maintainer",
-  "nextAction": "P03 迭代 2：用户/角色管理接口（管理员创建用户+分配角色，普通用户不可改权限，S2 服务端授权注解收敛）→ 菜单接口（三角色可见差异，extension.navigation 消费准备）→ 最小审计查询接口（按时间/操作者/对象过滤，分页白名单）→ 出口复核（三类角色表现不同、过期/无效 JWT 与无权限可诊断、管理员管理用户、关键写操作审计可追溯）",
+  "nextAction": "P03 出口复核：按 docs/09 P03 验收逐项核验（三类角色接口与菜单表现不同、过期/无效 JWT 与无权限请求可诊断、管理员创建用户并分配角色且普通用户不能修改权限、关键写操作审计可追溯）→ 复核通过后 P03 置 completed、P04 置 ready_to_start；Issue #10 余项复查（P2-1/P2-2 与 P3 若干）",
   "exitGate": "三类角色和 JWT 测试通过",
   "blockers": [],
   "stages": [
