@@ -152,6 +152,14 @@ public final class FieldTypeRegistry {
         validateDefaultOfType(type, value, rules);
     }
 
+    /**
+     * 记录值校验（service.data-access / P05）：与默认值共用同一值-规则校验路径
+     * （QG-4 单一实现），供动态 CRUD 对每个字段值执行类型与规则校验。
+     */
+    public static void validateValue(FieldType type, JsonNode value, JsonNode rules) {
+        validateDefaultValue(type, value, rules);
+    }
+
     private static void validateDefaultOfType(FieldType type, JsonNode value, JsonNode rules) {
         switch (type) {
             case TEXT -> validateTextDefault(value, rules);
@@ -235,8 +243,12 @@ public final class FieldTypeRegistry {
 
     private static void validateTextDefault(JsonNode value, JsonNode rules) {
         String text = optionAsString(value, "text 默认值");
-        int max = rules != null && rules.get("maxLength") != null && !rules.get("maxLength").isNull()
-                ? rules.get("maxLength").intValue() : TEXT_LENGTH_CAP;
+        JsonNode minLength = rules == null ? null : rules.get("minLength");
+        if (minLength != null && !minLength.isNull() && text.length() < minLength.intValue()) {
+            throw new IllegalArgumentException("text 默认值长度低于 minLength " + minLength.intValue());
+        }
+        JsonNode maxLength = rules == null ? null : rules.get("maxLength");
+        int max = maxLength != null && !maxLength.isNull() ? maxLength.intValue() : TEXT_LENGTH_CAP;
         if (text.length() > max) {
             throw new IllegalArgumentException("text 默认值长度超出 maxLength " + max);
         }

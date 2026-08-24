@@ -1,5 +1,6 @@
 package com.flexforge.meta.domain;
 
+import com.flexforge.common.PublicApi;
 import tools.jackson.databind.JsonNode;
 
 import java.util.Set;
@@ -7,7 +8,9 @@ import java.util.Set;
 /**
  * 视图配置校验（FR-META-03/05）：columns/filters 引用的字段必须存在于同实体；
  * filters 仅 list 视图、operator 必须在白名单内。null 视为空配置。
+ * {@link #FILTER_OPERATORS} 同时是动态查询（service.data-access）的操作符契约面。
  */
+@PublicApi
 public final class ViewRules {
 
     /** 查询字段操作符白名单（P05 动态查询构造的契约面，新增为 additive）。 */
