@@ -39,6 +39,9 @@ public final class ErrorCodes {
     /** 服务端内部错误（响应消息保持通用，细节只进日志）。 */
     public static final String INTERNAL_ERROR = "internal_error";
 
+    /** 未认证：缺失/无效/过期的登录令牌（消息细分可诊断，docs/09 P03）。 */
+    public static final String UNAUTHORIZED = "unauthorized";
+
     private ErrorCodes() {
     }
 }
