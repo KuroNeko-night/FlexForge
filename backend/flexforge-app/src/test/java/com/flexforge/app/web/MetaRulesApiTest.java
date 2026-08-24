@@ -45,12 +45,15 @@ class MetaRulesApiTest {
     private JdbcTemplate jdbc;
 
     private String developerBearer;
+    private String userBearer;
 
     @BeforeEach
     void seedAndLogin() throws Exception {
         AuthTestSupport.seedUsers(jdbc);
         developerBearer = "Bearer " + AuthTestSupport.loginToken(mockMvc,
                 AuthTestSupport.DEVELOPER_USERNAME, AuthTestSupport.developerPassword());
+        userBearer = "Bearer " + AuthTestSupport.loginToken(mockMvc,
+                AuthTestSupport.USER_USERNAME, AuthTestSupport.userPassword());
     }
 
     /** 建实体 + 一个 text 字段，并按目标状态推进（draft/enabled/disabled）。 */
@@ -215,5 +218,65 @@ class MetaRulesApiTest {
         long versionAfter = ((Number) JsonPath.read(after, "$.metaVersion")).longValue();
         assertThat((Integer) JsonPath.read(after, "$.fields.length()")).isEqualTo(1);
         assertThat(versionAfter).isGreaterThan(versionBefore);
+    }
+
+    @Test
+    void explicitJsonNullMeansUnchangedNotCleared() throws Exception {
+        String entityId = preparedEntity("meta_rules_null_patch", "draft");
+        String fieldId = fieldIdOf(entityId);
+
+        String patched = MetaTestSupport.patchField(mockMvc, developerBearer, fieldId,
+                "{\"displayName\":\"SKU 新名\",\"validation\":null,\"defaultValue\":null}", 200);
+        assertThat(JsonPath.read(patched, "$.displayName").toString()).isEqualTo("SKU 新名");
+        assertThat(JsonPath.read(patched, "$.validation.minLength").toString()).isEqualTo("3");
+    }
+
+    @Test
+    void equalValueResendOnEnabledEntityIsNotBreaking() throws Exception {
+        String entityId = preparedEntity("meta_rules_equal_resend", "enabled");
+        String fieldId = fieldIdOf(entityId);
+
+        MetaTestSupport.patchField(mockMvc, developerBearer, fieldId,
+                "{\"validation\":{\"maxLength\":32,\"minLength\":3}}", 200);
+    }
+
+    @Test
+    void rendererMustMatchFieldType() throws Exception {
+        String entityId = MetaTestSupport.createEntity(mockMvc, developerBearer, "meta_rules_renderer");
+        MetaTestSupport.addField(mockMvc, developerBearer, entityId,
+                "{\"name\":\"qty\",\"displayName\":\"数量\",\"fieldType\":\"integer\","
+                        + "\"rendererId\":\"text.default\"}", 400);
+
+        MetaTestSupport.addField(mockMvc, developerBearer, entityId, TEXT_FIELD, 200);
+        String fieldId = fieldIdOf(entityId);
+        String response = MetaTestSupport.patchField(mockMvc, developerBearer, fieldId,
+                "{\"rendererId\":\"integer.default\"}", 400);
+        assertThat(response).contains("renderer");
+    }
+
+    @Test
+    void viewTypeImmutableAfterCreation() throws Exception {
+        String entityId = preparedEntity("meta_rules_view_type", "draft");
+        String viewBody = mockMvc.perform(MockMvcRequestBuilders
+                        .post("/api/v1/meta/entities/" + entityId + "/views")
+                        .header("Authorization", developerBearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"viewType\":\"list\",\"name\":\"列\",\"columns\":[]}"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String viewId = JsonPath.read(viewBody, "$.id");
+
+        mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/meta/views/" + viewId)
+                        .header("Authorization", developerBearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"viewType\":\"form\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void disabledEntityHiddenFromUser() throws Exception {
+        String entityId = preparedEntity("meta_rules_disabled_hidden", "disabled");
+        MetaTestSupport.getEntity(mockMvc, userBearer, entityId, 404);
+        MetaTestSupport.getEntity(mockMvc, developerBearer, entityId, 200);
     }
 }

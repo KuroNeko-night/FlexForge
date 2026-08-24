@@ -110,6 +110,14 @@ public final class FieldTypeRegistry {
     }
 
     /**
+     * renderer 与字段类型的匹配校验（extension.field-renderer 载荷 {fieldType, rendererId}）：
+     * P04 每类型仅允许其默认 renderer；P06+ 前端 renderer registry 扩展同类型候选时在此加集。
+     */
+    public static boolean isRendererAllowedFor(FieldType type, String rendererId) {
+        return rendererId != null && contract(type).defaultRendererId().equals(rendererId);
+    }
+
+    /**
      * 校验规则对象：键必须在类型白名单内且值合法（FR-META-05）。
      * {@code rules} 为 null 或 JSON null 表示无规则。
      */

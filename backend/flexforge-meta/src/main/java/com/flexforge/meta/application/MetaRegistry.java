@@ -38,8 +38,12 @@ public class MetaRegistry {
         if (cached != null) {
             return Optional.of(cached);
         }
+        // 装载期间若有写失效（版本变动）则放弃缓存本次结果，避免慢读把旧定义灌回缓存
+        long versionAtLoad = version.get();
         Optional<EntityDefinition> loaded = repository.loadDefinition(entityId);
-        loaded.ifPresent(definition -> cache.put(entityId, definition));
+        if (version.get() == versionAtLoad) {
+            loaded.ifPresent(definition -> cache.put(entityId, definition));
+        }
         return loaded;
     }
 

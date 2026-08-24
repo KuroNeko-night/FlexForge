@@ -62,4 +62,21 @@ class MetaRegistryTest {
         registry.evictAll();
         assertThat(registry.version()).isEqualTo(initial + 2);
     }
+
+    @Test
+    void loadInterleavedWithInvalidationDoesNotCacheStaleEntry() {
+        MetaRepository repository = mock(MetaRepository.class);
+        EntityDefinition definition = definition("e1");
+        MetaRegistry registry = new MetaRegistry(repository);
+
+        // 装载期间发生写失效（版本变动）：本次结果不得进缓存
+        when(repository.loadDefinition("e1")).thenAnswer(invocation -> {
+            registry.evict("e1");
+            return Optional.of(definition);
+        });
+
+        assertThat(registry.findEntity("e1")).contains(definition);
+        assertThat(registry.findEntity("e1")).contains(definition);
+        verify(repository, times(2)).loadDefinition("e1");
+    }
 }

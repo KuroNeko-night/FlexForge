@@ -19,11 +19,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
  * meta_* 表 JDBC 实现：全部参数化（动态部分仅限白名单排序列与 ASC/DESC 字面量，
- * docs/coding-standards §5.4）；JSONB 写入用 ?::jsonb 显式转型，读出转文本后解析。
+ * docs/coding-standards §2 数据访问红线）；JSONB 写入用 ?::jsonb 显式转型，读出转文本后解析。
  */
 @Repository
 public class JdbcMetaRepository implements MetaRepository {
@@ -75,10 +76,11 @@ public class JdbcMetaRepository implements MetaRepository {
     }
 
     @Override
-    public int updateEntity(String id, String name, String displayName, EntityStatus status) {
+    public int updateEntity(String id, String name, String displayName, EntityStatus status,
+                            boolean requireDraftStatus) {
         return jdbc.update("UPDATE meta_entity SET name = ?, display_name = ?, status = ?,"
-                        + " updated_at = now() WHERE id = ?",
-                name, displayName, status.wireName(), id);
+                        + " updated_at = now() WHERE id = ? AND (NOT ? OR status = 'draft')",
+                name, displayName, status.wireName(), id, requireDraftStatus);
     }
 
     @Override
@@ -88,6 +90,7 @@ public class JdbcMetaRepository implements MetaRepository {
         Long total = jdbc.queryForObject("SELECT count(*) FROM meta_entity" + where, Long.class, filterArgs);
 
         String order = SORT_COLUMNS.get(query.sortBy() == null ? "updatedAt" : query.sortBy());
+        Objects.requireNonNull(order, "sortBy 已过 PageQuery 白名单但缺少列映射（防御纵深，二次强制）");
         String direction = query.sortDirection() == PageQuery.SortDirection.DESC ? "DESC" : "ASC";
         String sql = "SELECT " + ENTITY_COLUMNS + " FROM meta_entity" + where
                 + " ORDER BY " + order + " " + direction + " LIMIT ? OFFSET ?";
@@ -134,13 +137,15 @@ public class JdbcMetaRepository implements MetaRepository {
     }
 
     @Override
-    public int updateField(FieldDefinition field) {
-        return jdbc.update("UPDATE meta_field SET name = ?, display_name = ?, field_type = ?,"
+    public int updateField(FieldDefinition field, boolean requireDraftEntity) {
+        return jdbc.update("UPDATE meta_field f SET name = ?, display_name = ?, field_type = ?,"
                         + " required = ?, default_value = ?, validation = ?::jsonb, renderer_id = ?,"
-                        + " position = ?, updated_at = now() WHERE id = ?",
+                        + " position = ?, updated_at = now()"
+                        + " WHERE f.id = ? AND (NOT ? OR EXISTS (SELECT 1 FROM meta_entity e"
+                        + " WHERE e.id = f.entity_id AND e.status = 'draft'))",
                 field.name(), field.displayName(), field.fieldType(), field.required(),
                 jsonOf(field.defaultValue()), jsonOf(field.validation()), field.rendererId(),
-                field.position(), field.id());
+                field.position(), field.id(), requireDraftEntity);
     }
 
     @Override

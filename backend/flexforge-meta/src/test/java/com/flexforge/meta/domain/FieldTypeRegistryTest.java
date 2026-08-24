@@ -56,6 +56,14 @@ class FieldTypeRegistryTest {
         assertThat(FieldTypeRegistry.isBuiltInRendererId("enum.default")).isTrue();
         assertThat(FieldTypeRegistry.isBuiltInRendererId("custom.renderer")).isFalse();
         assertThat(FieldTypeRegistry.isBuiltInRendererId(null)).isFalse();
+
+        // renderer 与字段类型必须匹配（extension.field-renderer 载荷契约，P04 每类型仅默认 renderer）
+        assertThat(FieldTypeRegistry.isRendererAllowedFor(FieldTypeRegistry.FieldType.INTEGER,
+                "integer.default")).isTrue();
+        assertThat(FieldTypeRegistry.isRendererAllowedFor(FieldTypeRegistry.FieldType.INTEGER,
+                "text.default")).isFalse();
+        assertThat(FieldTypeRegistry.isRendererAllowedFor(FieldTypeRegistry.FieldType.INTEGER,
+                null)).isFalse();
     }
 
     @Test

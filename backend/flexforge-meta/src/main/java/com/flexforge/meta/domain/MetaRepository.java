@@ -21,8 +21,13 @@ public interface MetaRepository {
 
     Optional<EntityRecord> findEntityByName(String name);
 
-    /** 更新实体行；返回受影响行数（0 = 不存在）。 */
-    int updateEntity(String id, String name, String displayName, EntityStatus status);
+    /**
+     * 更新实体行；返回受影响行数（0 = 不存在或守卫失败）。
+     * {@code requireDraftStatus} 为 true 时（实体改名等 breaking 路径）仅在实体仍为 draft 时生效，
+     * 关闭"读取状态后实体被启用"的 TOCTOU 窗口。
+     */
+    int updateEntity(String id, String name, String displayName, EntityStatus status,
+                     boolean requireDraftStatus);
 
     /** 分页列实体；statusFilter 非 null 时按状态过滤（排序白名单已由 PageQuery 强制）。 */
     PageResult<EntityRecord> listEntities(PageQuery query, EntityStatus statusFilter);
@@ -35,8 +40,12 @@ public interface MetaRepository {
 
     Optional<FieldDefinition> findField(String fieldId);
 
-    /** 更新字段行；返回受影响行数（0 = 不存在）。 */
-    int updateField(FieldDefinition field);
+    /**
+     * 更新字段行；返回受影响行数（0 = 不存在或守卫失败）。
+     * {@code requireDraftEntity} 为 true 时（语义变更路径）仅在其所属实体仍为 draft 时生效，
+     * 关闭状态读取与写入之间的并发启用窗口。
+     */
+    int updateField(FieldDefinition field, boolean requireDraftEntity);
 
     /** 新增视图；(entity_id, view_type) 唯一冲突上抛。 */
     ViewDefinition insertView(ViewDefinition view);

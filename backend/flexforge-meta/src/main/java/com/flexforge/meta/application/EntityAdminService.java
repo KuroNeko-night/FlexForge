@@ -58,7 +58,10 @@ public class EntityAdminService {
     public record UpdateEntityCommand(String name, String displayName, String status) {
     }
 
-    /** 字段写入命令（新增全量必填；更新 null = 不变）。组件数对齐 meta_field 写入列（表行镜像口径）。 */
+    /**
+     * 字段写入命令（新增全量必填；更新 null = 不变；JSON 显式 null 在 API 边界归一化为未提供）。
+     * 组件数对齐 meta_field 写入列（表行镜像口径）。
+     */
     @PublicApi
     public record FieldCommand(String name, String displayName, String fieldType, Boolean required,
                                JsonNode defaultValue, JsonNode validation, String rendererId,
@@ -84,14 +87,22 @@ public class EntityAdminService {
         return repository.loadDefinition(created.id()).orElseThrow();
     }
 
-    /** 编辑实体（显示名随时可改；改名仅 draft；状态按合法迁移）。 */
+    /** 编辑实体（显示名随时可改；改名仅 draft 且更新带 draft 守卫）。 */
     public EntityDefinition updateEntity(String actor, String entityId, UpdateEntityCommand cmd) {
         EntityRecord current = requireEntity(entityId);
         String name = resolveEntityName(current, cmd);
         String displayName = cmd.displayName() == null ? current.displayName() : cmd.displayName();
         Identifiers.validateDisplayName(displayName, "实体显示名");
         EntityStatus status = resolveEntityStatus(current, cmd);
-        if (repository.updateEntity(entityId, name, displayName, status) != 1) {
+        boolean rename = cmd.name() != null && !cmd.name().equals(current.name());
+        int rows;
+        try {
+            rows = repository.updateEntity(entityId, name, displayName, status, rename);
+        } catch (DuplicateKeyException e) {
+            throw new IllegalArgumentException("实体名已存在: " + name);
+        }
+        if (rows != 1) {
+            requireUnchangedOrMissing(repository.findEntity(entityId).isPresent(), "实体改名");
             throw new NoSuchElementException("实体不存在: " + entityId);
         }
         publish(actor, "meta.entity.update", entityId, entityId);
@@ -111,14 +122,21 @@ public class EntityAdminService {
         return field;
     }
 
-    /** 编辑字段（表现层随时可改；语义列仅 draft 实体可改）。 */
+    /** 编辑字段（表现层随时可改；语义列仅 draft 实体可改，更新带 draft 守卫关闭并发启用窗口）。 */
     public FieldDefinition updateField(String actor, String fieldId, FieldCommand cmd) {
         FieldDefinition current = repository.findField(fieldId)
                 .orElseThrow(() -> new NoSuchElementException("字段不存在: " + fieldId));
         EntityRecord entity = requireEntity(current.entityId());
         EntityDefinition definition = requireDefinition(current.entityId());
-        FieldDefinition merged = mergeField(current, cmd, entity, definition);
-        if (repository.updateField(merged) != 1) {
+        FieldDefinition merged = FieldChanges.merge(current, cmd, entity, definition);
+        int rows;
+        try {
+            rows = repository.updateField(merged, FieldChanges.isSemanticChange(current, merged));
+        } catch (DuplicateKeyException e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+        if (rows != 1) {
+            requireUnchangedOrMissing(repository.findField(fieldId).isPresent(), "字段语义变更");
             throw new NoSuchElementException("字段不存在: " + fieldId);
         }
         publish(actor, "meta.field.update", fieldId, current.entityId());
@@ -214,81 +232,17 @@ public class EntityAdminService {
         }
         return new FieldDefinition(id, entityId, cmd.name(), cmd.displayName(), cmd.fieldType(),
                 Boolean.TRUE.equals(cmd.required()), cmd.defaultValue(),
-                orEmptyObject(cmd.validation()), rendererOf(type, cmd.rendererId()),
-                positionOf(definition, cmd.position()));
+                orEmptyObject(cmd.validation()),
+                FieldChanges.rendererOf(type, cmd.rendererId()),
+                FieldChanges.positionOf(definition, cmd.position()));
     }
 
-    private FieldDefinition mergeField(FieldDefinition current, FieldCommand cmd,
-                                       EntityRecord entity, EntityDefinition definition) {
-        String name = mergedName(current, cmd, entity, definition);
-        String fieldType = mergedSemantics(current.fieldType(), cmd.fieldType(), entity, "字段改类型");
-        JsonNode validation = mergedJson(current.validation(), cmd.validation(), entity, "改校验规则");
-        JsonNode defaultValue = mergedJson(current.defaultValue(), cmd.defaultValue(), entity, "改默认值");
-        boolean required = mergedRequired(current, cmd, entity);
-        String displayName = cmd.displayName() == null ? current.displayName() : cmd.displayName();
-        Identifiers.validateDisplayName(displayName, "字段显示名");
-        String rendererId = mergedRenderer(current, cmd);
-        int position = cmd.position() == null ? current.position() : cmd.position();
-        FieldTypeRegistry.FieldType type = FieldTypeRegistry.require(fieldType);
-        FieldTypeRegistry.validateRules(type, validation);
-        FieldTypeRegistry.validateDefaultValue(type, defaultValue, validation);
-        return new FieldDefinition(current.id(), current.entityId(), name, displayName, fieldType,
-                required, defaultValue, validation, rendererId, position);
-    }
-
-    private String mergedName(FieldDefinition current, FieldCommand cmd,
-                              EntityRecord entity, EntityDefinition definition) {
-        if (cmd.name() == null || cmd.name().equals(current.name())) {
-            return current.name();
+    /** 更新守卫失败时区分"对象还在（并发状态变化→breaking）"与"对象已不存在（404）"。 */
+    private static void requireUnchangedOrMissing(boolean stillExists, String operation) {
+        if (stillExists) {
+            throw new IllegalArgumentException(BREAKING_PREFIX + operation
+                    + "（更新期间实体状态已变化，请刷新后重试）");
         }
-        requireDraft(entity, "字段改名");
-        Identifiers.validateName(cmd.name(), "字段名");
-        boolean taken = definition.fields().stream()
-                .anyMatch(f -> !f.id().equals(current.id()) && f.name().equals(cmd.name()));
-        if (taken) {
-            throw new IllegalArgumentException("字段名已存在: " + cmd.name());
-        }
-        boolean referenced = definition.views().stream()
-                .anyMatch(view -> viewReferences(view, current.name()));
-        if (referenced) {
-            throw new IllegalArgumentException(
-                    "字段被视图引用，先更新视图引用后再改名: " + current.name());
-        }
-        return cmd.name();
-    }
-
-    private String mergedSemantics(String current, String requested, EntityRecord entity, String label) {
-        if (requested == null || requested.equals(current)) {
-            return current;
-        }
-        requireDraft(entity, label);
-        return requested;
-    }
-
-    private JsonNode mergedJson(JsonNode current, JsonNode requested, EntityRecord entity, String label) {
-        if (requested == null || requested.equals(current)) {
-            return current;
-        }
-        requireDraft(entity, label);
-        return requested;
-    }
-
-    private boolean mergedRequired(FieldDefinition current, FieldCommand cmd, EntityRecord entity) {
-        if (cmd.required() == null || cmd.required() == current.required()) {
-            return current.required();
-        }
-        requireDraft(entity, "改字段必填");
-        return cmd.required();
-    }
-
-    private String mergedRenderer(FieldDefinition current, FieldCommand cmd) {
-        if (cmd.rendererId() == null || cmd.rendererId().equals(current.rendererId())) {
-            return current.rendererId();
-        }
-        if (!FieldTypeRegistry.isBuiltInRendererId(cmd.rendererId())) {
-            throw new IllegalArgumentException("rendererId 必须是平台内置 ID: " + cmd.rendererId());
-        }
-        return cmd.rendererId();
     }
 
     private ViewDefinition buildView(String id, String entityId, ViewCommand cmd,
@@ -302,40 +256,6 @@ public class EntityAdminService {
 
     private static Set<String> fieldNamesOf(EntityDefinition definition) {
         return definition.fields().stream().map(FieldDefinition::name).collect(Collectors.toSet());
-    }
-
-    private static boolean viewReferences(ViewDefinition view, String fieldName) {
-        return references(view.columns(), fieldName) || references(view.filters(), fieldName);
-    }
-
-    private static boolean references(JsonNode items, String fieldName) {
-        if (items == null || !items.isArray()) {
-            return false;
-        }
-        for (JsonNode item : items) {
-            JsonNode field = item.get("field");
-            if (field != null && field.isTextual() && fieldName.equals(field.asText())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static String rendererOf(FieldTypeRegistry.FieldType type, String rendererId) {
-        if (rendererId == null) {
-            return FieldTypeRegistry.contract(type).defaultRendererId();
-        }
-        if (!FieldTypeRegistry.isBuiltInRendererId(rendererId)) {
-            throw new IllegalArgumentException("rendererId 必须是平台内置 ID: " + rendererId);
-        }
-        return rendererId;
-    }
-
-    private static int positionOf(EntityDefinition definition, Integer position) {
-        if (position != null) {
-            return position;
-        }
-        return definition.fields().stream().mapToInt(FieldDefinition::position).max().orElse(0) + 1;
     }
 
     private static void requireDraft(EntityRecord entity, String operation) {

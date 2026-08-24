@@ -165,13 +165,18 @@ public class MetaController {
 
     private static EntityAdminService.FieldCommand toCommand(FieldRequest request) {
         return new EntityAdminService.FieldCommand(request.name(), request.displayName(),
-                request.fieldType(), request.required(), request.defaultValue(),
-                request.validation(), request.rendererId(), request.position());
+                request.fieldType(), request.required(), normalize(request.defaultValue()),
+                normalize(request.validation()), request.rendererId(), request.position());
     }
 
     private static EntityAdminService.ViewCommand toCommand(ViewRequest request) {
         return new EntityAdminService.ViewCommand(request.viewType(), request.name(),
-                request.columns(), request.filters());
+                normalize(request.columns()), normalize(request.filters()));
+    }
+
+    /** 显式 JSON null（绑定为 NullNode）归一化为"未提供"，与缺省键同语义（PATCH null=不变）。 */
+    private static JsonNode normalize(JsonNode node) {
+        return node == null || node.isNull() ? null : node;
     }
 
     private EntityDetail toDetail(EntityDefinition definition) {
