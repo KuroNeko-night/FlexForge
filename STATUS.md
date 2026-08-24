@@ -3,14 +3,14 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P03
-CURRENT_STAGE_NAME: 认证、RBAC 与系统壳
-STAGE_STATUS: in_progress
-PROJECT_PROGRESS: 15%
+CURRENT_STAGE_ID: P04
+CURRENT_STAGE_NAME: 元数据写模型
+STAGE_STATUS: ready_to_start
+PROJECT_PROGRESS: 18%
 LAST_UPDATED: 2026-08-24
 OWNER: project-maintainer
-NEXT_ACTION: P03 出口复核：按 docs/09 P03 验收逐项核验（三类角色接口与菜单表现不同、过期/无效 JWT 与无权限请求可诊断、管理员创建用户并分配角色且普通用户不能修改权限、关键写操作审计可追溯）→ 复核通过后 P03 置 completed、P04 置 ready_to_start；Issue #10 余项复查（P2-1/P2-2 与 P3 若干）
-EXIT_GATE: 三类角色和 JWT 测试通过
+NEXT_ACTION: P04 启动：V004 meta_entity/meta_field/meta_view 迁移（平台表，对外 ID 为不透明字符串）→ FieldTypeRegistry 单点（六类字段白名单 + 校验/SQL 映射/renderer ID 契约，登记 service.meta 常量已有）→ 实体/字段/视图配置 API（DEVELOPER 角色，统一错误装配 + 分页白名单）→ MetaRegistry 查询与缓存失效（service.audit 记录元数据变更）→ breaking/additive 变更规则测试（实体启用且有数据后字段改名/改类型拒绝）
+EXIT_GATE: P03 出口证据：三类角色接口与菜单互异（AdminAndAuditApiTest/MenuServiceTest）、过期/无效/缺失 JWT 三段可诊断 401 与无权限 403（AuthFlowTest/AdminAndAuditApiTest）、管理员创建用户+分配角色且普通用户不可改权限、登录/锁定/登出/用户管理全审计可追溯（审计行 SQL 断言 + 查询接口）；RB-AUTH 回归包四项全覆盖；合并后 main 门禁 19 pass / 2 skip / 0 fail
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -21,8 +21,8 @@ BLOCKERS: none
 | P00 | 设计基线冻结 | completed | 文档、MVP 边界和 ADR 已冻结 |
 | P01 | 仓库与工程骨架 | completed | 新环境可启动，健康检查和初始迁移通过 |
 | P02 | 核心契约与可观测性 | completed | 注册/撤销、统一错误和审计端口通过测试 |
-| P03 | 认证、RBAC 与系统壳 | in_progress | 三类角色和 JWT 测试通过 |
-| P04 | 元数据写模型 | pending | 实体/字段/视图配置 API 通过验收 |
+| P03 | 认证、RBAC 与系统壳 | completed | 三类角色和 JWT 测试通过 |
+| P04 | 元数据写模型 | ready_to_start | 实体/字段/视图配置 API 通过验收 |
 | P05 | 动态数据运行时 | pending | 动态实体完成 CRUD 和字段校验 |
 | P06 | 前端动态渲染 | pending | 无业务页面代码即可显示动态实体 |
 | P07 | 插件包校验与版本存储 | pending | 合法包可预览，非法包被拒绝 |
@@ -82,4 +82,5 @@ BLOCKERS: none
 | 2026-08-24 | P03 | 迭代 1 两轮子代理交叉审查（PR #13）后合并（71cdcdc，CI 全绿）：第一轮 2 P1 + 3 P2 + 9 P3；P1-1 认证过滤器路径绕过（getRequestURI 前缀可被 ../ 与编码首段绕过）→ 自行解码规范化 + login 精确等值；复验发现同类残留（`;` 路径参数：/;x/api/v1/auth/me 被放行而容器剥离后路由受保护端点）→ 按子代理最小修复截断段内 ;（Servlet 映射语义等价）+ 3 用例；P1-2 审计写失败使登录 500 与端口契约矛盾 → 冻结口径"降级 ERROR 不阻塞"（三处 javadoc 同步 + mockito 回归）；P2-3 缺字段 500→400、P3×5 当场修；P2-1/P2-2 与 P3×8 记 Issue #10；gitleaks 两次拦截测试密钥样字面量（低熵化+重建分支历史处置，未放宽门禁）。最终 93 tests 绿 | PR #13 评论（逐条回应）、Issue #10 |
 | 2026-08-24 | P03 | 迭代 2 完成：@RequireRole 注解 + RoleAuthorizationInterceptor（S2 集中式授权，403 permission_denied 经统一错误装配）+ flexforge-system 用户/角色管理（POST /system/users 创建、PUT /{id}/roles 权限变化、GET 分页白名单 {createdAt,username}；输入校验用户名格式/口令长度/角色白名单）+ 菜单聚合（/api/v1/menus：内置工作台全员+数据模型仅 DEVELOPER+系统管理仅 ADMIN，合并 ExtensionRegistry extension.navigation 贡献按角色过滤——登记册 §2.2 首个真实消费方，注册/撤销即时生效）+ 审计查询（/system/audit-events：时间窗/actor/action/objectId 过滤 + 分页白名单 {occurredAt}，仅管理员）+ 审计口径统一（actor=用户名，AuditEvents 工厂收敛 id 生成，logout 补 username）+ PageQuery 新增方向默认 ASC 重载。后端 102 tests 绿（system 4 + app 42 含 AdminAndAuditApiTest 5：三角色 403/菜单差异/创建+改角色+审计行断言/查询过滤/注入样例拒绝）；check-repo-health 19/2/0 | `backend/flexforge-system`、`com.flexforge.common.contract.NavigationContribution`、AdminAndAuditApiTest |
 | 2026-08-24 | P03 | 迭代 2 子代理交叉审查（PR #14，含独立复跑）后合并（25c4124，CI 全绿）：结论可合并无 P0；P1-1 createUser 半写（insert 与角色绑定非同事务）→ @Transactional；P1-2 DEVELOPER 无可观察差异 → 内置『数据模型』菜单（DEVELOPER-only，P04 路由）三角色两两互异；P2-1 并发重名 500→400（唯一约束兜底）；P2-2 非法时间 500→400（BindException 映射）；P2-3/P2-4 与 P3×6 记 Issue #10。最终 104 tests 绿 | PR #14 评论（逐条回应）、Issue #10 |
+| 2026-08-24 | P03 | **P03 出口复核通过，置 completed**：验收四项逐项核验——①三类角色接口与菜单互异（菜单：管理员=工作台+系统管理、开发者=工作台+数据模型、用户=仅工作台；接口：非管理员 403 矩阵）②过期/无效/缺失 JWT 三段可诊断 401 + 无权限 403 permission_denied（均含 requestId）③管理员创建用户+分配角色（事务原子、审计可追溯）、普通用户不可改权限（403 且无残留）④关键写操作审计可追溯（登录/锁定/登出/用户创建/角色变更全落库 + 管理员查询接口过滤分页）；实施内容六项全交付；RB-AUTH 回归包四项覆盖（AuthFlowTest/AdminAndAuditApiTest/MenuServiceTest）；合并后 main 全量门禁 19 pass / 2 skip / 0 fail（后端 104 tests）；docs/13 §3.1.5 接受风险补记（账号 DoS 锁定/时序侧信道，Issue #10 排期）；P04 置 ready_to_start | `docs/09` P03 验收、PR #13/#14、`docs/13` §3.1.5/§7、RB-AUTH |
 

@@ -1,13 +1,13 @@
 {
   "project": "FlexForge",
   "updatedAt": "2026-08-24",
-  "currentStageId": "P03",
-  "currentStageName": "认证、RBAC 与系统壳",
-  "status": "in_progress",
-  "progressPercent": 15,
+  "currentStageId": "P04",
+  "currentStageName": "元数据写模型",
+  "status": "ready_to_start",
+  "progressPercent": 18,
   "owner": "project-maintainer",
-  "nextAction": "P03 出口复核：按 docs/09 P03 验收逐项核验（三类角色接口与菜单表现不同、过期/无效 JWT 与无权限请求可诊断、管理员创建用户并分配角色且普通用户不能修改权限、关键写操作审计可追溯）→ 复核通过后 P03 置 completed、P04 置 ready_to_start；Issue #10 余项复查（P2-1/P2-2 与 P3 若干）",
-  "exitGate": "三类角色和 JWT 测试通过",
+  "nextAction": "P04 启动：V004 meta_entity/meta_field/meta_view 迁移（平台表，对外 ID 为不透明字符串）→ FieldTypeRegistry 单点（六类字段白名单 + 校验/SQL 映射/renderer ID 契约，登记 service.meta 常量已有）→ 实体/字段/视图配置 API（DEVELOPER 角色，统一错误装配 + 分页白名单）→ MetaRegistry 查询与缓存失效（service.audit 记录元数据变更）→ breaking/additive 变更规则测试（实体启用且有数据后字段改名/改类型拒绝）",
+  "exitGate": "P03 出口证据：三类角色接口与菜单互异（AdminAndAuditApiTest/MenuServiceTest）、过期/无效/缺失 JWT 三段可诊断 401 与无权限 403（AuthFlowTest/AdminAndAuditApiTest）、管理员创建用户+分配角色且普通用户不可改权限、登录/锁定/登出/用户管理全审计可追溯（审计行 SQL 断言 + 查询接口）；RB-AUTH 回归包四项全覆盖；合并后 main 门禁 19 pass / 2 skip / 0 fail",
   "blockers": [],
   "stages": [
     {
@@ -28,12 +28,12 @@
     {
       "id": "P03",
       "name": "认证、RBAC 与系统壳",
-      "status": "in_progress"
+      "status": "completed"
     },
     {
       "id": "P04",
       "name": "元数据写模型",
-      "status": "pending"
+      "status": "ready_to_start"
     },
     {
       "id": "P05",
