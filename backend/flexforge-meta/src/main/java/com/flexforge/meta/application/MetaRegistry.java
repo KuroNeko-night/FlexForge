@@ -47,6 +47,12 @@ public class MetaRegistry {
         return loaded;
     }
 
+    /** 按实体名取完整定义（动态数据 API / P05 热路径；名称查行后复用按 id 缓存）。 */
+    public Optional<EntityDefinition> findEntityByName(String name) {
+        return repository.findEntityByName(name).map(EntityRecord::id)
+                .flatMap(this::findEntity);
+    }
+
     /** 分页列实体；statusFilter 非 null 时按状态过滤（USER 读路径仅 enabled）。 */
     public PageResult<EntityRecord> listEntities(PageQuery query, EntityStatus statusFilter) {
         return repository.listEntities(query, statusFilter);

@@ -25,7 +25,7 @@
 | ID | 契约/载荷 | 责任模块 | MVP 消费方 | 引入阶段 | 状态 |
 | --- | --- | --- | --- | --- | --- |
 | `service.meta` | `MetaRegistry`：实体/字段/视图查询与缓存失效 | flexforge-meta | flexforge-data、flexforge-plugin、前端元数据 API | P02 定义，P04 落地 | active |
-| `service.data-access` | 受控动态数据读写：白名单字段映射、参数化查询、排序分页 | flexforge-data | 动态 CRUD API、`extension.record-action` 内置动作 | P02 定义，P05 落地 | active |
+| `service.data-access` | 受控动态数据读写：白名单字段映射、参数化查询、排序分页 | flexforge-data（DynamicRecordService + 单 JSONB data_record 存储，P05 落地） | 动态 CRUD API、`extension.record-action` 内置动作 | P02 定义，P05 已落地 | active |
 | `service.audit` | 审计事件写入端口：`AuditEvent{id, actor, action, objectId, result, occurredAt}` | flexforge-system | 全部写路径模块 | P02 定义，P03 落地 | active |
 
 ### 2.2 ExtensionPoint
@@ -77,3 +77,4 @@ MVP 消费方: <至少一个真实消费方>
 | 2026-08-24 | P02 出口：v1 清单落地为代码常量（flexforge-common registry 包）与运行时注册表（flexforge-runtime）；§1.2 补充消费方落地前口径；R-GOV-03 门禁强制常量 == active 集合 | additive |
 | 2026-08-24 | GUI 定制需求澄清（用户）：插件驱动部件/布局/美术资产，非拖拽设计器；新增 `extension.layout` 与 `extension.theme-asset` 两条 proposed（FR-PLUGIN-09/10/11），实现 PR 落地时转 active | additive |
 | 2026-08-24 | `extension.field-renderer` 内置 renderer ID 集落定为六类默认 ID（`<type>.default`，FieldTypeRegistry 校验 + P06 前端按 ID 实现组件） | additive |
+| 2026-08-24 | `service.data-access` P05 落地：flexforge-data 为责任模块（data_record 单 JSONB 记录表，docs/03 §4 存储定案） | additive |
