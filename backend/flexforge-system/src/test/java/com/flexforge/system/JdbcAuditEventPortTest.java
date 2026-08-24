@@ -11,18 +11,20 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
  * 审计落库失败策略回归（复审 P1-2，P03 冻结口径）：写失败降级 ERROR 日志，
  * 不得向调用方抛出——登录等主流程不能因审计库异常而失败。
+ * stub 匹配器与生产调用的 6 个可变参数一一对应并 verify 触发，防止空转假绿（复审 P3）。
  */
 class JdbcAuditEventPortTest {
 
     @Test
     void recordSwallowsStorageFailure() {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
-        when(jdbc.update(anyString(), any(), any(), any(), any(), any()))
+        when(jdbc.update(anyString(), any(), any(), any(), any(), any(), any()))
                 .thenThrow(new DataAccessResourceFailureException("audit store down"));
         JdbcAuditEventPort port = new JdbcAuditEventPort(jdbc);
 
@@ -30,5 +32,7 @@ class JdbcAuditEventPortTest {
                 Instant.parse("2026-08-24T00:00:00Z"));
 
         assertThatCode(() -> port.record(event)).doesNotThrowAnyException();
+        // 生产调用为 (sql, 6 个绑定值)：anyString() + 6 个 any()，verify 确保 stub 真正命中
+        verify(jdbc).update(anyString(), any(), any(), any(), any(), any(), any());
     }
 }

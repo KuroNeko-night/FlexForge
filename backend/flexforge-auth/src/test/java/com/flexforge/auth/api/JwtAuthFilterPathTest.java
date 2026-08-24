@@ -73,6 +73,18 @@ class JwtAuthFilterPathTest {
     }
 
     @Test
+    void leadingSemicolonGarbageSegmentDoesNotBypassAuthentication() throws Exception {
+        // 复审 P1：容器会剥离 ; 路径参数后映射到 /api/v1/auth/me，过滤器必须同样截断
+        assertThat(run("GET", "/;x/api/v1/auth/me", null).status()).isEqualTo(401);
+        assertThat(run("GET", "/%3B/api/v1/auth/me", null).status()).isEqualTo(401);
+    }
+
+    @Test
+    void trailingPathParameterIsStrippedBeforeMatching() throws Exception {
+        assertThat(run("GET", "/api/v1/auth/me;p=1", null).status()).isEqualTo(401);
+    }
+
+    @Test
     void nonApiPathIsPermitted() throws Exception {
         assertThat(run("GET", "/actuator/health", null).chainCalls().get()).isEqualTo(1);
     }

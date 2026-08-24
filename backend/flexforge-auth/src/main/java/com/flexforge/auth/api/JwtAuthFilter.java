@@ -33,8 +33,10 @@ import java.util.Objects;
  * 认证主体写入请求属性 {@link #PRINCIPAL_ATTRIBUTE} 供控制器使用。
  *
  * <p>路径判定不使用原始 {@code getRequestURI()} 前缀（复审 P1-1：/api/v1/auth/login/../me
- * 可绕过），也不依赖容器的 servletPath 口径差异（MockMvc 中为空串）：自行 URL 解码并
- * 消解 ./.. 段后精确判定；解码失败、反斜杠或根目录逃逸一律 400。
+ * 可绕过），也不依赖容器的 servletPath 口径差异（MockMvc 中为空串）：自行 URL 解码、
+ * 截断 {@code ;} 路径参数（Servlet 映射语义忽略它们）并消解 ./.. 段后精确判定；
+ * 解码失败、反斜杠或根目录逃逸一律 400。注意 URLDecoder 会把 + 解码为空格（表单语义，
+ * 比容器路径解码更严），本 API 路径不含 +，方向上只会拒绝不会放行。
  */
 @PublicApi
 @Component
@@ -105,7 +107,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private static List<String> resolveSegments(String decodedPath) {
         Deque<String> segments = new ArrayDeque<>();
-        for (String segment : decodedPath.split("/")) {
+        for (String rawSegment : decodedPath.split("/")) {
+            // Servlet 语义：路径参数（;... 至下一个 /）不参与映射，容器会先剥离——
+            // 过滤器侧同样截断，否则 /;x/api/v1/auth/me 会因不以 /api/ 开头被放行（复审 P1）
+            String segment = truncatePathParams(rawSegment);
             if (segment.isEmpty() || ".".equals(segment)) {
                 continue;
             }
@@ -119,6 +124,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             segments.addLast(segment);
         }
         return List.copyOf(segments);
+    }
+
+    private static String truncatePathParams(String segment) {
+        int semicolon = segment.indexOf(';');
+        return semicolon < 0 ? segment : segment.substring(0, semicolon);
     }
 
     private AuthPrincipal parsePrincipal(HttpServletRequest request) {

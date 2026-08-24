@@ -39,9 +39,10 @@ public class JdbcAuditEventPort implements AuditEventPort {
                     event.id(), event.actor(), event.action(), event.objectId(), event.result(),
                     Timestamp.from(event.occurredAt()));
         } catch (DataAccessException e) {
+            // S8：日志不含 SQL/堆栈，只记异常类别摘要与事件字段
             log.error("审计写入失败 requestId={} action={} actor={} objectId={} result={} 原因={}",
                     MDC.get("requestId"), event.action(), event.actor(), event.objectId(),
-                    event.result(), e.getMessage());
+                    event.result(), e.getClass().getSimpleName());
         }
     }
 }
