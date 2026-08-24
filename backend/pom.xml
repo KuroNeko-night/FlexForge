@@ -16,6 +16,7 @@
     <module>flexforge-runtime</module>
     <module>flexforge-auth</module>
     <module>flexforge-system</module>
+    <module>flexforge-meta</module>
     <module>flexforge-app</module>
   </modules>
 
@@ -67,6 +68,11 @@
       <dependency>
         <groupId>com.flexforge</groupId>
         <artifactId>flexforge-system</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.flexforge</groupId>
+        <artifactId>flexforge-meta</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

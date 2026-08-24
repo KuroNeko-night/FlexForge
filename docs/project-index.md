@@ -38,6 +38,7 @@ FlexForge/
 │   ├── flexforge-runtime/          PluginContext + 内存 ServiceRegistry/ExtensionRegistry/事件发布器 + 注册-撤销测试（P02 迭代 1）
 │   ├── flexforge-auth/             登录/JWT/RBAC/当前用户：BCrypt+防暴破+JwtAuthFilter+@RequireRole（P03）
 │   ├── flexforge-system/           用户/角色/菜单/审计：管理接口+菜单聚合（extension.navigation 消费方）+审计查询+落库（P03）
+│   ├── flexforge-meta/             元数据写模型：FieldTypeRegistry 单点+MetaRegistry 缓存/版本+实体/字段/视图配置 API（service.meta，P04）
 │   └── flexforge-app/              启动、配置、健康检查；web/ 统一错误装配 + requestId 过滤器 + logback 脱敏基线（P02 迭代 2）；Testcontainers 冒烟 + ArchUnit（5 规则）+ R-GOV-06 fixture 测试
 ├── frontend/                       Vue 3 + TS + Vite（P01 骨架）
 │   ├── package.json / package-lock.json
@@ -47,6 +48,7 @@ FlexForge/
 │   └── src/                        main.ts / App.vue（健康检查 UI）/ services/health.ts + 单测
 ├── database/
 │   ├── migrations/V001__init.sql   平台骨架表（sys_user/sys_role/sys_user_role）
+│   ├── migrations/V002-004         V002 审计表 / V003 角色种子 / V004 meta_entity+meta_field+meta_view（P04）
 │   └── init/                       Compose 首次初始化：应用专用账号
 ├── tests/
 │   └── fixtures/
@@ -194,3 +196,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-24 | §1 树更新：app web/（RequestIdFilter/GlobalExceptionHandler）与 logback-spring.xml；R-GOV-08 门禁激活、R-GOV-01 升级完整版（防削弱检查）；§7 裁决 record 组件不计入参数上限（Issue #9） | P02 迭代 2：REST 统一错误装配 + requestId 全链路 + 日志脱敏；Mimosa 深度扫描 0 findings |
 | 2026-08-24 | §1 树更新：flexforge-auth 与 flexforge-system 新模块；V002 审计表 + V003 角色种子；.env/compose 增加 AUTH_JWT_* 与引导管理员占位 | P03 迭代 1：认证内核（BCrypt/JWT/防暴破/统一错误）+ 审计落库 |
 | 2026-08-24 | §1 树更新：auth 增 @RequireRole/RoleAuthorizationInterceptor；system 增 api/application/infrastructure 三层（用户管理/菜单/审计查询）；common 增 NavigationContribution 与 AuditEvents | P03 迭代 2：用户/角色管理 + 菜单三角色差异（extension.navigation 首个真实消费方）+ 审计查询 |
+| 2026-08-24 | §1 树更新：flexforge-meta 新模块（domain/application/infrastructure/api 四层）；V004 meta_* 三表；登记册 field-renderer 行落定六类内置 renderer ID | P04 迭代 1：FieldTypeRegistry 单点 + MetaRegistry 缓存/版本失效 + 实体/字段/视图配置 API + breaking/additive 规则（RB-META） |

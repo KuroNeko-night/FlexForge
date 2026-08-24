@@ -3,11 +3,11 @@
   "updatedAt": "2026-08-24",
   "currentStageId": "P04",
   "currentStageName": "元数据写模型",
-  "status": "ready_to_start",
+  "status": "in_progress",
   "progressPercent": 18,
   "owner": "project-maintainer",
-  "nextAction": "P04 启动：V004 meta_entity/meta_field/meta_view 迁移（平台表，对外 ID 为不透明字符串）→ FieldTypeRegistry 单点（六类字段白名单 + 校验/SQL 映射/renderer ID 契约，登记 service.meta 常量已有）→ 实体/字段/视图配置 API（DEVELOPER 角色，统一错误装配 + 分页白名单）→ MetaRegistry 查询与缓存失效（service.audit 记录元数据变更）→ breaking/additive 变更规则测试（实体启用且有数据后字段改名/改类型拒绝）",
-  "exitGate": "P03 出口证据：三类角色接口与菜单互异（AdminAndAuditApiTest/MenuServiceTest）、过期/无效/缺失 JWT 三段可诊断 401 与无权限 403（AuthFlowTest/AdminAndAuditApiTest）、管理员创建用户+分配角色且普通用户不可改权限、登录/锁定/登出/用户管理全审计可追溯（审计行 SQL 断言 + 查询接口）；RB-AUTH 回归包四项全覆盖；合并后 main 门禁 19 pass / 2 skip / 0 fail",
+  "nextAction": "P04 迭代 1 收口：跑全量 check-repo-health → push feat/p04-meta-write-model → 开 PR → 独立子代理缺陷优先交叉审查（AGENTS.md §6 ②）→ 修复 → CI 全绿合并 → P04 出口复核",
+  "exitGate": "P04 验收证据：六类字段白名单与非法字段名/类型/renderer ID 在 API 边界拒绝（负例测试）；字段类型映射仅 FieldTypeRegistry 一处（源扫描单点断言）；非 draft 实体上改名/改类型/改语义被拒、新增字段与视图 additive 可执行；元数据写操作全部产生审计事件（SQL 断言）；写入后读路径即时可见（缓存失效 + 版本号递增）；USER 仅见 enabled 实体；RB-META 回归并入 CI 并通过",
   "blockers": [],
   "stages": [
     {
@@ -33,7 +33,7 @@
     {
       "id": "P04",
       "name": "元数据写模型",
-      "status": "ready_to_start"
+      "status": "in_progress"
     },
     {
       "id": "P05",
