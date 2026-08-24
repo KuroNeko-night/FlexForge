@@ -6,7 +6,7 @@
   "status": "in_progress",
   "progressPercent": 15,
   "owner": "project-maintainer",
-  "nextAction": "P03 迭代 1（认证内核）：新建 flexforge-auth（BCrypt 密码哈希 cost≥10、JWT HS256 密钥 env 注入且 TTL 可配置、登录防暴破 5 次锁 10 分钟、登录/退出/当前用户接口、统一\"用户名或密码错误\"防枚举）+ flexforge-system（JdbcAuditEventPort 审计落库，登记册 owner 对齐）+ V002 审计表/V003 角色种子迁移 + app JwtAuthFilter 装配（login/actuator 放行，其余 401 unauthorized 可诊断）+ bootstrap admin（env 注入初始密码）→ 迭代 2：用户/角色/菜单管理接口、审计查询接口、三类角色接口与菜单差异",
+  "nextAction": "P03 迭代 2：用户/角色管理接口（管理员创建用户+分配角色，普通用户不可改权限，S2 服务端授权注解收敛）→ 菜单接口（三角色可见差异，extension.navigation 消费准备）→ 最小审计查询接口（按时间/操作者/对象过滤，分页白名单）→ 出口复核（三类角色表现不同、过期/无效 JWT 与无权限可诊断、管理员管理用户、关键写操作审计可追溯）",
   "exitGate": "三类角色和 JWT 测试通过",
   "blockers": [],
   "stages": [
