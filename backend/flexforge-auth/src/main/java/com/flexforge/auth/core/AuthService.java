@@ -8,19 +8,21 @@ import com.flexforge.auth.InvalidCredentialsException;
 import com.flexforge.auth.infrastructure.JdbcUserRepository;
 import com.flexforge.auth.infrastructure.UserRecord;
 import com.flexforge.common.PublicApi;
-import com.flexforge.common.audit.AuditEvent;
 import com.flexforge.common.audit.AuditEventPort;
+import com.flexforge.common.audit.AuditEvents;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * 认证用例（docs/09 P03、docs/13 §3.1）：登录（统一错误防枚举 + 防暴破）、退出（审计事件）、
  * 当前用户资料；关键路径全部写审计（service.audit 端口，P03 落库）。
+ *
+ * <p>审计口径（P03 迭代 2 统一）：actor=操作者用户名；objectId 登录成功/登出=用户 ID，
+ * 登录失败/锁定（用户可能不存在）=用户名字面量；事件统一经 {@link AuditEvents} 工厂构造。
  */
 @PublicApi
 @Service
@@ -51,15 +53,16 @@ public class AuthService {
                 .orElse(false);
         if (!ok) {
             kernel.guard().onFailure(username)
-                    .ifPresent(until -> audit.record(event(username, "auth.login.locked", username, "success")));
-            audit.record(event(username, "auth.login", username, "failure"));
+                    .ifPresent(until -> audit.record(
+                            AuditEvents.of(username, "auth.login.locked", username, "success", clock)));
+            audit.record(AuditEvents.of(username, "auth.login", username, "failure", clock));
             throw new InvalidCredentialsException();
         }
         UserRecord user = found.orElseThrow();
         kernel.guard().onSuccess(username);
         JwtTokenService.IssuedToken issued =
                 kernel.tokens().issue(user.id(), user.roles(), kernel.properties().getJwtTtl());
-        audit.record(event(username, "auth.login", Long.toString(user.id()), "success"));
+        audit.record(AuditEvents.of(username, "auth.login", Long.toString(user.id()), "success", clock));
         return new LoginResult(issued.token(), issued.expiresAt(), toCurrentUser(user));
     }
 
@@ -74,16 +77,14 @@ public class AuthService {
 
     /** 登出 = 审计事件（docs/13 §3.1.5：MVP 不做服务端吊销，前端删除令牌）。 */
     public void logout(AuthPrincipal principal) {
-        audit.record(event("user-" + principal.userId(), "auth.logout",
-                Long.toString(principal.userId()), "success"));
+        String actor = users.findById(principal.userId())
+                .map(UserRecord::username)
+                .orElse("user-" + principal.userId());
+        audit.record(AuditEvents.of(actor, "auth.logout", Long.toString(principal.userId()),
+                "success", clock));
     }
 
     private CurrentUser toCurrentUser(UserRecord user) {
         return new CurrentUser(user.id(), user.username(), user.displayName(), user.roles());
-    }
-
-    private AuditEvent event(String actor, String action, String objectId, String result) {
-        return new AuditEvent("audit-" + UUID.randomUUID(), actor, action, objectId, result,
-                clock.instant());
     }
 }
