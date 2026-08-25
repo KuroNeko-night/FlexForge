@@ -50,7 +50,6 @@ describe('KeyedRegistry（五扩展点共用语义，docs/extension-points §1�
     expect(registry.revokeByActivation('act-2')).toBe(1);
     expect(registry.resolve('menu.x')).toBeUndefined();
   });
-
 });
 
 describe('KeyedRegistry：快照与清理', () => {
