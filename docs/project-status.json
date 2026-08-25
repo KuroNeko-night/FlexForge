@@ -3,10 +3,10 @@
   "updatedAt": "2026-08-24",
   "currentStageId": "P06",
   "currentStageName": "前端动态渲染",
-  "status": "ready_to_start",
+  "status": "in_progress",
   "progressPercent": 24,
   "owner": "project-maintainer",
-  "nextAction": "P06 启动（前端动态渲染，RB-UI）：前端 API service 层（meta/data 接口客户端 + 元数据版本比对刷新）→ renderer registry（按 FieldTypeRegistry 内置 ID `<type>.default` 映射六类组件，登记即扩展不改通用组件主逻辑）→ 菜单/layout/theme registry（键用 extension.navigation/field-renderer/record-action/layout/theme-asset，缺省布局与默认外观兜底、撤销即时恢复）→ 动态列表/表单/详情页（无业务页面代码）+ loading/empty/error/denied/stale 五状态（元数据不作为 HTML/脚本执行）→ Vitest 组件测试 + 子代理交叉审查 → PR",
+  "nextAction": "P06 迭代 1 交付（feat/p06-frontend-rendering，RB-UI 核心）：新增依赖 vue-router + @vue/test-utils（MIT，路由与组件测试标准件）→ api 层（client 错误规范化/token 注入/401 处理 + auth/meta/data 客户端，令牌 sessionStorage）→ 通用 keyed registry 基座（register/revoke/activationId 清理，QG-4 单实现）+ renderer registry（六类内置 `<type>.default`）+ 菜单 registry（后端菜单 + 贡献合并）→ 登录页 + 动态列表/表单/详情（无业务页面代码，S5：仅文本插值）+ loading/empty/error/denied/stale 五状态 + metaVersion 比对刷新 → Vitest 组件/registry 测试 → 迭代 2：layout/theme/record-action registry（FR-PLUGIN-10/11 消费面）",
   "exitGate": "P05 出口证据：①P04 实体全 CRUD（DataApiTest 全路径：create/detail/list/patch/delete + 物理删除 SQL 断言）②用户输入不作 SQL/列名/表名（白名单字段+操作符+registry 类型转换、值全参数化；注入样例 400 负例 DataApiTest/DataQueryParamsTest）③非法数据被拒（FR-DEMO-02 示例 qty<0 + DECIMAL NUMERIC(20,6) 精度防线 + 七负例）④P95<500ms（DataPerformanceBaselineTest：200 种子 150 样本实测 5ms 量级）⑤动态读写仅 service.data-access（data_record 字面量单点源扫描，无示例实体专用 Controller/SQL）⑥删除审计三动作 SQL 断言 + pageSize>200/page>100000 可诊断 400；乐观并发守卫（updated_at 前置 + 失败路径单测）；RB-DATA 五要素覆盖，data 12 + meta 11 + app 73 tests（后端 146），两轮子代理审查后合并 49bba9f，main CI 六项 success、门禁 19 pass / 2 skip / 0 fail",
   "blockers": [],
   "stages": [

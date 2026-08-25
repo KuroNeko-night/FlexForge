@@ -141,6 +141,7 @@ AI 不直接获得数据库管理员权限、服务器命令权限或生产发�
 | --- | --- | --- |
 | `POST` | `/api/v1/auth/login` | 登录并返回令牌 |
 | `GET` | `/api/v1/meta/entities` | 查询实体元数据 |
+| `GET` | `/api/v1/meta/entities/by-name/{name}` | 按名称取实体定义（动态页面元数据入口，P06） |
 | `POST` | `/api/v1/meta/entities` | 创建实体 |
 | `GET` | `/api/v1/data/{entity}` | 查询动态实体数据（分页/白名单排序/白名单过滤） |
 | `POST` | `/api/v1/data/{entity}` | 新增动态记录 |

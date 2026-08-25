@@ -106,6 +106,19 @@ public class MetaController {
         return toDetail(definition);
     }
 
+    /** 按名称取实体定义（动态数据页面的元数据入口，URL 用实体名；可见性与 by-id 同口径）。 */
+    @GetMapping("/entities/by-name/{name}")
+    public EntityDetail getEntityByName(
+            @RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
+            @PathVariable String name) {
+        EntityDefinition definition = registry.findEntityByName(name)
+                .orElseThrow(() -> new NoSuchElementException("实体不存在: " + name));
+        if (!canSeeAllStatuses(principal) && definition.status() != EntityStatus.ENABLED) {
+            throw new NoSuchElementException("实体不存在: " + name);
+        }
+        return toDetail(definition);
+    }
+
     @PostMapping("/entities")
     @RequireRole(Roles.DEVELOPER)
     public EntityDetail createEntity(@RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
