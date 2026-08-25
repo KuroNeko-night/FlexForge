@@ -1,6 +1,7 @@
 import eslint from '@eslint/js';
 import prettier from 'eslint-config-prettier';
 import pluginVue from 'eslint-plugin-vue';
+import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 // 硬上限（docs/coding-standards.md §7 唯一数值来源）：
@@ -12,6 +13,10 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   ...pluginVue.configs['flat/recommended'],
+  {
+    // 浏览器运行环境（P06 起组件/视图使用 DOM API；非放宽数值上限）
+    languageOptions: { globals: { ...globals.browser } },
+  },
   {
     files: ['**/*.ts', '**/*.tsx'],
     rules: {

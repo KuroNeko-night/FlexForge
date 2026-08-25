@@ -41,12 +41,20 @@ FlexForge/
 │   ├── flexforge-meta/             元数据写模型：FieldTypeRegistry 单点+MetaRegistry 缓存/版本+实体/字段/视图配置 API（service.meta，P04）
 │   ├── flexforge-data/             动态数据访问：data_record 单 JSONB 存储+实体级记录校验+白名单 SQL 构造+动态 CRUD API（service.data-access，P05）
 │   └── flexforge-app/              启动、配置、健康检查；web/ 统一错误装配 + requestId 过滤器 + logback 脱敏基线（P02 迭代 2）；Testcontainers 冒烟 + ArchUnit（5 规则）+ R-GOV-06 fixture 测试
-├── frontend/                       Vue 3 + TS + Vite（P01 骨架）
-│   ├── package.json / package-lock.json
+├── frontend/                       Vue 3 + TS + Vite（P01 骨架 + P06 动态渲染）
+│   ├── package.json / package-lock.json   +vue-router；dev 依赖 +@vue/test-utils/happy-dom/globals（P06）
 │   ├── Dockerfile                  Vite dev 镜像（非 root；生产静态服务 P06 引入）
 │   ├── vite.config.ts              dev 同源代理（CORS 基线）+ preview CSP/安全响应头骨架
-│   ├── eslint.config.js / eslint.config.targets.js   硬上限 error / 建议目标 warn
-│   └── src/                        main.ts / App.vue（健康检查 UI）/ services/health.ts + 单测
+│   ├── vitest.config.ts            测试配置（@ alias；组件测试用文件级 happy-dom 标注）
+│   ├── eslint.config.js / eslint.config.targets.js   硬上限 error / 建议目标 warn（P06 补浏览器 globals）
+│   └── src/
+│       ├── main.ts / App.vue / router.ts   路由壳（登录守卫体验跳转，安全边界在服务端 S2）
+│       ├── api/                    client（错误规范化/令牌注入/401 回调）+ auth/meta/data 客户端 + 契约类型
+│       ├── auth/token.ts           会话令牌（sessionStorage）与当前用户
+│       ├── registry/               keyed.ts 通用基座（五扩展点共用注册-撤销语义）+ renderer/menu registry
+│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm
+│       ├── composables/            useEntityMetadata（metaVersion 比对 → stale 刷新）
+│       └── views/                  Login/Workbench/Home/DynamicEntity（列表/详情/新建/编辑）/Placeholder
 ├── database/
 │   ├── migrations/V001__init.sql   平台骨架表（sys_user/sys_role/sys_user_role）
 │   ├── migrations/V002-004         V002 审计表 / V003 角色种子 / V004 meta_entity+meta_field+meta_view（P04）
@@ -200,3 +208,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-24 | §1 树更新：auth 增 @RequireRole/RoleAuthorizationInterceptor；system 增 api/application/infrastructure 三层（用户管理/菜单/审计查询）；common 增 NavigationContribution 与 AuditEvents | P03 迭代 2：用户/角色管理 + 菜单三角色差异（extension.navigation 首个真实消费方）+ 审计查询 |
 | 2026-08-24 | §1 树更新：flexforge-meta 新模块（domain/application/infrastructure/api 四层）；V004 meta_* 三表；登记册 field-renderer 行落定六类内置 renderer ID | P04 迭代 1：FieldTypeRegistry 单点 + MetaRegistry 缓存/版本失效 + 实体/字段/视图配置 API + breaking/additive 规则（RB-META） |
 | 2026-08-24 | §1 树更新：flexforge-data 新模块（四层）；V005 data_record；登记册 service.data-access 行标注 P05 落地 | P05 迭代 1：动态数据运行时（CRUD API + 实体级记录校验 + 白名单 SQL + RB-DATA） |
+| 2026-08-25 | §1 树更新：frontend 新增 api/auth/registry/components/composables/views 分层与 router.ts；依赖 +vue-router、dev +@vue/test-utils/happy-dom/globals；后端 meta 增 by-name 端点 | P06 迭代 1：前端动态渲染核心（RB-UI） |

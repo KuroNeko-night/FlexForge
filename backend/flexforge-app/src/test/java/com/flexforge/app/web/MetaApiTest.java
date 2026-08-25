@@ -16,6 +16,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -168,6 +169,24 @@ class MetaApiTest {
         addViewExpect(entityId, "{\"viewType\":\"bogus\",\"name\":\"列\",\"columns\":[]}", 400);
         addViewExpect(entityId, "{\"viewType\":\"list\",\"name\":\"列\",\"columns\":[{\"field\":\"sku\"}]}", 200);
         addViewExpect(entityId, "{\"viewType\":\"list\",\"name\":\"列二\",\"columns\":[]}", 400);
+    }
+
+    @Test
+    void entityDefinitionResolvableByNameForDynamicPages() throws Exception {
+        String entityId = MetaTestSupport.createEntity(mockMvc, developerBearer, "meta_api_by_name");
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/meta/entities/by-name/meta_api_by_name")
+                        .header("Authorization", developerBearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(entityId))
+                .andExpect(jsonPath("$.name").value("meta_api_by_name"))
+                .andExpect(jsonPath("$.fields.length()").value(0));
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/meta/entities/by-name/meta_api_by_name")
+                        .header("Authorization", userBearer))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/meta/entities/by-name/ghost_entity")
+                        .header("Authorization", developerBearer))
+                .andExpect(status().isNotFound());
     }
 
     @Test
