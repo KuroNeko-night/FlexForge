@@ -6,7 +6,7 @@
   "status": "in_progress",
   "progressPercent": 24,
   "owner": "project-maintainer",
-  "nextAction": "P06 迭代 1 交付（feat/p06-frontend-rendering，RB-UI 核心）：新增依赖 vue-router + @vue/test-utils（MIT，路由与组件测试标准件）→ api 层（client 错误规范化/token 注入/401 处理 + auth/meta/data 客户端，令牌 sessionStorage）→ 通用 keyed registry 基座（register/revoke/activationId 清理，QG-4 单实现）+ renderer registry（六类内置 `<type>.default`）+ 菜单 registry（后端菜单 + 贡献合并）→ 登录页 + 动态列表/表单/详情（无业务页面代码，S5：仅文本插值）+ loading/empty/error/denied/stale 五状态 + metaVersion 比对刷新 → Vitest 组件/registry 测试 → 迭代 2：layout/theme/record-action registry（FR-PLUGIN-10/11 消费面）",
+  "nextAction": "P06 迭代 2（feat/p06-layout-theme 分支）：layout registry（消费 extension.layout 载荷 {key,target,slots}：页面/工作台槽位与部件编排渲染 + 缺省布局兜底 + 贡献撤销即时恢复，验收 4）→ theme registry（消费 extension.theme-asset 载荷 {key,kind,path,scope}：背景图/图标/动画以 CSS 变量/类注入，停用/卸载恢复平台默认外观，验收 5）→ record-action registry（extension.record-action：内置动作 handler 注册与表格动作栏消费）→ registry 注册/撤销/兜底恢复测试（RB-UI 补全）→ 子代理交叉审查 → PR 合并 → P06 出口复核（七项验收）",
   "exitGate": "P05 出口证据：①P04 实体全 CRUD（DataApiTest 全路径：create/detail/list/patch/delete + 物理删除 SQL 断言）②用户输入不作 SQL/列名/表名（白名单字段+操作符+registry 类型转换、值全参数化；注入样例 400 负例 DataApiTest/DataQueryParamsTest）③非法数据被拒（FR-DEMO-02 示例 qty<0 + DECIMAL NUMERIC(20,6) 精度防线 + 七负例）④P95<500ms（DataPerformanceBaselineTest：200 种子 150 样本实测 5ms 量级）⑤动态读写仅 service.data-access（data_record 字面量单点源扫描，无示例实体专用 Controller/SQL）⑥删除审计三动作 SQL 断言 + pageSize>200/page>100000 可诊断 400；乐观并发守卫（updated_at 前置 + 失败路径单测）；RB-DATA 五要素覆盖，data 12 + meta 11 + app 73 tests（后端 146），两轮子代理审查后合并 49bba9f，main CI 六项 success、门禁 19 pass / 2 skip / 0 fail",
   "blockers": [],
   "stages": [
