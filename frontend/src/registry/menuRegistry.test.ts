@@ -19,9 +19,9 @@ describe('菜单 registry（RB-UI：注册/撤销不残留）', () => {
     expect(merged.map((menu) => menu.key)).toEqual(['workbench', 'data-model', 'local.extra']);
 
     revokeMenu('local.extra');
-    expect(mergedMenus([{ key: 'workbench', title: '工作台', route: '/', order: 10 }]).map((m) => m.key)).toEqual([
-      'workbench',
-    ]);
+    expect(
+      mergedMenus([{ key: 'workbench', title: '工作台', route: '/', order: 10 }]).map((m) => m.key),
+    ).toEqual(['workbench']);
   });
 
   it('同 key 以后端为单一事实源，本地项被压制', () => {
@@ -41,7 +41,13 @@ describe('菜单 registry（RB-UI：注册/撤销不残留）', () => {
       displayName: 'U',
       roles: ['USER'],
     });
-    registerMenu({ key: 'local.admin', title: '管理入口', route: '/x', order: 1, permissionKey: 'ADMIN' });
+    registerMenu({
+      key: 'local.admin',
+      title: '管理入口',
+      route: '/x',
+      order: 1,
+      permissionKey: 'ADMIN',
+    });
     registerMenu({ key: 'local.user', title: '用户入口', route: '/y', order: 2 });
     const merged = mergedMenus([]);
     expect(merged.map((menu) => menu.key)).toEqual(['local.user']);

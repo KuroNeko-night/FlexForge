@@ -170,7 +170,9 @@ onMounted(refresh);
           <button type="button" @click.stop="openDetail(record.id)">详情</button>
           <button
             type="button"
-            @click.stop="router.push({ name: 'entity-edit', params: { entity: entityName, id: record.id } })"
+            @click.stop="
+              router.push({ name: 'entity-edit', params: { entity: entityName, id: record.id } })
+            "
           >
             编辑
           </button>
@@ -178,12 +180,29 @@ onMounted(refresh);
         </template>
       </DynamicTable>
       <footer class="pager">
-        <button type="button" :disabled="page <= 1" @click="page--; refresh()">上一页</button>
-        <span>第 {{ page }} 页 / 共 {{ Math.max(1, Math.ceil(total / pageSize)) }} 页（{{ total }} 条）</span>
+        <button
+          type="button"
+          :disabled="page <= 1"
+          @click="
+            page--;
+            refresh();
+          "
+        >
+          上一页
+        </button>
+        <span
+          >第 {{ page }} 页 / 共 {{ Math.max(1, Math.ceil(total / pageSize)) }} 页（{{
+            total
+          }}
+          条）</span
+        >
         <button
           type="button"
           :disabled="page >= Math.ceil(total / pageSize)"
-          @click="page++; refresh()"
+          @click="
+            page++;
+            refresh();
+          "
         >
           下一页
         </button>

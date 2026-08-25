@@ -37,8 +37,7 @@ function initialValue(): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const field of props.definition.fields) {
     const fromRecord = props.initial?.[field.name];
-    result[field.name] =
-      fromRecord !== undefined ? fromRecord : field.defaultValue ?? null;
+    result[field.name] = fromRecord !== undefined ? fromRecord : (field.defaultValue ?? null);
   }
   return result;
 }

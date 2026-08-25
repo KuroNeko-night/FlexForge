@@ -43,11 +43,7 @@ function cellRenderer(field: FieldDefinition) {
       </tr>
     </thead>
     <tbody>
-      <tr
-        v-for="record in records"
-        :key="record.id"
-        @click="$emit('row-click', record)"
-      >
+      <tr v-for="record in records" :key="record.id" @click="$emit('row-click', record)">
         <td v-for="column in columns" :key="column.id" :data-field="column.name">
           <component
             :is="cellRenderer(column)"

@@ -21,7 +21,8 @@ onMounted(async () => {
       return;
     }
     state.value = 'error';
-    error.value = e instanceof ApiError ? `${e.message}${e.requestId ? `（${e.requestId}）` : ''}` : null;
+    error.value =
+      e instanceof ApiError ? `${e.message}${e.requestId ? `（${e.requestId}）` : ''}` : null;
   }
 });
 </script>

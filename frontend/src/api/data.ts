@@ -11,19 +11,14 @@ export function queryRecords(
 ): Promise<PageResult<RecordView>> {
   const query = new URLSearchParams(params).toString();
   const suffix = query ? `?${query}` : '';
-  return apiFetch<PageResult<RecordView>>(
-    `/data/${encodeURIComponent(entity)}${suffix}`,
-  );
+  return apiFetch<PageResult<RecordView>>(`/data/${encodeURIComponent(entity)}${suffix}`);
 }
 
 export function fetchRecord(entity: string, id: string): Promise<RecordView> {
   return apiFetch<RecordView>(`/data/${encodeURIComponent(entity)}/${encodeURIComponent(id)}`);
 }
 
-export function createRecord(
-  entity: string,
-  data: Record<string, unknown>,
-): Promise<RecordView> {
+export function createRecord(entity: string, data: Record<string, unknown>): Promise<RecordView> {
   return apiFetch<RecordView>(`/data/${encodeURIComponent(entity)}`, {
     method: 'POST',
     body: JSON.stringify(data),

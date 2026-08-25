@@ -58,13 +58,15 @@ describe('DynamicForm（默认值补齐 + 提交载荷清洗）', () => {
   it('渲染全部字段（position 序），必填标记与默认值可见', () => {
     registerBuiltins();
     const wrapper = mount(DynamicForm, {
-      props: { definition: definition(), view: null, initial: null, submitLabel: '创建', submitting: false },
+      props: {
+        definition: definition(),
+        view: null,
+        initial: null,
+        submitLabel: '创建',
+        submitting: false,
+      },
     });
-    expect(wrapper.findAll('label').map((label) => label.text())).toEqual([
-      '数量',
-      'SKU*',
-      '状态',
-    ]);
+    expect(wrapper.findAll('label').map((label) => label.text())).toEqual(['数量', 'SKU*', '状态']);
     expect(wrapper.find('input[type="number"]').element).toBeTruthy();
     expect((wrapper.find('select').element as HTMLSelectElement).value).toBe('in_stock');
   });
@@ -72,7 +74,13 @@ describe('DynamicForm（默认值补齐 + 提交载荷清洗）', () => {
   it('提交只携带非空值（清洗 null/空串）', async () => {
     registerBuiltins();
     const wrapper = mount(DynamicForm, {
-      props: { definition: definition(), view: null, initial: null, submitLabel: '创建', submitting: false },
+      props: {
+        definition: definition(),
+        view: null,
+        initial: null,
+        submitLabel: '创建',
+        submitting: false,
+      },
     });
     const textInput = wrapper.find('input[type="text"]');
     await textInput.setValue('SKU-9');
