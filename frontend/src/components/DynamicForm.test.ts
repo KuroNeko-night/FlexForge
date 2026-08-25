@@ -71,7 +71,7 @@ describe('DynamicForm（默认值补齐 + 提交载荷清洗）', () => {
     expect((wrapper.find('select').element as HTMLSelectElement).value).toBe('in_stock');
   });
 
-  it('提交只携带非空值（清洗 null/空串）', async () => {
+  it('提交携带全部已定义键（null=显式清除语义）', async () => {
     registerBuiltins();
     const wrapper = mount(DynamicForm, {
       props: {
@@ -88,5 +88,15 @@ describe('DynamicForm（默认值补齐 + 提交载荷清洗）', () => {
     const emitted = wrapper.emitted('submit');
     expect(emitted).toBeTruthy();
     expect(emitted![0][0]).toEqual({ qty: 0, sku: 'SKU-9', status: 'in_stock' });
+
+    // 清空文本输入 → 空值以 null 提交（后端 PATCH null 清键 / create 丢弃 null）
+    await textInput.setValue('');
+    await textInput.trigger('input');
+    const empty = wrapper.find('input[type="text"]').element as HTMLInputElement;
+    empty.value = '';
+    empty.dispatchEvent(new Event('input'));
+    await wrapper.find('form').trigger('submit');
+    const cleared = wrapper.emitted('submit');
+    expect((cleared!.at(-1)?.[0] as Record<string, unknown>).sku).toBeNull();
   });
 });

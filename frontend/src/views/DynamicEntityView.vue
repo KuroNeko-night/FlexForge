@@ -61,9 +61,10 @@ async function loadRecords(): Promise<void> {
     page: String(page.value),
     pageSize: String(pageSize),
   });
-  // 末页删光后回退到新的最后一页，避免误导性"暂无数据"
-  if (result.items.length === 0 && result.total > 0 && page.value > 1) {
-    page.value = Math.max(1, Math.ceil(result.total / pageSize));
+  // 末页删光后回退到新的最后一页（仅校正一次：已在末页仍空则接受快照偏差，防递归）
+  const lastPage = Math.max(1, Math.ceil(result.total / pageSize));
+  if (result.items.length === 0 && result.total > 0 && page.value !== lastPage && page.value > 1) {
+    page.value = lastPage;
     await loadRecords();
     return;
   }
@@ -109,10 +110,8 @@ async function onSubmit(values: Record<string, unknown>): Promise<void> {
   formError.value = null;
   try {
     if (mode.value === 'new') {
+      // 创建成功直接跳详情；数据重载统一由路由 watch → refresh（seq 守卫）接管
       const created = await createRecord(entityName.value, values);
-      await load(entityName.value);
-      page.value = 1;
-      await loadRecords();
       await openDetail(created.id);
       return;
     }
@@ -148,7 +147,8 @@ async function openDetail(id: string): Promise<void> {
   await router.push({ name: 'entity-detail', params: { entity: entityName.value, id } });
 }
 
-let watchedEntity = '';
+// 挂载时即记录当前实体：首次同实体内导航（列表→详情）不重置分页
+let watchedEntity = String(route.params.entity ?? '');
 watch(
   () => [route.params.entity, route.params.id, route.name],
   () => {
