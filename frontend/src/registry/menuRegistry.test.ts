@@ -33,6 +33,16 @@ describe('菜单 registry（RB-UI：注册/撤销不残留）', () => {
     revokeMenu('workbench');
   });
 
+  it('按 activationId 撤销全部本地贡献（插件停用语义）', () => {
+    clearSession();
+    registerMenu({ key: 'p.a', title: 'A', route: '/a', order: 1 }, 'act-9');
+    registerMenu({ key: 'p.b', title: 'B', route: '/b', order: 2 }, 'act-9');
+    expect(revokeMenusByActivation('act-9')).toBe(2);
+    expect(mergedMenus([])).toHaveLength(0);
+  });
+});
+
+describe('菜单 registry：权限过滤', () => {
   it('permissionKey 本地过滤（服务端授权才是边界，S2）', () => {
     clearSession();
     saveSession('t', {
@@ -54,13 +64,5 @@ describe('菜单 registry（RB-UI：注册/撤销不残留）', () => {
     revokeMenu('local.admin');
     revokeMenu('local.user');
     clearSession();
-  });
-
-  it('按 activationId 撤销全部本地贡献（插件停用语义）', () => {
-    clearSession();
-    registerMenu({ key: 'p.a', title: 'A', route: '/a', order: 1 }, 'act-9');
-    registerMenu({ key: 'p.b', title: 'B', route: '/b', order: 2 }, 'act-9');
-    expect(revokeMenusByActivation('act-9')).toBe(2);
-    expect(mergedMenus([])).toHaveLength(0);
   });
 });
