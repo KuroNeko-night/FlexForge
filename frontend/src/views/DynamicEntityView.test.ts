@@ -93,7 +93,9 @@ describe('DynamicEntityView（RB-UI 集成面）', () => {
     await flushPromises();
     expect(wrapper.find('.state-view[data-state="denied"]').exists()).toBe(true);
   });
+});
 
+describe('DynamicEntityView：写路径', () => {
   it('新建模式提交 create 并跳转详情', async () => {
     routeMock.params = { entity: 'inventory_item', id: 'new' };
     routeMock.name = 'entity-new';
