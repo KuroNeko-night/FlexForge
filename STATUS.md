@@ -3,14 +3,14 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P05
-CURRENT_STAGE_NAME: 动态数据运行时
-STAGE_STATUS: in_progress
-PROJECT_PROGRESS: 21%
+CURRENT_STAGE_ID: P06
+CURRENT_STAGE_NAME: 前端动态渲染
+STAGE_STATUS: ready_to_start
+PROJECT_PROGRESS: 24%
 LAST_UPDATED: 2026-08-24
 OWNER: project-maintainer
-NEXT_ACTION: P05 出口复核（对齐 EXIT_GATE 六项逐项核验 + RB-DATA 覆盖确认 + 合并后 main 门禁证据），通过后置 completed、P06 置 ready_to_start
-EXIT_GATE: P05 验收证据：①P04 创建的实体完成全 CRUD（create/detail/list/patch/delete，DataApiTest 全路径 + 物理删除 SQL 断言）②用户输入不作为 SQL/列名/表名执行（白名单字段+操作符+类型转换、值全参数化；注入样例 400 负例）③qty<0 等非法数据被拒（FR-DEMO-02 示例 + DECIMAL NUMERIC(20,6) 精度防线 + 七负例）④P95<500ms 性能基线（DataPerformanceBaselineTest，实测 5ms 量级）⑤动态读写仅 service.data-access（data_record 字面量单点源扫描断言，无示例实体专用 Controller/SQL）⑥删除产生审计事件 + pageSize>200/page>100000 可诊断 400；RB-DATA 五要素覆盖，data 12 + app 74 tests，合并 49bba9f 后 main CI success
+NEXT_ACTION: P06 启动（前端动态渲染，RB-UI）：前端 API service 层（meta/data 接口客户端 + 元数据版本比对刷新）→ renderer registry（按 FieldTypeRegistry 内置 ID `<type>.default` 映射六类组件，登记即扩展不改通用组件主逻辑）→ 菜单/layout/theme registry（键用 extension.navigation/field-renderer/record-action/layout/theme-asset，缺省布局与默认外观兜底、撤销即时恢复）→ 动态列表/表单/详情页（无业务页面代码）+ loading/empty/error/denied/stale 五状态（元数据不作为 HTML/脚本执行）→ Vitest 组件测试 + 子代理交叉审查 → PR
+EXIT_GATE: P05 出口证据：①P04 实体全 CRUD（DataApiTest 全路径：create/detail/list/patch/delete + 物理删除 SQL 断言）②用户输入不作 SQL/列名/表名（白名单字段+操作符+registry 类型转换、值全参数化；注入样例 400 负例 DataApiTest/DataQueryParamsTest）③非法数据被拒（FR-DEMO-02 示例 qty<0 + DECIMAL NUMERIC(20,6) 精度防线 + 七负例）④P95<500ms（DataPerformanceBaselineTest：200 种子 150 样本实测 5ms 量级）⑤动态读写仅 service.data-access（data_record 字面量单点源扫描，无示例实体专用 Controller/SQL）⑥删除审计三动作 SQL 断言 + pageSize>200/page>100000 可诊断 400；乐观并发守卫（updated_at 前置 + 失败路径单测）；RB-DATA 五要素覆盖，data 12 + meta 11 + app 73 tests（后端 146），两轮子代理审查后合并 49bba9f，main CI 六项 success、门禁 19 pass / 2 skip / 0 fail
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -23,8 +23,8 @@ BLOCKERS: none
 | P02 | 核心契约与可观测性 | completed | 注册/撤销、统一错误和审计端口通过测试 |
 | P03 | 认证、RBAC 与系统壳 | completed | 三类角色和 JWT 测试通过 |
 | P04 | 元数据写模型 | completed | 实体/字段/视图配置 API 通过验收 |
-| P05 | 动态数据运行时 | in_progress | 动态实体完成 CRUD 和字段校验 |
-| P06 | 前端动态渲染 | pending | 无业务页面代码即可显示动态实体 |
+| P05 | 动态数据运行时 | completed | 动态实体完成 CRUD 和字段校验 |
+| P06 | 前端动态渲染 | ready_to_start | 无业务页面代码即可显示动态实体 |
 | P07 | 插件包校验与版本存储 | pending | 合法包可预览，非法包被拒绝 |
 | P08 | PluginRuntime 生命周期 | pending | 激活、停用、回滚、stale 拒绝通过 |
 | P09 | 库存示例插件 | pending | 库存插件可安装并完成演示 |
@@ -93,3 +93,4 @@ BLOCKERS: none
 | 2026-08-24 | P05 | 迭代 1 完成（分支 feat/p05-dynamic-data）：①docs/03 §4 存储定案（单 JSONB data_record + 元数据映射，动态 DDL 不采用，变更需新 ADR）+ §8 补 CRUD 五行 + repository-maintenance §5 增 data_* 平台前缀②V005（data_record + entity_id 外键 + GIN jsonb_path_ops）③flexforge-meta 增量：MetaRegistry.findEntityByName（复用按 id 缓存）、FieldTypeRegistry.validateValue（记录值与默认值共用同一校验路径，QG-4）、ViewRules 转 @PublicApi（FILTER_OPERATORS 成为跨模块契约面）、text 值校验补 minLength（记录路径复用后暴露的缺口）④flexforge-data 四层：RecordValidator（实体级编排：未知字段拒绝+required 完整性+逐字段规则；缺省字段按默认值补齐；PATCH null 清除语义）、DynamicRecordService（service.data-access：仅启用实体 404 语义、物理删除、data.record.create/update/delete 审计）、JdbcRecordRepository（SQL 动态片段仅白名单字段名+registry 类型转换+固定模板，值全参数化，->>' 提取 + contains ILIKE 转义）、DataController（/api/v1/data/{entity} CRUD；过滤参数 "字段.操作符=值" 白名单解析，操作符-类型兼容矩阵）⑤测试：data 9（校验 5+查询解析 3+data_record 单点断言 1）+ app 73（DataApiTest 8：CRUD 全路径+默认值+校验七负例+未启用 404+过滤排序+注入样例+pageSize 201 可诊断 400+跨实体隔离+审计三动作 SQL 断言+401；DataPerformanceBaselineTest 1：200 种子 150 样本 P95=5ms<500ms）。修复过程捕获两个自伤缺陷：data->'f' 单箭头返回 jsonb 致类型转换 500、sortBy 空默认值映射错键 400——均被集成测试当场拦截 | flexforge-data、V005、DataApiTest/DataPerformanceBaselineTest、`docs/03` §4/§8 |
 | 2026-08-24 | P05 | PR #16 独立子代理交叉审查：1 P1 + 3 P2 + 8 P3，结论"修 P1 后可合并"。当场修复——P1 DECIMAL 无精度上限可毒化实体查询（1e15 过校验入库后该字段过滤/排序持续 500）→ FieldTypeRegistry 增加 NUMERIC(20,6) 精度防线（整数位≤14、小数位≤6，默认值路径同受益）+ 单测两负例一正例 + API 负例（口径注记：JSON 浮点经 double 反序列化，约 15 位以上有效数字在边界被拒，安全方向过严）；P2 OFFSET int 溢出（page=10737420&pageSize=200 → 500）→ PageQuery 增页码上限 1..100000（common 中央修复，P03 审计/用户分页同受益）+ API 负例；P2 GIN 索引对现有查询路径无效 → V005 注释与 docs/03 §4 改为"containment 预留，演示量走顺序扫描"（声明与事实对齐）；P2 PATCH 丢失更新 → updateData 以读取时 updatedAt 为前置条件（0 行→"已被并发修改"可诊断 400），docs/03 §8 同步乐观并发口径；P3 当场修：STATUS 粘接行拆分+看板 in_progress、排序补 id tie-breaker（同刻分页稳定）、值校验消息中性化（不再误称"默认值"）、data pom 移除未用 mockito。P3 记 Issue #10：审计与写非原子（P03 同源，统一治理）、DataApiTest 数据耦合、count/page 非同快照、错误消息回显输入、V005 FK 无 ON DELETE、性能基线 CI 波动容差 | PR #16 评论（逐条回应）、Issue #10 |
 | 2026-08-24 | P05 | PR #16 两轮子代理交叉审查后合并（49bba9f，main CI 六项 success）：复审确认 P1/P2 全部修复成立（精度公式负 scale 行为、与 JSONB 存值同源不变量、时戳微秒往返均独立推算核验；"过严口径可接受，维持现状是正确最小修复"）；复审 5 项新发现均 P3——两项当场处置（docs/03 §8 PATCH 行补乐观并发口径修正 STATUS 声称偏差；守卫两分逻辑补 DynamicRecordServiceTest 3 例失败路径单测，AGENTS §4.9），三项记 Issue #10（静默近似方向/同微秒事务窗口/迁移不可变惯例）。最终 data 12 + meta 11 + app 73 tests（后端累计 146）、门禁 19 pass / 2 skip / 0 fail；下一步 P05 出口复核 | PR #16 评论两轮、Issue #10 |
+| 2026-08-24 | P05 | **P05 出口复核通过，置 completed**（P06 置 ready_to_start，进度 24%）。验收六项逐项核验——①P04 实体全 CRUD（DataApiTest 全路径：实体经 meta API 创建启用 → create/detail/list/patch/delete + 物理删除 SQL 断言）②注入防护（白名单字段+操作符+registry 类型转换、值全参数化、防御性正则二层；注入样例 `sku;drop table...--`/sortBy=password/非法操作符 一律 400）③非法数据拒绝（qty<0/类型不符/必填缺失/枚举越界/未知字段/DECIMAL 精度七负例，FR-DEMO-02 示例即字段 min:0）④P95=5ms 量级 < 500ms（200 种子 150 样本全链路）⑤data_record 访问单点（源扫描仅 JdbcRecordRepository，无示例实体专用 Controller/SQL）⑥删除审计三动作 SQL 断言 + pageSize>200/page>100000 可诊断 400。实施内容五项全交付（含乐观并发守卫 + 失败路径单测、Patch null 清除语义、默认值补齐）；RB-DATA 五要素覆盖（CRUD 全路径/参数绑定与注入防护/字段校验/实体业务规则编排/性能基线记录）；两轮子代理交叉审查（1P1+3P2+8P3 + 复审 5P3 → 全部处置）；合并 49bba9f 后 main CI 六项 success（含收口 42ecb59）、门禁 19 pass / 2 skip / 0 fail（后端 146 tests）；遗留均带复查触发条件记 Issue #10 | `docs/09` P05 验收、PR #16、RB-DATA、Issue #10 |
