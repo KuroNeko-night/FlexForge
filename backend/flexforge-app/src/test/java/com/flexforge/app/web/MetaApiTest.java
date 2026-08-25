@@ -181,6 +181,12 @@ class MetaApiTest {
                 .andExpect(jsonPath("$.name").value("meta_api_by_name"))
                 .andExpect(jsonPath("$.fields.length()").value(0));
 
+        // USER 动态页主路径：enabled 实体 200，draft 一律 404
+        MetaTestSupport.transition(mockMvc, developerBearer, entityId, "enabled", 200);
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/meta/entities/by-name/meta_api_by_name")
+                        .header("Authorization", userBearer))
+                .andExpect(status().isOk());
+        MetaTestSupport.transition(mockMvc, developerBearer, entityId, "disabled", 200);
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/meta/entities/by-name/meta_api_by_name")
                         .header("Authorization", userBearer))
                 .andExpect(status().isNotFound());

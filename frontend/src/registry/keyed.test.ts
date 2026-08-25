@@ -41,6 +41,16 @@ describe('KeyedRegistry（五扩展点共用语义，docs/extension-points §1�
     expect(registry.resolve('menu.z')).toBe('z');
   });
 
+  it('覆盖后按 activationId 撤销不误删新批次（插件重激活语义）', () => {
+    const registry = new KeyedRegistry<string>();
+    registry.register('menu.x', 'old', 'act-1');
+    registry.register('menu.x', 'new', 'act-2');
+    expect(registry.revokeByActivation('act-1')).toBe(0);
+    expect(registry.resolve('menu.x')).toBe('new');
+    expect(registry.revokeByActivation('act-2')).toBe(1);
+    expect(registry.resolve('menu.x')).toBeUndefined();
+  });
+
   it('list 按注册序快照', () => {
     const registry = new KeyedRegistry<string>();
     registry.register('b', '2');

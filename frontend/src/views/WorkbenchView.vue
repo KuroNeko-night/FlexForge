@@ -2,11 +2,11 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { logout } from '@/api/auth';
+import { logout, fetchMe } from '@/api/auth';
 import { ApiError } from '@/api/client';
 import { fetchMenus } from '@/api/meta';
 import type { MenuItem } from '@/api/types';
-import { session } from '@/auth/token';
+import { clearSession, session } from '@/auth/token';
 import StateView from '@/components/StateView.vue';
 import { mergedMenus } from '@/registry/menuRegistry';
 
@@ -40,11 +40,23 @@ async function signOut(): Promise<void> {
     await logout();
   } catch {
     /* 登出审计失败不阻塞本地清理（服务端口径：审计降级不阻塞） */
+  } finally {
+    clearSession();
   }
   await router.push({ path: '/login' });
 }
 
-onMounted(loadMenus);
+onMounted(async () => {
+  // 刷新后恢复会话身份（令牌在 sessionStorage，用户资料从服务端重取）
+  if (session.token && !session.user) {
+    try {
+      session.user = await fetchMe();
+    } catch {
+      /* 令牌失效由 401 回调统一跳转登录 */
+    }
+  }
+  await loadMenus();
+});
 </script>
 
 <template>
@@ -66,7 +78,7 @@ onMounted(loadMenus);
       </div>
     </aside>
     <section class="workbench-main">
-      <router-view @metadata-refreshed="loadMenus" />
+      <router-view />
     </section>
   </div>
 </template>

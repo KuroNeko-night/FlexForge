@@ -47,9 +47,10 @@ function fieldRenderer(field: FieldDefinition) {
 }
 
 function submit(): void {
+  // null = 显式清除（后端 PATCH null 清键、create 丢弃 null）；仅未定义键不提交
   const payload: Record<string, unknown> = {};
   for (const [name, value] of Object.entries(values)) {
-    if (value !== null && value !== undefined && value !== '') {
+    if (value !== undefined) {
       payload[name] = value;
     }
   }

@@ -34,8 +34,9 @@ function onInput(event: Event): void {
     emit('update:modelValue', null);
     return;
   }
-  const parsed = Number.parseInt(raw, 10);
-  if (Number.isNaN(parsed)) {
+  // parseFloat 再整性判定：number input 允许 1e3（=1000），parseInt 会截断成 1
+  const parsed = Number.parseFloat(raw);
+  if (Number.isNaN(parsed) || !Number.isInteger(parsed)) {
     return;
   }
   emit('update:modelValue', parsed);

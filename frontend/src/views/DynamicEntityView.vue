@@ -61,6 +61,12 @@ async function loadRecords(): Promise<void> {
     page: String(page.value),
     pageSize: String(pageSize),
   });
+  // 末页删光后回退到新的最后一页，避免误导性"暂无数据"
+  if (result.items.length === 0 && result.total > 0 && page.value > 1) {
+    page.value = Math.max(1, Math.ceil(result.total / pageSize));
+    await loadRecords();
+    return;
+  }
   records.value = result.items;
   total.value = result.total;
 }
@@ -69,7 +75,11 @@ async function loadRecord(id: string): Promise<void> {
   currentRecord.value = await fetchRecord(entityName.value, id);
 }
 
+let refreshSeq = 0;
+
 async function refresh(): Promise<void> {
+  // 竞态守卫：仅最后一次触发可落盘状态（连点分页/快速导航的慢响应覆盖）
+  const seq = ++refreshSeq;
   state.value = 'loading';
   errorDetail.value = null;
   try {
@@ -84,9 +94,13 @@ async function refresh(): Promise<void> {
     } else if (route.params.id) {
       await loadRecord(String(route.params.id));
     }
-    state.value = 'ready';
+    if (seq === refreshSeq) {
+      state.value = 'ready';
+    }
   } catch (e) {
-    fail(e);
+    if (seq === refreshSeq) {
+      fail(e);
+    }
   }
 }
 
@@ -99,7 +113,6 @@ async function onSubmit(values: Record<string, unknown>): Promise<void> {
       await load(entityName.value);
       page.value = 1;
       await loadRecords();
-      state.value = 'ready';
       await openDetail(created.id);
       return;
     }
@@ -120,6 +133,11 @@ async function remove(record: RecordView): Promise<void> {
   }
   try {
     await deleteRecord(entityName.value, record.id);
+    if (mode.value !== 'list') {
+      // 详情/编辑页删除后返回列表，避免对已删记录重取 404
+      await router.push({ name: 'entity-list', params: { entity: entityName.value } });
+      return;
+    }
     await refresh();
   } catch (e) {
     fail(e);
@@ -130,14 +148,20 @@ async function openDetail(id: string): Promise<void> {
   await router.push({ name: 'entity-detail', params: { entity: entityName.value, id } });
 }
 
+let watchedEntity = '';
 watch(
   () => [route.params.entity, route.params.id, route.name],
   () => {
-    if (route.params.entity) {
-      page.value = 1;
-      formError.value = null;
-      void refresh();
+    if (!route.params.entity) {
+      return;
     }
+    // 仅切换实体时重置分页；同实体内详情/编辑/翻页保留位置
+    if (route.params.entity !== watchedEntity) {
+      watchedEntity = String(route.params.entity);
+      page.value = 1;
+    }
+    formError.value = null;
+    void refresh();
   },
 );
 onMounted(refresh);
@@ -147,7 +171,9 @@ onMounted(refresh);
   <article class="entity-view" :data-entity="entityName" :data-mode="mode">
     <header>
       <h2>{{ definition?.displayName ?? entityName }}</h2>
-      <p v-if="state === 'stale'" class="stale-note">元数据已更新，数据已按新版本重新加载</p>
+      <p v-if="state === 'ready' && versionChanged" class="stale-note">
+        元数据已更新，数据已按新版本重新加载
+      </p>
     </header>
 
     <StateView v-if="state === 'loading' || state === 'denied'" :state="state" />
@@ -225,6 +251,7 @@ onMounted(refresh);
 
     <DynamicForm
       v-else
+      :key="`${entityName}-${String(route.params.id ?? 'new')}`"
       :definition="definition!"
       :view="formView"
       :initial="mode === 'edit' ? currentRecord?.data : null"

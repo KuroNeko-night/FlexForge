@@ -43,11 +43,13 @@ export interface EntitySummary {
   updatedAt: string;
 }
 
-export interface EntityDetail extends EntitySummary {
+export interface EntityDetail extends Omit<EntitySummary, 'updatedAt'> {
   fields: FieldDefinition[];
   views: ViewDefinition[];
   /** 元数据版本：递增即提示前端重新拉取（P04 契约）。 */
   metaVersion: number;
+  /** 后端详情响应当前不含 updatedAt（列表接口才有）；镜像标记为可选。 */
+  updatedAt?: string;
 }
 
 export interface RecordView {

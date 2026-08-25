@@ -38,7 +38,7 @@ const hint = computed(() => {
       :maxlength="numberRule('maxLength')"
       :disabled="disabled"
       :aria-label="field.displayName"
-      @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+      @input="emit('update:modelValue', ($event.target as HTMLInputElement).value || null)"
     />
     <small v-if="hint" class="hint">{{ hint }}</small>
   </span>
