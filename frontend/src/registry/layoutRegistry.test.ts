@@ -1,4 +1,4 @@
-import { defineComponent } from 'vue';
+import type { Component } from 'vue';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -9,8 +9,18 @@ import {
   revokeLayoutsByActivation,
 } from '@/registry/layoutRegistry';
 
-const FIRST = defineComponent({ template: '<div>first</div>' });
-const SECOND = defineComponent({ template: '<div>second</div>' });
+// 普通组件对象（测试夹具；不用 defineComponent 以避开 vue/one-component-per-file 对 .ts 的误报）
+const FIRST: Component = { template: '<div>first</div>' };
+const SECOND: Component = { template: '<div>second</div>' };
+
+function singleSlotLayout(
+  key: string,
+  target: string,
+  slotName: string,
+  widgetKey: string,
+): import('@/registry/layoutRegistry').LayoutContribution {
+  return { key, target, slots: [{ name: slotName, items: [{ key: widgetKey, order: 1 }] }] };
+}
 
 describe('layout registry（extension.layout 消费面，FR-PLUGIN-10）', () => {
   it('无贡献时返回缺省槽位（兜底布局）', () => {
@@ -50,14 +60,8 @@ describe('layout registry（extension.layout 消费面，FR-PLUGIN-10）', () =>
   it('多贡献合并同槽位；按 activationId 批量撤销不残留', () => {
     registerWidget('w.first', FIRST);
     registerWidget('w.second', SECOND);
-    registerLayout(
-      { key: 'l.a', target: 'page.multi', slots: [{ name: 'main', items: [{ key: 'w.first', order: 1 }] }] },
-      'act-7',
-    );
-    registerLayout(
-      { key: 'l.b', target: 'page.multi', slots: [{ name: 'side', items: [{ key: 'w.second', order: 1 }] }] },
-      'act-7',
-    );
+    registerLayout(singleSlotLayout('l.a', 'page.multi', 'main', 'w.first'), 'act-7');
+    registerLayout(singleSlotLayout('l.b', 'page.multi', 'side', 'w.second'), 'act-7');
     const merged = resolveLayout('page.multi', []);
     expect(merged.value.map((slot) => slot.name).sort()).toEqual(['main', 'side']);
 

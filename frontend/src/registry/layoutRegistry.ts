@@ -37,7 +37,10 @@ function bump(): void {
   version.value += 1;
 }
 
-export function registerLayout(contribution: LayoutContribution, activationId: string | null = null) {
+export function registerLayout(
+  contribution: LayoutContribution,
+  activationId: string | null = null,
+) {
   const registration = layouts.register(contribution.key, contribution, activationId);
   bump();
   return {
@@ -61,7 +64,11 @@ export function revokeLayoutsByActivation(activationId: string): number {
   return removed;
 }
 
-export function registerWidget(key: string, component: Component, activationId: string | null = null) {
+export function registerWidget(
+  key: string,
+  component: Component,
+  activationId: string | null = null,
+) {
   const registration = widgets.register(key, component, activationId);
   bump();
   return {

@@ -1,13 +1,14 @@
 // @vitest-environment happy-dom
 import { flushPromises, mount } from '@vue/test-utils';
-import { defineComponent } from 'vue';
+import type { Component } from 'vue';
 import { describe, expect, it } from 'vitest';
 
 import LayoutRenderer from '@/components/LayoutRenderer.vue';
 import { registerLayout, registerWidget, revokeLayout } from '@/registry/layoutRegistry';
 
-const FIRST = defineComponent({ template: '<p data-widget-kind="first">部件一</p>' });
-const SECOND = defineComponent({ template: '<p data-widget-kind="second">部件二</p>' });
+// 测试夹具：普通组件对象（避开 vue/one-component-per-file 对 .ts 中 defineComponent 的误报）
+const FIRST: Component = { template: '<p data-widget-kind="first">部件一</p>' };
+const SECOND: Component = { template: '<p data-widget-kind="second">部件二</p>' };
 
 const DEFAULT_SLOTS = [{ name: 'main', widgetKeys: ['w.first'] }];
 

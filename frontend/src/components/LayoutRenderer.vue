@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import {
-  resolveLayout,
-  resolveWidget,
-  type ResolvedSlots,
-} from '@/registry/layoutRegistry';
+import { resolveLayout, resolveWidget, type ResolvedSlots } from '@/registry/layoutRegistry';
 
 /**
  * 布局渲染器（extension.layout 消费面，FR-PLUGIN-10 验收 4）：按声明渲染
@@ -26,12 +22,7 @@ function widgetOf(key: string) {
 
 <template>
   <div class="layout-renderer" :data-layout-target="target">
-    <section
-      v-for="slot in slots"
-      :key="slot.name"
-      class="layout-slot"
-      :data-slot="slot.name"
-    >
+    <section v-for="slot in slots" :key="slot.name" class="layout-slot" :data-slot="slot.name">
       <component :is="widgetOf(key)" v-for="key in slot.widgetKeys" :key="key" />
     </section>
   </div>

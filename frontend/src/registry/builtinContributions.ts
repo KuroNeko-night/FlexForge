@@ -1,9 +1,6 @@
 import { deleteRecord } from '@/api/data';
 import EntityCards from '@/components/EntityCards.vue';
-import {
-  registerRecordAction,
-  type ActionContext,
-} from '@/registry/recordActionRegistry';
+import { registerRecordAction, type ActionContext } from '@/registry/recordActionRegistry';
 import { registerWidget } from '@/registry/layoutRegistry';
 
 /**

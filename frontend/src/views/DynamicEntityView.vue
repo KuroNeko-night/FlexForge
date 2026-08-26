@@ -2,23 +2,14 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import {
-  createRecord,
-  deleteRecord,
-  fetchRecord,
-  queryRecords,
-  updateRecord,
-} from '@/api/data';
+import { createRecord, deleteRecord, fetchRecord, queryRecords, updateRecord } from '@/api/data';
 import { ApiError } from '@/api/client';
 import type { RecordView, ViewDefinition } from '@/api/types';
 import DynamicForm from '@/components/DynamicForm.vue';
 import DynamicTable from '@/components/DynamicTable.vue';
 import StateView from '@/components/StateView.vue';
 import { useEntityMetadata } from '@/composables/useEntityMetadata';
-import {
-  visibleRecordActions,
-  type ActionContext,
-} from '@/registry/recordActionRegistry';
+import { visibleRecordActions, type ActionContext } from '@/registry/recordActionRegistry';
 
 /**
  * 动态实体页（docs/09 P06 验收 1）：列表/详情/新建/编辑四模式由路由参数驱动，
