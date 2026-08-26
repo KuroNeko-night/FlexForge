@@ -51,8 +51,8 @@ FlexForge/
 │       ├── main.ts / App.vue / router.ts   路由壳（登录守卫体验跳转，安全边界在服务端 S2）
 │       ├── api/                    client（错误规范化/令牌注入/401 回调）+ auth/meta/data 客户端 + 契约类型
 │       ├── auth/token.ts           会话令牌（sessionStorage）与当前用户
-│       ├── registry/               keyed.ts 通用基座（五扩展点共用注册-撤销语义）+ renderer/menu registry
-│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm
+│       ├── registry/               keyed.ts 通用基座 + renderer/menu/layout/theme/recordAction registry + builtinContributions（内置部件与动作）
+│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards
 │       ├── composables/            useEntityMetadata（metaVersion 比对 → stale 刷新）
 │       └── views/                  Login/Workbench/Home/DynamicEntity（列表/详情/新建/编辑）/Placeholder
 ├── database/
