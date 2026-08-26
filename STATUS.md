@@ -3,14 +3,14 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P06
-CURRENT_STAGE_NAME: 前端动态渲染
-STAGE_STATUS: in_progress
-PROJECT_PROGRESS: 24%
+CURRENT_STAGE_ID: P07
+CURRENT_STAGE_NAME: 插件包校验与版本存储
+STAGE_STATUS: ready_to_start
+PROJECT_PROGRESS: 27%
 LAST_UPDATED: 2026-08-26
 OWNER: project-maintainer
-NEXT_ACTION: P06 出口复核（对齐 EXIT_GATE 七项验收逐项核验 + RB-UI 覆盖确认 + 合并后 main 门禁证据；验收 5 中 icon/animation 消费点为已声明的 P09 预留——变量注入与恢复语义已验证），通过后置 completed、P07 置 ready_to_start
-EXIT_GATE: P05 出口证据：①P04 实体全 CRUD（DataApiTest 全路径：create/detail/list/patch/delete + 物理删除 SQL 断言）②用户输入不作 SQL/列名/表名（白名单字段+操作符+registry 类型转换、值全参数化；注入样例 400 负例 DataApiTest/DataQueryParamsTest）③非法数据被拒（FR-DEMO-02 示例 qty<0 + DECIMAL NUMERIC(20,6) 精度防线 + 七负例）④P95<500ms（DataPerformanceBaselineTest：200 种子 150 样本实测 5ms 量级）⑤动态读写仅 service.data-access（data_record 字面量单点源扫描，无示例实体专用 Controller/SQL）⑥删除审计三动作 SQL 断言 + pageSize>200/page>100000 可诊断 400；乐观并发守卫（updated_at 前置 + 失败路径单测）；RB-DATA 五要素覆盖，data 12 + meta 11 + app 73 tests（后端 146），两轮子代理审查后合并 49bba9f，main CI 六项 success、门禁 19 pass / 2 skip / 0 fail
+NEXT_ACTION: P07 启动（flexforge-plugin 模块）：V006 plugin_instance/plugin_version/plugin_dependency(+plugin_migration) 迁移 → PluginArchive 读取与上传安全基线（压缩 10MB/解压 50MB、zip-slip 防护、临时目录清理、非法包不落库）→ plugin.json Schema/路径/哈希/能力等级校验器（schemaVersion 分派；contributions 键与 renderer ID 对登记册校验；美术资产类型白名单 FR-PLUGIN-11）→ 依赖解析/安装预览/幂等导入（content hash 去重）→ 插件迁移 runner 骨架（V*__*.sql 顺序+checksum+同事务+越界拒绝，ADR-0005）→ RB-PLUGIN-VALID 回归 → 子代理交叉审查 → PR
+EXIT_GATE: P06 出口证据：①无业务页面代码显示 P05 实体列表/表单（DynamicEntityView 四模式路由驱动 + DynamicEntityView.test 列表渲染/创建提交）②六类字段正确内置 renderer（rendererRegistry `<type>.default` 映射 + DynamicTable 按类型渲染）③菜单注册/撤销不残留（menuRegistry 4 例：合并/后端优先/权限过滤/activationId 清理）④布局贡献声明渲染+撤销恢复缺省（layoutRegistry+LayoutRenderer 同一挂载 nextTick 断言，FR-PLUGIN-10）⑤美术资产即时更换/恢复默认（themeRegistry 同一 computed；background url() 端到端；icon/animation P09 预留已声明）⑥刷新后从服务端恢复元数据（useEntityMetadata 版本表内存态 + sessionStorage 令牌 + fetchMe 身份恢复）⑦新增 renderer 仅登记映射（"登记即扩展"用例，通用组件零分支）；五状态（StateView + requestId）；S5 两轮子代理复审确认无 v-html/动态执行；extension.layout/theme-asset 转 active（常量+登记册+R-GOV-03 五点对齐）；前端 49 + 后端 147 tests，PR #17/#18 四轮审查后合并，main CI success、门禁 19 pass / 2 skip / 0 fail
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -24,8 +24,8 @@ BLOCKERS: none
 | P03 | 认证、RBAC 与系统壳 | completed | 三类角色和 JWT 测试通过 |
 | P04 | 元数据写模型 | completed | 实体/字段/视图配置 API 通过验收 |
 | P05 | 动态数据运行时 | completed | 动态实体完成 CRUD 和字段校验 |
-| P06 | 前端动态渲染 | ready_to_start | 无业务页面代码即可显示动态实体 |
-| P07 | 插件包校验与版本存储 | pending | 合法包可预览，非法包被拒绝 |
+| P06 | 前端动态渲染 | completed | 无业务页面代码即可显示动态实体 |
+| P07 | 插件包校验与版本存储 | ready_to_start | 合法包可预览，非法包被拒绝 |
 | P08 | PluginRuntime 生命周期 | pending | 激活、停用、回滚、stale 拒绝通过 |
 | P09 | 库存示例插件 | pending | 库存插件可安装并完成演示 |
 | P10 | Issue 与规格 Schema | pending | Issue 状态机和规格版本可审计 |
@@ -103,3 +103,4 @@ BLOCKERS: none
 | 2026-08-25 | P06 | PR #18 独立子代理交叉审查：1 P1 + 2 P2 + 6 P3，结论"修 P1 后可合并"。全部当场修复——P1 背景变量裸路径使 CSS 无效（"测了管道没测水龙头"）→ themeStyle 对 background 输出 url("…") 包裹（转义引号/反斜杠）+ 测试断言修正；P2 icon/animation 消费点与 scope 无消费者的验收口径虚记 → NEXT_ACTION/PR 明示 P09 预留（变量注入与恢复语义已验证）；P2 响应式断言空转（删掉 void version.value 测试仍绿）→ theme/layout/LayoutRenderer 测试改为持有同一 computed/同一挂载跨注册撤销断言（layout+theme 各 1 例、组件重渲染例改 nextTick 同实例）；P3 当场修：双删除路径收敛改名 removeFromDetail、布局合并同槽位 widget key 去重、resolveLayout 注释对齐实际行为（跳过悬空/空贡献清空）、theme path 注册防御（拒绝外链/协议相对/空值，P07 纵深）、NEXT_ACTION 同步消除 JSON 漂移、登记册 record-action 行补 actionType/handlerId 前端映射注记。前端 48 tests | PR #18 评论（逐条回应） |
 | 2026-08-26 | P06 | PR #18 复审通过（"可合并"）后顺手处置 3 项 P3：validatePath 收紧（trim 后拒绝任意 scheme 前缀正则 + 协议相对 + 首尾空白，复审实测的 ` http://`、`http:/`、`JavaScript:` 绕过全部封堵）+ 六负例；补 background 转义分支（含引号/反斜杠路径）与 icon 透传分支用例；LAST_UPDATED/updatedAt 刷新 2026-08-26。前端 49 tests | PR #18 评论两轮 |
 | 2026-08-26 | P06 | PR #18 两轮子代理交叉审查后合并（e16d825，main CI 六项 success）：复审确认 P1/P2 全部成立（url 转义顺序、响应式断言经失效推演+运行实证必红）；二轮 3 项 P3（path 防御绕过/分支用例/日期）全部当场处置。迭代 2 交付完成——layout/theme/record-action registry（FR-PLUGIN-10/11 消费面，验收 4 全覆盖、验收 5 背景链路端到端+icon/animation 声明 P09 预留）；extension.layout/theme-asset 转 active（常量+登记册+R-GOV-03 对齐）。最终前端 49 + 后端 147 tests、门禁 19 pass / 2 skip / 0 fail；下一步 P06 出口复核（七项验收逐项核验） | PR #18 评论两轮、`docs/extension-points.md` |
+| 2026-08-26 | P06 | **P06 出口复核通过，置 completed**（P07 置 ready_to_start，进度 27%）。验收七项逐项核验——①无业务页面代码显示实体列表/表单（DynamicEntityView 四模式路由驱动，测试覆盖列表渲染/创建提交）②六类字段正确内置 renderer（registry `<type>.default` 映射 + DynamicTable 按类型断言）③菜单注册/撤销不残留（合并/后端优先/权限过滤/activationId 四例）④布局声明渲染+撤销恢复缺省（FR-PLUGIN-10，同一挂载 nextTick 断言）⑤美术资产即时更换/恢复默认（FR-PLUGIN-11，背景 url() 端到端；icon/animation 消费点 P09 预留——已在锚点声明）⑥刷新后从服务端恢复元数据（版本表内存态 + sessionStorage 令牌 + fetchMe 身份恢复）⑦新增 renderer 仅登记映射（登记即扩展用例，通用组件零字段分支）。实施内容五项全交付（registry key 全用登记册 ID/layout+theme 兜底恢复/五状态/分层/版本刷新不作 HTML 执行）；RB-UI 三要素覆盖；S5 经 PR #17/#18 四轮子代理审查确认；发现并修正：看板 P06 行启动时漏翻 in_progress（R-GOV-04 只校验解析一致性未拦截，本例直接修正为 completed，过程偏差如实记录） | `docs/09` P06 验收、PR #17/#18、RB-UI |
