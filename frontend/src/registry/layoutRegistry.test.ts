@@ -45,6 +45,20 @@ describe('layout registry（extension.layout 消费面，FR-PLUGIN-10）', () =>
     expect(resolved.value).toEqual([{ name: 'main', widgetKeys: ['w.first'] }]);
   });
 
+  it('多贡献合并同槽位；按 activationId 批量撤销不残留', () => {
+    registerWidget('w.first', FIRST);
+    registerWidget('w.second', SECOND);
+    registerLayout(singleSlotLayout('l.a', 'page.multi', 'main', 'w.first'), 'act-7');
+    registerLayout(singleSlotLayout('l.b', 'page.multi', 'side', 'w.second'), 'act-7');
+    const merged = resolveLayout('page.multi', []);
+    expect(merged.value.map((slot) => slot.name).sort()).toEqual(['main', 'side']);
+
+    expect(revokeLayoutsByActivation('act-7')).toBe(2);
+    expect(resolveLayout('page.multi', []).value).toEqual([]);
+  });
+});
+
+describe('layout registry：贡献合并语义', () => {
   it('布局贡献按声明合并槽位，items 按 order→key 排序，未注册部件跳过', () => {
     registerWidget('w.second', SECOND);
     registerWidget('w.first', FIRST);
@@ -62,25 +76,9 @@ describe('layout registry（extension.layout 消费面，FR-PLUGIN-10）', () =>
         },
       ],
     });
-    const resolved = resolveLayout('page.demo', []);
-    expect(resolved.value).toEqual([{ name: 'main', widgetKeys: ['w.first', 'w.second'] }]);
-
-    // 撤销后即时恢复缺省（响应式重算）
-    revokeLayout('layout.demo');
-    expect(resolveLayout('page.demo', [{ name: 'main', widgetKeys: ['w.first'] }]).value).toEqual([
-      { name: 'main', widgetKeys: ['w.first'] },
+    expect(resolveLayout('page.demo', []).value).toEqual([
+      { name: 'main', widgetKeys: ['w.first', 'w.second'] },
     ]);
-  });
-
-  it('多贡献合并同槽位；按 activationId 批量撤销不残留', () => {
-    registerWidget('w.first', FIRST);
-    registerWidget('w.second', SECOND);
-    registerLayout(singleSlotLayout('l.a', 'page.multi', 'main', 'w.first'), 'act-7');
-    registerLayout(singleSlotLayout('l.b', 'page.multi', 'side', 'w.second'), 'act-7');
-    const merged = resolveLayout('page.multi', []);
-    expect(merged.value.map((slot) => slot.name).sort()).toEqual(['main', 'side']);
-
-    expect(revokeLayoutsByActivation('act-7')).toBe(2);
-    expect(resolveLayout('page.multi', []).value).toEqual([]);
+    revokeLayout('layout.demo');
   });
 });
