@@ -14,32 +14,47 @@ describe('theme registry（extension.theme-asset 消费面，FR-PLUGIN-11）', (
     expect(themeStyle().value).toEqual({});
   });
 
-  it('注册即时生效为 CSS 变量，撤销即时恢复默认', () => {
+  it('注册即时生效为 CSS 变量（background 以 url() 包裹），撤销即时恢复默认', () => {
+    // 持有同一 computed 跨注册/撤销：验证响应式重算（而非新建查询）
+    const style = themeStyle();
+    expect(style.value).toEqual({});
     const registration = registerThemeAsset({
       key: 'theme.bg',
       kind: 'background',
       path: 'assets/bg.png',
     });
-    expect(themeStyle().value).toEqual({ '--ff-theme-background': 'assets/bg.png' });
+    expect(style.value).toEqual({ '--ff-theme-background': 'url("assets/bg.png")' });
 
     registration.close();
-    expect(themeStyle().value).toEqual({});
+    expect(style.value).toEqual({});
+  });
+
+  it('path 最小防御：拒绝外链/协议相对/空值（P07 S6 纵深防线）', () => {
+    expect(() =>
+      registerThemeAsset({ key: 't.evil', kind: 'background', path: 'https://evil.example/a.png' }),
+    ).toThrow(/相对路径/);
+    expect(() =>
+      registerThemeAsset({ key: 't.evil2', kind: 'background', path: '//cdn.example/a.png' }),
+    ).toThrow(/相对路径/);
+    expect(() => registerThemeAsset({ key: 't.evil3', kind: 'icon', path: '' })).toThrow(
+      /相对路径/,
+    );
   });
 
   it('同 kind 后注册者胜；特定 scope 覆盖全局；按 activationId 批量撤销', () => {
-    registerThemeAsset({ key: 't.global', kind: 'background', path: 'a.png' }, 'act-t');
-    registerThemeAsset({ key: 't.override', kind: 'background', path: 'b.png' }, 'act-t');
-    expect(resolveThemeAsset('background').value?.path).toBe('b.png');
+    registerThemeAsset({ key: 't.global', kind: 'icon', path: 'a.png' }, 'act-t');
+    registerThemeAsset({ key: 't.override', kind: 'icon', path: 'b.png' }, 'act-t');
+    expect(resolveThemeAsset('icon').value?.path).toBe('b.png');
 
-    registerThemeAsset({ key: 't.scoped', kind: 'background', path: 'c.png', scope: 'page.demo' });
-    expect(resolveThemeAsset('background', 'page.demo').value?.path).toBe('c.png');
-    expect(resolveThemeAsset('background').value?.path).toBe('b.png');
+    registerThemeAsset({ key: 't.scoped', kind: 'icon', path: 'c.png', scope: 'page.demo' });
+    expect(resolveThemeAsset('icon', 'page.demo').value?.path).toBe('c.png');
+    expect(resolveThemeAsset('icon').value?.path).toBe('b.png');
 
     expect(revokeThemeAssetsByActivation('act-t')).toBe(2);
     // 全局资产已清（全局视角恢复默认），作用域资产仍服务其作用域
-    expect(resolveThemeAsset('background').value).toBeNull();
-    expect(resolveThemeAsset('background', 'page.demo').value?.path).toBe('c.png');
+    expect(resolveThemeAsset('icon').value).toBeNull();
+    expect(resolveThemeAsset('icon', 'page.demo').value?.path).toBe('c.png');
     revokeThemeAsset('t.scoped');
-    expect(resolveThemeAsset('background', 'page.demo').value).toBeNull();
+    expect(resolveThemeAsset('icon', 'page.demo').value).toBeNull();
   });
 });

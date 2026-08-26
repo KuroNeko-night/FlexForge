@@ -30,6 +30,21 @@ describe('layout registry（extension.layout 消费面，FR-PLUGIN-10）', () =>
     expect(resolved.value).toEqual([{ name: 'main', widgetKeys: ['workbench.entities'] }]);
   });
 
+  it('响应式：同一 computed 跨注册/撤销自动重算（即时生效与恢复缺省）', () => {
+    registerWidget('w.first', FIRST);
+    registerWidget('w.second', SECOND);
+    const resolved = resolveLayout('page.reactive', [{ name: 'main', widgetKeys: ['w.first'] }]);
+    expect(resolved.value).toEqual([{ name: 'main', widgetKeys: ['w.first'] }]);
+
+    const registration = registerLayout(
+      singleSlotLayout('l.re', 'page.reactive', 'main', 'w.second'),
+    );
+    expect(resolved.value).toEqual([{ name: 'main', widgetKeys: ['w.second'] }]);
+
+    registration.close();
+    expect(resolved.value).toEqual([{ name: 'main', widgetKeys: ['w.first'] }]);
+  });
+
   it('布局贡献按声明合并槽位，items 按 order→key 排序，未注册部件跳过', () => {
     registerWidget('w.second', SECOND);
     registerWidget('w.first', FIRST);

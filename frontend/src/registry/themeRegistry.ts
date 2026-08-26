@@ -36,6 +36,7 @@ export function registerThemeAsset(
   contribution: ThemeAssetContribution,
   activationId: string | null = null,
 ) {
+  validatePath(contribution.path);
   const registration = registry.register(contribution.key, contribution, activationId);
   bump();
   return {
@@ -44,6 +45,16 @@ export function registerThemeAsset(
       bump();
     },
   };
+}
+
+/**
+ * path 最小防御（P07 S6 包校验的纵深防线）：非空字符串、相对路径
+ * （拒绝 scheme 与协议相对 // 开头，防外链请求的信息泄露面）。
+ */
+function validatePath(path: string): void {
+  if (typeof path !== 'string' || path === '' || path.includes('://') || path.startsWith('//')) {
+    throw new Error(`theme asset path 必须是非空相对路径（拒绝外链）: ${String(path)}`);
+  }
 }
 
 export function revokeThemeAsset(key: string): void {
@@ -95,7 +106,12 @@ export function themeStyle(scope?: string | null) {
       [animation.value, 'animation'],
     ] as const) {
       if (asset) {
-        style[THEME_CSS_VARIABLES[kind]] = asset.path;
+        // background 需要 <url>() 语法（裸路径是非法值，整条属性会失效）；
+        // icon/animation 由消费方自行组装（P09 示例落地），此处只透传路径
+        style[THEME_CSS_VARIABLES[kind]] =
+          kind === 'background'
+            ? `url("${asset.path.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}")`
+            : asset.path;
       }
     }
     return style;

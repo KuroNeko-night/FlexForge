@@ -80,8 +80,9 @@ export function registerWidget(
 }
 
 /**
- * 解析某 target 的生效槽位：无任何布局贡献 → null（调用方使用缺省布局）；
- * 有贡献 → 合并各贡献槽位（items 按 order→key 排序），未注册部件 key 跳过。
+ * 解析某 target 的生效槽位：无任何布局贡献 → 调用方缺省布局兜底；
+ * 有贡献 → 合并各贡献槽位（items 按 order→key 排序、同槽位 widget key 去重），
+ * 未注册部件 key 跳过（容忍悬空引用）；空 slots 贡献即清空该 target 区域。
  */
 export function resolveLayout(target: string, defaultSlots?: ResolvedSlots) {
   return computed<ResolvedSlots>(() => {
@@ -101,10 +102,13 @@ export function resolveLayout(target: string, defaultSlots?: ResolvedSlots) {
     }
     return [...bySlot.entries()].map(([name, items]) => ({
       name,
-      widgetKeys: items
-        .sort((a, b) => a.order - b.order || a.key.localeCompare(b.key))
-        .map((item) => item.key)
-        .filter((key) => widgets.resolve(key) !== undefined),
+      widgetKeys: [
+        ...new Set(
+          items
+            .sort((a, b) => a.order - b.order || a.key.localeCompare(b.key))
+            .map((item) => item.key),
+        ),
+      ].filter((key) => widgets.resolve(key) !== undefined),
     }));
   });
 }

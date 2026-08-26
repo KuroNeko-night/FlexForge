@@ -127,25 +127,17 @@ async function onSubmit(values: Record<string, unknown>): Promise<void> {
   }
 }
 
-async function remove(record: RecordView): Promise<void> {
+/** 详情/编辑页删除（列表走 record-action registry 内置动作）：确认后返回列表。 */
+async function removeFromDetail(record: RecordView): Promise<void> {
   if (!window.confirm(`确认删除该记录？`)) {
     return;
   }
   try {
-    await deleteViaAction(record);
+    await deleteRecord(entityName.value, record.id);
+    await router.push({ name: 'entity-list', params: { entity: entityName.value } });
   } catch (e) {
     fail(e);
   }
-}
-
-/** 详情/编辑页删除：成功后返回列表（避免对已删记录重取 404）。 */
-async function deleteViaAction(record: RecordView): Promise<void> {
-  await deleteRecord(entityName.value, record.id);
-  if (mode.value !== 'list') {
-    await router.push({ name: 'entity-list', params: { entity: entityName.value } });
-    return;
-  }
-  await refresh();
 }
 
 async function openDetail(id: string): Promise<void> {
@@ -272,7 +264,9 @@ onMounted(refresh);
       </template>
       <div class="detail-actions">
         <router-link :to="`/data/${entityName}/${currentRecord?.id}/edit`">编辑</router-link>
-        <button type="button" @click="currentRecord && remove(currentRecord)">删除</button>
+        <button type="button" @click="currentRecord && removeFromDetail(currentRecord)">
+          删除
+        </button>
         <router-link :to="`/data/${entityName}`">返回列表</router-link>
       </div>
     </dl>
