@@ -2,13 +2,23 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import { createRecord, deleteRecord, fetchRecord, queryRecords, updateRecord } from '@/api/data';
+import {
+  createRecord,
+  deleteRecord,
+  fetchRecord,
+  queryRecords,
+  updateRecord,
+} from '@/api/data';
 import { ApiError } from '@/api/client';
 import type { RecordView, ViewDefinition } from '@/api/types';
 import DynamicForm from '@/components/DynamicForm.vue';
 import DynamicTable from '@/components/DynamicTable.vue';
 import StateView from '@/components/StateView.vue';
 import { useEntityMetadata } from '@/composables/useEntityMetadata';
+import {
+  visibleRecordActions,
+  type ActionContext,
+} from '@/registry/recordActionRegistry';
 
 /**
  * 动态实体页（docs/09 P06 验收 1）：列表/详情/新建/编辑四模式由路由参数驱动，
@@ -131,20 +141,48 @@ async function remove(record: RecordView): Promise<void> {
     return;
   }
   try {
-    await deleteRecord(entityName.value, record.id);
-    if (mode.value !== 'list') {
-      // 详情/编辑页删除后返回列表，避免对已删记录重取 404
-      await router.push({ name: 'entity-list', params: { entity: entityName.value } });
-      return;
-    }
-    await refresh();
+    await deleteViaAction(record);
   } catch (e) {
     fail(e);
   }
 }
 
+/** 详情/编辑页删除：成功后返回列表（避免对已删记录重取 404）。 */
+async function deleteViaAction(record: RecordView): Promise<void> {
+  await deleteRecord(entityName.value, record.id);
+  if (mode.value !== 'list') {
+    await router.push({ name: 'entity-list', params: { entity: entityName.value } });
+    return;
+  }
+  await refresh();
+}
+
 async function openDetail(id: string): Promise<void> {
   await router.push({ name: 'entity-detail', params: { entity: entityName.value, id } });
+}
+
+async function editRecord(id: string): Promise<void> {
+  await router.push({ name: 'entity-edit', params: { entity: entityName.value, id } });
+}
+
+// 表格动作栏 = 内置动作 + registry 贡献（extension.record-action 消费面）
+const recordActions = visibleRecordActions();
+const actionContext = computed<ActionContext>(() => ({
+  entity: entityName.value,
+  openDetail,
+  edit: editRecord,
+  refresh,
+}));
+
+async function runAction(actionKey: string, record: RecordView): Promise<void> {
+  const action = recordActions.value.find((item) => item.key === actionKey);
+  if (action) {
+    try {
+      await action.handler(record, actionContext.value);
+    } catch (e) {
+      fail(e);
+    }
+  }
 }
 
 // 挂载时即记录当前实体：首次同实体内导航（列表→详情）不重置分页
@@ -193,16 +231,15 @@ onMounted(refresh);
         @row-click="(record) => openDetail(record.id)"
       >
         <template #actions="{ record }">
-          <button type="button" @click.stop="openDetail(record.id)">详情</button>
           <button
+            v-for="action in recordActions"
+            :key="action.key"
             type="button"
-            @click.stop="
-              router.push({ name: 'entity-edit', params: { entity: entityName, id: record.id } })
-            "
+            :data-action="action.key"
+            @click.stop="runAction(action.key, record)"
           >
-            编辑
+            {{ action.label }}
           </button>
-          <button type="button" @click.stop="remove(record)">删除</button>
         </template>
       </DynamicTable>
       <footer class="pager">

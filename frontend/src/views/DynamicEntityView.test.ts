@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/api/client';
 import type { EntityDetail, PageResult, RecordView } from '@/api/types';
 import { resetKnownVersions } from '@/composables/useEntityMetadata';
+import { registerBuiltinContributions } from '@/registry/builtinContributions';
 import { registerBuiltins } from '@/registry/rendererRegistry';
 import DynamicEntityView from '@/views/DynamicEntityView.vue';
 
@@ -71,6 +72,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   resetKnownVersions();
   registerBuiltins();
+  registerBuiltinContributions();
   routeMock.params = { entity: 'inventory_item' };
   routeMock.name = 'entity-list';
 });
