@@ -48,11 +48,17 @@ export function registerThemeAsset(
 }
 
 /**
- * path 最小防御（P07 S6 包校验的纵深防线）：非空字符串、相对路径
- * （拒绝 scheme 与协议相对 // 开头，防外链请求的信息泄露面）。
+ * path 最小防御（P07 S6 包校验的纵深防线）：非空、无首尾空白、相对路径
+ * （拒绝任意 scheme 前缀与协议相对 // 开头，防外链请求的信息泄露面）。
  */
 function validatePath(path: string): void {
-  if (typeof path !== 'string' || path === '' || path.includes('://') || path.startsWith('//')) {
+  const trimmed = path.trim();
+  const isExternal =
+    trimmed === '' ||
+    trimmed !== path ||
+    trimmed.startsWith('//') ||
+    /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed);
+  if (typeof path !== 'string' || isExternal) {
     throw new Error(`theme asset path 必须是非空相对路径（拒绝外链）: ${String(path)}`);
   }
 }
