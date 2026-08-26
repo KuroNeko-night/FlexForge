@@ -92,6 +92,11 @@ button:disabled {
   display: grid;
   grid-template-columns: 14rem 1fr;
   min-height: 100vh;
+  /* extension.theme-asset 消费面（FR-PLUGIN-11）：贡献以 CSS 变量注入，
+     缺省不设变量即平台默认外观；animation/icon 变量为 P09 示例预留 */
+  background-image: var(--ff-theme-background, none);
+  background-size: cover;
+  background-position: center;
 }
 .workbench-side {
   background: #1f2430;

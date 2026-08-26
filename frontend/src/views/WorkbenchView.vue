@@ -9,15 +9,19 @@ import type { MenuItem } from '@/api/types';
 import { clearSession, session } from '@/auth/token';
 import StateView from '@/components/StateView.vue';
 import { mergedMenus } from '@/registry/menuRegistry';
+import { themeStyle } from '@/registry/themeRegistry';
 
 /**
  * 工作台壳（菜单 + 路由出口）：菜单 = 后端 /menus（角色已过滤）+ 前端注册项合并。
- * 元数据/菜单数据只作文本插值与路由跳转（S5）。
+ * 美术资产（extension.theme-asset 消费面）以 CSS 变量注入本壳层，注册/撤销即时
+ * 生效、缺省不设变量即平台默认外观（FR-PLUGIN-11）。元数据只作文本插值与
+ * 路由跳转（S5）。
  */
 const router = useRouter();
 const menus = ref<MenuItem[]>([]);
 const state = ref<'loading' | 'ready' | 'error' | 'denied'>('loading');
 const error = ref<string | null>(null);
+const shellTheme = themeStyle();
 
 async function loadMenus(): Promise<void> {
   state.value = 'loading';
@@ -60,7 +64,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="workbench" data-testid="workbench">
+  <div class="workbench" data-testid="workbench" :style="shellTheme">
     <aside class="workbench-side">
       <p class="brand">FlexForge</p>
       <StateView v-if="state !== 'ready'" :state="state" :message="error" />

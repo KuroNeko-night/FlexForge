@@ -51,8 +51,8 @@ FlexForge/
 │       ├── main.ts / App.vue / router.ts   路由壳（登录守卫体验跳转，安全边界在服务端 S2）
 │       ├── api/                    client（错误规范化/令牌注入/401 回调）+ auth/meta/data 客户端 + 契约类型
 │       ├── auth/token.ts           会话令牌（sessionStorage）与当前用户
-│       ├── registry/               keyed.ts 通用基座（五扩展点共用注册-撤销语义）+ renderer/menu registry
-│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm
+│       ├── registry/               keyed.ts 通用基座 + renderer/menu/layout/theme/recordAction registry + builtinContributions（内置部件与动作）
+│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards
 │       ├── composables/            useEntityMetadata（metaVersion 比对 → stale 刷新）
 │       └── views/                  Login/Workbench/Home/DynamicEntity（列表/详情/新建/编辑）/Placeholder
 ├── database/
@@ -209,3 +209,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-24 | §1 树更新：flexforge-meta 新模块（domain/application/infrastructure/api 四层）；V004 meta_* 三表；登记册 field-renderer 行落定六类内置 renderer ID | P04 迭代 1：FieldTypeRegistry 单点 + MetaRegistry 缓存/版本失效 + 实体/字段/视图配置 API + breaking/additive 规则（RB-META） |
 | 2026-08-24 | §1 树更新：flexforge-data 新模块（四层）；V005 data_record；登记册 service.data-access 行标注 P05 落地 | P05 迭代 1：动态数据运行时（CRUD API + 实体级记录校验 + 白名单 SQL + RB-DATA） |
 | 2026-08-25 | §1 树更新：frontend 新增 api/auth/registry/components/composables/views 分层与 router.ts；依赖 +vue-router、dev +@vue/test-utils/happy-dom/globals；后端 meta 增 by-name 端点 | P06 迭代 1：前端动态渲染核心（RB-UI） |
+| 2026-08-25 | §1 树更新：registry 增 layout/theme/recordAction/builtinContributions；components 增 LayoutRenderer/EntityCards；common ExtensionPoints +LAYOUT/THEME_ASSET | P06 迭代 2：GUI 澄清消费面（FR-PLUGIN-10/11） |
