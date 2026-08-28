@@ -45,6 +45,9 @@ public interface LifecycleRepository {
     /** 已应用脚本 checksum（重复安装跳过判据）。 */
     List<MigrationEntry> migrationsOf(String pluginVersionId);
 
+    /** 从 plugin_version 读 resource_payloads（注册编排用）。 */
+    String resourcePayloadsOf(String pluginVersionId);
+
     /** 实体注册接口：metadata 贡献写 meta_entity/meta_field（复用 P04 服务）。 */
     String insertEntityWithFields(String entityName, String displayName, String pluginId,
                                   List<FieldSpec> fields);

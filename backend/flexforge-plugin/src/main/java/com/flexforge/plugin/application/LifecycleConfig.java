@@ -16,10 +16,10 @@ class LifecycleConfig {
     PluginLifecycleService.LifecycleKernel lifecycleKernel(
             LifecycleRepository lifecycle,
             PluginPackageRepository packages,
-            JdbcTemplate jdbc,
+            MigrationScriptRunner scriptRunner,
             MetaRegistry metaRegistry,
             InMemoryExtensionRegistry extensions) {
         return new PluginLifecycleService.LifecycleKernel(
-                lifecycle, packages, jdbc, metaRegistry, extensions);
+                lifecycle, packages, scriptRunner, metaRegistry, extensions);
     }
 }

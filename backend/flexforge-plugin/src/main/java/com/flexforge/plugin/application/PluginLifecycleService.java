@@ -47,7 +47,7 @@ public class PluginLifecycleService {
     /** 协作者内核（参数上限口径）。 */
     record LifecycleKernel(LifecycleRepository lifecycle,
                            PluginPackageRepository packages,
-                           JdbcTemplate jdbc,
+                           MigrationScriptRunner scriptRunner,
                            MetaRegistry metaRegistry,
                            InMemoryExtensionRegistry extensions) {
     }
@@ -157,16 +157,12 @@ public class PluginLifecycleService {
         return restored;
     }
 
-    /** 迁移执行层（ADR-0005：checksum 一致跳过；差异拒绝；执行语句直接 JdbcTemplate）。 */
+    /** 迁移执行层（ADR-0005：checksum 一致跳过；差异拒绝；脚本执行经 MigrationScriptRunner）。 */
     private void runMigrations(ActivationRecord activation, PluginVersionRecord version) {
         Map<String, String> applied = new HashMap<>();
         for (LifecycleRepository.MigrationEntry entry : kernel.lifecycle().migrationsOf(version.id())) {
             applied.put(entry.scriptName(), entry.checksum());
         }
-        String scriptsJson = kernel.jdbc().queryForObject(
-                "SELECT script_payloads FROM plugin_version WHERE id = ?", String.class, version.id());
-        JsonNode scripts = scriptsJson == null ? JSON.readTree("{}")
-                : JSON.readTree(scriptsJson.getBytes(StandardCharsets.UTF_8));
         for (String scriptName : version.scriptChecksums().keySet()) {
             String expectedChecksum = version.scriptChecksums().get(scriptName);
             String previous = applied.get(scriptName);
@@ -175,10 +171,7 @@ public class PluginLifecycleService {
                         "迁移脚本 checksum 与已应用记录不一致（包损坏拒绝）: " + scriptName);
             }
             if (previous == null) {
-                String sql = scripts.path(scriptName).asString("");
-                if (!sql.isEmpty()) {
-                    kernel.jdbc().execute(sql);
-                }
+                kernel.scriptRunner().executeFromVersion(scriptName, version.id());
                 kernel.lifecycle().insertMigration(version.id(), activation.id(),
                         scriptName, expectedChecksum);
             }
@@ -197,9 +190,7 @@ public class PluginLifecycleService {
     }
 
     private void registerMetadata(ActivationRecord activation, PluginVersionRecord version) {
-        String entitiesJson = kernel.jdbc().queryForObject(
-                "SELECT resource_payloads FROM plugin_version WHERE id = ?",
-                String.class, version.id());
+        String entitiesJson = kernel.lifecycle().resourcePayloadsOf(version.id());
         JsonNode entities = entitiesJson == null ? JSON.readTree("{}")
                 : JSON.readTree(entitiesJson.getBytes(StandardCharsets.UTF_8));
         for (String path : entities.propertyNames()) {

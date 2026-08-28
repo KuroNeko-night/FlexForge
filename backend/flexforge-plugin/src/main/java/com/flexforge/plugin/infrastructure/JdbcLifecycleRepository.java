@@ -103,6 +103,13 @@ public class JdbcLifecycleRepository implements LifecycleRepository {
     }
 
     @Override
+    public String resourcePayloadsOf(String pluginVersionId) {
+        return jdbc.queryForObject(
+                "SELECT resource_payloads FROM plugin_version WHERE id = ?",
+                String.class, pluginVersionId);
+    }
+
+    @Override
     public int deleteRegistrations(String activationId) {
         return jdbc.update("DELETE FROM plugin_registration WHERE activation_id = ?", activationId);
     }

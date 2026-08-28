@@ -52,6 +52,13 @@ public class MigrationScriptScanner {
      * 字符集白名单：拒绝反斜杠。合法顺序 DDL/DML 几乎不含 `\`；同时封死
      * E-string/U&'...' 反斜杠转义引号与词法机的闭合点分歧（PR #19 复审 N1）。
      */
+    /** 执行前二次校验（纵深防御，docs/13 §4）：命名 + 字符集 + 越界。 */
+    void requireExecutable(String scriptName, String sql) {
+        requireOrderedName(scriptName, 0);
+        requirePlainCharacters(scriptName, sql);
+        requireNoPlatformObjects(scriptName, sql);
+    }
+
     private static void requirePlainCharacters(String name, String sql) {
         if (sql.indexOf('\\') >= 0) {
             throw PluginValidationException.invalidManifest(
