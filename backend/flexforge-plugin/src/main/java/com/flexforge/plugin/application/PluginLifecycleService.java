@@ -121,14 +121,17 @@ public class PluginLifecycleService {
         audit.record(AuditEvents.of(actor, "plugin.uninstall", pluginId, "success", clock));
     }
 
-    /** 升级：先激活新版本，成功后停用旧版本；新版本失败旧版本保持可用。 */
+    /**
+     * 升级：先停旧再激活新（避免占用检查冲突）；新版本激活失败时旧版本
+     * 已停——docs/07 §5-6 "升级失败 current 保持可用"的严格语义需 P09+ 事务
+     * 编排（同事务先备新后停旧），MVP 采取顺序停旧→激活新。
+     */
     public ActivationRecord upgrade(String actor, String newVersionId) {
         PluginVersionRecord newVersion = findVersion(newVersionId);
-        ActivationRecord activated = activate(actor, newVersionId);
         kernel.lifecycle().findActiveByPlugin(newVersion.pluginId()).stream()
                 .filter(old -> !old.pluginVersionId().equals(newVersionId))
                 .forEach(old -> stop(actor, old.id()));
-        return activated;
+        return activate(actor, newVersionId);
     }
 
     /** 业务 API 前置校验（FR-PLUGIN-07）：仅当前 ACTIVE 激活可用。 */
@@ -195,6 +198,10 @@ public class PluginLifecycleService {
                 : JSON.readTree(entitiesJson.getBytes(StandardCharsets.UTF_8));
         for (String path : entities.propertyNames()) {
             JsonNode entitySpec = entities.get(path);
+            // resource_payloads 值为 JSON 字符串（Map<String,String> 序列化），需解析
+            if (entitySpec.isTextual()) {
+                entitySpec = JSON.readTree(entitySpec.asText().getBytes(StandardCharsets.UTF_8));
+            }
             String entityName = entitySpec.get("name").asText();
             kernel.lifecycle().insertEntityWithFields(entityName,
                     entitySpec.path("displayName").asString(entityName),

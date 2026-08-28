@@ -32,20 +32,24 @@ public class MigrationScriptRunner {
      * 执行前二次校验（docs/13 §4 纵深防御）。
      */
     public void executeFromVersion(String scriptName, String pluginVersionId) {
-        String sql = jdbc.queryForObject(
-                "SELECT script_payloads -> ? FROM plugin_version WHERE id = ?",
-                String.class, scriptName, pluginVersionId);
+        String sql;
+        try {
+            sql = jdbc.queryForObject(
+                    "SELECT script_payloads ->> ? FROM plugin_version WHERE id = ?",
+                    String.class, scriptName, pluginVersionId);
+        } catch (org.springframework.dao.DataAccessException e) {
+            throw new PluginValidationException(ErrorCodes.MIGRATION_FAILED,
+                    "迁移脚本读取失败（" + scriptName + "）: " + e.getClass().getSimpleName());
+        }
         if (sql == null || sql.equals("null") || sql.isEmpty()) {
-            return; // 空脚本视为 no-op
+            return;
         }
         try {
             scanner.requireExecutable(scriptName, sql);
+            jdbc.execute(sql);
         } catch (PluginValidationException e) {
             throw new PluginValidationException(ErrorCodes.MIGRATION_FAILED,
-                    "执行前二次校验拒绝（" + scriptName + "）: " + e.getMessage());
-        }
-        try {
-            jdbc.execute(sql);
+                    "迁移脚本执行失败（" + scriptName + "）: " + e.getMessage());
         } catch (org.springframework.dao.DataAccessException e) {
             throw new PluginValidationException(ErrorCodes.MIGRATION_FAILED,
                     "迁移脚本执行失败（" + scriptName + "）: " + e.getClass().getSimpleName());
