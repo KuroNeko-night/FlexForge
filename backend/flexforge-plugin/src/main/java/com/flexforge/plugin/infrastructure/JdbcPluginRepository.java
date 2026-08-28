@@ -34,18 +34,20 @@ public class JdbcPluginRepository implements PluginPackageRepository {
     }
 
     @Override
+    public Optional<PluginVersionRecord> findByVersionId(String versionId) {
+        return jdbc.query(versionSelect() + " WHERE id = ?", row, versionId).stream().findFirst();
+    }
+
+    @Override
     public Optional<PluginVersionRecord> findByContentHash(String contentHash) {
-        return jdbc.query("SELECT id, plugin_id, version, content_hash, capability_level,"
-                        + " manifest_json, script_checksums, size_bytes, created_at"
-                        + " FROM plugin_version WHERE content_hash = ?", row, contentHash)
+        return jdbc.query(versionSelect() + " WHERE content_hash = ?", row, contentHash)
                 .stream().findFirst();
     }
 
     @Override
     public Optional<PluginVersionRecord> findVersion(String pluginId, String version) {
-        return jdbc.query("SELECT id, plugin_id, version, content_hash, capability_level,"
-                        + " manifest_json, script_checksums, size_bytes, created_at"
-                        + " FROM plugin_version WHERE plugin_id = ? AND version = ?", row, pluginId, version)
+        return jdbc.query(versionSelect()
+                        + " WHERE plugin_id = ? AND version = ?", row, pluginId, version)
                 .stream().findFirst();
     }
 
@@ -66,13 +68,15 @@ public class JdbcPluginRepository implements PluginPackageRepository {
                 "pi-" + UUID.randomUUID(), version.pluginId(), pluginName);
         try {
             jdbc.update("INSERT INTO plugin_version (id, plugin_id, version, content_hash,"
-                            + " capability_level, manifest_json, script_checksums, size_bytes)"
-                            + " VALUES (?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?)",
+                            + " capability_level, manifest_json, script_checksums, size_bytes,"
+                            + " script_payloads, resource_payloads)"
+                            + " VALUES (?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?::jsonb)",
                     version.id(), version.pluginId(), version.version(), version.contentHash(),
                     version.capabilityLevel(), version.manifestJson(),
-                    checksumsJson(version.scriptChecksums()), version.sizeBytes());
+                    checksumsJson(version.scriptChecksums()), version.sizeBytes(),
+                    payloadsJson(version.scriptPayloads()),
+                    payloadsJson(version.resourcePayloads()));
         } catch (DuplicateKeyException e) {
-            // 并发同包导入：约束兜底，调用方按幂等语义复查 content hash
             throw e;
         }
         for (DependencySpec dependency : dependencies) {
@@ -88,15 +92,36 @@ public class JdbcPluginRepository implements PluginPackageRepository {
         return JSON.writeValueAsString(checksums == null ? Map.of() : checksums);
     }
 
+    private static String payloadsJson(Map<String, String> payloads) {
+        return JSON.writeValueAsString(payloads == null ? Map.of() : payloads);
+    }
+
+    private String versionSelect() {
+        return "SELECT id, plugin_id, version, content_hash, capability_level,"
+                + " manifest_json, script_checksums, size_bytes, created_at,"
+                + " script_payloads, resource_payloads FROM plugin_version";
+    }
+
     private PluginVersionRecord mapRow(ResultSet rs, int rowNum) throws SQLException {
-        Map<String, String> checksums = new HashMap<>();
-        JsonNode node = JSON.readTree(rs.getString("script_checksums"));
-        for (var entry : node.properties()) {
-            checksums.put(entry.getKey(), entry.getValue().asText());
-        }
+        Map<String, String> checksums = stringMapOf(rs.getString("script_checksums"));
+        Map<String, String> scripts = stringMapOf(rs.getString("script_payloads"));
+        Map<String, String> resources = stringMapOf(rs.getString("resource_payloads"));
         return new PluginVersionRecord(rs.getString("id"), rs.getString("plugin_id"),
                 rs.getString("version"), rs.getString("content_hash"),
                 rs.getInt("capability_level"), rs.getString("manifest_json"), checksums,
-                rs.getLong("size_bytes"), rs.getTimestamp("created_at").toInstant());
+                rs.getLong("size_bytes"), rs.getTimestamp("created_at").toInstant(),
+                scripts, resources);
+    }
+
+    private static Map<String, String> stringMapOf(String json) {
+        Map<String, String> result = new HashMap<>();
+        if (json == null) {
+            return result;
+        }
+        JsonNode node = JSON.readTree(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        for (var entry : node.properties()) {
+            result.put(entry.getKey(), entry.getValue().asText());
+        }
+        return result;
     }
 }

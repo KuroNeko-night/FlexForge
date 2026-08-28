@@ -12,6 +12,9 @@ import java.util.Optional;
 @PublicApi
 public interface PluginPackageRepository {
 
+    /** 按主键查版本（生命周期入口）。 */
+    Optional<PluginVersionRecord> findByVersionId(String versionId);
+
     /** 按 content hash 查版本（幂等导入命中）。 */
     Optional<PluginVersionRecord> findByContentHash(String contentHash);
 
