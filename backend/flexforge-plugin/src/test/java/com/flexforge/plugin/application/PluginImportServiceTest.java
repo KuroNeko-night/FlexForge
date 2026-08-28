@@ -96,4 +96,40 @@ class PluginImportServiceTest {
         assertThat(preview.versionId()).isEqualTo("pv-winner");
         assertThat(stores.get()).isEqualTo(1);
     }
+
+    /** 并发同版本异内容：hash 复查 miss → 按同版本冲突转 400（非 500）。 */
+    @Test
+    void concurrentSameVersionDifferentContentRejectedAsConflict() {
+        PluginPackageRepository repository = new PluginPackageRepository() {
+            @Override
+            public Optional<PluginVersionRecord> findByContentHash(String contentHash) {
+                return Optional.empty(); // 两次均未命中（内容不同）
+            }
+
+            @Override
+            public Optional<PluginVersionRecord> findVersion(String pluginId, String version) {
+                return Optional.of(record("another-hash")); // 赢家已占同 (id, version)
+            }
+
+            @Override
+            public List<String> versionsOf(String pluginId) {
+                return List.of();
+            }
+
+            @Override
+            public PluginVersionRecord storeVersion(String pluginName, PluginVersionRecord version,
+                                                    List<com.flexforge.plugin.domain.DependencySpec> deps) {
+                throw new DuplicateKeyException("uq_plugin_version_natural");
+            }
+        };
+        PluginImportService service = new PluginImportService(
+                new PluginImportKernel(new ArchiveInspector(), new ManifestValidator(),
+                        new MigrationScriptScanner(), new DependencyResolver()),
+                repository, event -> { }, Clock.systemUTC());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> service.importPackage("tester", minimalPackage()))
+                .isInstanceOf(com.flexforge.plugin.domain.PluginValidationException.class)
+                .hasMessageContaining("不一致");
+    }
 }

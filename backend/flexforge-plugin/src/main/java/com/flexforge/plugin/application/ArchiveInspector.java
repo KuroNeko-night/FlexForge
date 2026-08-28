@@ -61,9 +61,9 @@ public class ArchiveInspector {
             return extract(zipBytes, tempDir);
         } catch (IOException e) {
             deleteRecursively(tempDir);
-            // 损坏/截断 zip、非法文件名字符等：统一 400 invalid_manifest（docs/08 §7）
-            throw PluginValidationException.invalidManifest("插件包损坏或不可读（"
-                    + e.getClass().getSimpleName() + "）");
+            // 损坏/截断 zip、非法文件名字符等：统一 400 invalid_manifest（docs/08 §7）；
+            // 消息保持通用，不携带异常类名等内部细节（docs/13 §3.8-4）
+            throw PluginValidationException.invalidManifest("插件包损坏或不可读");
         } catch (RuntimeException e) {
             deleteRecursively(tempDir);
             throw e;
@@ -212,9 +212,16 @@ public class ArchiveInspector {
         }
     }
 
-    /** 文本类资产（svg/css/json）：全文拒绝内嵌脚本（S6：无任意可执行资源）。 */
+    /** 文本类资产（svg/css/json）：全文拒绝内嵌脚本与二进制 NUL（S6）。 */
     private static void requireNoScriptContent(String entryName, Path file) throws IOException {
-        String content = Files.readString(file, java.nio.charset.StandardCharsets.UTF_8)
+        byte[] raw = Files.readAllBytes(file);
+        for (byte b : raw) {
+            if (b == 0) {
+                throw PluginValidationException.invalidManifest(
+                        "文本资产含 NUL 二进制内容: " + entryName);
+            }
+        }
+        String content = new String(raw, java.nio.charset.StandardCharsets.UTF_8)
                 .toLowerCase(Locale.ROOT);
         if (content.contains("<script") || content.contains("javascript:")) {
             throw PluginValidationException.invalidManifest(

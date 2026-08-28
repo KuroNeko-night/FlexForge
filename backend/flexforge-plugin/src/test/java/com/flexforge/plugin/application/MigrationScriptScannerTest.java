@@ -75,10 +75,19 @@ class MigrationScriptScannerTest {
         assertThatThrownBy(() -> scan(List.of("migrations/V001__evil.sql"),
                         "SELECT '/*'; DELETE FROM sys_user; SELECT '*/'"))
                 .hasMessageContaining("越界");
-        // dollar-quote 内的越界对象同样可见
+        // dollar-quote 内容同样占位替换（字符串数据非对象引用）；越界对象在引号外
         assertThatThrownBy(() -> scan(List.of("migrations/V001__evil.sql"),
-                        "SELECT $$sys_user$$; DELETE FROM meta_entity;"))
-                .hasMessageContaining("越界");
+                        "SELECT $$some data$$; DELETE FROM meta_entity;"))
+                .hasMessageContaining("越界")
+                .hasMessageContaining("meta_entity");
+    }
+
+    @Test
+    void backslashRejectedToCloseEscapeStringBypass() {
+        // PR #19 复审 N1：E'a\'' 依赖反斜杠转义引号构造闭合点分歧——字符集白名单整体拒绝
+        assertThatThrownBy(() -> scan(List.of("migrations/V001__evil.sql"),
+                        "SELECT E'a\\''; DROP TABLE sys_user;"))
+                .hasMessageContaining("反斜杠");
     }
 
     @Test

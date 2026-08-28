@@ -41,10 +41,22 @@ public class MigrationScriptScanner {
             long ordinal = requireOrderedName(name, previous);
             previous = ordinal;
             String sql = new String(bytesOf.apply(name), StandardCharsets.UTF_8);
+            requirePlainCharacters(name, sql);
             requireNoPlatformObjects(name, sql);
             checksums.put(name, sha256(sql));
         }
         return checksums;
+    }
+
+    /**
+     * 字符集白名单：拒绝反斜杠。合法顺序 DDL/DML 几乎不含 `\`；同时封死
+     * E-string/U&'...' 反斜杠转义引号与词法机的闭合点分歧（PR #19 复审 N1）。
+     */
+    private static void requirePlainCharacters(String name, String sql) {
+        if (sql.indexOf('\\') >= 0) {
+            throw PluginValidationException.invalidManifest(
+                    "迁移脚本含反斜杠（Level 1 迁移字符集不允许）: " + name);
+        }
     }
 
     private static long requireOrderedName(String name, long previous) {

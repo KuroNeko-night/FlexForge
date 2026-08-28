@@ -2,7 +2,6 @@ package com.flexforge.plugin.application;
 
 import com.flexforge.plugin.domain.PluginValidationException;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -20,8 +19,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /** 上传安全基线（RB-PLUGIN-VALID：zip-slip/大小上限/白名单/魔数/临时目录清理）。 */
 class ArchiveInspectorTest {
 
-    @TempDir
-    Path probe;
 
     private static final byte[] PNG_MAGIC = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'};
 
@@ -60,13 +57,11 @@ class ArchiveInspectorTest {
     @Test
     void validArchiveExtractsAndCleansUpTempDir() throws IOException {
         byte[] bytes = zip(validPackage());
-        Path before = probe;
         try (SafeArchive archive = new ArchiveInspector().inspect(bytes)) {
             assertThat(archive.entryNames()).containsExactlyInAnyOrder(
                     "plugin.json", "migrations/V001__demo.sql", "assets/logo.png");
             assertThat(new String(archive.manifestBytes())).contains("schemaVersion");
         }
-        assertThat(before).isNotNull();
     }
 
     @Test

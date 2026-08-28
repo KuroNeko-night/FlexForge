@@ -80,24 +80,24 @@ public class PluginImportService {
             kernel.resolver().resolve(manifest.dependencies(), repository::versionsOf);
             requireNoVersionConflict(manifest, hash);
             PluginVersionRecord candidate = recordOf(manifest, hash, zipBytes.length, checksums);
-            PluginVersionRecord stored = storeIdempotently(manifest.name(), candidate,
-                    manifest.dependencies(), hash);
+            PluginVersionRecord stored = storeIdempotently(manifest, candidate, hash);
             audit.record(AuditEvents.of(actor, "plugin.import", stored.id(), "success", clock));
             return previewOf(stored, stored.id().equals(candidate.id()));
         }
     }
 
-    /** 并发窗口兜底：唯一约束冲突后复查 content hash，命中即幂等返回（接口契约）。 */
-    private PluginVersionRecord storeIdempotently(String pluginName, PluginVersionRecord candidate,
-                                                  List<com.flexforge.plugin.domain.DependencySpec> dependencies,
-                                                  String hash) {
+    /** 并发窗口兜底：唯一约束冲突后复查——hash 命中即幂等返回；否则按同版本冲突转 400。 */
+    private PluginVersionRecord storeIdempotently(PluginManifest manifest,
+                                                  PluginVersionRecord candidate, String hash) {
         try {
-            return repository.storeVersion(pluginName, candidate, dependencies);
+            return repository.storeVersion(manifest.name(), candidate, manifest.dependencies());
         } catch (DuplicateKeyException e) {
             var winner = repository.findByContentHash(hash);
             if (winner.isPresent()) {
                 return winner.orElseThrow();
             }
+            // 并发同版本异内容：败者事务已回滚，按串行路径同口径拒绝
+            requireNoVersionConflict(manifest, hash);
             throw e;
         }
     }
