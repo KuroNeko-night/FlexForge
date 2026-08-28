@@ -3,10 +3,10 @@
   "updatedAt": "2026-08-26",
   "currentStageId": "P07",
   "currentStageName": "插件包校验与版本存储",
-  "status": "ready_to_start",
+  "status": "in_progress",
   "progressPercent": 27,
   "owner": "project-maintainer",
-  "nextAction": "P07 启动（flexforge-plugin 模块）：V006 plugin_instance/plugin_version/plugin_dependency(+plugin_migration) 迁移 → PluginArchive 读取与上传安全基线（压缩 10MB/解压 50MB、zip-slip 防护、临时目录清理、非法包不落库）→ plugin.json Schema/路径/哈希/能力等级校验器（schemaVersion 分派；contributions 键与 renderer ID 对登记册校验；美术资产类型白名单 FR-PLUGIN-11）→ 依赖解析/安装预览/幂等导入（content hash 去重）→ 插件迁移 runner 骨架（V*__*.sql 顺序+checksum+同事务+越界拒绝，ADR-0005）→ RB-PLUGIN-VALID 回归 → 子代理交叉审查 → PR",
+  "nextAction": "P07 迭代 1 交付（feat/p07-plugin-validation，全阶段单迭代）：V006 plugin_instance/plugin_version/plugin_dependency/plugin_migration 迁移 → flexforge-plugin 模块（ArchiveInspector 上传安全基线：zip 魔数、压缩 10MB/解压 50MB、zip-slip、临时目录 finally 清理、资源路径/声明白名单/类型白名单+魔数嗅探；ManifestParser+校验器 schemaVersion 分派（未知→unsupported_schema_version，ErrorCodes+docs/08 §7 additive）；MigrationScriptScanner V*__*.sql 命名/顺序/越界平台表拒绝/checksum；依赖解析 exact+^ 指出缺失插件与范围；幂等导入 content_hash 去重 + 同版本异内容拒绝）→ POST /plugins/validate|import（ADMIN）→ RB-PLUGIN-VALID 回归 → 子代理审查 → PR",
   "exitGate": "P06 出口证据：①无业务页面代码显示 P05 实体列表/表单（DynamicEntityView 四模式路由驱动 + DynamicEntityView.test 列表渲染/创建提交）②六类字段正确内置 renderer（rendererRegistry `<type>.default` 映射 + DynamicTable 按类型渲染）③菜单注册/撤销不残留（menuRegistry 4 例：合并/后端优先/权限过滤/activationId 清理）④布局贡献声明渲染+撤销恢复缺省（layoutRegistry+LayoutRenderer 同一挂载 nextTick 断言，FR-PLUGIN-10）⑤美术资产即时更换/恢复默认（themeRegistry 同一 computed；background url() 端到端；icon/animation P09 预留已声明）⑥刷新后从服务端恢复元数据（useEntityMetadata 版本表内存态 + sessionStorage 令牌 + fetchMe 身份恢复）⑦新增 renderer 仅登记映射（\"登记即扩展\"用例，通用组件零分支）；五状态（StateView + requestId）；S5 两轮子代理复审确认无 v-html/动态执行；extension.layout/theme-asset 转 active（常量+登记册+R-GOV-03 五点对齐）；前端 49 + 后端 147 tests，PR #17/#18 四轮审查后合并，main CI success、门禁 19 pass / 2 skip / 0 fail",
   "blockers": [],
   "stages": [
