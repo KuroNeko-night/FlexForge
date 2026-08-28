@@ -6,6 +6,7 @@ import com.flexforge.auth.PermissionDeniedException;
 import com.flexforge.common.RequestIds;
 import com.flexforge.common.api.ErrorCodes;
 import com.flexforge.common.api.ErrorResponse;
+import com.flexforge.plugin.domain.PluginValidationException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +42,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleValidation(IllegalArgumentException exception) {
         return envelope(HttpStatus.BAD_REQUEST, ErrorCodes.VALIDATION_ERROR,
                 exception.getMessage() == null ? "请求参数不合法" : exception.getMessage());
+    }
+
+    /** 插件包校验失败：携带稳定错误码（invalid_manifest/unsupported_schema_version/...）→ 400。 */
+    @ExceptionHandler({PluginValidationException.class})
+    public ResponseEntity<ErrorResponse> handlePluginValidation(PluginValidationException exception) {
+        return envelope(HttpStatus.BAD_REQUEST, exception.code(), exception.getMessage());
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, HandlerMethodValidationException.class,
