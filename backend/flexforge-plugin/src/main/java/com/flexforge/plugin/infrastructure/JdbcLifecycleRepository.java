@@ -160,6 +160,12 @@ public class JdbcLifecycleRepository implements LifecycleRepository {
     }
 
     @Override
+    public Optional<String> entityOwnerOf(String entityName) {
+        return jdbc.query("SELECT plugin_id FROM meta_entity WHERE name = ?",
+                (rs, n) -> rs.getString(1), entityName).stream().findFirst();
+    }
+
+    @Override
     public int deactivateEntity(String pluginId) {
         return jdbc.update("UPDATE meta_entity SET status = 'disabled', updated_at = now()"
                 + " WHERE plugin_id = ?", pluginId);

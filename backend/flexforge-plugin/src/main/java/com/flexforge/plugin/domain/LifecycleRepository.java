@@ -52,6 +52,9 @@ public interface LifecycleRepository {
     String insertEntityWithFields(String entityName, String displayName, String pluginId,
                                   List<FieldSpec> fields);
 
+    /** 实体名当前归属插件（空=未注册）；跨插件同名在服务层拒绝（防静默覆盖）。 */
+    Optional<String> entityOwnerOf(String entityName);
+
     int deactivateEntity(String pluginId);
 
     /** plugin_audit_event 追加事件（区别于平台审计）。 */

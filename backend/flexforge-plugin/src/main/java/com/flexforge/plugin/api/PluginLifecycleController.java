@@ -9,14 +9,18 @@ import com.flexforge.common.ApiConstants;
 import com.flexforge.common.PublicApi;
 import com.flexforge.plugin.application.PluginLifecycleService;
 import com.flexforge.plugin.domain.ActivationRecord;
+import com.flexforge.plugin.domain.LifecycleRepository;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 插件生命周期接口（FR-PLUGIN-02，仅管理员）：激活/停用/升级/卸载。 */
+import java.util.List;
+
+/** 插件生命周期接口（FR-PLUGIN-02，仅管理员）：激活/停用/升级/卸载/注册清单。 */
 @PublicApi
 @RestController
 @RequestMapping(ApiConstants.API_V1 + "/plugins")
@@ -28,6 +32,14 @@ public class PluginLifecycleController {
     public PluginLifecycleController(PluginLifecycleService lifecycle, AuthService authService) {
         this.lifecycle = lifecycle;
         this.authService = authService;
+    }
+
+    /** 激活注册清单（FR-PLUGIN-07：stale activation 校验消费方，旧 ID 返回 409）。 */
+    @GetMapping("/activations/{activationId}/registrations")
+    @RequireRole(Roles.ADMIN)
+    public List<LifecycleRepository.RegistrationEntry> registrations(
+            @PathVariable String activationId) {
+        return lifecycle.registrationsOf(activationId);
     }
 
     /** 激活指定版本（docs/03 §8 POST /plugins/{id}/activate）。 */
