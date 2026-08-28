@@ -159,10 +159,14 @@ public class JdbcLifecycleRepository implements LifecycleRepository {
         return actualId;
     }
 
+    /** 平台侧（元数据管理）创建的实体 plugin_id 为 NULL 的归属哨兵（非合法插件 ID 字符集）。 */
+    private static final String PLATFORM_OWNER = "<platform>";
+
     @Override
     public Optional<String> entityOwnerOf(String entityName) {
         return jdbc.query("SELECT plugin_id FROM meta_entity WHERE name = ?",
-                (rs, n) -> rs.getString(1), entityName).stream().findFirst();
+                (rs, n) -> rs.getString(1) == null ? PLATFORM_OWNER : rs.getString(1),
+                entityName).stream().findFirst();
     }
 
     @Override

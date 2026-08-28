@@ -253,13 +253,14 @@ public class PluginLifecycleService {
         }
     }
 
-    /** 归属校验（PR 复审）：同名实体归属其他插件时拒绝，防静默覆盖。 */
+    /** 归属校验：同名实体归属其他插件或平台（元数据管理创建）时拒绝，防静默覆盖。 */
     private void requireEntityOwnership(String entityName, String pluginId) {
         kernel.lifecycle().entityOwnerOf(entityName)
                 .filter(owner -> !owner.equals(pluginId))
                 .ifPresent(owner -> {
+                    String ownerLabel = "<platform>".equals(owner) ? "平台（元数据管理创建）" : owner;
                     throw new PluginValidationException(ErrorCodes.REGISTRATION_FAILED,
-                            "实体 " + entityName + " 已被插件 " + owner + " 注册，禁止跨插件覆盖");
+                            "实体 " + entityName + " 已被 " + ownerLabel + " 注册，禁止跨归属覆盖");
                 });
     }
 

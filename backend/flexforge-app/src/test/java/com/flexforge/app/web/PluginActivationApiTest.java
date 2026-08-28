@@ -183,6 +183,32 @@ class PluginActivationApiTest {
         assertThat(residueCountOf(intruderVersionId)).isZero();
     }
 
+    // ===== 实体归属冲突：平台创建（plugin_id NULL）的同名实体同样拒绝，不得 500 =====
+    @Test
+    void platformEntityConflictIsRejectedWithoutServerError() throws Exception {
+        MetaTestSupport.createEntity(mockMvc, developerBearer(), "platform_shared_item");
+        String versionId = importVersion(mockMvc, adminBearer, "owner.three", "1.0.0",
+                defaultBody("platform_shared_item", "owner_three_tab"));
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/plugins/" + versionId + "/activate")
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("registration_failed"));
+
+        Map<String, Object> failed = jdbc.queryForMap(
+                "SELECT status, stage, error_code FROM plugin_activation"
+                        + " WHERE plugin_version_id = ?", versionId);
+        assertThat(failed.get("status")).isEqualTo("FAILED");
+        assertThat(failed.get("stage")).isEqualTo("REGISTER");
+        assertThat(failed.get("error_code")).isEqualTo("registration_failed");
+
+        // 平台实体归属未被夺走
+        Map<String, Object> entity = jdbc.queryForMap(
+                "SELECT plugin_id, status FROM meta_entity WHERE name = 'platform_shared_item'");
+        assertThat(entity.get("plugin_id")).isNull();
+        assertThat(residueCountOf(versionId)).isZero();
+    }
+
     // ===== 权限矩阵：非管理员不可管理生命周期 =====
     @Test
     void nonAdminCannotManageLifecycle() throws Exception {
@@ -203,6 +229,11 @@ class PluginActivationApiTest {
                         "/api/v1/plugins/activations/act-any/registrations")
                         .header("Authorization", userBearer))
                 .andExpect(status().isForbidden());
+    }
+
+    private String developerBearer() throws Exception {
+        return "Bearer " + AuthTestSupport.loginToken(mockMvc,
+                AuthTestSupport.DEVELOPER_USERNAME, AuthTestSupport.developerPassword());
     }
 
     private Integer residueCountOf(String versionId) {
