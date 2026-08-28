@@ -61,7 +61,8 @@ public class JdbcPluginRepository implements PluginPackageRepository {
     public PluginVersionRecord storeVersion(String pluginName, PluginVersionRecord version,
                                             List<DependencySpec> dependencies) {
         jdbc.update("INSERT INTO plugin_instance (id, plugin_id, name)"
-                        + " VALUES (?, ?, ?) ON CONFLICT (plugin_id) DO NOTHING",
+                        + " VALUES (?, ?, ?)"
+                        + " ON CONFLICT (plugin_id) DO UPDATE SET name = EXCLUDED.name, updated_at = now()",
                 "pi-" + UUID.randomUUID(), version.pluginId(), pluginName);
         try {
             jdbc.update("INSERT INTO plugin_version (id, plugin_id, version, content_hash,"

@@ -151,6 +151,47 @@ class ArchiveInspectorTest {
     }
 
     @Test
+    void defaultEntryCapMatchesSecurityBaseline() {
+        // docs/13 §3.5-2：解压后文件数量 ≤ 1000（数值唯一来源）
+        assertThat(new ArchiveInspector().maxEntryCount()).isEqualTo(1000);
+    }
+
+    @Test
+    void corruptedZipWithValidMagicRejectedAsInvalidManifest() {
+        byte[] corrupted = new byte[] {'P', 'K', 3, 4, 'g', 'a', 'r', 'b', 'a', 'g', 'e'};
+        assertThatThrownBy(() -> reject(corrupted))
+                .isInstanceOf(PluginValidationException.class)
+                .hasMessageContaining("损坏或不可读");
+    }
+
+    @Test
+    void controlCharactersAndOverlongSegmentsRejected() {
+        var control = new LinkedHashMap<>(validPackage());
+        control.put("assets/ev\til.png", PNG_MAGIC);
+        assertThatThrownBy(() -> reject(zip(control))).hasMessageContaining("非法包内路径");
+
+        var longSegment = new LinkedHashMap<>(validPackage());
+        longSegment.put("assets/" + "x".repeat(201) + ".png", PNG_MAGIC);
+        assertThatThrownBy(() -> reject(zip(longSegment))).hasMessageContaining("超长");
+    }
+
+    @Test
+    void svgWithEmbeddedScriptRejectedWhileCleanTextPasses() {
+        var evil = new LinkedHashMap<>(validPackage());
+        evil.put("assets/icon.svg", "<svg xmlns=\"...\"><script>alert(1)</script></svg>".getBytes());
+        assertThatThrownBy(() -> reject(zip(evil)))
+                .hasMessageContaining("可执行脚本内容");
+
+        var clean = new LinkedHashMap<>(validPackage());
+        clean.put("assets/icon.svg", "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg>".getBytes());
+        try (SafeArchive archive = new ArchiveInspector().inspect(zip(clean))) {
+            assertThat(archive.entryNames()).contains("assets/icon.svg");
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    @Test
     void tempDirRemovedAfterCloseAndAfterFailure() throws IOException {
         // 关闭即清理：直接检查本包的临时目录
         byte[] bytes = zip(validPackage());

@@ -262,4 +262,28 @@ class PluginApiTest {
                         .file(new MockMultipartFile("file", "pkg.zip", "application/zip", bytes)))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void corruptedZipReturnsInvalidManifestNot500() throws Exception {
+        byte[] corrupted = new byte[] {'P', 'K', 3, 4, 'g', 'a', 'r', 'b', 'a', 'g', 'e'};
+        mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/plugins/import")
+                        .file(new MockMultipartFile("file", "pkg.zip", "application/zip", corrupted))
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("invalid_manifest"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("损坏")));
+    }
+
+    @Test
+    void oversizedUploadRejectedWithDiagnostic4xx() throws Exception {
+        // MockMvc 不执行 servlet multipart 上限（真实部署由 MaxUploadSizeExceededException
+        // handler 兜底）；此处验证第二层防线：ArchiveInspector 字节上限
+        byte[] oversized = new byte[11 * 1024 * 1024];
+        mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/plugins/import")
+                        .file(new MockMultipartFile("file", "pkg.zip", "application/zip", oversized))
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("validation_error"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("压缩大小上限")));
+    }
 }

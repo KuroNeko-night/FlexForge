@@ -63,4 +63,29 @@ class MigrationScriptScannerTest {
                         + "/* meta_field 也不碰 */\nCREATE TABLE inv_item (id INT);");
         assertThat(checksums).containsKey("migrations/V001__ok.sql");
     }
+
+    @Test
+    void stringLiteralsCannotHidePlatformObjectsViaCommentTokens() {
+        // PR #19 审查 P1：字符串内的 -- 不能把后半行从扫描中剥除
+        assertThatThrownBy(() -> scan(List.of("migrations/V001__evil.sql"),
+                        "INSERT INTO inv_x VALUES ('a--b'); DROP TABLE sys_user;"))
+                .hasMessageContaining("越界")
+                .hasMessageContaining("sys_user");
+        // 字符串内的 /* 不能触发跨段块注释剥除
+        assertThatThrownBy(() -> scan(List.of("migrations/V001__evil.sql"),
+                        "SELECT '/*'; DELETE FROM sys_user; SELECT '*/'"))
+                .hasMessageContaining("越界");
+        // dollar-quote 内的越界对象同样可见
+        assertThatThrownBy(() -> scan(List.of("migrations/V001__evil.sql"),
+                        "SELECT $$sys_user$$; DELETE FROM meta_entity;"))
+                .hasMessageContaining("越界");
+    }
+
+    @Test
+    void plainStringsContainingPlatformPrefixesAreNotFalsePositives() {
+        // 字符串内容按占位替换：合法插件存字符串 'sys_user' 不误报
+        Map<String, String> checksums = scan(List.of("migrations/V001__ok.sql"),
+                "INSERT INTO inv_item (note) VALUES ('mention of sys_user and meta_field');");
+        assertThat(checksums).containsKey("migrations/V001__ok.sql");
+    }
 }

@@ -107,8 +107,12 @@ public class ManifestValidator {
         int size = node.size();
         for (String key : CONTRIBUTION_KEYS) {
             JsonNode value = node.get(key);
-            if (value == null || value.isNull()) {
+            if (value == null) {
                 continue;
+            }
+            if (value.isNull()) {
+                throw PluginValidationException.invalidManifest(
+                        "contributions." + key + " 为 null（缺省请省略该键）");
             }
             result.put(key, stringList(value, "contributions." + key, KEY_PATTERN));
         }

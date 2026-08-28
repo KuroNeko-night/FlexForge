@@ -10,6 +10,7 @@ import com.flexforge.plugin.domain.PluginPackageRepository;
 import com.flexforge.plugin.domain.PluginValidationException;
 import com.flexforge.plugin.domain.PluginVersionRecord;
 import com.flexforge.plugin.domain.ValidationReport;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -78,10 +79,26 @@ public class PluginImportService {
                     manifest.resources().migrations(), archive::fileBytes);
             kernel.resolver().resolve(manifest.dependencies(), repository::versionsOf);
             requireNoVersionConflict(manifest, hash);
-            PluginVersionRecord stored = repository.storeVersion(manifest.name(),
-                    recordOf(manifest, hash, zipBytes.length, checksums), manifest.dependencies());
+            PluginVersionRecord candidate = recordOf(manifest, hash, zipBytes.length, checksums);
+            PluginVersionRecord stored = storeIdempotently(manifest.name(), candidate,
+                    manifest.dependencies(), hash);
             audit.record(AuditEvents.of(actor, "plugin.import", stored.id(), "success", clock));
-            return previewOf(stored, true);
+            return previewOf(stored, stored.id().equals(candidate.id()));
+        }
+    }
+
+    /** 并发窗口兜底：唯一约束冲突后复查 content hash，命中即幂等返回（接口契约）。 */
+    private PluginVersionRecord storeIdempotently(String pluginName, PluginVersionRecord candidate,
+                                                  List<com.flexforge.plugin.domain.DependencySpec> dependencies,
+                                                  String hash) {
+        try {
+            return repository.storeVersion(pluginName, candidate, dependencies);
+        } catch (DuplicateKeyException e) {
+            var winner = repository.findByContentHash(hash);
+            if (winner.isPresent()) {
+                return winner.orElseThrow();
+            }
+            throw e;
         }
     }
 

@@ -49,11 +49,14 @@ public class DependencyResolver {
                 return false;
             }
             int[] b = parts(base);
-            // npm 语义：主版本 >0 锁主版本；0.x 锁次版本
+            // npm 语义：主版本 >0 锁主版本；0.x 锁次版本；0.0.x 锁 patch
             if (b[0] > 0) {
                 return major(version) == b[0];
             }
-            return major(version) == 0 && minor(version) == b[1];
+            if (b[1] > 0) {
+                return major(version) == 0 && minor(version) == b[1];
+            }
+            return compare(version, base) == 0;
         }
         return compare(version, range) == 0;
     }

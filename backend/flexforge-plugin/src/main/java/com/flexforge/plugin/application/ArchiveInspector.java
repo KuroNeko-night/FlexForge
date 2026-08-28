@@ -30,12 +30,16 @@ public class ArchiveInspector {
             "migrations", Set.of(".sql"),
             "assets", Set.of(".png", ".svg", ".webp", ".css", ".json"));
 
+    /** 文本类资产扩展名（全文内容嗅探，拒绝内嵌脚本）。 */
+    private static final Set<String> TEXT_ASSET_EXTENSIONS = Set.of(".svg", ".css", ".json");
+
     private final long maxCompressedBytes;
     private final long maxUncompressedBytes;
     private final int maxEntryCount;
 
     public ArchiveInspector() {
-        this(10L * 1024 * 1024, 50L * 1024 * 1024, 2000);
+        // docs/13 §3.5-2（数值唯一来源）：条目 ≤1000、解压 ≤50MB；压缩 ≤10MB 见 §3.5-1
+        this(10L * 1024 * 1024, 50L * 1024 * 1024, 1000);
     }
 
     /** 测试可注入小上限验证边界行为。 */
@@ -45,12 +49,22 @@ public class ArchiveInspector {
         this.maxEntryCount = maxEntryCount;
     }
 
+    /** 生产默认条目上限（docs/13 §3.5-2 = 1000；测试断言用）。 */
+    int maxEntryCount() {
+        return maxEntryCount;
+    }
+
     public SafeArchive inspect(byte[] zipBytes) throws IOException {
         requireZipShape(zipBytes);
         Path tempDir = Files.createTempDirectory("flexforge-plugin-");
         try {
             return extract(zipBytes, tempDir);
-        } catch (IOException | RuntimeException e) {
+        } catch (IOException e) {
+            deleteRecursively(tempDir);
+            // 损坏/截断 zip、非法文件名字符等：统一 400 invalid_manifest（docs/08 §7）
+            throw PluginValidationException.invalidManifest("插件包损坏或不可读（"
+                    + e.getClass().getSimpleName() + "）");
+        } catch (RuntimeException e) {
             deleteRecursively(tempDir);
             throw e;
         }
@@ -78,9 +92,11 @@ public class ArchiveInspector {
         long total = 0;
         try (ZipFile zip = new ZipFile(zipFile.toFile())) {
             var entries = zip.entries();
+            int seen = 0;
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
-                if (extracted.size() >= maxEntryCount) {
+                // 目录条目同样计入（docs/13 §3.5-2 文件数量含目录风暴面）
+                if (++seen > maxEntryCount) {
                     throw PluginValidationException.invalidManifest("插件包条目数超过上限 " + maxEntryCount);
                 }
                 String name = safeName(entry.getName());
@@ -127,19 +143,27 @@ public class ArchiveInspector {
     }
 
     private static String safeName(String raw) {
+        // docs/13 §3.5-2：拒绝控制字符与超长路径（防日志注入与 OS 层异常路径）
         if (raw == null || raw.isEmpty() || raw.startsWith("/") || raw.contains("\\")
-                || raw.chars().anyMatch(c -> c == 0)) {
+                || raw.length() > 400 || raw.chars().anyMatch(Character::isISOControl)) {
             throw PluginValidationException.invalidManifest("非法包内路径: " + raw);
         }
         for (String segment : raw.split("/")) {
-            if (segment.isEmpty() || segment.equals(".")) {
-                throw PluginValidationException.invalidManifest("非法包内路径段: " + raw);
-            }
-            if (segment.equals("..")) {
-                throw PluginValidationException.invalidManifest("zip-slip 路径拒绝（.. 段）: " + raw);
-            }
+            requirePlainSegment(segment, raw);
         }
         return raw;
+    }
+
+    private static void requirePlainSegment(String segment, String raw) {
+        if (segment.isEmpty() || segment.equals(".")) {
+            throw PluginValidationException.invalidManifest("非法包内路径段: " + raw);
+        }
+        if (segment.length() > 200) {
+            throw PluginValidationException.invalidManifest("包内路径段超长（>200）: " + raw);
+        }
+        if (segment.equals("..")) {
+            throw PluginValidationException.invalidManifest("zip-slip 路径拒绝（.. 段）: " + raw);
+        }
     }
 
     private static void requireAreaAllowed(String name) {
@@ -166,15 +190,35 @@ public class ArchiveInspector {
         }
     }
 
-    /** 资产魔数嗅探（docs/13 §3.5-3：不信任类型声明；css/json/svg 拒绝二进制内容）。 */
+    /** 资产魔数嗅探（docs/13 §3.5-3：不信任类型声明；svg/css/json 拒二进制与脚本内容）。 */
     private static void sniffAsset(String entryName, Path file) throws IOException {
         String name = entryName.toLowerCase(Locale.ROOT);
         if (!name.startsWith("assets/") && !name.contains("/assets/")) {
             return;
         }
+        String extension = extensionOf(name);
+        if (TEXT_ASSET_EXTENSIONS.contains(extension)) {
+            requireNoScriptContent(entryName, file);
+            return;
+        }
         byte[] head = readHead(file, entryName);
-        if (!magicMatches(name, head)) {
+        boolean ok = switch (extension) {
+            case ".png" -> isPng(head);
+            case ".webp" -> isWebp(head);
+            default -> false;
+        };
+        if (!ok) {
             throw PluginValidationException.invalidManifest("资产魔数与声明类型不符: " + entryName);
+        }
+    }
+
+    /** 文本类资产（svg/css/json）：全文拒绝内嵌脚本（S6：无任意可执行资源）。 */
+    private static void requireNoScriptContent(String entryName, Path file) throws IOException {
+        String content = Files.readString(file, java.nio.charset.StandardCharsets.UTF_8)
+                .toLowerCase(Locale.ROOT);
+        if (content.contains("<script") || content.contains("javascript:")) {
+            throw PluginValidationException.invalidManifest(
+                    "文本资产含可执行脚本内容，拒绝（S6）: " + entryName);
         }
     }
 
@@ -190,30 +234,15 @@ public class ArchiveInspector {
         return head;
     }
 
-    private static boolean magicMatches(String name, byte[] head) {
-        return switch (extensionOf(name)) {
-            case ".png" -> isPng(head);
-            case ".webp" -> isWebp(head);
-            case ".svg", ".css", ".json" -> !containsZero(head);
-            default -> false;
-        };
-    }
-
     private static boolean isPng(byte[] head) {
         return head[0] == (byte) 0x89 && head[1] == 'P' && head[2] == 'N' && head[3] == 'G';
     }
 
     private static boolean isWebp(byte[] head) {
-        return head[0] == 'R' && head[1] == 'I' && head[2] == 'F' && head[3] == 'F';
-    }
-
-    private static boolean containsZero(byte[] head) {
-        for (byte b : head) {
-            if (b == 0) {
-                return true;
-            }
-        }
-        return false;
+        // RIFF 容器需同时校验 8..11 字节的 WEBP 标识（区分 wav/avi）
+        return head.length >= 12 && head[0] == 'R' && head[1] == 'I' && head[2] == 'F'
+                && head[3] == 'F' && head[8] == 'W' && head[9] == 'E' && head[10] == 'B'
+                && head[11] == 'P';
     }
 
     private static String extensionOf(String name) {

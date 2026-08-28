@@ -1,6 +1,6 @@
 -- V006：插件版本存储（P07；docs/07 §1 持久化对象）。
 -- plugin_instance/plugin_version/plugin_dependency 本期读写；plugin_activation/
--- plugin_registration 属 P08 生命周期，plugin_migration 建表本期不写
+-- plugin_registration 属 P08 生命周期；plugin_migration 本期建表但不写入
 -- （activation_id 留空，P08 安装期由迁移 runner 写入，ADR-0005）。
 -- 版本不可变：content_hash 全库唯一（幂等导入），(plugin_id, version) 唯一
 -- （同版本异内容导入在应用层先拒绝）。幂等：IF NOT EXISTS。

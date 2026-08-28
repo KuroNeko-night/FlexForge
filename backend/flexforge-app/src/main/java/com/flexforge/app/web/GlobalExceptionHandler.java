@@ -50,6 +50,14 @@ public class GlobalExceptionHandler {
         return envelope(HttpStatus.BAD_REQUEST, exception.code(), exception.getMessage());
     }
 
+    /** 上传超过 multipart 上限（docs/13 §3.5）：4xx 可诊断，不落 500 兜底。 */
+    @ExceptionHandler({org.springframework.web.multipart.MaxUploadSizeExceededException.class})
+    public ResponseEntity<ErrorResponse> handleUploadSize(
+            org.springframework.web.multipart.MaxUploadSizeExceededException exception) {
+        return envelope(HttpStatus.BAD_REQUEST, ErrorCodes.VALIDATION_ERROR,
+                "上传内容超过大小上限（插件包压缩上限 10MB）");
+    }
+
     @ExceptionHandler({MethodArgumentNotValidException.class, HandlerMethodValidationException.class,
             org.springframework.validation.BindException.class})
     public ResponseEntity<ErrorResponse> handleBinding(Exception exception) {
