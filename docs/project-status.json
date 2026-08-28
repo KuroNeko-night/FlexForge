@@ -3,7 +3,7 @@
   "updatedAt": "2026-08-28",
   "currentStageId": "P08",
   "currentStageName": "PluginRuntime 生命周期",
-  "status": "ready_to_start",
+  "status": "in_progress",
   "progressPercent": 30,
   "owner": "project-maintainer",
   "nextAction": "P08 启动（flexforge-plugin 扩展 + V007 plugin_activation/plugin_registration）：V007 两表迁移 → PluginRuntime 生命周期状态机（导入→安装→激活→停用→卸载；activationId 唯一 + 过期身份 stale_activation 拒绝）→ 迁移 runner 执行层（ADR-0005：与安装同事务执行 V*__*.sql、checksum 记录 plugin_migration、重复跳过、失败整体回滚）→ 注册编排（metadata/navigation/renderer 贡献注册 + ActivationContext 逆序释放，service.meta 缓存失效）→ 插件资产 serve 端点（CSP/Content-Disposition 前置，Issue #20 第 4 项）→ 预置 example-inventory 打包（与第三方同权过 P07 全量校验）→ RB-PLUGIN-LIFE 回归（docs/07 §5 八例）→ 子代理交叉审查 → PR",
@@ -53,7 +53,7 @@
     {
       "id": "P08",
       "name": "PluginRuntime 生命周期",
-      "status": "ready_to_start"
+      "status": "in_progress"
     },
     {
       "id": "P09",

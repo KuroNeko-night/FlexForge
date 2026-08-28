@@ -5,7 +5,7 @@
 <!-- FLEXFORGE_STATUS:BEGIN -->
 CURRENT_STAGE_ID: P08
 CURRENT_STAGE_NAME: PluginRuntime 生命周期
-STAGE_STATUS: ready_to_start
+STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 30%
 LAST_UPDATED: 2026-08-28
 OWNER: project-maintainer
@@ -26,7 +26,7 @@ BLOCKERS: none
 | P05 | 动态数据运行时 | completed | 动态实体完成 CRUD 和字段校验 |
 | P06 | 前端动态渲染 | completed | 无业务页面代码即可显示动态实体 |
 | P07 | 插件包校验与版本存储 | completed | 合法包可预览，非法包被拒绝 |
-| P08 | PluginRuntime 生命周期 | ready_to_start | 激活、停用、回滚、stale 拒绝通过 |
+| P08 | PluginRuntime 生命周期 | in_progress | 激活、停用、回滚、stale 拒绝通过 |
 | P09 | 库存示例插件 | pending | 库存插件可安装并完成演示 |
 | P10 | Issue 与规格 Schema | pending | Issue 状态机和规格版本可审计 |
 | P11 | AI 适配器与生成器 | pending | 在线/fixture/手工三条路径可用 |
@@ -110,3 +110,4 @@ BLOCKERS: none
 | 2026-08-28 | P07 | PR #19 复审通过（"可合并"）后处置合并条件与新发现：N2 并发同版本异内容窗口 → storeIdempotently hash 复查 miss 后补 findVersion 复查转 400（与串行路径同口径，桩测试两路径各一）；N1 E-string 反斜杠转义旁路 → 迁移脚本字符集白名单整体拒绝 `\`（合法顺序 DDL/DML 不含反斜杠，负例 E'a\''）；N5 文本资产补全文 NUL 检查；N3 dollar-quote 测试注释修正；N7 清理空转断言/移除消息中的异常类名（docs/13 §3.8-4）；N6 遗留归属修正——新开 Issue #20（P07 专 Issue），STATUS 引用更正。plugin 34 tests | PR #19 评论两轮、Issue #20 |
 | 2026-08-28 | P07 | PR #19 两轮子代理交叉审查后合并（9bc08f8，main CI 六项 success）：复审确认 4 P1 中 2 完全修复、2 主路径修复后残余收窄并当场关闭（并发冲突 400、反斜杠字符集禁令）；遗留四项均 P3 记 Issue #20（P07 专 Issue）。最终 plugin 34 + app 83 tests（后端累计 183）、门禁 19 pass / 2 skip / 0 fail；下一步 P07 出口复核 | PR #19 评论两轮、Issue #20 |
 | 2026-08-28 | P07 | **P07 出口复核通过，置 completed**（P08 置 ready_to_start，进度 30%）。验收七项逐项核验——①合法 Level 1 导入+预览（PluginApiTest 9 例之 validLevel1：versionId/contentHash/scriptChecksums/审计行断言）②非法包拒绝（manifest 8 例 + zip-slip/绝对路径/控制字符/超长段/svg script/js 扩展名/魔数不符/损坏 zip 全负例）③幂等（同内容 isNew=false 同 versionId、行数=1 断言）④依赖缺失指名（vendor.absent + ^1.0.0 消息断言；已导入解析正例）⑤unsupported_schema_version API 级 + 登记册外贡献键/renderer 白名单拒绝⑥大小/条目/zip-slip/迁移命名/临时目录清理（快照断言 + 默认值 1000 断言）⑦越界词法状态机（字符串旁路/反斜杠/E-string 三层封堵）+ 同版本异内容串行/并发同口径拒绝。实施内容八项全交付；RB-PLUGIN-VALID 八要素覆盖；两轮子代理审查 4P1+4P2+8P3+N1-N7 全处置；后端 183 tests、main CI success（含收口 93fd4b1）、门禁 19/2/0；遗留四项 P3 记 Issue #20；过程偏差如实记录：看板 P07 行启动时漏翻 in_progress（与 P06 同类，直接修正 completed） | `docs/09` P07 验收、PR #19、RB-PLUGIN-VALID、Issue #20 |
+| 2026-08-28 | P08 | P08 启动（in_progress，分支 feat/p08-plugin-lifecycle，单迭代交付全阶段）。范围：V007 plugin_activation/plugin_registration（plugin_migration/plugin_audit_event V006 已建/评估补建）→ ActivationLifecycle 状态机（INSTALLED→STARTING→ACTIVE→STOPPING→STOPPED，FAILED 带失败阶段；同插件同刻仅一个 STARTING/ACTIVE；幂等重提交返回既有 activationId）→ 迁移 runner 执行层（ADR-0005：安装同事务执行、checksum 记 plugin_migration、重复跳过、越界已在 P07 导入期封堵）→ 注册编排（manifest 贡献→plugin_registration 落库+内存 ExtensionRegistry 注册；metadata 实体/视图经 service.meta 写入+缓存失效）→ stale_activation 拒绝（旧 activationId 请求）→ 升级失败 current 可用 → 卸载清理（注册表/菜单/实体撤销、审计保留）→ 重启恢复 ACTIVE → 资产 serve 端点（CSP 前置）→ example-inventory 预置打包（与第三方同权过 P07 校验）→ RB-PLUGIN-LIFE 八例 | `docs/09` P08、docs/07 §2-§5、FR-PLUGIN-02..07、ADR-0005、RB-PLUGIN-LIFE |
