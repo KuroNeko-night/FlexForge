@@ -12,6 +12,9 @@ public final class ErrorCodes {
     /** 插件清单不合法或不可解析。 */
     public static final String INVALID_MANIFEST = "invalid_manifest";
 
+    /** 插件清单 schemaVersion 不受支持（P07：schemaVersion 分派层拒绝）。 */
+    public static final String UNSUPPORTED_SCHEMA_VERSION = "unsupported_schema_version";
+
     /** 插件依赖缺失或版本不满足。 */
     public static final String DEPENDENCY_MISSING = "dependency_missing";
 
