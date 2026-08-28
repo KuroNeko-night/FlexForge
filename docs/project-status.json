@@ -1,12 +1,12 @@
 {
   "project": "FlexForge",
-  "updatedAt": "2026-08-28",
+  "updatedAt": "2026-08-29",
   "currentStageId": "P08",
   "currentStageName": "PluginRuntime 生命周期",
-  "status": "ready_to_start",
+  "status": "in_progress",
   "progressPercent": 30,
   "owner": "project-maintainer",
-  "nextAction": "P08 启动（flexforge-plugin 扩展 + V007 plugin_activation/plugin_registration）：V007 两表迁移 → PluginRuntime 生命周期状态机（导入→安装→激活→停用→卸载；activationId 唯一 + 过期身份 stale_activation 拒绝）→ 迁移 runner 执行层（ADR-0005：与安装同事务执行 V*__*.sql、checksum 记录 plugin_migration、重复跳过、失败整体回滚）→ 注册编排（metadata/navigation/renderer 贡献注册 + ActivationContext 逆序释放，service.meta 缓存失效）→ 插件资产 serve 端点（CSP/Content-Disposition 前置，Issue #20 第 4 项）→ 预置 example-inventory 打包（与第三方同权过 P07 全量校验）→ RB-PLUGIN-LIFE 回归（docs/07 §5 八例）→ 子代理交叉审查 → PR",
+  "nextAction": "PR #21 复审通过并合并后，继续 P08 剩余：插件资产 serve 端点（CSP/Content-Disposition，Issue #20 第 4 项）→ example-inventory 预置打包（与第三方同权过 P07 校验）→ RB-PLUGIN-LIFE 全量回归 → P08 出口复核（Issue #22 P3 按触发条件排期）",
   "exitGate": "P07 出口证据：①合法 Level 1 导入+预览（PluginApiTest.validLevel1：manifest/审计行/preview 断言）②缺失字段/越权 renderer/路径穿越/脚本资源拒绝（manifest 8 例 + zip-slip/控制字符/svg script/js 扩展名负例）③同内容幂等（hash 命中 isNew=false 同 versionId，行数断言）④依赖缺失指名插件与范围（dependency_missing 消息断言）⑤未知 schemaVersion→unsupported_schema_version（API 级）+登记册外贡献键/renderer 拒绝⑥压缩/解压/条目上限（1000=docs/13 §3.5-2）+zip-slip+非 V*.sql+临时目录清理（快照断言）⑦越界平台表拒绝（词法状态机+反斜杠禁令，字符串旁路负例）+同版本异内容拒绝（串行 400+并发复查同口径）；迁移 checksum 导入期计算（script_checksums）；RB-PLUGIN-VALID 八要素覆盖；两轮子代理审查（4P1+4P2+8P3+复审 N1-N7 全处置）后合并 9bc08f8，plugin 34 + app 83（后端 183）tests，main CI success、门禁 19 pass / 2 skip / 0 fail；遗留四项 P3 记 Issue #20（另：看板 P07 行启动时漏翻 in_progress，与 P06 同类过程偏差，本轮直接修正为 completed）",
   "blockers": [],
   "stages": [
@@ -53,7 +53,7 @@
     {
       "id": "P08",
       "name": "PluginRuntime 生命周期",
-      "status": "ready_to_start"
+      "status": "in_progress"
     },
     {
       "id": "P09",

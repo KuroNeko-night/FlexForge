@@ -79,7 +79,8 @@ public class PluginImportService {
                     manifest.resources().migrations(), archive::fileBytes);
             kernel.resolver().resolve(manifest.dependencies(), repository::versionsOf);
             requireNoVersionConflict(manifest, hash);
-            PluginVersionRecord candidate = recordOf(manifest, hash, zipBytes.length, checksums);
+            PluginVersionRecord candidate = recordOf(manifest, hash, zipBytes.length,
+                    checksums, archive);
             PluginVersionRecord stored = storeIdempotently(manifest, candidate, hash);
             audit.record(AuditEvents.of(actor, "plugin.import", stored.id(), "success", clock));
             return previewOf(stored, stored.id().equals(candidate.id()));
@@ -144,10 +145,24 @@ public class PluginImportService {
     }
 
     private PluginVersionRecord recordOf(PluginManifest manifest, String hash, int size,
-                                         Map<String, String> checksums) {
+                                         Map<String, String> checksums, SafeArchive archive) {
+        Map<String, String> scriptPayloads = new java.util.LinkedHashMap<>();
+        for (String script : manifest.resources().migrations()) {
+            scriptPayloads.put(script,
+                    new String(archive.fileBytes(script), java.nio.charset.StandardCharsets.UTF_8));
+        }
+        Map<String, String> resourcePayloads = new java.util.LinkedHashMap<>();
+        for (String path : manifest.resources().entities()) {
+            resourcePayloads.put(path,
+                    new String(archive.fileBytes(path), java.nio.charset.StandardCharsets.UTF_8));
+        }
+        for (String path : manifest.resources().views()) {
+            resourcePayloads.put(path,
+                    new String(archive.fileBytes(path), java.nio.charset.StandardCharsets.UTF_8));
+        }
         return new PluginVersionRecord("pv-" + UUID.randomUUID(), manifest.id(),
                 manifest.version(), hash, manifest.capabilityLevel(), manifest.raw().toString(),
-                checksums, size, null);
+                checksums, size, null, scriptPayloads, resourcePayloads);
     }
 
     private InstallPreview transientPreview(PluginManifest manifest, String hash,

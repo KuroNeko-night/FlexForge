@@ -51,7 +51,7 @@ class PluginImportServiceTest {
 
     private static PluginVersionRecord record(String hash) {
         return new PluginVersionRecord("pv-winner", "demo.race", "1.0.0", hash, 1,
-                "{\"name\":\"race\"}", NO_SCRIPTS, 100, null);
+                "{\"name\":\"race\"}", Map.of(), 100, null, Map.of(), Map.of());
     }
 
     /** 并发窗口：storeVersion 撞唯一约束 → 复查 content hash 命中 → 幂等返回。 */
@@ -59,10 +59,30 @@ class PluginImportServiceTest {
     void concurrentDuplicateStoreFallsBackToIdempotentHit() throws IOException {
         AtomicInteger hashLookups = new AtomicInteger();
         AtomicInteger stores = new AtomicInteger();
-        PluginPackageRepository repository = new PluginPackageRepository() {
+        PluginPackageRepository repository = hashLookupRepo(hashLookups, stores, null);
+        PluginImportService service = new PluginImportService(
+                new PluginImportKernel(new ArchiveInspector(), new ManifestValidator(),
+                        new MigrationScriptScanner(), new DependencyResolver()),
+                repository, audit -> { }, Clock.systemUTC());
+
+        InstallPreview preview = service.importPackage("tester", minimalPackage());
+
+        assertThat(preview.isNew()).isFalse();
+        assertThat(preview.versionId()).isEqualTo("pv-winner");
+        assertThat(stores.get()).isEqualTo(1);
+    }
+
+    /** 仓库桩工厂：hash 命中路径（conflictVersion=null）或冲突路径。 */
+    private static PluginPackageRepository hashLookupRepo(AtomicInteger hashLookups,
+            AtomicInteger stores, PluginVersionRecord conflictVersion) {
+        return new PluginPackageRepository() {
+            @Override
+            public Optional<PluginVersionRecord> findByVersionId(String versionId) {
+                return Optional.empty();
+            }
+
             @Override
             public Optional<PluginVersionRecord> findByContentHash(String contentHash) {
-                // 第一次（导入开头）未命中；冲突复查时命中赢家
                 return hashLookups.incrementAndGet() == 1
                         ? Optional.empty()
                         : Optional.of(record(contentHash));
@@ -70,7 +90,8 @@ class PluginImportServiceTest {
 
             @Override
             public Optional<PluginVersionRecord> findVersion(String pluginId, String version) {
-                return Optional.empty();
+                return conflictVersion == null ? Optional.empty()
+                        : Optional.of(conflictVersion);
             }
 
             @Override
@@ -85,43 +106,15 @@ class PluginImportServiceTest {
                 throw new DuplicateKeyException("uq_plugin_version_hash");
             }
         };
-        PluginImportService service = new PluginImportService(
-                new PluginImportKernel(new ArchiveInspector(), new ManifestValidator(),
-                        new MigrationScriptScanner(), new DependencyResolver()),
-                repository, audit -> { }, Clock.systemUTC());
-
-        InstallPreview preview = service.importPackage("tester", minimalPackage());
-
-        assertThat(preview.isNew()).isFalse();
-        assertThat(preview.versionId()).isEqualTo("pv-winner");
-        assertThat(stores.get()).isEqualTo(1);
     }
 
     /** 并发同版本异内容：hash 复查 miss → 按同版本冲突转 400（非 500）。 */
     @Test
     void concurrentSameVersionDifferentContentRejectedAsConflict() {
-        PluginPackageRepository repository = new PluginPackageRepository() {
-            @Override
-            public Optional<PluginVersionRecord> findByContentHash(String contentHash) {
-                return Optional.empty(); // 两次均未命中（内容不同）
-            }
-
-            @Override
-            public Optional<PluginVersionRecord> findVersion(String pluginId, String version) {
-                return Optional.of(record("another-hash")); // 赢家已占同 (id, version)
-            }
-
-            @Override
-            public List<String> versionsOf(String pluginId) {
-                return List.of();
-            }
-
-            @Override
-            public PluginVersionRecord storeVersion(String pluginName, PluginVersionRecord version,
-                                                    List<com.flexforge.plugin.domain.DependencySpec> deps) {
-                throw new DuplicateKeyException("uq_plugin_version_natural");
-            }
-        };
+        AtomicInteger hashLookups = new AtomicInteger();
+        AtomicInteger stores = new AtomicInteger();
+        PluginPackageRepository repository = hashLookupRepo(hashLookups, stores,
+                record("another-hash"));
         PluginImportService service = new PluginImportService(
                 new PluginImportKernel(new ArchiveInspector(), new ManifestValidator(),
                         new MigrationScriptScanner(), new DependencyResolver()),

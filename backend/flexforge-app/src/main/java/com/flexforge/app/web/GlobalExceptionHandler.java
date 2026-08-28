@@ -7,6 +7,7 @@ import com.flexforge.common.RequestIds;
 import com.flexforge.common.api.ErrorCodes;
 import com.flexforge.common.api.ErrorResponse;
 import com.flexforge.plugin.domain.PluginValidationException;
+import com.flexforge.plugin.domain.StaleActivationException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({PluginValidationException.class})
     public ResponseEntity<ErrorResponse> handlePluginValidation(PluginValidationException exception) {
         return envelope(HttpStatus.BAD_REQUEST, exception.code(), exception.getMessage());
+    }
+
+    /** 使用过期激活身份（FR-PLUGIN-07）：409 + stale_activation，不影响当前版本。 */
+    @ExceptionHandler(StaleActivationException.class)
+    public ResponseEntity<ErrorResponse> handleStaleActivation(StaleActivationException exception) {
+        return envelope(HttpStatus.CONFLICT, ErrorCodes.STALE_ACTIVATION, exception.getMessage());
     }
 
     /** 上传超过 multipart 上限（docs/13 §3.5）：4xx 可诊断，不落 500 兜底。 */
