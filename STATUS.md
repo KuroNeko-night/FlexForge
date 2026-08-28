@@ -3,14 +3,14 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P07
-CURRENT_STAGE_NAME: 插件包校验与版本存储
-STAGE_STATUS: in_progress
-PROJECT_PROGRESS: 27%
-LAST_UPDATED: 2026-08-26
+CURRENT_STAGE_ID: P08
+CURRENT_STAGE_NAME: PluginRuntime 生命周期
+STAGE_STATUS: ready_to_start
+PROJECT_PROGRESS: 30%
+LAST_UPDATED: 2026-08-28
 OWNER: project-maintainer
-NEXT_ACTION: P07 出口复核（对齐 docs/09 P07 七项验收逐项核验 + RB-PLUGIN-VALID 八要素覆盖 + 合并后 main 门禁证据），通过后置 completed、P08 置 ready_to_start
-EXIT_GATE: P06 出口证据：①无业务页面代码显示 P05 实体列表/表单（DynamicEntityView 四模式路由驱动 + DynamicEntityView.test 列表渲染/创建提交）②六类字段正确内置 renderer（rendererRegistry `<type>.default` 映射 + DynamicTable 按类型渲染）③菜单注册/撤销不残留（menuRegistry 4 例：合并/后端优先/权限过滤/activationId 清理）④布局贡献声明渲染+撤销恢复缺省（layoutRegistry+LayoutRenderer 同一挂载 nextTick 断言，FR-PLUGIN-10）⑤美术资产即时更换/恢复默认（themeRegistry 同一 computed；background url() 端到端；icon/animation P09 预留已声明）⑥刷新后从服务端恢复元数据（useEntityMetadata 版本表内存态 + sessionStorage 令牌 + fetchMe 身份恢复）⑦新增 renderer 仅登记映射（"登记即扩展"用例，通用组件零分支）；五状态（StateView + requestId）；S5 两轮子代理复审确认无 v-html/动态执行；extension.layout/theme-asset 转 active（常量+登记册+R-GOV-03 五点对齐）；前端 49 + 后端 147 tests，PR #17/#18 四轮审查后合并，main CI success、门禁 19 pass / 2 skip / 0 fail
+NEXT_ACTION: P08 启动（flexforge-plugin 扩展 + V007 plugin_activation/plugin_registration）：V007 两表迁移 → PluginRuntime 生命周期状态机（导入→安装→激活→停用→卸载；activationId 唯一 + 过期身份 stale_activation 拒绝）→ 迁移 runner 执行层（ADR-0005：与安装同事务执行 V*__*.sql、checksum 记录 plugin_migration、重复跳过、失败整体回滚）→ 注册编排（metadata/navigation/renderer 贡献注册 + ActivationContext 逆序释放，service.meta 缓存失效）→ 插件资产 serve 端点（CSP/Content-Disposition 前置，Issue #20 第 4 项）→ 预置 example-inventory 打包（与第三方同权过 P07 全量校验）→ RB-PLUGIN-LIFE 回归（docs/07 §5 八例）→ 子代理交叉审查 → PR
+EXIT_GATE: P07 出口证据：①合法 Level 1 导入+预览（PluginApiTest.validLevel1：manifest/审计行/preview 断言）②缺失字段/越权 renderer/路径穿越/脚本资源拒绝（manifest 8 例 + zip-slip/控制字符/svg script/js 扩展名负例）③同内容幂等（hash 命中 isNew=false 同 versionId，行数断言）④依赖缺失指名插件与范围（dependency_missing 消息断言）⑤未知 schemaVersion→unsupported_schema_version（API 级）+登记册外贡献键/renderer 拒绝⑥压缩/解压/条目上限（1000=docs/13 §3.5-2）+zip-slip+非 V*.sql+临时目录清理（快照断言）⑦越界平台表拒绝（词法状态机+反斜杠禁令，字符串旁路负例）+同版本异内容拒绝（串行 400+并发复查同口径）；迁移 checksum 导入期计算（script_checksums）；RB-PLUGIN-VALID 八要素覆盖；两轮子代理审查（4P1+4P2+8P3+复审 N1-N7 全处置）后合并 9bc08f8，plugin 34 + app 83（后端 183）tests，main CI success、门禁 19 pass / 2 skip / 0 fail；遗留四项 P3 记 Issue #20（另：看板 P07 行启动时漏翻 in_progress，与 P06 同类过程偏差，本轮直接修正为 completed）
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -25,8 +25,8 @@ BLOCKERS: none
 | P04 | 元数据写模型 | completed | 实体/字段/视图配置 API 通过验收 |
 | P05 | 动态数据运行时 | completed | 动态实体完成 CRUD 和字段校验 |
 | P06 | 前端动态渲染 | completed | 无业务页面代码即可显示动态实体 |
-| P07 | 插件包校验与版本存储 | ready_to_start | 合法包可预览，非法包被拒绝 |
-| P08 | PluginRuntime 生命周期 | pending | 激活、停用、回滚、stale 拒绝通过 |
+| P07 | 插件包校验与版本存储 | completed | 合法包可预览，非法包被拒绝 |
+| P08 | PluginRuntime 生命周期 | ready_to_start | 激活、停用、回滚、stale 拒绝通过 |
 | P09 | 库存示例插件 | pending | 库存插件可安装并完成演示 |
 | P10 | Issue 与规格 Schema | pending | Issue 状态机和规格版本可审计 |
 | P11 | AI 适配器与生成器 | pending | 在线/fixture/手工三条路径可用 |
@@ -109,3 +109,4 @@ BLOCKERS: none
 | 2026-08-28 | P07 | PR #19 独立子代理交叉审查：4 P1 + 4 P2 + 8 P3，结论"修 P1 后可合并"。全部当场修复——P1 迁移越界扫描可被字符串字面量内 --// 绕过 → 词法清洗重写（单引号''转义/dollar-quote 内容占位替换、行/块注释剥除，两绕过负例+字符串假阳性正例）；P1 条目上限 2000 偏离 docs/13 §3.5-2 唯一来源 1000 → 改 1000+默认值断言；P1 损坏 zip（魔数过结构坏）500 → inspect 包装 invalid_manifest（API 级用例）；P1 并发同包导入 500 且注释声称的幂等复查不存在 → storeIdempotently 撞唯一约束后复查 content hash 命中即幂等返回（isNew 按实际落库身份判定，桩测试）。P2 四项全修：svg/css/json 全文拒绝内嵌 <script>/javascript:（S6）；safeName 拒全部控制字符+段≤200+总长≤400；目录条目计入条目上限；multipart 超限加 MaxUploadSizeExceededException→400 映射+11MB API 用例（实测 MockMvc 不执行 servlet 上限、由 ArchiveInspector 第二层拦截，双防线记录）。P3 当场修六项：V006 注释对齐、plugin_instance 名随最新版本 DO UPDATE、贡献键 null 值准确报错、^0.0.x 锁 patch、webp 校验 RIFF+WEBP 标识、词法 CC 拆分。P3 记 Issue #20（P07 遗留专 Issue；初记 Issue #10 有误，系 P02 议题，复审 N6 纠正）：循环依赖死锁限制登记、validate/import preview 字段差异备注、assets 免声明收紧至 P08、svg 事件属性 P08 CSP 前置。最终 plugin 31 + app 83 tests（后端 180） | PR #19 评论（逐条回应）、Issue #20 |
 | 2026-08-28 | P07 | PR #19 复审通过（"可合并"）后处置合并条件与新发现：N2 并发同版本异内容窗口 → storeIdempotently hash 复查 miss 后补 findVersion 复查转 400（与串行路径同口径，桩测试两路径各一）；N1 E-string 反斜杠转义旁路 → 迁移脚本字符集白名单整体拒绝 `\`（合法顺序 DDL/DML 不含反斜杠，负例 E'a\''）；N5 文本资产补全文 NUL 检查；N3 dollar-quote 测试注释修正；N7 清理空转断言/移除消息中的异常类名（docs/13 §3.8-4）；N6 遗留归属修正——新开 Issue #20（P07 专 Issue），STATUS 引用更正。plugin 34 tests | PR #19 评论两轮、Issue #20 |
 | 2026-08-28 | P07 | PR #19 两轮子代理交叉审查后合并（9bc08f8，main CI 六项 success）：复审确认 4 P1 中 2 完全修复、2 主路径修复后残余收窄并当场关闭（并发冲突 400、反斜杠字符集禁令）；遗留四项均 P3 记 Issue #20（P07 专 Issue）。最终 plugin 34 + app 83 tests（后端累计 183）、门禁 19 pass / 2 skip / 0 fail；下一步 P07 出口复核 | PR #19 评论两轮、Issue #20 |
+| 2026-08-28 | P07 | **P07 出口复核通过，置 completed**（P08 置 ready_to_start，进度 30%）。验收七项逐项核验——①合法 Level 1 导入+预览（PluginApiTest 9 例之 validLevel1：versionId/contentHash/scriptChecksums/审计行断言）②非法包拒绝（manifest 8 例 + zip-slip/绝对路径/控制字符/超长段/svg script/js 扩展名/魔数不符/损坏 zip 全负例）③幂等（同内容 isNew=false 同 versionId、行数=1 断言）④依赖缺失指名（vendor.absent + ^1.0.0 消息断言；已导入解析正例）⑤unsupported_schema_version API 级 + 登记册外贡献键/renderer 白名单拒绝⑥大小/条目/zip-slip/迁移命名/临时目录清理（快照断言 + 默认值 1000 断言）⑦越界词法状态机（字符串旁路/反斜杠/E-string 三层封堵）+ 同版本异内容串行/并发同口径拒绝。实施内容八项全交付；RB-PLUGIN-VALID 八要素覆盖；两轮子代理审查 4P1+4P2+8P3+N1-N7 全处置；后端 183 tests、main CI success（含收口 93fd4b1）、门禁 19/2/0；遗留四项 P3 记 Issue #20；过程偏差如实记录：看板 P07 行启动时漏翻 in_progress（与 P06 同类，直接修正 completed） | `docs/09` P07 验收、PR #19、RB-PLUGIN-VALID、Issue #20 |

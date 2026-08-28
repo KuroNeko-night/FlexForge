@@ -1,13 +1,13 @@
 {
   "project": "FlexForge",
-  "updatedAt": "2026-08-26",
-  "currentStageId": "P07",
-  "currentStageName": "插件包校验与版本存储",
-  "status": "in_progress",
-  "progressPercent": 27,
+  "updatedAt": "2026-08-28",
+  "currentStageId": "P08",
+  "currentStageName": "PluginRuntime 生命周期",
+  "status": "ready_to_start",
+  "progressPercent": 30,
   "owner": "project-maintainer",
-  "nextAction": "P07 出口复核（对齐 docs/09 P07 七项验收逐项核验 + RB-PLUGIN-VALID 八要素覆盖 + 合并后 main 门禁证据），通过后置 completed、P08 置 ready_to_start",
-  "exitGate": "P06 出口证据：①无业务页面代码显示 P05 实体列表/表单（DynamicEntityView 四模式路由驱动 + DynamicEntityView.test 列表渲染/创建提交）②六类字段正确内置 renderer（rendererRegistry `<type>.default` 映射 + DynamicTable 按类型渲染）③菜单注册/撤销不残留（menuRegistry 4 例：合并/后端优先/权限过滤/activationId 清理）④布局贡献声明渲染+撤销恢复缺省（layoutRegistry+LayoutRenderer 同一挂载 nextTick 断言，FR-PLUGIN-10）⑤美术资产即时更换/恢复默认（themeRegistry 同一 computed；background url() 端到端；icon/animation P09 预留已声明）⑥刷新后从服务端恢复元数据（useEntityMetadata 版本表内存态 + sessionStorage 令牌 + fetchMe 身份恢复）⑦新增 renderer 仅登记映射（\"登记即扩展\"用例，通用组件零分支）；五状态（StateView + requestId）；S5 两轮子代理复审确认无 v-html/动态执行；extension.layout/theme-asset 转 active（常量+登记册+R-GOV-03 五点对齐）；前端 49 + 后端 147 tests，PR #17/#18 四轮审查后合并，main CI success、门禁 19 pass / 2 skip / 0 fail",
+  "nextAction": "P08 启动（flexforge-plugin 扩展 + V007 plugin_activation/plugin_registration）：V007 两表迁移 → PluginRuntime 生命周期状态机（导入→安装→激活→停用→卸载；activationId 唯一 + 过期身份 stale_activation 拒绝）→ 迁移 runner 执行层（ADR-0005：与安装同事务执行 V*__*.sql、checksum 记录 plugin_migration、重复跳过、失败整体回滚）→ 注册编排（metadata/navigation/renderer 贡献注册 + ActivationContext 逆序释放，service.meta 缓存失效）→ 插件资产 serve 端点（CSP/Content-Disposition 前置，Issue #20 第 4 项）→ 预置 example-inventory 打包（与第三方同权过 P07 全量校验）→ RB-PLUGIN-LIFE 回归（docs/07 §5 八例）→ 子代理交叉审查 → PR",
+  "exitGate": "P07 出口证据：①合法 Level 1 导入+预览（PluginApiTest.validLevel1：manifest/审计行/preview 断言）②缺失字段/越权 renderer/路径穿越/脚本资源拒绝（manifest 8 例 + zip-slip/控制字符/svg script/js 扩展名负例）③同内容幂等（hash 命中 isNew=false 同 versionId，行数断言）④依赖缺失指名插件与范围（dependency_missing 消息断言）⑤未知 schemaVersion→unsupported_schema_version（API 级）+登记册外贡献键/renderer 拒绝⑥压缩/解压/条目上限（1000=docs/13 §3.5-2）+zip-slip+非 V*.sql+临时目录清理（快照断言）⑦越界平台表拒绝（词法状态机+反斜杠禁令，字符串旁路负例）+同版本异内容拒绝（串行 400+并发复查同口径）；迁移 checksum 导入期计算（script_checksums）；RB-PLUGIN-VALID 八要素覆盖；两轮子代理审查（4P1+4P2+8P3+复审 N1-N7 全处置）后合并 9bc08f8，plugin 34 + app 83（后端 183）tests，main CI success、门禁 19 pass / 2 skip / 0 fail；遗留四项 P3 记 Issue #20（另：看板 P07 行启动时漏翻 in_progress，与 P06 同类过程偏差，本轮直接修正为 completed）",
   "blockers": [],
   "stages": [
     {
@@ -48,12 +48,12 @@
     {
       "id": "P07",
       "name": "插件包校验与版本存储",
-      "status": "ready_to_start"
+      "status": "completed"
     },
     {
       "id": "P08",
       "name": "PluginRuntime 生命周期",
-      "status": "pending"
+      "status": "ready_to_start"
     },
     {
       "id": "P09",
