@@ -29,10 +29,12 @@ USER_PASS="${FLEXFORGE_DEMO_PASS:?需要环境变量 FLEXFORGE_DEMO_PASS（演�
 json() { python3 -c "import sys,json;d=json.load(sys.stdin);print(d$1)"; }
 pybool() { python3 -c "$1" | grep -qx True; }
 api() { # api METHOD PATH TOKEN [JSON_BODY] -> 响应体（curl -sf，非 2xx 视为失败）
+  # body 经 printf 内建 | stdin 传输：Windows 下命令行参数传原生 exe 会被转系统代码页
+  # （GBK）破坏 UTF-8 中文载荷，stdin 字节流不经过该转换（跨平台一致）
   local method="$1" path="$2" token="${3:-}" body="${4:-}"
   if [ -n "$body" ]; then
-    curl -sf -X "$method" -H "Authorization: Bearer $token" \
-      -H 'Content-Type: application/json' -d "$body" "$BASE_URL$path"
+    printf '%s' "$body" | curl -sf -X "$method" -H "Authorization: Bearer $token" \
+      -H 'Content-Type: application/json' -d @- "$BASE_URL$path"
   elif [ -n "$token" ]; then
     curl -sf -X "$method" -H "Authorization: Bearer $token" "$BASE_URL$path"
   else
