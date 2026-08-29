@@ -1,13 +1,13 @@
 {
   "project": "FlexForge",
   "updatedAt": "2026-08-29",
-  "currentStageId": "P10",
-  "currentStageName": "Issue 与规格 Schema",
-  "status": "in_progress",
-  "progressPercent": 40,
+  "currentStageId": "P11",
+  "currentStageName": "AI 适配器与生成器",
+  "status": "ready_to_start",
+  "progressPercent": 45,
   "owner": "project-maintainer",
-  "nextAction": "PR #25 复审修复已推送，待 CI 绿后合并 → P10 出口复核（四项验收）→ P11 启动（AI 适配器与生成器：在线/fixture/手工三路径）",
-  "exitGate": "P09 出口证据（验收六项，复审者逐项核对自动化证据齐全）：①干净库安装出库存菜单——ExampleInventoryPluginTest @Order(1) 干净容器断言无库存痕迹 + @Order(2) admin/USER 菜单均含 example.inventory.items②普通用户查询/编辑——@Order(3) USER create/query/patch 全 200③非负规则——qty=-1 → 400（应用层 min:0 + DB CHECK 双层）④停用/启用/卸载行为——@Order(4) stop→菜单消失+data 404；re-activate→数据回归（data_record 保留）；uninstall→注册 0/实体 disabled⑤同权+骨架纯净——全程标准 API、R-GOV-09 门禁转正（骨架 main 源码扫描演示标识，20 pass/1 skip/0 fail）、复审独立 grep 无硬编码⑥卸载撤销+审计保留——registrations=0 + sys_audit_event plugin.uninstall=1。实施内容五项全交付（example-inventory 包+种子+安装说明+演示脚本全生命周期+与第三方同权）；附带交付：Issue #22 #1/#2 守卫（V009+TOCTOU）、Issue #20 #2 收口（preview 统一+inventory API）、P08 遗留迁移顺序 bug 修复（manifest 声明序）、视图注册补齐（复用 ViewRules）。一轮子代理审查（1 P1+2 P2+7 P3：P1/P2/P3-3/4/6 当场修，余记 Issue #22 #14-17）；后端 222 tests 全绿、门禁 20 pass/1 skip/0 fail、main CI 全绿（PR #24 4bd0d68）。已知限制如实记录：演示脚本需预置 admin+demo-user 账号（脚本头/README 已说明），答辩前需一次性人工预置",
+  "nextAction": "P11 启动（分支 feat/p11-ai-generator，docs/09 P11 + docs/03 §6 + FR-ISSUE-03..06 + docs/13 §3.6）：ModelPort 适配器（在线/固定 fixture/手工三路径，密钥仅环境变量）→ clarify 多轮追问草稿 → 生成器（RequirementSpec→Level 1 包骨架，复用 SpecPreview 派生规则）→ Schema 校验+重试上限 → RB-AI 回归 → 子代理审查 → PR",
+  "exitGate": "P10 出口证据（验收四项，复审者逐项核对通过）：①Issue 只能合法迁移——IssueStatusTest 迁移矩阵（DONE/CLOSED 对全部目标封闭）+ IssueApiTest 全链/非法越级 + ck_issue_status DB 兜底 + 乐观锁 UPDATE WHERE status=from②规格缺字段不得批准——approvalRequiresValidLatestSpec 三段（无规格/invalid/valid），门=最新 revision valid③评论/迁移/规格版本审计——issue.comment/transition/spec.update 落 sys_audit_event + issue_transition 记操作者/原因/时间+ revision valid/错误快照留存④开发者预览插件资源——preview 无规格 404→有规格 200（plugin.json 骨架+实体/视图文件），USER 403。实施内容四项全交付（Issue/评论/标签/指派/状态机、RequirementSchema v1 版本化、实体/字段/视图/权限/规则/验收标准纳入、审核退回反馈关闭原因）；两新模块 flexforge-issue/flexforge-ai 落 docs/08 模块树；一轮子代理审查（1 P1+3 P2 全修：Dockerfile 模块遗漏/并发取号/写路径守卫/Identifiers 单点；P3 记 Issue #22 #18-22）；后端 243 tests 全绿、门禁 20 pass/1 skip/0 fail、main CI 全绿（PR #25）。过程记录：迭代回退路径为 docs/03 §7 本轮补记（主链未偏离 FR-ISSUE-02）；FR-ISSUE-04/06 作者编辑规格假设延后 P11 clarify 放开（STATUS 已标注）",
   "blockers": [],
   "stages": [
     {
@@ -63,12 +63,12 @@
     {
       "id": "P10",
       "name": "Issue 与规格 Schema",
-      "status": "in_progress"
+      "status": "completed"
     },
     {
       "id": "P11",
       "name": "AI 适配器与生成器",
-      "status": "pending"
+      "status": "ready_to_start"
     },
     {
       "id": "P12",
