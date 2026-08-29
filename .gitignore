@@ -41,3 +41,6 @@ artifacts/uploads/
 # Local tooling workspaces
 .mimosa/
 
+
+# 论文数据本地存档（docs/12 §3：不进仓库，路径记录在进度日志）
+thesis-data/

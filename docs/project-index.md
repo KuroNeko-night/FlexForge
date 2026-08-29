@@ -95,6 +95,7 @@ FlexForge/
     ├── 11-regression-test-plan.md     回归分层与 R-GOV 自检
     ├── 12-thesis-experiment-plan.md   论文实验与数据收集计划
     ├── 13-security-baseline.md        应用安全基线（威胁模型、S 红线、分域基线）
+    ├── 14-defense-delivery-guide.md   答辩交付运行手册（启动/账号/演示/三保险/排障）
     ├── coding-standards.md            编码规范与数值硬约束（§7）
     ├── repository-maintenance.md      仓库/分支/环境/Issue 约束
     ├── extension-points.md            扩展点唯一登记册
@@ -149,6 +150,7 @@ scripts/                check-repo-health 等可重复脚本
 | `docs/11-regression-test-plan.md` | 回归分层、R-GOV | 测试/CI/门禁任务 |
 | `docs/12-thesis-experiment-plan.md` | 论文指标、数据埋点与导出 | P06 前定稿；P11 起核对埋点 |
 | `docs/13-security-baseline.md` | 威胁模型、S1-S9 安全红线、分域基线、阶段映射 | 认证/权限/上传/AI/密钥/CORS 改动前必读 |
+| `docs/14-defense-delivery-guide.md` | 答辩演示启动/账号/流程/离线三保险/故障排查 | 演示、验收与答辩准备 |
 | `docs/coding-standards.md` | 命名、注释、UTC、数值硬约束 | 任何代码 |
 | `docs/repository-maintenance.md` | 分支/PR/环境/迁移/Issue | Git、环境、迁移 |
 | `docs/extension-points.md` | 扩展点登记册 | 新增/使用扩展点 |
@@ -233,3 +235,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-29 | §1 树更新：flexforge-issue/flexforge-ai 新模块；V010 issue_* 五表；ErrorCodes +invalid_transition；app 测试 +IssueApiTest | P10：Issue 与规格 Schema（RB-ISSUE） |
 | 2026-08-29 | §1 树更新：V011 ai_task_log；ai +ModelPort/HttpModelPort/FixtureModelPort/ClarifyEngine/PromptTemplates/PluginPackageGenerator +prompts/v1 资源；issue +AiTaskLogPort/IssueAiService/IssueAiConfig +clarify/generate 端点；ErrorCodes +model_unavailable/model_output_invalid；scripts +export-thesis-data.mjs；app 测试 +IssueAiApiTest | P11：AI 适配器与生成器（RB-AI） |
 | 2026-08-29 | §1 树更新：scripts +demo-e2e.sh（五场景演示+计时；顺带回填 P09/P11 遗漏的 demo-example-inventory.sh 与 export-thesis-data.mjs 两行）；frontend api +plugins.ts、views +PluginsView、router +/plugins、builtinContributions +本地菜单；app 测试 +AgentIssueE2eTest/E2eDemoScript | P12：Agent Issue 端到端闭环（RB-E2E + 插件页，docs/12 §"端到端演示各环节耗时"数据源落地） |
+| 2026-08-29 | §1 树/文档地图 +docs/14-defense-delivery-guide.md（答辩运行手册：启动/账号/演示/三保险/排障/清理），docs/05 索引同步登记 | P14 迭代 2：答辩交付固化（docs/09 P14"故障排查手册/演示账号/三保险"落位） |

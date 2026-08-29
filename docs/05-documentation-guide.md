@@ -16,6 +16,7 @@
 - `docs/11-regression-test-plan.md`：回归分层、治理自检（R-GOV）与按阶段交付的回归包。
 - `docs/12-thesis-experiment-plan.md`：论文实验设计、指标埋点与数据导出（P06 前定稿）。
 - `docs/13-security-baseline.md`：应用安全唯一归属文档（威胁模型、S1-S9 红线、分域基线、阶段落地映射）；安全数值以本文为唯一来源，其他文档只引用。
+- `docs/14-defense-delivery-guide.md`：答辩交付唯一运行手册（环境启动、演示账号、演示流程、离线三保险、故障排查）。
 - `docs/extension-points.md`：扩展点唯一登记册；任何新扩展点先在此登记。
 - `docs/project-index.md`：文件级索引（项目结构、文档地图、模块→文档映射、被阻断速查）；结构变化即时更新并写变更记录（自更新规则见该文 §7）。
 - `STATUS.md`：开发者查看和更新当前进度的唯一可见锚点。

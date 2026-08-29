@@ -3,11 +3,11 @@
   "updatedAt": "2026-08-29",
   "currentStageId": "P14",
   "currentStageName": "质量收敛与答辩交付",
-  "status": "in_progress",
-  "progressPercent": 55,
+  "status": "completed",
+  "progressPercent": 60,
   "owner": "project-maintainer",
-  "nextAction": "P14 迭代 1（选择性清障）：门禁加 bash -n（#22-11）→ docs/07 模型/恢复口径对齐（#22-4/6）→ plugin_instance.status 实装（#22 评论-16）→ 安全负例（编码穿越/终态 clarify 门）→ docs/00 已知限制章节；迭代 2：L4 干净环境重建+live 演练×3+全量回归证据+答辩物料+release_candidate",
-  "exitGate": "P12 出口证据（docs/09 P12 验收四项，逐项实证）：①干净库连续三次完整演示+耗时记录——AgentIssueE2eTest 同上下文 DROP SCHEMA→Flyway 重迁移→重种子三轮全绿（total 748/448/414ms），逐环节计时行 RB-E2E,iter,stage,ms 入 CI 日志（docs/12 §\"端到端演示各环节耗时\"数据源；对照 docs/00 §5 十分钟目标余量充足）②三类失败回到可操作状态——AI 失败→503+手工规格兜底（IssueAiFailureApiTest，P11）；包验证失败→明确错误码（PluginApiTest，P07）；安装失败→B2 dependency_missing HTTP400+activation FAILED/DEPENDENCY_CHECK+零残留+卸载清理可重试（E2eDemoScript B2 与 demo-e2e.sh 双断言）③Issue↔插件版本↔activation↔审计互追——assertCrossTraceability：ai_task_log 3 条（clarify×2+generate）/issue_transition 链/审计 issue.generate+plugin.activate(×3 口径核实：失败激活不写审计)/inventory 聚合含 gen.* 与版本 0.1.1；pluginId=gen.i{issueId} 结构性关联④人工审核前不启用——assertGenerateRequiresApproval：SUBMITTED 下 generate 4xx 且 gen.% 插件实例为 0；实施内容全覆盖（全链含 TESTED→DONE 收口/状态机含 CLOSED 取消与 DEV_FAILED 恢复（P10/P11 回归）/demo-e2e.sh+fixture/PluginsView 版本+激活尝试+失败诊断）。一轮子代理审查 1 P0+4 P3：P0（demo 脚本 B2 断言反转，live 必崩）当场修复并升级为 HTTP+错误码双断言，P3 三项顺手修（计时改 EPOCHREALTIME 免子进程开销/口令等价注明/样板下沉 400→377 行）+两项记 Issue #22 #11-12；DROP SCHEMA 跨轮内存状态、计数口径、前端契约等 8 项假设逐项验证无缺陷。后端全量 verify BUILD SUCCESS（app 125 tests/总 265+）、前端 53 tests、门禁 20/1/0、PR #27 CI 六项全绿后合并（92f6ef3）",
+  "nextAction": "【项目进入 release_candidate】最后一次全量验证 2026-08-29 20:04（L4 live 三轮 5966/6238/5838ms + 存档跑 6045ms；门禁 21/1/0；main CI 六项全绿）。后续可选：P13 加分项（默认不做）、答辩录屏与镜像预导入（docs/14 §4 三保险）、Issue #22 余项按触发条件排期",
+  "exitGate": "P14 出口证据（docs/09 P14 验收四项）：①核心验收场景全过且 P0/P1 为零——L4 干净环境重建（down -v+全新镜像+空库迁移）下 demo-e2e.sh 五场景 live 连续三轮全过（R1 5966ms/R2 6238ms/R3 5838ms+存档跑 6045ms，对照 docs/00 §5 十分钟目标；RB-E2E CI 侧另有 Testcontainers 三轮），全仓开放 Issue 无 P0/P1（余项均 P3 附触发条件，docs/00 §7 论文对账）②新环境按文档可启动完成演示——docker compose 三服务重建 + docs/14 运行手册（启动/账号/演示/三保险/九条排障）实测可用；两轮子代理审查共 2 P1+1 P2+4 P3 全修（开场命令缺 BASE_URL/证据链断链/PYTHONUTF8 未文档化等）③答辩不依赖在线模型——fixture 默认装配，live 三轮均 fixture 链路；在线路径仅增强（docs/00 §7 三保险口径）④release_candidate 标记+最后全量验证时间——本 NEXT_ACTION 首行；迭代 1（PR #28：门禁 bash-n/docs07 对齐/instance 状态派生/安全负例/已知限制 8+1 项，审查 7 P3 全修）+迭代 2（PR #29：docs/14 手册/演示脚本 stdin 跨平台修复/L4 取证与论文数据归档）两轮子代理审查通过后合并；论文数据存档 thesis-data/（gitignored）：e2e-demo-timing-2026-08-29.csv + thesis-data-2026-08-29/ 四数据面 CSV（docs/12 §3 口径）",
   "blockers": [],
   "stages": [
     {
@@ -83,7 +83,7 @@
     {
       "id": "P14",
       "name": "质量收敛与答辩交付",
-      "status": "in_progress"
+      "status": "completed"
     }
   ]
 }
