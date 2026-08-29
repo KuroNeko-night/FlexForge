@@ -3,14 +3,14 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P09
-CURRENT_STAGE_NAME: 库存示例插件
-STAGE_STATUS: in_progress
-PROJECT_PROGRESS: 35%
+CURRENT_STAGE_ID: P10
+CURRENT_STAGE_NAME: Issue 与规格 Schema
+STAGE_STATUS: ready_to_start
+PROJECT_PROGRESS: 40%
 LAST_UPDATED: 2026-08-29
 OWNER: project-maintainer
-NEXT_ACTION: P09 迭代 1 已完成待子代理审查合并；合并后出口复核（干净库菜单/普通用户 CRUD/非负规则/停启卸行为/同权/骨架纯净六项验收）
-EXIT_GATE: P08 出口证据（验收六项逐项核验）：①激活后贡献可用/停用全撤销——validPluginActivationRegistersEverything（注册≥3/实体 enabled/字段 2/迁移 1/表存在/菜单可见）+ stoppedActivationRejectedAsStale（注册清零/实体 disabled/菜单撤销/stop 幂等）②缺依赖/迁移失败/注册冲突记失败阶段并清残留——missingDependency…WithoutResidue（FAILED@DEPENDENCY_CHECK 残留 0，补依赖后可恢复）/migrationFailureRollsBackEverything（FAILED@MIGRATION 无注册残留）/entityOwnershipConflict+platformEntityConflict（FAILED@REGISTER 原实体完整不覆盖）③同插件同刻唯一 STARTING/ACTIVE——concurrentActivationRejected+升级后 ACTIVE=1 断言（DB 级 partial unique index 记 Issue #22-1）④旧 activationId→stale_activation——停用/升级后 409（registrations 与 assets serve 双消费方）⑤升级失败 current 可用——upgradeFailureRestoresCurrentVersion（补偿重激活旧版，唯一 ACTIVE=v1，非原子窗口为已记录已知限制）⑥迁移失败整体回滚+重复安装跳过——迁移/注册/ACTIVE 单事务（TransactionTemplate，ADR-0005），失败例无注册残留（plugin_migration 随事务回滚，显式断言记 Issue #22-8）/repeatedActivationIsIdempotent（checksum 命中跳过同 activationId）。实施内容：V007 三表+V006 plugin_migration；状态机 STARTING→ACTIVE→STOPPING→STOPPED/FAILED（docs/09 合并列表中 DEFINED/VALIDATED/INSTALLED 由导入期 plugin_instance/version 状态承载，分布偏差如实记录）；ActivationContext 以 ActivationRecord+注册编排（activationId 绑定撤销/disposer）语义落地。两轮子代理审查（PR #21：6P1+复审 P2 全修；PR #23：1P2+7P3 当场修四项、余记 Issue #22）全处置；theme-asset 注册+资产存储/serve 收口 Issue #20 第 3/4 项（docs/13 §3.5-4 登记）；后端 218 tests 全绿、门禁 19 pass / 2 skip / 0 fail、main CI 全绿（PR #21 da455d2 + PR #23 673dfa9）
+NEXT_ACTION: P10 启动（分支 feat/p10-issue-schema，docs/09 P10 + docs/03 §6 + FR-ISSUE-01..04）：issue 表建模（状态机 draft→clarified→spec_ready→generating→generated→failed，迁移合法性）→ 规格 Schema 版本化（AI 输出校验的唯一事实源）→ Issue/澄清/生成 API → 审计 → RB-ISSUE 回归 → 子代理审查 → PR
+EXIT_GATE: P09 出口证据（验收六项，复审者逐项核对自动化证据齐全）：①干净库安装出库存菜单——ExampleInventoryPluginTest @Order(1) 干净容器断言无库存痕迹 + @Order(2) admin/USER 菜单均含 example.inventory.items②普通用户查询/编辑——@Order(3) USER create/query/patch 全 200③非负规则——qty=-1 → 400（应用层 min:0 + DB CHECK 双层）④停用/启用/卸载行为——@Order(4) stop→菜单消失+data 404；re-activate→数据回归（data_record 保留）；uninstall→注册 0/实体 disabled⑤同权+骨架纯净——全程标准 API、R-GOV-09 门禁转正（骨架 main 源码扫描演示标识，20 pass/1 skip/0 fail）、复审独立 grep 无硬编码⑥卸载撤销+审计保留——registrations=0 + sys_audit_event plugin.uninstall=1。实施内容五项全交付（example-inventory 包+种子+安装说明+演示脚本全生命周期+与第三方同权）；附带交付：Issue #22 #1/#2 守卫（V009+TOCTOU）、Issue #20 #2 收口（preview 统一+inventory API）、P08 遗留迁移顺序 bug 修复（manifest 声明序）、视图注册补齐（复用 ViewRules）。一轮子代理审查（1 P1+2 P2+7 P3：P1/P2/P3-3/4/6 当场修，余记 Issue #22 #14-17）；后端 222 tests 全绿、门禁 20 pass/1 skip/0 fail、main CI 全绿（PR #24 4bd0d68）。已知限制如实记录：演示脚本需预置 admin+demo-user 账号（脚本头/README 已说明），答辩前需一次性人工预置
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -27,8 +27,8 @@ BLOCKERS: none
 | P06 | 前端动态渲染 | completed | 无业务页面代码即可显示动态实体 |
 | P07 | 插件包校验与版本存储 | completed | 合法包可预览，非法包被拒绝 |
 | P08 | PluginRuntime 生命周期 | completed | 激活、停用、回滚、stale 拒绝通过 |
-| P09 | 库存示例插件 | in_progress | 库存插件可安装并完成演示 |
-| P10 | Issue 与规格 Schema | pending | Issue 状态机和规格版本可审计 |
+| P09 | 库存示例插件 | completed | 库存插件可安装并完成演示 |
+| P10 | Issue 与规格 Schema | ready_to_start | Issue 状态机和规格版本可审计 |
 | P11 | AI 适配器与生成器 | pending | 在线/fixture/手工三条路径可用 |
 | P12 | Agent Issue 端到端闭环 | pending | 干净数据库连续三次完成主流程 |
 | P13 | 加分项与体验优化 | optional | 不影响主线稳定性 |
@@ -121,3 +121,4 @@ BLOCKERS: none
 | 2026-08-29 | P08 | **P08 出口复核通过，置 completed**（P09 置 ready_to_start，进度 35%）。验收六项逐项核验（证据见 EXIT_GATE）：贡献注册与撤销、三类失败阶段+无残留、唯一占用、stale 409 双消费方、升级失败补偿 current 可用、迁移单事务回滚+幂等跳过。实施内容四项交付（V007 三表/状态机/ActivationContext 语义/迁移事务+stale）；过程偏差如实记录：①docs/09 状态合并列表中 DEFINED/VALIDATED/INSTALLED 分布在导入期（plugin_instance/version），生命周期侧五状态，未单列文档修订（P09 复查 docs/07-09 状态清单时统一）②ActivationContext 未落独立类，以 ActivationRecord+注册编排承载（docs/07 §2 内存对象口径一致）③plugin_migration 无残留的显式断言未单列（事务回滚保证，断言补齐记 Issue #22-8）④example-inventory 曾列入 P08 启动条目，按 docs/09 权威归 P09。theme-asset 注册+资产 serve 收口 Issue #20 第 3/4 项；两轮独立子代理审查全处置；后端 218 tests、门禁 19/2/0、main CI 全绿 | docs/09 P08 验收、PR #21/#23、Issue #20/#22、RB-PLUGIN-LIFE |
 | 2026-08-29 | P09 | P09 启动并迭代 1 完成（分支 feat/p09-example-inventory，单迭代交付全阶段）：①Issue #22 第 1/2 项守卫前置——V009 plugin_activation 部分唯一索引（同插件唯一 STARTING/ACTIVE 的 DB 级兜底，并发败者复查幂等口径）+ meta_entity upsert TOCTOU 守卫（ON CONFLICT WHERE plugin_id 归属 + name+plugin 复查，跨归属并发插入转 registration_failed）②生命周期视图注册：metadata/views/*（{entity,viewType,name,columns,filters?}）→ meta_view upsert，viewType 限 list/form、实体必须同包注册（此前视图文件存储但未注册）③preview 依赖统一（幂等命中同 validate 返回全量依赖）+ GET /plugins/inventory 清单聚合（实例+版本+激活/失败诊断，ADMIN-only；Issue #20 第 2 项收口）④**修复 P08 遗留 bug：迁移按 HashMap 顺序执行**（V002 种子先于 V001 建表）→ 改按 manifest resources.migrations 声明顺序（docs/08 §3.3 本就如此规定，单脚本时代未暴露）⑤plugins/example-inventory Level 1 包（实体 4 字段含 qty min:0/列表+表单视图/建表+可重复种子两迁移；README 因包区域白名单移包外）+ 演示脚本 scripts/demo-example-inventory.sh（安装→菜单→USER CRUD→非负规则→停用→启用→卸载全链路，只调标准 API）⑥R-GOV-09 骨架纯净性门禁实现并激活（骨架 main 源码扫描演示插件标识；ManifestValidator 示例 id 改中性 vendor.demo）⑦ExampleInventoryPluginTest 4 例：NFR-SKEL-01 干净骨架/标准 API 安装注册（含视图 2 行+迁移+种子 3 行+inventory API）/USER CRUD+非负规则/停启卸+审计保留（类级单例 zip 防 contentHash 漂移 + @Order 显式状态依赖）。后端 222 tests 全绿、门禁 20 pass / 1 skip / 0 fail（R-GOV-09 转正） | docs/08 §4 资源契约、Issue #20 第 2 项、Issue #22 第 1/2 项、FR-DEMO-01..03、NFR-SKEL-01 |
 | 2026-08-29 | P09 | PR #24 独立子代理交叉审查：0 P0 + 1 P1 + 2 P2 + 7 P3，结论"修复 P1 后可合并"。全部当场修复——P1：演示脚本第 3 步 json() 中间层输出 Python repr 致第二段解析必崩（set -e 下后半段全不执行）→ 改单段 python3 解析；P2-1：TOCTOU 守卫复查用 queryForObject 空结果抛 EmptyResultDataAccessException 而非预期 DuplicateKeyException（跨归属竞态实际 500+INTERNAL 而非宣称的 registration_failed）→ 改 query+findFirst+orElseThrow(DuplicateKey)；P2-2：插件视图注册绕过平台 ViewRules 且缺省落库 "{}" 违反 meta_view 数组契约 → registerViews 复用 ViewRules.validate（列/过滤/字段白名单，与 P04 写路径同契约）+ orEmptyArray；P3-6：firstEntityNameOf 未按实体路径过滤（视图 name 可污染 route 派生）→ 加 isEntityPath 过滤；P3-3：V009 迁移补存量重复数据处置注释；P3-4：演示脚本停用检查改精确 HTTP 码断言（原 curl 失败皆当 404）、头部补 demo-user 前置说明。P3-1/2/5/7（R-GOV-09 扫描面扩 SQL/配置、孤儿 STARTING 清扫、instanceStatus 常量噪声、stop/并发 activate 实体交错）追加 Issue #22 #14-17。后端 222 tests 全绿、门禁 20/1/0；审查者实证核对验收六项自动化证据齐全 | PR #24 评论、Issue #22 |
+| 2026-08-29 | P09 | **P09 出口复核通过，置 completed**（P10 置 ready_to_start，进度 40%）。验收六项逐项核验（证据见 EXIT_GATE，复审者独立核对自动化证据齐全）。附带交付四项：Issue #22 #1/#2 守卫、Issue #20 #2 收口、迁移声明顺序 bug 修复、视图注册补齐（ViewRules 复用）。已知限制：演示脚本需预置 admin+demo-user 账号（已文档化，答辩前人工预置）；R-GOV-09 扫描面扩展等 P3 记 Issue #22 #14-17。后端 222 tests、门禁 20/1/0、main CI 全绿 | docs/09 P09 验收、PR #24、FR-DEMO-01..03、NFR-SKEL-01、Issue #20/#22 |
