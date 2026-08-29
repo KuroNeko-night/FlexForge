@@ -107,6 +107,18 @@ class IssueApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"\",\"description\":\"x\"}"))
                 .andExpect(status().isBadRequest());
+        // 写路径长度守卫（复审 P2-2）：DB 宽度违规须为 400 而非 500
+        String issueId = createIssue(userBearer, "长度守卫", "负例", "guard");
+        mockMvc.perform(MockMvcRequestBuilders.patch("/api/v1/issues/" + issueId + "/labels")
+                        .header("Authorization", userBearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"labels\":[\"" + "x".repeat(41) + "\"]}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/issues/" + issueId + "/transition")
+                        .header("Authorization", developerBearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"to\":\"RETURNED\",\"reason\":\"" + "r".repeat(501) + "\"}"))
+                .andExpect(status().isBadRequest());
     }
 
     // ===== 规格门：缺规格/invalid 规格 不能批准；valid 规格放行（验收 2）=====

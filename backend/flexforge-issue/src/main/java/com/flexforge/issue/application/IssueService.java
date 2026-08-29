@@ -37,16 +37,21 @@ public class IssueService {
         if (description == null || description.isBlank()) {
             throw new IllegalArgumentException("description 必填");
         }
-        for (String label : labels) {
-            if (label.isBlank() || label.length() > 40) {
-                throw new IllegalArgumentException("label 须为 1..40 字符: " + label);
-            }
-        }
+        requireValidLabels(labels);
         String id = "iss-" + UUID.randomUUID();
         IssueRepository.IssueRecord issue =
                 repository.insertIssue(id, title, description, actor, labels);
         audit.record(AuditEvents.of(actor, "issue.create", id, "success", clock));
         return issue;
+    }
+
+    /** 标签形状校验（创建与替换同口径，防 DB 宽度违规变 500）。 */
+    private static void requireValidLabels(List<String> labels) {
+        for (String label : labels) {
+            if (label.isBlank() || label.length() > 40) {
+                throw new IllegalArgumentException("label 须为 1..40 字符: " + label);
+            }
+        }
     }
 
     public IssueRepository.IssueRecord require(String issueId) {
@@ -58,15 +63,16 @@ public class IssueService {
     }
 
     public List<IssueRepository.IssueRecord> list(String status, int page, int pageSize) {
+        int safePage = Math.min(Math.max(1, page), 10_000);
         return repository.listIssues(status == null ? null
                 : com.flexforge.issue.domain.IssueStatus.fromName(status),
-                Math.max(0, page - 1) * pageSize, pageSize);
+                (safePage - 1) * pageSize, pageSize);
     }
 
     public void comment(String actor, String issueId, String body) {
         require(issueId);
-        if (body == null || body.isBlank()) {
-            throw new IllegalArgumentException("评论内容必填");
+        if (body == null || body.isBlank() || body.length() > 2000) {
+            throw new IllegalArgumentException("评论内容必填且 ≤2000 字符");
         }
         repository.insertComment(issueId, actor, body);
         audit.record(AuditEvents.of(actor, "issue.comment", issueId, "success", clock));
@@ -79,6 +85,7 @@ public class IssueService {
     public IssueRepository.IssueRecord replaceLabels(String actor, String issueId,
                                                      List<String> labels) {
         require(issueId);
+        requireValidLabels(labels);
         repository.replaceLabels(issueId, labels);
         audit.record(AuditEvents.of(actor, "issue.labels.replace", issueId, "success", clock));
         return require(issueId);
@@ -86,6 +93,9 @@ public class IssueService {
 
     public IssueRepository.IssueRecord assign(String actor, String issueId, String assignee) {
         require(issueId);
+        if (assignee != null && !assignee.isBlank() && assignee.length() > 64) {
+            throw new IllegalArgumentException("assignee 须 ≤64 字符");
+        }
         repository.updateAssignee(issueId, assignee == null || assignee.isBlank()
                 ? null : assignee);
         audit.record(AuditEvents.of(actor, "issue.assign", issueId, "success", clock));

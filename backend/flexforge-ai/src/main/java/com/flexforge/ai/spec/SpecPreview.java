@@ -46,7 +46,8 @@ public final class SpecPreview {
         manifest.put("capabilityLevel", 1);
         manifest.put("minPlatformVersion", "0.1.0");
         manifest.set("dependencies", JSON.createArrayNode());
-        manifest.set("permissions", spec.path("permissions").deepCopy());
+        manifest.set("permissions", spec.has("permissions") && !spec.path("permissions").isNull()
+                ? spec.path("permissions").deepCopy() : JSON.createArrayNode());
         ObjectNode contributions = manifest.putObject("contributions");
         ArrayNode navigation = contributions.putArray("navigation");
         ArrayNode renderers = contributions.putArray("renderers");

@@ -2,6 +2,7 @@ package com.flexforge.ai.spec;
 
 import com.flexforge.common.PublicApi;
 import com.flexforge.meta.domain.FieldTypeRegistry;
+import com.flexforge.meta.domain.Identifiers;
 import com.flexforge.meta.domain.ViewRules;
 import com.flexforge.meta.domain.ViewType;
 import tools.jackson.databind.JsonNode;
@@ -26,7 +27,6 @@ public final class RequirementSchema {
 
     public static final int CURRENT_VERSION = 1;
 
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-z][a-z0-9_]*$");
     private static final Pattern KEY_PATTERN =
             Pattern.compile("^[a-z][a-z0-9_]*(\\.[a-z0-9_]*)*$");
 
@@ -82,7 +82,7 @@ public final class RequirementSchema {
         }
     }
 
-    /** 校验实体名（snake 标识 + 不重复）；非法/重复返回 null（不入字段白名单）。 */
+    /** 校验实体名（平台 Identifiers 单点：snake 标识 + 63 上限 + 不重复）。 */
     private static String validatedEntityName(JsonNode entity, String label,
                                               Map<String, Set<String>> fieldsByEntity,
                                               List<String> errors) {
@@ -90,8 +90,10 @@ public final class RequirementSchema {
         if (name == null) {
             return null;
         }
-        if (!NAME_PATTERN.matcher(name).matches()) {
-            errors.add(label + ".name 须为小写下划线标识: " + name);
+        try {
+            Identifiers.validateName(name, label + ".name");
+        } catch (RuntimeException e) {
+            errors.add(e.getMessage());
             return null;
         }
         if (fieldsByEntity.containsKey(name)) {
@@ -123,6 +125,14 @@ public final class RequirementSchema {
             return null;
         }
         String name = textOf(field.get("name"), label + ".name", errors);
+        if (name != null) {
+            try {
+                Identifiers.validateName(name, label + ".name");
+            } catch (RuntimeException e) {
+                errors.add(e.getMessage());
+                name = null;
+            }
+        }
         validateFieldType(field, label, errors);
         return name;
     }

@@ -93,6 +93,18 @@ class RequirementSchemaTest {
         assertThat(RequirementSchema.validate(spec)).anyMatch(e -> e.contains("不存在的字段"));
     }
 
+    @Test
+    void entityAndFieldNamesFollowPlatformIdentifiers() {
+        ObjectNode spec = validSpec();
+        ObjectNode entity = (ObjectNode) spec.withArray("entities").get(0);
+        entity.put("name", "InventoryItem");
+        assertThat(RequirementSchema.validate(spec)).anyMatch(e -> e.contains(".name"));
+
+        ObjectNode spec2 = validSpec();
+        field(spec2, 0).put("name", "n".repeat(64));
+        assertThat(RequirementSchema.validate(spec2)).anyMatch(e -> e.contains(".name"));
+    }
+
     private static ObjectNode field(ObjectNode spec, int index) {
         ObjectNode entity = (ObjectNode) spec.withArray("entities").get(0);
         return (ObjectNode) entity.withArray("fields").get(index);

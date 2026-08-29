@@ -104,18 +104,24 @@ public class JdbcIssueRepository implements IssueRepository {
                         + " ORDER BY created_at", transitionRow, issueId);
     }
 
+    /** 原子取号 + 唯一约束冲突重试：并发保存规格败者换号重插（最多 3 次）。 */
     @Override
     public SpecRevisionRecord insertSpec(String issueId, SpecContent content, String createdBy) {
-        Integer max = jdbc.queryForObject(
-                "SELECT max(revision) FROM requirement_spec WHERE issue_id = ?",
-                Integer.class, issueId);
-        int revision = (max == null ? 0 : max) + 1;
-        jdbc.update("INSERT INTO requirement_spec (id, issue_id, schema_version, revision,"
-                        + " spec_json, valid, validation_errors, created_by)"
-                        + " VALUES (?, ?, ?, ?, ?::jsonb, ?, ?::jsonb, ?)",
-                "rs-" + UUID.randomUUID(), issueId, content.schemaVersion(), revision,
-                content.specJson(), content.valid(), content.errorsJson(), createdBy);
-        return latestSpec(issueId);
+        for (int attempt = 0; attempt < 3; attempt++) {
+            try {
+                jdbc.update("INSERT INTO requirement_spec (id, issue_id, schema_version,"
+                                + " revision, spec_json, valid, validation_errors, created_by)"
+                                + " SELECT ?, ?, ?, coalesce(max(revision), 0) + 1, ?::jsonb, ?,"
+                                + " ?::jsonb, ? FROM requirement_spec WHERE issue_id = ?",
+                        "rs-" + UUID.randomUUID(), issueId, content.schemaVersion(),
+                        content.specJson(), content.valid(), content.errorsJson(), createdBy,
+                        issueId);
+                return latestSpec(issueId);
+            } catch (org.springframework.dao.DuplicateKeyException e) {
+                // 并发窗口：另一保存已占用该 revision，换号重试
+            }
+        }
+        throw new IllegalArgumentException("并发保存规格冲突，请重试: " + issueId);
     }
 
     @Override

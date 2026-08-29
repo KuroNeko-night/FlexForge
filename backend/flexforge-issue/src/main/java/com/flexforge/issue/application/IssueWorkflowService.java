@@ -49,6 +49,9 @@ public class IssueWorkflowService {
                 && (reason == null || reason.isBlank())) {
             throw InvalidTransitionException.missingReason(target);
         }
+        if (reason != null && reason.length() > 500) {
+            throw new IllegalArgumentException("迁移原因须 ≤500 字符");
+        }
         if (target == IssueStatus.APPROVED) {
             requireValidSpec(issueId);
         }
@@ -86,9 +89,9 @@ public class IssueWorkflowService {
         return repository.specRevisionsOf(issueId);
     }
 
-    /** 预览将要生成的插件资源（docs/09 P10 验收 4）；无规格 → 400。 */
+    /** 预览将要生成的插件资源（docs/09 P10 验收 4）；无规格 → 404。 */
     public SpecPreview.Preview preview(String issueId) {
-        SpecRevisionRecord latest = requireLatestSpec(issueId);
+        SpecRevisionRecord latest = latestSpec(issueId);
         return SpecPreview.of(JSON.readTree(
                 latest.specJson().getBytes(java.nio.charset.StandardCharsets.UTF_8)));
     }
@@ -99,14 +102,6 @@ public class IssueWorkflowService {
             throw new NoSuchElementException("Issue 不存在: " + issueId);
         }
         return issue;
-    }
-
-    private SpecRevisionRecord requireLatestSpec(String issueId) {
-        SpecRevisionRecord latest = latestSpec(issueId);
-        if (latest == null) {
-            throw new IllegalArgumentException("尚无规格版本，无法预览: " + issueId);
-        }
-        return latest;
     }
 
     private void requireValidSpec(String issueId) {
