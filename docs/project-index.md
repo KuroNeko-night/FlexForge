@@ -63,7 +63,11 @@ FlexForge/
 │   ├── migrations/V006__plugin_tables.sql plugin_instance/version/dependency/migration 版本存储（P07）
 │   ├── migrations/V007__plugin_lifecycle.sql plugin_activation/registration/audit_event + plugin_version 载荷列（P08）
 │   ├── migrations/V008__plugin_asset_payloads.sql 资产载荷列（asset_payloads，P08）
+│   ├── migrations/V009__plugin_activation_occupancy.sql 同插件唯一占用部分唯一索引（P09 前置）
 │   └── init/                       Compose 首次初始化：应用专用账号
+├── plugins/
+│   ├── example-inventory/          库存示例 Level 1 包（P09：plugin.json+实体+两视图+两迁移；纯包目录无 README）
+│   └── example-inventory-README.md 安装说明（包外，P07 区域白名单不允许包内文档）
 ├── tests/
 │   └── fixtures/
 │       ├── fixtures.json           条目清单 + SHA-256（R-GOV-06 哈希校验）
@@ -217,3 +221,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-28 | §1 树更新：flexforge-plugin 新模块（四层）；V006 plugin_* 四表；ErrorCodes +unsupported_schema_version；app multipart 上限配置 | P07：插件包校验与版本存储（RB-PLUGIN-VALID） |
 | 2026-08-29 | §1 树更新（补记）：V007 plugin_activation/registration/audit_event + plugin_version 载荷列；flexforge-plugin 生命周期四层（ActivationStatus 状态机/LifecycleRepository 端口/PluginLifecycleService+MigrationScriptRunner+PluginContributionFactory/PluginLifecycleController）；common +StaleActivationException；app 测试 +PluginPackageTestSupport/PluginActivationApiTest | P08 迭代 1：PluginRuntime 生命周期（PR #21，RB-PLUGIN-LIFE） |
 | 2026-08-29 | §1 树更新：V008 plugin_version.asset_payloads；flexforge-plugin +ThemeAssetSpec/PluginAssetService/PluginRestoreRunner；common +ThemeAssetContribution；app 测试 +PluginAssetApiTest | P08 迭代 2：theme-asset 注册+资产存储/serve 端点（Issue #20 第 3/4 项） |
+| 2026-08-29 | §1 树更新：V009 占用唯一索引；plugins/ 目录（example-inventory 包+包外 README）；flexforge-plugin +PluginInventoryService/视图注册端口；app 测试 +ExampleInventoryPluginTest；scripts +demo-example-inventory.sh +lib/rgov-skeleton-purity.mjs（R-GOV-09 激活） | P09：库存示例插件（FR-DEMO-01..03、NFR-SKEL-01、Issue #22 第 1/2 项守卫） |
