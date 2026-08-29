@@ -63,9 +63,29 @@ final class PluginContributionFactory {
         return result;
     }
 
-    /** 首个注册实体名（navigation route 派生用）；无实体返回 null。 */
+    /** 包内实体名 → 字段名集合（视图字段白名单校验用）。 */
+    static Map<String, java.util.Set<String>> entityFieldNamesOf(JsonNode payloads) {
+        Map<String, java.util.Set<String>> result = new HashMap<>();
+        for (String path : payloads.propertyNames()) {
+            if (!isEntityPath(path)) {
+                continue;
+            }
+            JsonNode spec = entitySpec(payloads, path);
+            java.util.Set<String> fields = new java.util.HashSet<>();
+            for (JsonNode field : spec.path("fields")) {
+                fields.add(field.path("name").asString());
+            }
+            result.put(spec.path("name").asString(), fields);
+        }
+        return result;
+    }
+
+    /** 首个注册实体名（navigation route 派生用）；无实体返回 null（仅计实体路径）。 */
     static String firstEntityNameOf(JsonNode entities) {
         for (String path : entities.propertyNames()) {
+            if (!isEntityPath(path)) {
+                continue;
+            }
             JsonNode spec = entitySpec(entities, path);
             if (spec != null && spec.has("name")) {
                 return spec.get("name").asString();

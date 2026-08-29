@@ -2,6 +2,8 @@
 # example-inventory 演示脚本（docs/09 P09）：安装 → 普通用户查询/编辑/非负规则 →
 # 停用 → 启用 → 卸载，全程只调用标准插件/数据 API（FR-DEMO-03 同权口径）。
 # 依赖：bash、curl、python3；环境：FLEXFORGE_BASE_URL（默认 http://localhost:8080）
+# 前置：已存在管理员账号（FLEXFORGE_ADMIN_USER/PASS）与 USER 角色演示账号
+# （FLEXFORGE_DEMO_USER/PASS，默认 demo-user）——经系统用户管理创建。
 set -euo pipefail
 
 BASE_URL="${FLEXFORGE_BASE_URL:-http://localhost:8080}"
@@ -64,9 +66,8 @@ done
 step "普通用户 CRUD 与非负规则（FR-DEMO-02）"
 api POST /api/v1/data/inventory_item "$user_token" \
   '{"sku":"DEMO-BOLT-M6","name":"M6 螺栓","qty":100,"status":"在库"}' >/dev/null
-api GET '/api/v1/data/inventory_item?pageSize=10' "$user_token" \
-  | json "['items']" | python3 -c "import sys,json;print(len(json.load(sys.stdin))>0)" \
-  | grep -qx True
+api GET '/api/v1/data/inventory_item?pageSize=10' "$user_token" | python3 -c \
+  "import sys,json;print(len(json.load(sys.stdin)['items'])>0)" | grep -qx True
 if api POST /api/v1/data/inventory_item "$user_token" \
     '{"sku":"DEMO-BAD","name":"坏数据","qty":-1,"status":"在库"}' >/dev/null 2>&1; then
   echo "非负规则失效！qty=-1 被接受" >&2; exit 1
@@ -79,9 +80,10 @@ api POST "/api/v1/plugins/$activation_id/stop" "$admin_token" >/dev/null
 api GET /api/v1/menus "$user_token" | python3 -c \
   "import sys,json;print(any(m['key']=='example.inventory.items' for m in json.load(sys.stdin)))" \
   | grep -qx False
-curl -sf -H "Authorization: Bearer $user_token" \
-  "$BASE_URL/api/v1/data/inventory_item" >/dev/null 2>&1 \
-  && { echo "停用后数据 API 仍可访问！" >&2; exit 1; } || echo "停用后 data API 404 ✓"
+stop_code="$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $user_token" \
+  "$BASE_URL/api/v1/data/inventory_item")"
+[ "$stop_code" = "404" ] || { echo "停用后 data API 期望 404，实际 $stop_code" >&2; exit 1; }
+echo "停用后 data API 404 ✓"
 
 # 5. 启用（再次激活）：菜单与数据回归（data_record 保留）
 step "启用（re-activate）"
@@ -95,5 +97,7 @@ api DELETE /api/v1/plugins/example.inventory "$admin_token" >/dev/null
 api GET /api/v1/menus "$user_token" | python3 -c \
   "import sys,json;print(any(m['key']=='example.inventory.items' for m in json.load(sys.stdin)))" \
   | grep -qx False
-api GET /api/v1/plugins/inventory "$admin_token" >/dev/null
+audit_code="$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $admin_token" \
+  "$BASE_URL/api/v1/plugins/inventory")"
+[ "$audit_code" = "200" ] || { echo "卸载后 inventory 清单不可读（$audit_code）" >&2; exit 1; }
 echo "演示完成：安装 → 规则 → 停用 → 启用 → 卸载 全链路通过"

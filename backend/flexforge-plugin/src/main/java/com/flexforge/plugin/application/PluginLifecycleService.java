@@ -6,6 +6,8 @@ import com.flexforge.common.audit.AuditEventPort;
 import com.flexforge.common.audit.AuditEvents;
 import com.flexforge.common.registry.ExtensionPoints;
 import com.flexforge.meta.application.MetaRegistry;
+import com.flexforge.meta.domain.ViewRules;
+import com.flexforge.meta.domain.ViewType;
 import com.flexforge.plugin.domain.ActivationRecord;
 import com.flexforge.plugin.domain.ActivationStatus;
 import com.flexforge.plugin.domain.LifecycleRepository;
@@ -284,15 +286,10 @@ public class PluginLifecycleService {
         }
     }
 
-    /** 视图注册（metadata/views/*）：viewType 限 list/form，实体必须为本包注册实体。 */
+    /** 视图注册（metadata/views/*）：复用平台 ViewRules（列/过滤/字段白名单契约）。 */
     private void registerViews(JsonNode payloads) {
-        Set<String> entityNames = new HashSet<>();
-        for (String path : payloads.propertyNames()) {
-            if (PluginContributionFactory.isEntityPath(path)) {
-                entityNames.add(PluginContributionFactory.entitySpec(payloads, path)
-                        .path("name").asString());
-            }
-        }
+        Map<String, Set<String>> entityFields = PluginContributionFactory.entityFieldNamesOf(
+                payloads);
         for (JsonNode view : PluginContributionFactory.viewSpecsOf(payloads)) {
             String viewType = view.path("viewType").asString();
             String entityName = view.path("entity").asString();
@@ -300,12 +297,15 @@ public class PluginLifecycleService {
                 throw new PluginValidationException(ErrorCodes.VALIDATION_ERROR,
                         "视图 viewType 非法（允许 list/form）: " + viewType);
             }
-            if (!entityNames.contains(entityName)) {
+            Set<String> fieldNames = entityFields.get(entityName);
+            if (fieldNames == null) {
                 throw new PluginValidationException(ErrorCodes.VALIDATION_ERROR,
                         "视图引用了包外实体: " + entityName);
             }
-            kernel.lifecycle().upsertViewForEntity(entityName, viewType,
-                    view.path("name").asString(viewType),
+            String viewName = view.path("name").asString(viewType);
+            ViewRules.validate(ViewType.fromName(viewType), viewName, view.get("columns"),
+                    view.get("filters"), fieldNames);
+            kernel.lifecycle().upsertViewForEntity(entityName, viewType, viewName,
                     view.has("columns") ? view.get("columns").toString() : null,
                     view.has("filters") ? view.get("filters").toString() : null);
         }

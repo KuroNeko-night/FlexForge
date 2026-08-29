@@ -160,13 +160,12 @@ public class JdbcLifecycleRepository implements LifecycleRepository {
                 + " updated_at = now()"
                 + " WHERE meta_entity.plugin_id = EXCLUDED.plugin_id",
                 entityId, entityName, displayName, pluginId);
-        String actualId = jdbc.queryForObject(
+        // 复查按 name+plugin：跨归属并发插入时守卫未更新、复查为空 → 注册冲突
+        String actualId = jdbc.query(
                 "SELECT id FROM meta_entity WHERE name = ? AND plugin_id = ?",
-                String.class, entityName, pluginId);
-        if (actualId == null) {
-            throw new org.springframework.dao.DuplicateKeyException(
-                    "实体名已被其他归属占用: " + entityName);
-        }
+                (rs, n) -> rs.getString(1), entityName, pluginId).stream().findFirst()
+                .orElseThrow(() -> new org.springframework.dao.DuplicateKeyException(
+                        "实体名已被其他归属占用: " + entityName));
         jdbc.update("DELETE FROM meta_field WHERE entity_id = ?", actualId);
         int position = 0;
         for (FieldSpec field : fields) {
@@ -200,7 +199,7 @@ public class JdbcLifecycleRepository implements LifecycleRepository {
                 + " columns = EXCLUDED.columns, filters = EXCLUDED.filters,"
                 + " updated_at = now()",
                 "mv-" + UUID.randomUUID(), viewType, viewName,
-                orEmpty(columnsJson), orEmpty(filtersJson), entityName);
+                orEmptyArray(columnsJson), orEmptyArray(filtersJson), entityName);
     }
 
     @Override
@@ -223,6 +222,11 @@ public class JdbcLifecycleRepository implements LifecycleRepository {
 
     private static String orEmpty(String json) {
         return json == null ? "{}" : json;
+    }
+
+    /** 视图列/过滤缺省为空数组（meta_view 契约：columns/filters 为数组）。 */
+    private static String orEmptyArray(String json) {
+        return json == null ? "[]" : json;
     }
 
     private ActivationRecord mapActivation(ResultSet rs, int rowNum) throws SQLException {
