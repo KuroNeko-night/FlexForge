@@ -162,6 +162,11 @@ example-inventory/
 
 `plugins/example-inventory` 与任何第三方包同权：预置但不自动安装；演示脚本只能调用标准导入/安装/启停/卸载 API；禁止在前后端骨架中为其写死菜单、路由、页面或权限。
 
+插件资源 JSON 契约（P09 起，激活期消费）：实体 `{"name","displayName","fields":[{name,displayName,fieldType,required?,validation?,position}]}`；
+视图 `{"entity","viewType":"list|form","name","columns":[{field}],"filters"?}`（entity 必须为同包注册实体）。
+迁移 runner 按 `resources.migrations` **声明顺序**执行（多脚本顺序由 manifest 决定）。
+包目录只允许 manifest/metadata/migrations/assets 区域——安装说明等文档放包外（如 `plugins/<name>-README.md`）。
+
 `migrations/` 只允许 `V<序号>__<名称>.sql` 顺序脚本，由 PluginRuntime runner 执行（规则见 §3.3，ADR-0005）；不允许放入可执行脚本或 Flyway 专用配置。
 
 ## 5. 元数据和动态数据实现取舍

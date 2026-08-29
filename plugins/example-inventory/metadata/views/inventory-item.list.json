@@ -1,0 +1,11 @@
+{
+  "entity": "inventory_item",
+  "viewType": "list",
+  "name": "库存列表",
+  "columns": [
+    { "field": "sku" },
+    { "field": "name" },
+    { "field": "qty" },
+    { "field": "status" }
+  ]
+}

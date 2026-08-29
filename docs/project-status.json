@@ -3,10 +3,10 @@
   "updatedAt": "2026-08-29",
   "currentStageId": "P09",
   "currentStageName": "库存示例插件",
-  "status": "ready_to_start",
+  "status": "in_progress",
   "progressPercent": 35,
   "owner": "project-maintainer",
-  "nextAction": "P09 启动（分支 feat/p09-example-inventory）：plugins/example-inventory 声明式包（plugin.json+实体/列表/表单视图+迁移+种子数据+安装说明+演示脚本覆盖 安装→停用→卸载；与第三方同权过 P07 全量校验，不写骨架硬编码）→ 干净库安装出库存菜单/普通用户 CRUD/非负规则/停用卸载无残留（NFR-SKEL-01）→ RB-PLUGIN-LIFE 全量回归 → 子代理审查 → PR；Issue #22 P3 第 1/2 项（并发唯一索引/TOCTOU 守卫）P09 前处理；Issue #20 第 2 项随 P09 inventory 接口设计收口",
+  "nextAction": "P09 迭代 1 已完成待子代理审查合并；合并后出口复核（干净库菜单/普通用户 CRUD/非负规则/停启卸行为/同权/骨架纯净六项验收）",
   "exitGate": "P08 出口证据（验收六项逐项核验）：①激活后贡献可用/停用全撤销——validPluginActivationRegistersEverything（注册≥3/实体 enabled/字段 2/迁移 1/表存在/菜单可见）+ stoppedActivationRejectedAsStale（注册清零/实体 disabled/菜单撤销/stop 幂等）②缺依赖/迁移失败/注册冲突记失败阶段并清残留——missingDependency…WithoutResidue（FAILED@DEPENDENCY_CHECK 残留 0，补依赖后可恢复）/migrationFailureRollsBackEverything（FAILED@MIGRATION 无注册残留）/entityOwnershipConflict+platformEntityConflict（FAILED@REGISTER 原实体完整不覆盖）③同插件同刻唯一 STARTING/ACTIVE——concurrentActivationRejected+升级后 ACTIVE=1 断言（DB 级 partial unique index 记 Issue #22-1）④旧 activationId→stale_activation——停用/升级后 409（registrations 与 assets serve 双消费方）⑤升级失败 current 可用——upgradeFailureRestoresCurrentVersion（补偿重激活旧版，唯一 ACTIVE=v1，非原子窗口为已记录已知限制）⑥迁移失败整体回滚+重复安装跳过——迁移/注册/ACTIVE 单事务（TransactionTemplate，ADR-0005），失败例无注册残留（plugin_migration 随事务回滚，显式断言记 Issue #22-8）/repeatedActivationIsIdempotent（checksum 命中跳过同 activationId）。实施内容：V007 三表+V006 plugin_migration；状态机 STARTING→ACTIVE→STOPPING→STOPPED/FAILED（docs/09 合并列表中 DEFINED/VALIDATED/INSTALLED 由导入期 plugin_instance/version 状态承载，分布偏差如实记录）；ActivationContext 以 ActivationRecord+注册编排（activationId 绑定撤销/disposer）语义落地。两轮子代理审查（PR #21：6P1+复审 P2 全修；PR #23：1P2+7P3 当场修四项、余记 Issue #22）全处置；theme-asset 注册+资产存储/serve 收口 Issue #20 第 3/4 项（docs/13 §3.5-4 登记）；后端 218 tests 全绿、门禁 19 pass / 2 skip / 0 fail、main CI 全绿（PR #21 da455d2 + PR #23 673dfa9）",
   "blockers": [],
   "stages": [
@@ -58,7 +58,7 @@
     {
       "id": "P09",
       "name": "库存示例插件",
-      "status": "ready_to_start"
+      "status": "in_progress"
     },
     {
       "id": "P10",

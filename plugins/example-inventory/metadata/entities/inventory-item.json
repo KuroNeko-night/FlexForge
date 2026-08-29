@@ -1,0 +1,37 @@
+{
+  "name": "inventory_item",
+  "displayName": "库存项",
+  "fields": [
+    {
+      "name": "sku",
+      "displayName": "物料编码",
+      "fieldType": "text",
+      "required": true,
+      "validation": { "maxLength": 64 },
+      "position": 0
+    },
+    {
+      "name": "name",
+      "displayName": "物料名称",
+      "fieldType": "text",
+      "required": true,
+      "position": 1
+    },
+    {
+      "name": "qty",
+      "displayName": "库存数量",
+      "fieldType": "integer",
+      "required": true,
+      "validation": { "min": 0 },
+      "position": 2
+    },
+    {
+      "name": "status",
+      "displayName": "状态",
+      "fieldType": "enum",
+      "required": true,
+      "validation": { "options": ["在库", "缺货", "预定"] },
+      "position": 3
+    }
+  ]
+}

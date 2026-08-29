@@ -72,10 +72,23 @@ class PluginImportServiceTest {
         assertThat(stores.get()).isEqualTo(1);
     }
 
+    /** 仓库桩基类：inventory 聚合方法与本用例无关，统一空实现。 */
+    private abstract static class StubRepo implements PluginPackageRepository {
+        @Override
+        public List<PluginPackageRepository.InstanceEntry> listInstances() {
+            return List.of();
+        }
+
+        @Override
+        public List<PluginPackageRepository.VersionEntry> versionSummariesOf(String pluginId) {
+            return List.of();
+        }
+    }
+
     /** 仓库桩工厂：hash 命中路径（conflictVersion=null）或冲突路径。 */
     private static PluginPackageRepository hashLookupRepo(AtomicInteger hashLookups,
             AtomicInteger stores, PluginVersionRecord conflictVersion) {
-        return new PluginPackageRepository() {
+        return new StubRepo() {
             @Override
             public Optional<PluginVersionRecord> findByVersionId(String versionId) {
                 return Optional.empty();

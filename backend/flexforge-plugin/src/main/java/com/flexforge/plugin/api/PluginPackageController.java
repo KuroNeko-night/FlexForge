@@ -9,10 +9,12 @@ import com.flexforge.common.ApiConstants;
 import com.flexforge.common.PublicApi;
 import com.flexforge.common.api.ErrorCodes;
 import com.flexforge.plugin.application.PluginImportService;
+import com.flexforge.plugin.application.PluginInventoryService;
 import com.flexforge.plugin.domain.InstallPreview;
 import com.flexforge.plugin.domain.PluginValidationException;
 import com.flexforge.plugin.domain.ValidationReport;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -39,11 +42,21 @@ public class PluginPackageController {
             "application/zip", "application/x-zip-compressed", "application/octet-stream");
 
     private final PluginImportService imports;
+    private final PluginInventoryService inventory;
     private final AuthService authService;
 
-    public PluginPackageController(PluginImportService imports, AuthService authService) {
+    public PluginPackageController(PluginImportService imports, PluginInventoryService inventory,
+                                   AuthService authService) {
         this.imports = imports;
+        this.inventory = inventory;
         this.authService = authService;
+    }
+
+    /** 插件清单（docs/03 §8 GET /plugins/inventory）：版本、激活与失败诊断。 */
+    @GetMapping("/inventory")
+    @RequireRole(Roles.ADMIN)
+    public List<PluginInventoryService.PluginInventoryEntry> inventory() {
+        return inventory.inventory();
     }
 
     @PostMapping(value = "/validate", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

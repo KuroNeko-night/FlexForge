@@ -6,6 +6,8 @@ import com.flexforge.common.audit.AuditEventPort;
 import com.flexforge.common.audit.AuditEvents;
 import com.flexforge.common.registry.ExtensionPoints;
 import com.flexforge.meta.application.MetaRegistry;
+import com.flexforge.meta.domain.ViewRules;
+import com.flexforge.meta.domain.ViewType;
 import com.flexforge.plugin.domain.ActivationRecord;
 import com.flexforge.plugin.domain.ActivationStatus;
 import com.flexforge.plugin.domain.LifecycleRepository;
@@ -22,9 +24,11 @@ import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Clock;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -70,16 +74,17 @@ public class PluginLifecycleService {
         if (existing != null) {
             return existing;
         }
-        kernel.lifecycle().findOccupying(version.pluginId()).ifPresent(current -> {
-            if (!current.pluginVersionId().equals(versionId)) {
-                throw new PluginValidationException(ErrorCodes.VALIDATION_ERROR,
-                        "插件已有进行中激活（" + current.id() + " @" + current.status().wireName()
-                                + "），需先停用当前版本");
-            }
-        });
+        requireSlotFree(version.pluginId(), versionId);
 
-        ActivationRecord activation = kernel.lifecycle().insertActivation(
-                "act-" + UUID.randomUUID(), version.pluginId(), versionId, "ACTIVATE", actor);
+        ActivationRecord activation;
+        try {
+            activation = kernel.lifecycle().insertActivation(
+                    "act-" + UUID.randomUUID(), version.pluginId(), versionId, "ACTIVATE", actor);
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            // V009 部分唯一索引兜底并发窗口（Issue #22-1）：败者复查幂等口径
+            return kernel.lifecycle().findActiveOperation(versionId, "ACTIVATE")
+                    .orElseThrow(() -> slotOccupied("并发冲突败者"));
+        }
         try {
             checkDependencies(version);
             transactions.executeWithoutResult(tx -> {
@@ -95,6 +100,19 @@ public class PluginLifecycleService {
         kernel.metaRegistry().evictAll();
         audit.record(AuditEvents.of(actor, "plugin.activate", activation.id(), "success", clock));
         return requireActivation(activation.id());
+    }
+
+    private void requireSlotFree(String pluginId, String versionId) {
+        kernel.lifecycle().findOccupying(pluginId).ifPresent(current -> {
+            if (!current.pluginVersionId().equals(versionId)) {
+                throw slotOccupied(current.id() + " @" + current.status().wireName());
+            }
+        });
+    }
+
+    private static PluginValidationException slotOccupied(String detail) {
+        return new PluginValidationException(ErrorCodes.VALIDATION_ERROR,
+                "插件已有进行中激活（" + detail + "），需先停用当前版本");
     }
 
     /** 停用：DB 清理（注册/实体/状态）单事务提交，事务外撤销内存注册。 */
@@ -198,14 +216,14 @@ public class PluginLifecycleService {
         }
     }
 
-    /** 迁移执行层（ADR-0005：checksum 一致跳过；差异拒绝；脚本执行经 MigrationScriptRunner）。 */
+    /** 迁移执行层（ADR-0005：声明顺序执行、checksum 一致跳过、差异拒绝）。 */
     private void runMigrations(ActivationRecord activation, PluginVersionRecord version) {
         Map<String, String> applied = new HashMap<>();
         for (LifecycleRepository.MigrationEntry entry : kernel.lifecycle().migrationsOf(
                 version.id())) {
             applied.put(entry.scriptName(), entry.checksum());
         }
-        for (String scriptName : version.scriptChecksums().keySet()) {
+        for (String scriptName : PluginContributionFactory.migrationOrderOf(version)) {
             String expectedChecksum = version.scriptChecksums().get(scriptName);
             String previous = applied.get(scriptName);
             if (previous != null && !previous.equals(expectedChecksum)) {
@@ -232,22 +250,14 @@ public class PluginLifecycleService {
     }
 
     private void registerMetadata(ActivationRecord activation, PluginVersionRecord version) {
-        JsonNode entities = PluginContributionFactory.parseEntities(
+        JsonNode payloads = PluginContributionFactory.parseEntities(
                 kernel.lifecycle().resourcePayloadsOf(version.id()));
-        for (String path : entities.propertyNames()) {
-            JsonNode entitySpec = PluginContributionFactory.entitySpec(entities, path);
-            String entityName = entitySpec.get("name").asString();
-            requireEntityOwnership(entityName, version.pluginId());
-            kernel.lifecycle().insertEntityWithFields(entityName,
-                    entitySpec.path("displayName").asString(entityName),
-                    version.pluginId(), PluginContributionFactory.fieldSpecsOf(entitySpec));
-            kernel.lifecycle().insertRegistration(activation.id(), "service.meta", entityName,
-                    entitySpec.toString());
-        }
+        registerEntities(activation, version, payloads);
+        registerViews(payloads);
         for (String navigationKey : PluginContributionFactory.navigationKeysOf(version)) {
             kernel.lifecycle().insertRegistration(activation.id(), ExtensionPoints.NAVIGATION,
                     navigationKey, PluginContributionFactory.navigationPayload(navigationKey,
-                            version, entities));
+                            version, payloads));
         }
         for (String rendererId : PluginContributionFactory.rendererIdsOf(version)) {
             kernel.lifecycle().insertRegistration(activation.id(), ExtensionPoints.FIELD_RENDERER,
@@ -256,6 +266,48 @@ public class PluginLifecycleService {
         for (ThemeAssetSpec asset : PluginContributionFactory.themeAssetsOf(version)) {
             kernel.lifecycle().insertRegistration(activation.id(), ExtensionPoints.THEME_ASSET,
                     asset.key(), PluginContributionFactory.themeAssetPayload(asset));
+        }
+    }
+
+    private void registerEntities(ActivationRecord activation, PluginVersionRecord version,
+                                  JsonNode payloads) {
+        for (String path : payloads.propertyNames()) {
+            if (!PluginContributionFactory.isEntityPath(path)) {
+                continue;
+            }
+            JsonNode entitySpec = PluginContributionFactory.entitySpec(payloads, path);
+            String entityName = entitySpec.get("name").asString();
+            requireEntityOwnership(entityName, version.pluginId());
+            kernel.lifecycle().insertEntityWithFields(entityName,
+                    entitySpec.path("displayName").asString(entityName),
+                    version.pluginId(), PluginContributionFactory.fieldSpecsOf(entitySpec));
+            kernel.lifecycle().insertRegistration(activation.id(), "service.meta", entityName,
+                    entitySpec.toString());
+        }
+    }
+
+    /** 视图注册（metadata/views/*）：复用平台 ViewRules（列/过滤/字段白名单契约）。 */
+    private void registerViews(JsonNode payloads) {
+        Map<String, Set<String>> entityFields = PluginContributionFactory.entityFieldNamesOf(
+                payloads);
+        for (JsonNode view : PluginContributionFactory.viewSpecsOf(payloads)) {
+            String viewType = view.path("viewType").asString();
+            String entityName = view.path("entity").asString();
+            if (!List.of("list", "form").contains(viewType)) {
+                throw new PluginValidationException(ErrorCodes.VALIDATION_ERROR,
+                        "视图 viewType 非法（允许 list/form）: " + viewType);
+            }
+            Set<String> fieldNames = entityFields.get(entityName);
+            if (fieldNames == null) {
+                throw new PluginValidationException(ErrorCodes.VALIDATION_ERROR,
+                        "视图引用了包外实体: " + entityName);
+            }
+            String viewName = view.path("name").asString(viewType);
+            ViewRules.validate(ViewType.fromName(viewType), viewName, view.get("columns"),
+                    view.get("filters"), fieldNames);
+            kernel.lifecycle().upsertViewForEntity(entityName, viewType, viewName,
+                    view.has("columns") ? view.get("columns").toString() : null,
+                    view.has("filters") ? view.get("filters").toString() : null);
         }
     }
 

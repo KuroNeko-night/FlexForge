@@ -85,6 +85,13 @@ public class JdbcLifecycleRepository implements LifecycleRepository {
     }
 
     @Override
+    public List<ActivationRecord> activationsOf(String pluginId) {
+        return jdbc.query(activationSelect()
+                        + " WHERE plugin_id = ? ORDER BY started_at DESC LIMIT 20",
+                activationRow, pluginId);
+    }
+
+    @Override
     public int insertRegistration(String activationId, String extensionType, String registrationKey,
                                   String payloadJson) {
         return jdbc.update("INSERT INTO plugin_registration (id, activation_id, extension_type,"
@@ -144,15 +151,21 @@ public class JdbcLifecycleRepository implements LifecycleRepository {
     public String insertEntityWithFields(String entityName, String displayName, String pluginId,
                                          List<FieldSpec> fields) {
         String entityId = "meta-" + UUID.randomUUID();
-        // 同名实体已存在（升级/重激活）：更新状态为 enabled 并清旧字段
+        // 同名实体 upsert 仅限本插件归属（WHERE 守卫，Issue #22-2 TOCTOU）：
+        // 并发跨归属插入不更新，随后按 name+plugin 复查为空即抛注册冲突
         jdbc.update("INSERT INTO meta_entity (id, name, display_name, status, plugin_id)"
                 + " VALUES (?, ?, ?, 'enabled', ?)"
                 + " ON CONFLICT (name) DO UPDATE SET status = 'enabled',"
                 + " display_name = EXCLUDED.display_name, plugin_id = EXCLUDED.plugin_id,"
-                + " updated_at = now()", entityId, entityName, displayName, pluginId);
-        // 取实际实体 ID（upsert 后可能是旧 ID）
-        String actualId = jdbc.queryForObject(
-                "SELECT id FROM meta_entity WHERE name = ?", String.class, entityName);
+                + " updated_at = now()"
+                + " WHERE meta_entity.plugin_id = EXCLUDED.plugin_id",
+                entityId, entityName, displayName, pluginId);
+        // 复查按 name+plugin：跨归属并发插入时守卫未更新、复查为空 → 注册冲突
+        String actualId = jdbc.query(
+                "SELECT id FROM meta_entity WHERE name = ? AND plugin_id = ?",
+                (rs, n) -> rs.getString(1), entityName, pluginId).stream().findFirst()
+                .orElseThrow(() -> new org.springframework.dao.DuplicateKeyException(
+                        "实体名已被其他归属占用: " + entityName));
         jdbc.update("DELETE FROM meta_field WHERE entity_id = ?", actualId);
         int position = 0;
         for (FieldSpec field : fields) {
@@ -177,6 +190,19 @@ public class JdbcLifecycleRepository implements LifecycleRepository {
     }
 
     @Override
+    public void upsertViewForEntity(String entityName, String viewType, String viewName,
+                                    String columnsJson, String filtersJson) {
+        jdbc.update("INSERT INTO meta_view (id, entity_id, view_type, name, columns, filters)"
+                + " SELECT ?, e.id, ?, ?, ?::jsonb, ?::jsonb FROM meta_entity e"
+                + " WHERE e.name = ?"
+                + " ON CONFLICT (entity_id, view_type) DO UPDATE SET name = EXCLUDED.name,"
+                + " columns = EXCLUDED.columns, filters = EXCLUDED.filters,"
+                + " updated_at = now()",
+                "mv-" + UUID.randomUUID(), viewType, viewName,
+                orEmptyArray(columnsJson), orEmptyArray(filtersJson), entityName);
+    }
+
+    @Override
     public int deactivateEntity(String pluginId) {
         return jdbc.update("UPDATE meta_entity SET status = 'disabled', updated_at = now()"
                 + " WHERE plugin_id = ?", pluginId);
@@ -196,6 +222,11 @@ public class JdbcLifecycleRepository implements LifecycleRepository {
 
     private static String orEmpty(String json) {
         return json == null ? "{}" : json;
+    }
+
+    /** 视图列/过滤缺省为空数组（meta_view 契约：columns/filters 为数组）。 */
+    private static String orEmptyArray(String json) {
+        return json == null ? "[]" : json;
     }
 
     private ActivationRecord mapActivation(ResultSet rs, int rowNum) throws SQLException {

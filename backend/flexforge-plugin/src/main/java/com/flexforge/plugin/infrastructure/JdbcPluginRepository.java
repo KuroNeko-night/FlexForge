@@ -59,6 +59,21 @@ public class JdbcPluginRepository implements PluginPackageRepository {
     }
 
     @Override
+    public List<PluginPackageRepository.InstanceEntry> listInstances() {
+        return jdbc.query("SELECT plugin_id, name, status FROM plugin_instance ORDER BY plugin_id",
+                (rs, n) -> new PluginPackageRepository.InstanceEntry(rs.getString(1),
+                        rs.getString(2), rs.getString(3)));
+    }
+
+    @Override
+    public List<PluginPackageRepository.VersionEntry> versionSummariesOf(String pluginId) {
+        return jdbc.query("SELECT id, version, created_at FROM plugin_version"
+                        + " WHERE plugin_id = ? ORDER BY created_at",
+                (rs, n) -> new PluginPackageRepository.VersionEntry(rs.getString(1),
+                        rs.getString(2), rs.getTimestamp(3).toInstant()), pluginId);
+    }
+
+    @Override
     @Transactional
     public PluginVersionRecord storeVersion(String pluginName, PluginVersionRecord version,
                                             List<DependencySpec> dependencies) {

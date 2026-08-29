@@ -16,6 +16,7 @@ import {
   runFrontendGates,
 } from './lib/gates.mjs';
 import { checkRgov03 } from './lib/rgov-extension-points.mjs';
+import { checkRgov09 } from './lib/rgov-skeleton-purity.mjs';
 import { checkLintThresholds } from './lib/rgov-thresholds.mjs';
 import { buildStatusJson, readStatusSnapshot } from './lib/status.mjs';
 
@@ -199,6 +200,6 @@ if (!frontendOk || (!backend.skipped && !backend.ok)) {
 } else {
   record('GATE-SUMMARY', 'pass', ['前端与后端全部检查通过']);
 }
+checkRgov09(files, record);
 record('R-GOV-07', 'skip', ['契约 fixture 回放：P07/P10']);
-record('R-GOV-09', 'skip', ['骨架纯净性：P09']);
 printSummary();

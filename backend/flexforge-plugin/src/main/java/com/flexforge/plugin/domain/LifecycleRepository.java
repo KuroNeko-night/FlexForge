@@ -31,6 +31,9 @@ public interface LifecycleRepository {
     /** 全平台 ACTIVE 激活（应用重启恢复）。 */
     List<ActivationRecord> findAllActive();
 
+    /** 某插件全部激活记录（inventory 诊断用，新→旧）。 */
+    List<ActivationRecord> activationsOf(String pluginId);
+
     int insertRegistration(String activationId, String extensionType, String registrationKey,
                            String payloadJson);
 
@@ -57,6 +60,10 @@ public interface LifecycleRepository {
 
     /** 实体名当前归属插件（空=未注册）；跨插件同名在服务层拒绝（防静默覆盖）。 */
     Optional<String> entityOwnerOf(String entityName);
+
+    /** 视图注册：按实体名归属 upsert meta_view（list/form 各一，重激活覆盖）。 */
+    void upsertViewForEntity(String entityName, String viewType, String viewName,
+                             String columnsJson, String filtersJson);
 
     int deactivateEntity(String pluginId);
 
