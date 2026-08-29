@@ -140,12 +140,23 @@ AI 不直接获得数据库管理员权限、服务器命令权限或生产发�
 
 ## 8. 关键接口（草案）
 
+> 2026-08-29 注释审计同步：按控制器实际实现补齐缺失端点并修正路径参数名（activate 按 versionId、stop 按 activationId）。
+
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
 | `POST` | `/api/v1/auth/login` | 登录并返回令牌 |
+| `POST` | `/api/v1/auth/logout` | 登出（写审计） |
+| `GET` | `/api/v1/auth/me` | 当前用户信息（刷新后前端会话恢复） |
+| `GET` | `/api/v1/menus` | 当前用户菜单（内置菜单 + 插件 navigation 贡献按角色过滤，P03） |
 | `GET` | `/api/v1/meta/entities` | 查询实体元数据 |
+| `GET` | `/api/v1/meta/entities/{id}` | 实体定义详情 |
 | `GET` | `/api/v1/meta/entities/by-name/{name}` | 按名称取实体定义（动态页面元数据入口，P06） |
-| `POST` | `/api/v1/meta/entities` | 创建实体 |
+| `POST` | `/api/v1/meta/entities` | 创建实体（开发者） |
+| `PATCH` | `/api/v1/meta/entities/{id}` | 更新实体（非 draft 语义变更按 breaking 规则拒绝，P04） |
+| `POST` | `/api/v1/meta/entities/{id}/fields` | 新增字段（additive） |
+| `PATCH` | `/api/v1/meta/fields/{id}` | 更新字段（breaking/additive 规则，P04） |
+| `POST` | `/api/v1/meta/entities/{id}/views` | 新增视图 |
+| `PATCH` | `/api/v1/meta/views/{id}` | 更新视图 |
 | `GET` | `/api/v1/data/{entity}` | 查询动态实体数据（分页/白名单排序/白名单过滤） |
 | `POST` | `/api/v1/data/{entity}` | 新增动态记录 |
 | `GET` | `/api/v1/data/{entity}/{id}` | 记录详情 |
@@ -155,11 +166,19 @@ AI 不直接获得数据库管理员权限、服务器命令权限或生产发�
 | `POST` | `/api/v1/plugins/import` | 导入插件包（幂等，P07 落地） |
 | `GET` | `/api/v1/plugins/activations/{activationId}/registrations` | 激活注册清单（旧 activationId 返回 `stale_activation`，P08 落地） |
 | `GET` | `/api/v1/plugins/activations/{activationId}/assets/{path}` | 插件静态资产（theme-asset 消费面，登录可读；path 为完整存储键含 `assets/` 前缀；CSP/attachment/nosniff 响应头纵深，P08 落地） |
-| `POST` | `/api/v1/plugins/install` | 安装插件（P07 起由 import 承担） |
-| `POST` | `/api/v1/plugins/{id}/activate` | 启用指定插件版本 |
-| `POST` | `/api/v1/plugins/{id}/stop` | 停用当前激活 |
+| `POST` | `/api/v1/plugins/{versionId}/activate` | 激活指定版本（同插件同刻唯一占用，迁移+注册单事务） |
+| `POST` | `/api/v1/plugins/{activationId}/stop` | 停用指定激活（注册与实体撤销） |
+| `POST` | `/api/v1/plugins/{newVersionId}/upgrade` | 升级（停旧→激活新；失败补偿回旧版本保持 current 可用，P11 迭代回路） |
+| `DELETE` | `/api/v1/plugins/{pluginId}` | 卸载（清理注册与实体；审计保留） |
 | `GET` | `/api/v1/plugins/inventory` | 查看插件版本、激活和失败诊断 |
+| `POST` | `/api/v1/system/users` | 创建用户（ADMIN，事务内绑定角色，审计） |
+| `GET` | `/api/v1/system/users` | 用户分页查询（ADMIN） |
+| `PUT` | `/api/v1/system/users/{id}/roles` | 变更用户角色（ADMIN，审计） |
+| `GET` | `/api/v1/system/audit-events` | 审计事件查询（ADMIN，时间窗/actor/action/objectId 过滤） |
 | `POST` | `/api/v1/issues` | 创建 Issue |
+| `GET` | `/api/v1/issues` | Issue 分页列表 |
+| `GET` | `/api/v1/issues/{id}` | Issue 详情 |
+| `GET` | `/api/v1/issues/{id}/transitions` | 当前状态可迁移列表 |
 | `POST` | `/api/v1/issues/{id}/clarify` | AI 澄清需求 |
 | `POST` | `/api/v1/issues/{id}/generate` | 生成插件骨架 |
 | `POST` | `/api/v1/issues/{id}/transition` | 执行合法状态迁移（开发者；批准门=最新规格 valid） |
