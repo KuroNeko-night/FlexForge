@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "example.inventory",
+  "name": "库存示例",
+  "version": "0.1.0",
+  "capabilityLevel": 1,
+  "minPlatformVersion": "0.1.0",
+  "dependencies": [],
+  "permissions": ["inventory.read", "inventory.write"],
+  "contributions": {
+    "navigation": ["example.inventory.items"],
+    "renderers": ["text.default", "integer.default", "enum.default"]
+  },
+  "resources": {
+    "entities": ["metadata/entities/inventory-item.json"],
+    "views": [
+      "metadata/views/inventory-item.list.json",
+      "metadata/views/inventory-item.form.json"
+    ],
+    "migrations": [
+      "migrations/V001__inventory_item.sql",
+      "migrations/V002__inventory_seed.sql"
+    ]
+  }
+}
