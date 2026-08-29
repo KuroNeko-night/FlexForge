@@ -3,14 +3,14 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P08
-CURRENT_STAGE_NAME: PluginRuntime 生命周期
-STAGE_STATUS: in_progress
-PROJECT_PROGRESS: 30%
+CURRENT_STAGE_ID: P09
+CURRENT_STAGE_NAME: 库存示例插件
+STAGE_STATUS: ready_to_start
+PROJECT_PROGRESS: 35%
 LAST_UPDATED: 2026-08-29
 OWNER: project-maintainer
-NEXT_ACTION: PR #23 复审修复已推送，待 CI 绿后合并 → P08 出口复核（验收逐项核验后置 completed、P09 ready_to_start）；example-inventory 归 P09（docs/09 裁定）；Issue #22 P3 按触发条件排期
-EXIT_GATE: P07 出口证据：①合法 Level 1 导入+预览（PluginApiTest.validLevel1：manifest/审计行/preview 断言）②缺失字段/越权 renderer/路径穿越/脚本资源拒绝（manifest 8 例 + zip-slip/控制字符/svg script/js 扩展名负例）③同内容幂等（hash 命中 isNew=false 同 versionId，行数断言）④依赖缺失指名插件与范围（dependency_missing 消息断言）⑤未知 schemaVersion→unsupported_schema_version（API 级）+登记册外贡献键/renderer 拒绝⑥压缩/解压/条目上限（1000=docs/13 §3.5-2）+zip-slip+非 V*.sql+临时目录清理（快照断言）⑦越界平台表拒绝（词法状态机+反斜杠禁令，字符串旁路负例）+同版本异内容拒绝（串行 400+并发复查同口径）；迁移 checksum 导入期计算（script_checksums）；RB-PLUGIN-VALID 八要素覆盖；两轮子代理审查（4P1+4P2+8P3+复审 N1-N7 全处置）后合并 9bc08f8，plugin 34 + app 83（后端 183）tests，main CI success、门禁 19 pass / 2 skip / 0 fail；遗留四项 P3 记 Issue #20（另：看板 P07 行启动时漏翻 in_progress，与 P06 同类过程偏差，本轮直接修正为 completed）
+NEXT_ACTION: P09 启动（分支 feat/p09-example-inventory）：plugins/example-inventory 声明式包（plugin.json+实体/列表/表单视图+迁移+种子数据+安装说明+演示脚本覆盖 安装→停用→卸载；与第三方同权过 P07 全量校验，不写骨架硬编码）→ 干净库安装出库存菜单/普通用户 CRUD/非负规则/停用卸载无残留（NFR-SKEL-01）→ RB-PLUGIN-LIFE 全量回归 → 子代理审查 → PR；Issue #22 P3 第 1/2 项（并发唯一索引/TOCTOU 守卫）P09 前处理；Issue #20 第 2 项随 P09 inventory 接口设计收口
+EXIT_GATE: P08 出口证据（验收六项逐项核验）：①激活后贡献可用/停用全撤销——validPluginActivationRegistersEverything（注册≥3/实体 enabled/字段 2/迁移 1/表存在/菜单可见）+ stoppedActivationRejectedAsStale（注册清零/实体 disabled/菜单撤销/stop 幂等）②缺依赖/迁移失败/注册冲突记失败阶段并清残留——missingDependency…WithoutResidue（FAILED@DEPENDENCY_CHECK 残留 0，补依赖后可恢复）/migrationFailureRollsBackEverything（FAILED@MIGRATION 无注册残留）/entityOwnershipConflict+platformEntityConflict（FAILED@REGISTER 原实体完整不覆盖）③同插件同刻唯一 STARTING/ACTIVE——concurrentActivationRejected+升级后 ACTIVE=1 断言（DB 级 partial unique index 记 Issue #22-1）④旧 activationId→stale_activation——停用/升级后 409（registrations 与 assets serve 双消费方）⑤升级失败 current 可用——upgradeFailureRestoresCurrentVersion（补偿重激活旧版，唯一 ACTIVE=v1，非原子窗口为已记录已知限制）⑥迁移失败整体回滚+重复安装跳过——迁移/注册/ACTIVE 单事务（TransactionTemplate，ADR-0005），失败例无注册残留（plugin_migration 随事务回滚，显式断言记 Issue #22-8）/repeatedActivationIsIdempotent（checksum 命中跳过同 activationId）。实施内容：V007 三表+V006 plugin_migration；状态机 STARTING→ACTIVE→STOPPING→STOPPED/FAILED（docs/09 合并列表中 DEFINED/VALIDATED/INSTALLED 由导入期 plugin_instance/version 状态承载，分布偏差如实记录）；ActivationContext 以 ActivationRecord+注册编排（activationId 绑定撤销/disposer）语义落地。两轮子代理审查（PR #21：6P1+复审 P2 全修；PR #23：1P2+7P3 当场修四项、余记 Issue #22）全处置；theme-asset 注册+资产存储/serve 收口 Issue #20 第 3/4 项（docs/13 §3.5-4 登记）；后端 218 tests 全绿、门禁 19 pass / 2 skip / 0 fail、main CI 全绿（PR #21 da455d2 + PR #23 673dfa9）
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -26,8 +26,8 @@ BLOCKERS: none
 | P05 | 动态数据运行时 | completed | 动态实体完成 CRUD 和字段校验 |
 | P06 | 前端动态渲染 | completed | 无业务页面代码即可显示动态实体 |
 | P07 | 插件包校验与版本存储 | completed | 合法包可预览，非法包被拒绝 |
-| P08 | PluginRuntime 生命周期 | in_progress | 激活、停用、回滚、stale 拒绝通过 |
-| P09 | 库存示例插件 | pending | 库存插件可安装并完成演示 |
+| P08 | PluginRuntime 生命周期 | completed | 激活、停用、回滚、stale 拒绝通过 |
+| P09 | 库存示例插件 | ready_to_start | 库存插件可安装并完成演示 |
 | P10 | Issue 与规格 Schema | pending | Issue 状态机和规格版本可审计 |
 | P11 | AI 适配器与生成器 | pending | 在线/fixture/手工三条路径可用 |
 | P12 | Agent Issue 端到端闭环 | pending | 干净数据库连续三次完成主流程 |
@@ -118,3 +118,4 @@ BLOCKERS: none
 | 2026-08-29 | P08 | PR #21 修复后独立子代理复审（全新实例，缺陷优先）：六项 P1 五项完全修复、P1-4 部分修复——残余为新发现 P2：平台侧 meta_entity（元数据管理创建）plugin_id 为 NULL，entityOwnerOf RowMapper 返回 null 进 Stream 抛 NPE → 500 且 stage 误标 DEPENDENCY_CHECK。复审结论"可合并，建议合并前顺手修 P2"。当场修复：NULL 归属映射哨兵 <platform>（非法插件 ID 字符集）按跨归属拒绝，错误消息区分平台/插件归属；新增 platformEntityConflictIsRejectedWithoutServerError 用例（developer 建平台实体→插件同名激活→400 registration_failed@REGISTER、平台归属未被夺走、无 500）。复审 P3 十项记 Issue #22 排期（并发唯一索引/TOCTOU 守卫/STOPPING 卡死/plugin_instance 列偏差/权限注册语义/恢复口径/反向依赖/§5-3 专属用例/断言收紧/多实体 route 键序；首轮 P2/P3 已在修复轮处置或被本清单取代）。后端 210 tests 全绿、门禁 19 pass / 2 skip / 0 fail；合并 PR #21（da455d2，main CI 全绿） | PR #21 评论、Issue #22 |
 | 2026-08-29 | P08 | 迭代 2 完成（分支 feat/p08-plugin-assets）：theme-asset 插件侧注册 + 资产存储/serve（Issue #20 第 3/4 项收口）。①V008 plugin_version.asset_payloads JSONB（导入期按 themeAssets 声明存 base64，contentHash 覆盖）②manifest 扩展 contributions.themeAssets 对象数组（key/kind∈background\|icon\|animation/path/scope，additive 不动 schemaVersion；ManifestValidator 校验+key 去重；登记册 §2.2 契约）③assets/ 逐文件声明收紧（双向核对：包内资产必被声明、声明资产必在包内）④激活注册 extension.theme-asset（plugin_registration 载荷 + 内存 ThemeAssetContribution 契约类型，重启恢复同路径）⑤serve 端点 GET /plugins/activations/{id}/assets/{*path}：登录可读、stale 校验（409）、存储键精确匹配无文件系统面、CSP default-src 'none' + attachment + nosniff 三重纵深（svg 事件属性）；requireCurrentActivation 改返激活记录。测试 PluginAssetApiTest 6 例（正例全链路+安全头+字节一致/未声明资产拒/声明缺失拒/kind 非法拒/未知与穿越路径 404/stale+401）；PluginApiTest 包构造器补 themeAssets 声明适配收紧。后端 216 tests 全绿、门禁 19/2/0 | Issue #20 第 3/4 项、docs/03 §8、docs/08 §4、docs/13 §3.5-4、登记册变更记录 |
 | 2026-08-29 | P08 | PR #23 独立子代理交叉审查：无 P0/P1，1 P2 + 7 P3，结论"可合并"。P2：themeAssets 去重用 record 四元组 equals——同 key 异 path 放行，激活时 DB 注册 ON CONFLICT 静默丢第二条而内存两条全注册（DB/内存不一致）。当场修复并连带三个一行级 P3：①去重改 key 维度 Set+同 key 异 path 负例②kind 非法错误码统一 invalid_manifest（原走 IllegalArgumentException→validation_error）③scope 非文本值显式拒绝（原 isTextual 前置条件可绕过）+ASSET_PATH_PATTERN 收紧（段内禁点，杜绝 ../与空段）④base64 解码失败改抛 IllegalStateException（500，存储损坏不误报客户端 400）⑤补升级后旧 activationId 资产 409 用例（升级包只声明新增迁移的口径在该用例固化）。遗留 P3（两处 themeAssets 解析收敛共享、%2e%2e/%00 穿越负例、stop 后内存 THEME_ASSET 撤销断言、serve URL 形态文档已补）追加至 Issue #22。后端 218 tests 全绿、门禁 19/2/0 | PR #23 评论、Issue #22 |
+| 2026-08-29 | P08 | **P08 出口复核通过，置 completed**（P09 置 ready_to_start，进度 35%）。验收六项逐项核验（证据见 EXIT_GATE）：贡献注册与撤销、三类失败阶段+无残留、唯一占用、stale 409 双消费方、升级失败补偿 current 可用、迁移单事务回滚+幂等跳过。实施内容四项交付（V007 三表/状态机/ActivationContext 语义/迁移事务+stale）；过程偏差如实记录：①docs/09 状态合并列表中 DEFINED/VALIDATED/INSTALLED 分布在导入期（plugin_instance/version），生命周期侧五状态，未单列文档修订（P09 复查 docs/07-09 状态清单时统一）②ActivationContext 未落独立类，以 ActivationRecord+注册编排承载（docs/07 §2 内存对象口径一致）③plugin_migration 无残留的显式断言未单列（事务回滚保证，断言补齐记 Issue #22-8）④example-inventory 曾列入 P08 启动条目，按 docs/09 权威归 P09。theme-asset 注册+资产 serve 收口 Issue #20 第 3/4 项；两轮独立子代理审查全处置；后端 218 tests、门禁 19/2/0、main CI 全绿 | docs/09 P08 验收、PR #21/#23、Issue #20/#22、RB-PLUGIN-LIFE |
