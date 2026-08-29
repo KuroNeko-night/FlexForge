@@ -41,6 +41,8 @@ FlexForge/
 │   ├── flexforge-meta/             元数据写模型：FieldTypeRegistry 单点+MetaRegistry 缓存/版本+实体/字段/视图配置 API（service.meta，P04）
 │   ├── flexforge-data/             动态数据访问：data_record 单 JSONB 存储+实体级记录校验+白名单 SQL 构造+动态 CRUD API（service.data-access，P05）
 │   ├── flexforge-plugin/            插件包校验+版本存储+生命周期：P07 导入链路；P08 生命周期（激活/停用/升级/卸载/stale/重启恢复+MigrationScriptRunner+资产 serve）
+│   ├── flexforge-issue/             Issue/评论/标签/状态机/版本化规格（P10；docs/03 §7 迁移矩阵+规格门）
+│   ├── flexforge-ai/                规格 Schema（RequirementSchema v1）+插件资源预览派生（P10；P11 扩展适配器/生成器）
 │   └── flexforge-app/              启动、配置、健康检查；web/ 统一错误装配 + requestId 过滤器 + logback 脱敏基线（P02 迭代 2）；Testcontainers 冒烟 + ArchUnit（5 规则）+ R-GOV-06 fixture 测试
 ├── frontend/                       Vue 3 + TS + Vite（P01 骨架 + P06 动态渲染）
 │   ├── package.json / package-lock.json   +vue-router；dev 依赖 +@vue/test-utils/happy-dom/globals（P06）
@@ -64,6 +66,7 @@ FlexForge/
 │   ├── migrations/V007__plugin_lifecycle.sql plugin_activation/registration/audit_event + plugin_version 载荷列（P08）
 │   ├── migrations/V008__plugin_asset_payloads.sql 资产载荷列（asset_payloads，P08）
 │   ├── migrations/V009__plugin_activation_occupancy.sql 同插件唯一占用部分唯一索引（P09 前置）
+│   ├── migrations/V010__issue_tables.sql issue/标签/评论/迁移记录/requirement_spec 版本化规格（P10）
 │   └── init/                       Compose 首次初始化：应用专用账号
 ├── plugins/
 │   ├── example-inventory/          库存示例 Level 1 包（P09：plugin.json+实体+两视图+两迁移；纯包目录无 README）
@@ -222,3 +225,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-29 | §1 树更新（补记）：V007 plugin_activation/registration/audit_event + plugin_version 载荷列；flexforge-plugin 生命周期四层（ActivationStatus 状态机/LifecycleRepository 端口/PluginLifecycleService+MigrationScriptRunner+PluginContributionFactory/PluginLifecycleController）；common +StaleActivationException；app 测试 +PluginPackageTestSupport/PluginActivationApiTest | P08 迭代 1：PluginRuntime 生命周期（PR #21，RB-PLUGIN-LIFE） |
 | 2026-08-29 | §1 树更新：V008 plugin_version.asset_payloads；flexforge-plugin +ThemeAssetSpec/PluginAssetService/PluginRestoreRunner；common +ThemeAssetContribution；app 测试 +PluginAssetApiTest | P08 迭代 2：theme-asset 注册+资产存储/serve 端点（Issue #20 第 3/4 项） |
 | 2026-08-29 | §1 树更新：V009 占用唯一索引；plugins/ 目录（example-inventory 包+包外 README）；flexforge-plugin +PluginInventoryService/视图注册端口；app 测试 +ExampleInventoryPluginTest；scripts +demo-example-inventory.sh +lib/rgov-skeleton-purity.mjs（R-GOV-09 激活） | P09：库存示例插件（FR-DEMO-01..03、NFR-SKEL-01、Issue #22 第 1/2 项守卫） |
+| 2026-08-29 | §1 树更新：flexforge-issue/flexforge-ai 新模块；V010 issue_* 五表；ErrorCodes +invalid_transition；app 测试 +IssueApiTest | P10：Issue 与规格 Schema（RB-ISSUE） |

@@ -19,6 +19,8 @@
     <module>flexforge-meta</module>
     <module>flexforge-data</module>
     <module>flexforge-plugin</module>
+    <module>flexforge-issue</module>
+    <module>flexforge-ai</module>
     <module>flexforge-app</module>
   </modules>
 
@@ -85,6 +87,16 @@
       <dependency>
         <groupId>com.flexforge</groupId>
         <artifactId>flexforge-plugin</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.flexforge</groupId>
+        <artifactId>flexforge-issue</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.flexforge</groupId>
+        <artifactId>flexforge-ai</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

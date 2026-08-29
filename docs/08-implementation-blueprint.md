@@ -207,7 +207,9 @@ extension.theme-asset       背景图/图标/动画等美术资产更换（propo
 }
 ```
 
-统一错误码至少包括：`invalid_manifest`、`unsupported_schema_version`（P07 schemaVersion 分派层）、`dependency_missing`、`migration_failed`、`registration_failed`、`activation_not_found`、`stale_activation`、`permission_denied`、`validation_error`、`not_found`、`internal_error`、`unauthorized`（后四类为 P02 统一错误装配与 P03 认证引入，代码见 `flexforge-common` `ErrorCodes`）。
+统一错误码至少包括：`invalid_manifest`、`unsupported_schema_version`（P07 schemaVersion 分派层）、`dependency_missing`、`migration_failed`、`registration_failed`、`activation_not_found`、`stale_activation`、`permission_denied`、`validation_error`、`not_found`、`internal_error`、`unauthorized`（后四类为 P02 统一错误装配与 P03 认证引入，代码见 `flexforge-common` `ErrorCodes`）、`invalid_transition`（P10 Issue 状态机：非法迁移/缺原因/缺合法规格批准门）。`
+
+RequirementSpec 规格契约（P10，唯一事实源 `flexforge-ai` `RequirementSchema`，当前 v1）：`schemaVersion=1` + `summary` + `entities[]`（snake 名/displayName/`fields[]`：fieldType 六类白名单 + validation 复用 FieldTypeRegistry 规则键）+ 可选 `views[]`（复用 ViewRules：实体/列白名单）+ 可选 `permissions[]`/`rules[]`（name+description）+ 必填 `acceptance[]`（验收标准非空）。
 
 ## 8. Definition of Done
 

@@ -29,6 +29,8 @@ public final class ErrorCodes {
 
     /** 使用过期激活身份的请求被拒绝。 */
     public static final String STALE_ACTIVATION = "stale_activation";
+    /** P10：Issue 非法状态迁移/缺原因/缺合法规格批准门（docs/08 §7 只增）。 */
+    public static final String INVALID_TRANSITION = "invalid_transition";
 
     /** 权限不足。 */
     public static final String PERMISSION_DENIED = "permission_denied";
