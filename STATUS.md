@@ -5,11 +5,11 @@
 <!-- FLEXFORGE_STATUS:BEGIN -->
 CURRENT_STAGE_ID: P12
 CURRENT_STAGE_NAME: Agent Issue 端到端闭环
-STAGE_STATUS: ready_to_start
+STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 50%
 LAST_UPDATED: 2026-08-29
 OWNER: project-maintainer
-NEXT_ACTION: P12 启动（分支 feat/p12-agent-e2e，docs/09 P12 + RB-E2E 五场景）：端到端冒烟脚本/测试（动态实体 CRUD、插件生命周期、Issue→规格→骨架→审核→安装，干净数据库连续三次）→ 演示准备（预置账号/数据/脚本演练）→ 子代理审查 → PR → 出口
+NEXT_ACTION: P12 实现（分支 feat/p12-agent-e2e）：RB-E2E 端到端冒烟（场景 A/B/B2/C/D，干净库 DROP+重迁移连续三次，计时留档）→ 插件页（inventory 版本/激活尝试/失败诊断）→ 演示脚本与预置账号 → 子代理审查 → PR → 出口
 EXIT_GATE: P11 出口证据（验收七项，复审者核对+修复后全部成立）：①模型可用生成合法规格——fixture 全链（clarify×2→valid 规格→批准→生成→IN_TESTING，IssueAiApiTest）+在线路径经 HttpModelPort 本地 stub 实测（200 解析；接口确认前 fixture 优先为 docs/09 P11 原文口径，真机接入记 Issue #22-31）②模型不可用手工兜底——IssueAiFailureApiTest（503 后 PUT 手工规格继续流程）+ manualSpec 用例③非法输出不产可安装包——ClarifyEngineTest 非法 JSON/越权 fieldType 重试与上限 + Generator 只派生内置 renderer +非法规格拒绝生成④AI 无 DB/shell/FS/发布权限——编排纯函数、输出经 Schema+P07 标准导入链（复审逐点核验）⑤切换实现不改主流程——ModelPort 注入+条件装配（fixture 默认/http 显式），compose/.env 配置链贯通⑥超时/限流/离线可诊断、密钥不入库日志——model_unavailable 503/model_output_invalid 400 API 级断言；密钥仅环境变量、V011 无密钥/全文/请求头⑦结构化记录落库+可导出——V011 七字段 + IssueAiApiTest 断言 +export-thesis-data.mjs 四数据面（compose 服务名修正后可用）。一轮子代理审查（2 P1+6 P2 全修：导出脚本服务名/生成版本死锁（迭代回路 0.1.1→0.1.2 回归）+注入围栏/JSON 安全 manifest/日志语义/配置链/非 JSON 分类/API 级失败证据；P3 记 Issue #22 #23-31）；后端 264 tests 全绿、门禁 20/1/0、main CI 全绿（PR #26）
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -30,7 +30,7 @@ BLOCKERS: none
 | P09 | 库存示例插件 | completed | 库存插件可安装并完成演示 |
 | P10 | Issue 与规格 Schema | completed | Issue 状态机和规格版本可审计 |
 | P11 | AI 适配器与生成器 | completed | 在线/fixture/手工三条路径可用 |
-| P12 | Agent Issue 端到端闭环 | ready_to_start | 干净数据库连续三次完成主流程 |
+| P12 | Agent Issue 端到端闭环 | in_progress | 干净数据库连续三次完成主流程 |
 | P13 | 加分项与体验优化 | optional | 不影响主线稳定性 |
 | P14 | 质量收敛与答辩交付 | pending | 全量验收通过，进入 release candidate |
 
