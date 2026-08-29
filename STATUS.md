@@ -3,13 +3,13 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P12
-CURRENT_STAGE_NAME: Agent Issue 端到端闭环
-STAGE_STATUS: completed
+CURRENT_STAGE_ID: P14
+CURRENT_STAGE_NAME: 质量收敛与答辩交付
+STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 55%
 LAST_UPDATED: 2026-08-29
 OWNER: project-maintainer
-NEXT_ACTION: P14 启动（质量收敛与答辩交付：L4 全量回归、发布候选、答辩物料固化 docs/00 §5 十分钟流程含离线兜底；用户要求验收阶段统一重建容器并 live 演练 demo-e2e.sh）
+NEXT_ACTION: P14 迭代 1（选择性清障）：门禁加 bash -n（#22-11）→ docs/07 模型/恢复口径对齐（#22-4/6）→ plugin_instance.status 实装（#22 评论-16）→ 安全负例（编码穿越/终态 clarify 门）→ docs/00 已知限制章节；迭代 2：L4 干净环境重建+live 演练×3+全量回归证据+答辩物料+release_candidate
 EXIT_GATE: P12 出口证据（docs/09 P12 验收四项，逐项实证）：①干净库连续三次完整演示+耗时记录——AgentIssueE2eTest 同上下文 DROP SCHEMA→Flyway 重迁移→重种子三轮全绿（total 748/448/414ms），逐环节计时行 RB-E2E,iter,stage,ms 入 CI 日志（docs/12 §"端到端演示各环节耗时"数据源；对照 docs/00 §5 十分钟目标余量充足）②三类失败回到可操作状态——AI 失败→503+手工规格兜底（IssueAiFailureApiTest，P11）；包验证失败→明确错误码（PluginApiTest，P07）；安装失败→B2 dependency_missing HTTP400+activation FAILED/DEPENDENCY_CHECK+零残留+卸载清理可重试（E2eDemoScript B2 与 demo-e2e.sh 双断言）③Issue↔插件版本↔activation↔审计互追——assertCrossTraceability：ai_task_log 3 条（clarify×2+generate）/issue_transition 链/审计 issue.generate+plugin.activate(×3 口径核实：失败激活不写审计)/inventory 聚合含 gen.* 与版本 0.1.1；pluginId=gen.i{issueId} 结构性关联④人工审核前不启用——assertGenerateRequiresApproval：SUBMITTED 下 generate 4xx 且 gen.% 插件实例为 0；实施内容全覆盖（全链含 TESTED→DONE 收口/状态机含 CLOSED 取消与 DEV_FAILED 恢复（P10/P11 回归）/demo-e2e.sh+fixture/PluginsView 版本+激活尝试+失败诊断）。一轮子代理审查 1 P0+4 P3：P0（demo 脚本 B2 断言反转，live 必崩）当场修复并升级为 HTTP+错误码双断言，P3 三项顺手修（计时改 EPOCHREALTIME 免子进程开销/口令等价注明/样板下沉 400→377 行）+两项记 Issue #22 #11-12；DROP SCHEMA 跨轮内存状态、计数口径、前端契约等 8 项假设逐项验证无缺陷。后端全量 verify BUILD SUCCESS（app 125 tests/总 265+）、前端 53 tests、门禁 20/1/0、PR #27 CI 六项全绿后合并（92f6ef3）
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -32,7 +32,7 @@ BLOCKERS: none
 | P11 | AI 适配器与生成器 | completed | 在线/fixture/手工三条路径可用 |
 | P12 | Agent Issue 端到端闭环 | completed | 干净数据库连续三次完成主流程（RB-E2E 三轮全绿，见 EXIT_GATE） |
 | P13 | 加分项与体验优化 | optional | 不影响主线稳定性 |
-| P14 | 质量收敛与答辩交付 | ready_to_start | 全量验收通过，进入 release candidate |
+| P14 | 质量收敛与答辩交付 | in_progress | 全量验收通过，进入 release candidate |
 
 ## 更新规则
 
