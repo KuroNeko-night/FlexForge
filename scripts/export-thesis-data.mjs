@@ -29,7 +29,7 @@ const queries = [
 for (const [file, sql] of queries) {
   const csv = execFileSync(
     'docker',
-    ['compose', 'exec', '-T', 'postgres', 'psql', '-U', 'flexforge', '-d', 'flexforge',
+    ['compose', 'exec', '-T', 'db', 'psql', '-U', 'flexforge', '-d', 'flexforge',
       '-c', `\\copy (${sql}) TO STDOUT WITH CSV HEADER`],
     { cwd: ROOT, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 },
   );

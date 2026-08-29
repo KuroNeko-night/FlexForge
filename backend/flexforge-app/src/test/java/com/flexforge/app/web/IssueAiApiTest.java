@@ -37,7 +37,7 @@ class IssueAiApiTest {
 
     private static final String MANUAL_SPEC = """
             {"schemaVersion":1,"summary":"手工规格","entities":[
-            {"name":"manual_item","displayName":"手工项","fields":[
+            {"name":"manualgen_item","displayName":"手工项","fields":[
             {"name":"name","displayName":"名称","fieldType":"text","required":true}]}],
             "acceptance":["可查询"]}
             """;
@@ -130,13 +130,13 @@ class IssueAiApiTest {
     private void assertGeneratedPluginUsable(String pluginId) throws Exception {
         assertThat(pluginId).startsWith("gen.");
         // 生成的插件同权可用：菜单可见 + 普通用户 CRUD 生成实体
-        assertThat(menuKeys(mockMvc, userBearer)).contains(pluginId + ".manual_item");
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/data/manual_item")
+        assertThat(menuKeys(mockMvc, userBearer)).contains(pluginId + ".manualgen_item");
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/data/manualgen_item")
                         .header("Authorization", userBearer)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"生成记录\"}"))
                 .andExpect(status().isOk());
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/data/manual_item?pageSize=10")
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/data/manualgen_item?pageSize=10")
                         .header("Authorization", userBearer))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items.length()").value(1));
@@ -253,6 +253,66 @@ class IssueAiApiTest {
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/issues/" + issueId + "/generate")
                         .header("Authorization", userBearer))
                 .andExpect(status().isForbidden());
+    }
+
+    // ===== 迭代回路（复审 P1-2）：反馈→修改规格→再生成，版本随 revision 递增不撞不可变 =====
+    @Test
+    void regenerateAfterSpecRevisionProducesNewVersion() throws Exception {
+        String issueId = createIssue("迭代", "二次生成");
+        saveManualSpec(issueId, iterSpec("iter_item"));
+        approve(issueId);
+        String first = mockMvc.perform(
+                        MockMvcRequestBuilders.post("/api/v1/issues/" + issueId + "/generate")
+                                .header("Authorization", developerBearer))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat((String) com.jayway.jsonpath.JsonPath.read(first, "$.version"))
+                .isEqualTo("0.1.1");
+
+        // 反馈修复 → 回 APPROVED → 修改规格（新 revision）→ 再生成
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/issues/" + issueId + "/transition")
+                        .header("Authorization", developerBearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"to\":\"FEEDBACK\",\"reason\":\"字段不足\"}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/issues/" + issueId + "/transition")
+                        .header("Authorization", developerBearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"to\":\"APPROVED\"}"))
+                .andExpect(status().isOk());
+        saveManualSpec(issueId, iterSpec("iter_item2"));
+        String second = mockMvc.perform(
+                        MockMvcRequestBuilders.post("/api/v1/issues/" + issueId + "/generate")
+                                .header("Authorization", developerBearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.issue.status").value("IN_TESTING"))
+                .andReturn().getResponse().getContentAsString();
+        assertThat((String) com.jayway.jsonpath.JsonPath.read(second, "$.version"))
+                .isEqualTo("0.1.2");
+    }
+
+    private static String iterSpec(String entityName) {
+        return "{\"schemaVersion\":1,\"summary\":\"迭代规格\",\"entities\":["
+                + "{\"name\":\"" + entityName + "\",\"displayName\":\"迭代项\",\"fields\":["
+                + "{\"name\":\"name\",\"displayName\":\"名称\",\"fieldType\":\"text\"}]}],"
+                + "\"acceptance\":[\"可查询\"]}";
+    }
+
+    private void saveManualSpec(String issueId, String spec) throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/issues/" + issueId + "/spec")
+                        .header("Authorization", developerBearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(spec))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valid").value(true));
+    }
+
+    private void approve(String issueId) throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/issues/" + issueId + "/transition")
+                        .header("Authorization", developerBearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"to\":\"APPROVED\"}"))
+                .andExpect(status().isOk());
     }
 
     private String createIssue(String title, String description) throws Exception {

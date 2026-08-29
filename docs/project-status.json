@@ -6,7 +6,7 @@
   "status": "in_progress",
   "progressPercent": 45,
   "owner": "project-maintainer",
-  "nextAction": "P11 迭代 1 已完成，待子代理交叉审查合并后出口复核（验收七项）",
+  "nextAction": "PR #26 复审修复已推送，待 CI 绿后合并 → P11 出口复核（验收七项）→ P12 启动（Agent Issue 端到端闭环）",
   "exitGate": "P10 出口证据（验收四项，复审者逐项核对通过）：①Issue 只能合法迁移——IssueStatusTest 迁移矩阵（DONE/CLOSED 对全部目标封闭）+ IssueApiTest 全链/非法越级 + ck_issue_status DB 兜底 + 乐观锁 UPDATE WHERE status=from②规格缺字段不得批准——approvalRequiresValidLatestSpec 三段（无规格/invalid/valid），门=最新 revision valid③评论/迁移/规格版本审计——issue.comment/transition/spec.update 落 sys_audit_event + issue_transition 记操作者/原因/时间+ revision valid/错误快照留存④开发者预览插件资源——preview 无规格 404→有规格 200（plugin.json 骨架+实体/视图文件），USER 403。实施内容四项全交付（Issue/评论/标签/指派/状态机、RequirementSchema v1 版本化、实体/字段/视图/权限/规则/验收标准纳入、审核退回反馈关闭原因）；两新模块 flexforge-issue/flexforge-ai 落 docs/08 模块树；一轮子代理审查（1 P1+3 P2 全修：Dockerfile 模块遗漏/并发取号/写路径守卫/Identifiers 单点；P3 记 Issue #22 #18-22）；后端 243 tests 全绿、门禁 20 pass/1 skip/0 fail、main CI 全绿（PR #25）。过程记录：迭代回退路径为 docs/03 §7 本轮补记（主链未偏离 FR-ISSUE-02）；FR-ISSUE-04/06 作者编辑规格假设延后 P11 clarify 放开（STATUS 已标注）",
   "blockers": [],
   "stages": [

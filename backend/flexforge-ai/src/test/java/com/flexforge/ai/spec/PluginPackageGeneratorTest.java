@@ -30,9 +30,11 @@ class PluginPackageGeneratorTest {
     @Test
     void validSpecGeneratesPackageWithDeterministicId() throws Exception {
         PluginPackageGenerator.GeneratedPackage pkg =
-                PluginPackageGenerator.generate("iss-abc123", JSON.readTree(VALID));
+                PluginPackageGenerator.generate("iss-abc123", 1, JSON.readTree(VALID));
         assertThat(pkg.pluginId()).isEqualTo("gen.iabc123");
-        assertThat(pkg.version()).isEqualTo("0.1.0");
+        assertThat(pkg.version()).isEqualTo("0.1.1");
+        assertThat(PluginPackageGenerator.generate("iss-abc123", 1, JSON.readTree(VALID)).zip())
+                .isEqualTo(pkg.zip());
 
         Map<String, String> entries = unzip(pkg.zip());
         assertThat(entries).containsKeys("plugin.json", "metadata/entities/gen_item.json",
@@ -54,7 +56,7 @@ class PluginPackageGeneratorTest {
                 {"name":"x_item","displayName":"X","fields":[
                 {"name":"n","displayName":"N","fieldType":"text"}]}],"acceptance":[]}
                 """);
-        assertThatThrownBy(() -> PluginPackageGenerator.generate("iss-x", invalid))
+        assertThatThrownBy(() -> PluginPackageGenerator.generate("iss-x", 1, invalid))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("拒绝生成");
     }

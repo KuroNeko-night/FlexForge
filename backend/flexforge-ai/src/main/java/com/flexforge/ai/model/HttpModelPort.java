@@ -33,7 +33,7 @@ public class HttpModelPort implements ModelPort {
     private final String model;
     private final String apiKey;
 
-    public HttpModelPort(@Value("${flexforge.ai.base-url}") String baseUrl,
+    public HttpModelPort(@Value("${flexforge.ai.base-url:}") String baseUrl,
                          @Value("${flexforge.ai.model:gpt-4o-mini}") String model) {
         this(baseUrl, model, System.getenv("FLEXFORGE_AI_API_KEY"));
     }
@@ -102,9 +102,15 @@ public class HttpModelPort implements ModelPort {
     }
 
     private static ModelReply parseReply(String responseBody) {
-        JsonNode content = JSON.readTree(
-                        responseBody.getBytes(java.nio.charset.StandardCharsets.UTF_8))
-                .path("choices").path(0).path("message").path("content");
+        JsonNode root;
+        try {
+            root = JSON.readTree(responseBody.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } catch (RuntimeException e) {
+            // 200 + 非 JSON 网关页等：归类模型不可用而非 500 兜底
+            throw new ModelUnavailableException(ModelUnavailableException.REASON_OFFLINE,
+                    "模型响应不是合法 JSON");
+        }
+        JsonNode content = root.path("choices").path(0).path("message").path("content");
         if (!content.isTextual()) {
             throw new ModelUnavailableException(ModelUnavailableException.REASON_OFFLINE,
                     "模型响应缺少 choices[0].message.content");

@@ -23,6 +23,7 @@ public final class PluginPackageGenerator {
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
 
+
     private PluginPackageGenerator() {
     }
 
@@ -31,13 +32,16 @@ public final class PluginPackageGenerator {
     public record GeneratedPackage(byte[] zip, String pluginId, String version) {
     }
 
-    /** pluginId 需点分小写且每段以字母开头（P07 ID_PATTERN）：gen.i<issueId hex>。 */
-    public static GeneratedPackage generate(String issueId, JsonNode spec) {
+    /**
+     * pluginId=gen.i<issueId hex>（P07 ID_PATTERN）；version=0.1.<specRevision>——
+     * 版本随规格修订递增（同 Issue 迭代再生成不撞"同版本不可变"，FR-ISSUE-06 回路）。
+     */
+    public static GeneratedPackage generate(String issueId, int specRevision, JsonNode spec) {
         if (!RequirementSchema.validate(spec).isEmpty()) {
             throw new IllegalArgumentException("规格校验未通过，拒绝生成（FR-ISSUE-04）");
         }
         String pluginId = "gen.i" + issueId.replace("iss-", "").replace("-", "");
-        String version = "0.1.0";
+        String version = "0.1." + specRevision;
         Map<String, String> resources = derivedResources(pluginId, version, spec);
         return new GeneratedPackage(zipOf(resources), pluginId, version);
     }
@@ -70,10 +74,6 @@ public final class PluginPackageGenerator {
                 builder.append(',');
             }
         }
-
-        String close(StringBuilder builder) {
-            return builder.append(']').toString();
-        }
     }
 
     private static void appendEntity(JsonNode entity, String pluginId,
@@ -105,27 +105,41 @@ public final class PluginPackageGenerator {
         resources.put(viewPath, view.toString());
     }
 
+    /** manifest 经 ObjectNode 构造（JSON 安全：summary 含引号/反斜杠不再破坏结构）。 */
     private static String manifestOf(String pluginId, String version, JsonNode spec,
                                      Contributions contributions) {
-        return "{\"schemaVersion\":1,\"id\":\"" + pluginId + "\",\"name\":\""
-                + spec.path("summary").asString() + "\",\"version\":\"" + version
-                + "\",\"capabilityLevel\":1,\"minPlatformVersion\":\"0.1.0\",\"dependencies\":[],"
-                + "\"permissions\":" + (spec.has("permissions")
-                        ? spec.path("permissions").toString() : "[]")
-                + ",\"contributions\":{\"navigation\":" + contributions.close(
-                        contributions.navigation)
-                + ",\"renderers\":" + contributions.close(contributions.renderers)
-                + "},\"resources\":{\"entities\":" + contributions.close(
-                        contributions.entitiesDecl)
-                + ",\"views\":" + contributions.close(contributions.viewsDecl)
-                + ",\"migrations\":[]}}";
+        var manifest = JSON.createObjectNode();
+        manifest.put("schemaVersion", 1);
+        manifest.put("id", pluginId);
+        manifest.put("name", spec.path("summary").asString());
+        manifest.put("version", version);
+        manifest.put("capabilityLevel", 1);
+        manifest.put("minPlatformVersion", "0.1.0");
+        manifest.putArray("dependencies");
+        manifest.set("permissions", spec.has("permissions") && !spec.path("permissions").isNull()
+                ? spec.path("permissions").deepCopy() : JSON.createArrayNode());
+        var contributionsNode = manifest.putObject("contributions");
+        contributionsNode.set("navigation", arrayNodeOf(contributions.navigation));
+        contributionsNode.set("renderers", arrayNodeOf(contributions.renderers));
+        var resourcesNode = manifest.putObject("resources");
+        resourcesNode.set("entities", arrayNodeOf(contributions.entitiesDecl));
+        resourcesNode.set("views", arrayNodeOf(contributions.viewsDecl));
+        resourcesNode.putArray("migrations");
+        return manifest.toString();
+    }
+
+    /** 已拼接的 JSON 数组文本（元素均为合法 JSON 字面量）解析回数组节点。 */
+    private static JsonNode arrayNodeOf(StringBuilder builder) {
+        return JSON.readTree((builder + "]").getBytes(StandardCharsets.UTF_8));
     }
 
     private static byte[] zipOf(Map<String, String> resources) {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream();
                 ZipOutputStream zos = new ZipOutputStream(out)) {
             for (var entry : resources.entrySet()) {
-                zos.putNextEntry(new ZipEntry(entry.getKey()));
+                ZipEntry zipEntry = new ZipEntry(entry.getKey());
+                zipEntry.setTime(0); // 字节级确定性：同规格重复生成产出同 zip
+                zos.putNextEntry(zipEntry);
                 zos.write(entry.getValue().getBytes(StandardCharsets.UTF_8));
                 zos.closeEntry();
             }

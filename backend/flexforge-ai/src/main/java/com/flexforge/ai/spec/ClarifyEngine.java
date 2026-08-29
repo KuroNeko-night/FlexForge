@@ -47,7 +47,13 @@ public class ClarifyEngine {
                 continue;
             }
             if (parsed.has("questions")) {
-                return new ClarifyResult(false, questionsOf(parsed), null, attempts, true);
+                List<String> questions = questionsOf(parsed);
+                if (questions != null) {
+                    return new ClarifyResult(false, questions, null, attempts, true);
+                }
+                currentPrompt = prompt + "\n\n## 上次输出非法\n"
+                        + "questions 必须是字符串数组，请按格式重新输出。";
+                continue;
             }
             JsonNode spec = parsed.get("spec");
             if (spec == null || !spec.isObject()) {
@@ -64,13 +70,18 @@ public class ClarifyEngine {
         throw new ModelOutputInvalidException(attempts);
     }
 
+    /** questions 元素必须全为文本；否则视为非法输出（交由上层重试口径）。 */
     private static List<String> questionsOf(JsonNode parsed) {
-        java.util.List<String> questions = new java.util.ArrayList<>();
         JsonNode array = parsed.get("questions");
-        if (array != null && array.isArray()) {
-            for (int i = 0; i < array.size(); i++) {
-                questions.add(array.get(i).asString());
+        if (array == null || !array.isArray()) {
+            return null;
+        }
+        java.util.List<String> questions = new java.util.ArrayList<>();
+        for (int i = 0; i < array.size(); i++) {
+            if (!array.get(i).isTextual()) {
+                return null;
             }
+            questions.add(array.get(i).asString());
         }
         return List.copyOf(questions);
     }

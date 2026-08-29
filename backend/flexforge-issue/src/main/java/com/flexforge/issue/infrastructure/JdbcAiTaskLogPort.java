@@ -17,6 +17,14 @@ public class JdbcAiTaskLogPort implements AiTaskLogPort {
     }
 
     @Override
+    public int countOf(String issueId, String kind) {
+        Integer count = jdbc.queryForObject(
+                "SELECT count(*) FROM ai_task_log WHERE issue_id = ? AND kind = ?",
+                Integer.class, issueId, kind);
+        return count == null ? 0 : count;
+    }
+
+    @Override
     public void insert(TaskLogEntry entry) {
         jdbc.update("INSERT INTO ai_task_log (id, issue_id, kind, model, prompt_version,"
                         + " clarify_rounds, retries, output_valid, error_code, duration_ms)"

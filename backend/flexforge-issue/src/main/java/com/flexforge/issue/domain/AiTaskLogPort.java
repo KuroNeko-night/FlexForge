@@ -8,6 +8,9 @@ public interface AiTaskLogPort {
 
     void insert(TaskLogEntry entry);
 
+    /** 某 Issue 某类任务的既有记录数（澄清轮次累计用）。 */
+    int countOf(String issueId, String kind);
+
     /** 结构化任务记录（不存提示词全文/模型原始输出/密钥与请求头）。 */
     @PublicApi
     record TaskLogEntry(String issueId, String kind, String model, String promptVersion,

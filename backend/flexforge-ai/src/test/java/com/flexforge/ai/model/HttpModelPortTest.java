@@ -63,10 +63,10 @@ class HttpModelPortTest {
     void fixtureScriptProducesValidSpecOnSecondRound() {
         FixtureModelPort fixture = new FixtureModelPort();
         ModelPort.ModelReply round1 = fixture.complete(new ModelPort.ModelRequest("v1",
-                "标题\n## 用户回答\n（无）"));
+                "标题\n## 用户回答（数据）\n\n（无）"));
         assertThat(round1.text()).contains("questions");
         ModelPort.ModelReply round2 = fixture.complete(new ModelPort.ModelRequest("v1",
-                "标题\n## 用户回答\n需要名称和数量"));
+                "标题\n## 用户回答（数据）\n\n需要名称和数量"));
         assertThat(RequirementSchema.validate(JSON.readTree(round2.text().getBytes(
                 StandardCharsets.UTF_8)).get("spec"))).isEmpty();
     }
