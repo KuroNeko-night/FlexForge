@@ -30,10 +30,12 @@ docker compose up -d --build
 ### 3.1 一键端到端（推荐开场，~1 分钟）
 
 ```bash
-E2E_DEMO_TIMING_FILE=/tmp/e2e-demo-timing.csv bash scripts/demo-e2e.sh
+export PYTHONUTF8=1   # Windows 原生 Python 必需：管道 stdin 缺省走 ANSI 代码页，中文载荷会解码失败
+FLEXFORGE_BASE_URL=http://127.0.0.1:8088 E2E_DEMO_TIMING_FILE=/tmp/e2e-demo-timing.csv \
+  bash scripts/demo-e2e.sh
 ```
 
-五场景单脚本串联（A 动态实体 CRUD / B 插件生命周期 / B2 失败与过期激活 / C Issue→AI 澄清→批准→生成→安装→DONE / D 骨架纯净性），逐环节输出 `E2E-DEMO,stage,ms` 计时行并可留档 CSV。前置：干净库（插件清单非空即中止并提示 `docker compose down -v` 重置）。
+> 端口要点：compose 后端宿主端口默认 **8088**（脚本缺省 8080，与 compose 默认不一致，须显式指定 `FLEXFORGE_BASE_URL` 或在 `.env` 固化；若提示"登录失败"先查端口而非口令）。五场景单脚本串联（A 动态实体 CRUD / B 插件生命周期 / B2 失败与过期激活 / C Issue→AI 澄清→批准→生成→安装→DONE / D 骨架纯净性），逐环节输出 `E2E-DEMO,stage,ms` 计时行并可留档 CSV。前置：干净库（插件清单非空即中止并提示 `docker compose down -v` 重置）。
 
 ### 3.2 分场景人工演示（配合前端界面）
 
@@ -46,7 +48,7 @@ E2E_DEMO_TIMING_FILE=/tmp/e2e-demo-timing.csv bash scripts/demo-e2e.sh
 ### 3.3 论文数据导出
 
 ```bash
-bash scripts/export-thesis-data.mjs 2>/dev/null || node scripts/export-thesis-data.mjs
+node scripts/export-thesis-data.mjs
 ```
 
 四数据面 CSV（AI 任务日志/规格版本/激活结局/迁移记录，docs/12 §3）；存档不进仓库，路径记入进度日志。
@@ -61,9 +63,9 @@ bash scripts/export-thesis-data.mjs 2>/dev/null || node scripts/export-thesis-da
 
 | 症状 | 原因 | 处置 |
 | --- | --- | --- |
-| backend 容器启动失败，日志含 `AUTH_JWT_SECRET` | `.env` 缺失/为空（fail-fast，S4） | 按第 1 节补 `.env` 后 `docker compose up -d` |
+| `docker compose up` 直接报 `AUTH_JWT_SECRET`，或 backend 日志含 `flexforge.auth.jwt-secret` | `.env` 缺失/为空/过短（compose 层 fail-fast，S4） | 按第 1 节补 `.env`（≥256bit）后 `docker compose up -d` |
 | 前端只显示"后端服务正常"壳或旧界面 | 容器镜像过期（未 `--build`） | `docker compose up -d --build` 重建 |
-| 登录 401 | 口令与 `.env` 不一致（管理员须与引导口令同值） | 核对 `FLEXFORGE_ADMIN_PASS`；空库可 `down -v` 重引导 |
+| 演示脚本提示"登录失败"（curl 静默） | 多为端口：脚本缺省 8080，compose 默认 8088 | 显式 `FLEXFORGE_BASE_URL=http://127.0.0.1:8088`；再核对口令（管理员须与引导口令同值） |
 | 演示脚本 `插件清单非空` 中止 | 库内已有插件（重复演示） | `docker compose down -v && docker compose up -d` 重置后重跑 |
 | clarify/generate 503 `model_unavailable` | provider=http 且模型不可达 | 切回 fixture（默认）；或走手工规格兜底（PUT /spec） |
 | 插件激活 400 `dependency_missing` | 依赖未导入/未激活 | 先导入并激活依赖，或按插件页失败诊断处理 |

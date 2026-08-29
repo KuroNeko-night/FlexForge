@@ -5,12 +5,12 @@
 <!-- FLEXFORGE_STATUS:BEGIN -->
 CURRENT_STAGE_ID: P14
 CURRENT_STAGE_NAME: 质量收敛与答辩交付
-STAGE_STATUS: in_progress
-PROJECT_PROGRESS: 55%
+STAGE_STATUS: completed
+PROJECT_PROGRESS: 60%
 LAST_UPDATED: 2026-08-29
 OWNER: project-maintainer
-NEXT_ACTION: P14 迭代 1（选择性清障）：门禁加 bash -n（#22-11）→ docs/07 模型/恢复口径对齐（#22-4/6）→ plugin_instance.status 实装（#22 评论-16）→ 安全负例（编码穿越/终态 clarify 门）→ docs/00 已知限制章节；迭代 2：L4 干净环境重建+live 演练×3+全量回归证据+答辩物料+release_candidate
-EXIT_GATE: P12 出口证据（docs/09 P12 验收四项，逐项实证）：①干净库连续三次完整演示+耗时记录——AgentIssueE2eTest 同上下文 DROP SCHEMA→Flyway 重迁移→重种子三轮全绿（total 748/448/414ms），逐环节计时行 RB-E2E,iter,stage,ms 入 CI 日志（docs/12 §"端到端演示各环节耗时"数据源；对照 docs/00 §5 十分钟目标余量充足）②三类失败回到可操作状态——AI 失败→503+手工规格兜底（IssueAiFailureApiTest，P11）；包验证失败→明确错误码（PluginApiTest，P07）；安装失败→B2 dependency_missing HTTP400+activation FAILED/DEPENDENCY_CHECK+零残留+卸载清理可重试（E2eDemoScript B2 与 demo-e2e.sh 双断言）③Issue↔插件版本↔activation↔审计互追——assertCrossTraceability：ai_task_log 3 条（clarify×2+generate）/issue_transition 链/审计 issue.generate+plugin.activate(×3 口径核实：失败激活不写审计)/inventory 聚合含 gen.* 与版本 0.1.1；pluginId=gen.i{issueId} 结构性关联④人工审核前不启用——assertGenerateRequiresApproval：SUBMITTED 下 generate 4xx 且 gen.% 插件实例为 0；实施内容全覆盖（全链含 TESTED→DONE 收口/状态机含 CLOSED 取消与 DEV_FAILED 恢复（P10/P11 回归）/demo-e2e.sh+fixture/PluginsView 版本+激活尝试+失败诊断）。一轮子代理审查 1 P0+4 P3：P0（demo 脚本 B2 断言反转，live 必崩）当场修复并升级为 HTTP+错误码双断言，P3 三项顺手修（计时改 EPOCHREALTIME 免子进程开销/口令等价注明/样板下沉 400→377 行）+两项记 Issue #22 #11-12；DROP SCHEMA 跨轮内存状态、计数口径、前端契约等 8 项假设逐项验证无缺陷。后端全量 verify BUILD SUCCESS（app 125 tests/总 265+）、前端 53 tests、门禁 20/1/0、PR #27 CI 六项全绿后合并（92f6ef3）
+NEXT_ACTION: 【项目进入 release_candidate】最后一次全量验证 2026-08-29 20:04（L4 live 三轮 5966/6238/5838ms + 存档跑 6045ms；门禁 21/1/0；main CI 六项全绿）。后续可选：P13 加分项（默认不做）、答辩录屏与镜像预导入（docs/14 §4 三保险）、Issue #22 余项按触发条件排期
+EXIT_GATE: P14 出口证据（docs/09 P14 验收四项）：①核心验收场景全过且 P0/P1 为零——L4 干净环境重建（down -v+全新镜像+空库迁移）下 demo-e2e.sh 五场景 live 连续三轮全过（R1 5966ms/R2 6238ms/R3 5838ms+存档跑 6045ms，对照 docs/00 §5 十分钟目标；RB-E2E CI 侧另有 Testcontainers 三轮），全仓开放 Issue 无 P0/P1（余项均 P3 附触发条件，docs/00 §7 论文对账）②新环境按文档可启动完成演示——docker compose 三服务重建 + docs/14 运行手册（启动/账号/演示/三保险/九条排障）实测可用；两轮子代理审查共 2 P1+1 P2+4 P3 全修（开场命令缺 BASE_URL/证据链断链/PYTHONUTF8 未文档化等）③答辩不依赖在线模型——fixture 默认装配，live 三轮均 fixture 链路；在线路径仅增强（docs/00 §7 三保险口径）④release_candidate 标记+最后全量验证时间——本 NEXT_ACTION 首行；迭代 1（PR #28：门禁 bash-n/docs07 对齐/instance 状态派生/安全负例/已知限制 8+1 项，审查 7 P3 全修）+迭代 2（PR #29：docs/14 手册/演示脚本 stdin 跨平台修复/L4 取证与论文数据归档）两轮子代理审查通过后合并；论文数据存档 thesis-data/（gitignored）：e2e-demo-timing-2026-08-29.csv + thesis-data-2026-08-29/ 四数据面 CSV（docs/12 §3 口径）
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -32,7 +32,7 @@ BLOCKERS: none
 | P11 | AI 适配器与生成器 | completed | 在线/fixture/手工三条路径可用 |
 | P12 | Agent Issue 端到端闭环 | completed | 干净数据库连续三次完成主流程（RB-E2E 三轮全绿，见 EXIT_GATE） |
 | P13 | 加分项与体验优化 | optional | 不影响主线稳定性 |
-| P14 | 质量收敛与答辩交付 | in_progress | 全量验收通过，进入 release candidate |
+| P14 | 质量收敛与答辩交付 | completed | 全量验收通过，进入 release_candidate（见 NEXT_ACTION 验证时间） |
 
 ## 更新规则
 
@@ -132,3 +132,6 @@ BLOCKERS: none
 | 2026-08-29 | P12 | PR #27 独立子代理交叉审查：1 P0 + 4 P3，结论"修复 P0 后可合并"，8 项重点假设（DROP SCHEMA 跨轮内存状态/三类计数口径/Java 计时/前端契约/D.pre 语义/硬上限/R-GOV-09/文档登记）逐项验证无缺陷。P0：demo-e2e.sh B2 断言反转（合法依赖插件 e2e.dep.base 也被断言"激活必败"，live 必 exit 1；且 EXPECT_CODE 未实断言）→ base 改只导入不激活+child 激活升级 HTTP 400+$.code 双断言；P3 顺手修三项：now_ms 改 bash5 EPOCHREALTIME 免子进程计时开销、.env.example 注明 ADMIN_PASS 与 BOOTSTRAP 同值+login 失败诊断、场景 A 样板下沉 MetaTestSupport（E2eDemoScript 400→377 行留余量）；P3 记 Issue #22（#11 门禁加 bash -n、#12 live 演练留档）。修复后 RB-E2E 三轮重跑全绿（748/448/414ms）、门禁 20/1/0、CI 六项全绿 | PR #27 评论、Issue #22 |
 | 2026-08-29 | P12 | **P12 出口复核通过，置 completed**（P14 置 ready_to_start，P13 保持 optional 不做，进度 55%）。验收四项逐项实证（见 EXIT_GATE）：三轮干净库全绿+计时留档/三类失败可恢复/四方互追/人工审核门。实施内容全覆盖（全链 TESTED→DONE 收口、取消与失败恢复语义、演示脚本+fixture、插件页）。live 容器演练按用户要求推迟到验收阶段（Issue #22 #12 跟踪）。后端全量 verify BUILD SUCCESS、前端 53 tests、门禁 20/1/0、main CI 全绿（合并 92f6ef3） | docs/09 P12 验收、PR #27、RB-E2E、docs/12 |
 | 2026-08-29 | P14 | 迭代 1 选择性清障（用户裁决：不全修，答辩可见项并入 P14）：①门禁 +SCRIPT-SYNTAX（bash -n 全量演示脚本，#22-11，P12 P0 教训固化）②docs/07 三处对齐（#22-4 §1 表+MVP 口径注、#22-6 §2 恢复事实源=plugin_version 载荷、§5-6 补偿语义）③plugin_instance.status 随生命周期派生（#22 评论-16：updateStatus 终态→active/stopped/failed、PLUGIN_UNINSTALLED 事件→uninstalled，仓储内派生零服务层新增；ExampleInventory/E2E 断言）④安全负例（#22 评论-12 资产 URL 编码穿越三形态 4xx+无泄漏断言；评论-24 终态 Issue 拒绝 clarify/saveSpec→400+失败路径测试）⑤docs/00 §7 已知限制（8 项论文素材+三保险口径）。过程修复：MethodLength 41→抽 helper；新用例与 MANUAL_SPEC 实体名冲突（P11 教训复现）→TERMINAL_SPEC 独立实体。后端 127 tests 全绿 | Issue #22 解决记录、docs/00 §7、docs/07 §1/§2/§5-6 |
+| 2026-08-29 | P14 | 迭代 1 PR #28 独立子代理审查：**可合并**，0 P0/P1/P2 + 7 P3 全部当场修复——重导入残留 uninstalled（upsert CASE 重置+幂等路径 resetUninstalledInstance+断言）、docs/07 补 asset_payloads、§2 措辞收敛（恢复只读 manifest+resource_payloads，V007 注释标注历史口径）、FAILED 派生崩溃窗口登记 docs/00 §7 第 9 项、PR 描述虚列更正、SCRIPT-SYNTAX ENOENT 可诊断提示。a-h 假设逐项验证（事务边界/upgrade 补偿终态推演/终态门无绕过/穿越负例证据力/Issue 对账/双环境 bash/文档对照/测试隔离）均无缺陷。修复后后端全量 verify 127 tests 全绿、门禁 21/1/0、CI 六项全绿合并（c59f049） | PR #28 评论、Issue #22 |
+| 2026-08-29 | P14 | 迭代 2 L4 发布候选：**干净环境重建**（docker compose down -v+全新后端镜像+空库平台迁移）+ **live 演练连续三轮全过**（R1 5966ms/R2 6238ms/R3 5838ms+第四轮存档跑 6045ms，六环节计时）+ 论文数据导出归档。过程发现并修复演示脚本跨平台缺陷：Windows 命令行参数传原生 exe 被转 GBK 破坏中文载荷→api() 改 printf\|curl -d @- stdin 传输（实测 UTF-8 保真）；.env 缺 FLEXFORGE_BASE_URL（脚本缺省 8080≠compose 默认 8088）。交付：docs/14 答辩运行手册（启动/三角色账号/一键+分场景演示/离线三保险/九条排障/清理，已登记 project-index+docs/05）；.gitignore +thesis-data/。数据存档（gitignored，docs/12 §3 口径）：`thesis-data/e2e-demo-timing-2026-08-29.csv`（六环节计时）、`thesis-data/thesis-data-2026-08-29/`（ai-task-log/requirement-spec-revisions/plugin-activation-outcomes/plugin-migrations 四 CSV）。前端镜像因 docker.io 拉取限速重建中（答辩前按 docs/14 §4 预导入） | docs/14、PR #29、thesis-data/ 本地存档 |
+| 2026-08-29 | P14 | 迭代 2 PR #29 独立子代理审查：修复 2 P1+1 P2+3 P3 后可合并——P1-1 手册开场命令缺 FLEXFORGE_BASE_URL（照抄必撞本机 8080 占用且误导查口令）→命令补齐+排障表改写；P1-2 STATUS 迭代 2 证据断链（四处"路径记进度日志"承诺未兑现）→本条目+锚点翻牌补齐（含存档路径/三轮数字/验证时间）；P2 演示机 PYTHONUTF8 依赖未文档化（Windows 原生 Python 管道 stdin 缺省 ANSI 代码页）→脚本内 export+手册补注；P3：导出示范命令删 bash 分支、JWT 症状描述对照实现修正、-d @- 剥换行约束注明。stdin 修复经审查者 --libcurl dump 实证（GBK 17 字节 vs UTF-8 21 字节）、pipefail 传播/Content-Length 正确性验证无缺陷；审查者全量门禁复跑 21/1/0。**P14 出口复核通过，置 completed，项目进入 release_candidate（最后全量验证 2026-08-29 20:04）** | PR #29 评论、docs/14、docs/09 P14 验收 |
