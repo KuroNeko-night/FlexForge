@@ -208,11 +208,23 @@ public class PluginImportService {
     private InstallPreview previewOf(PluginVersionRecord record, boolean isNew) {
         JsonNode manifest = JSON.readTree(record.manifestJson());
         JsonNode name = manifest.get("name");
-        // 幂等命中路径不回查依赖表；依赖明细经插件清单接口获取（P08 inventory）
+        // 幂等命中与 validate 同口径返回全量依赖（Issue #20 第 2 项统一）
         return new InstallPreview(isNew, record.pluginId(),
                 name == null ? record.pluginId() : name.asText(),
                 record.version(), record.capabilityLevel(), record.contentHash(), record.id(),
-                record.scriptChecksums(), List.of());
+                record.scriptChecksums(), dependenciesOf(manifest));
+    }
+
+    private static List<com.flexforge.plugin.domain.DependencySpec> dependenciesOf(
+            JsonNode manifest) {
+        JsonNode node = manifest.path("dependencies");
+        List<com.flexforge.plugin.domain.DependencySpec> result = new ArrayList<>();
+        for (int i = 0; i < node.size(); i++) {
+            result.add(new com.flexforge.plugin.domain.DependencySpec(
+                    node.get(i).path("pluginId").asString(),
+                    node.get(i).path("versionRange").asString("*")));
+        }
+        return List.copyOf(result);
     }
 
     static String sha256(byte[] content) {

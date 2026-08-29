@@ -45,7 +45,7 @@ public class ManifestValidator {
     private PluginManifest validateV1(JsonNode root) {
         String id = requiredText(root, "id");
         if (!ID_PATTERN.matcher(id).matches()) {
-            throw PluginValidationException.invalidManifest("id 须为小写点分标识（如 example.inventory）: " + id);
+            throw PluginValidationException.invalidManifest("id 须为小写点分标识（如 vendor.demo）: " + id);
         }
         String name = requiredText(root, "name");
         String version = requiredText(root, "version");

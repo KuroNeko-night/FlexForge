@@ -44,6 +44,25 @@ final class PluginContributionFactory {
         return spec;
     }
 
+    /** 实体路径前缀判别（registerMetadata 分流实体/视图）。 */
+    static boolean isEntityPath(String path) {
+        return path.startsWith("metadata/entities/");
+    }
+
+    /** 视图规格（metadata/views/*）：{entity,viewType,name,columns,filters?}。 */
+    static List<JsonNode> viewSpecsOf(JsonNode resourcePayloads) {
+        List<JsonNode> result = new ArrayList<>();
+        for (String path : resourcePayloads.propertyNames()) {
+            if (path.startsWith("metadata/views/")) {
+                JsonNode spec = entitySpec(resourcePayloads, path);
+                if (spec != null) {
+                    result.add(spec);
+                }
+            }
+        }
+        return result;
+    }
+
     /** 首个注册实体名（navigation route 派生用）；无实体返回 null。 */
     static String firstEntityNameOf(JsonNode entities) {
         for (String path : entities.propertyNames()) {
@@ -61,6 +80,19 @@ final class PluginContributionFactory {
 
     static List<String> rendererIdsOf(PluginVersionRecord version) {
         return manifestContributions(version).getOrDefault("renderers", List.of());
+    }
+
+    /** 迁移执行顺序（docs/08 §3.3：按 manifest resources.migrations 声明顺序）。 */
+    static List<String> migrationOrderOf(PluginVersionRecord version) {
+        JsonNode list = JSON.readTree(version.manifestJson())
+                .path("resources").path("migrations");
+        List<String> result = new ArrayList<>();
+        if (list.isArray()) {
+            for (int i = 0; i < list.size(); i++) {
+                result.add(list.get(i).asString());
+            }
+        }
+        return List.copyOf(result);
     }
 
     /** themeAssets 贡献（对象数组，登记册 §2.2）：激活期从 manifestJson 原始解析。 */

@@ -2,6 +2,7 @@ package com.flexforge.plugin.domain;
 
 import com.flexforge.common.PublicApi;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,4 +31,20 @@ public interface PluginPackageRepository {
      */
     PluginVersionRecord storeVersion(String pluginName, PluginVersionRecord version,
                                      List<DependencySpec> dependencies);
+
+    /** 全部插件实例摘要（inventory 聚合用）。 */
+    List<InstanceEntry> listInstances();
+
+    /** 某插件版本摘要（inventory 聚合用，旧→新）。 */
+    List<VersionEntry> versionSummariesOf(String pluginId);
+
+    /** 插件实例摘要行（plugin_instance 镜像）。 */
+    @PublicApi
+    record InstanceEntry(String pluginId, String name, String status) {
+    }
+
+    /** 版本摘要行（不含载荷）。 */
+    @PublicApi
+    record VersionEntry(String versionId, String version, Instant createdAt) {
+    }
 }
