@@ -5,6 +5,7 @@ import DynamicEntityView from '@/views/DynamicEntityView.vue';
 import HomeView from '@/views/HomeView.vue';
 import LoginView from '@/views/LoginView.vue';
 import PlaceholderView from '@/views/PlaceholderView.vue';
+import PluginsView from '@/views/PluginsView.vue';
 import WorkbenchView from '@/views/WorkbenchView.vue';
 
 /**
@@ -29,6 +30,11 @@ export const router = createRouter({
           name: 'meta-placeholder',
           component: PlaceholderView,
           props: { title: '数据模型' },
+        },
+        {
+          path: 'plugins',
+          name: 'plugins',
+          component: PluginsView,
         },
         {
           path: 'system',
