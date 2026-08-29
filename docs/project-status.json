@@ -3,11 +3,11 @@
   "updatedAt": "2026-08-29",
   "currentStageId": "P12",
   "currentStageName": "Agent Issue 端到端闭环",
-  "status": "in_progress",
-  "progressPercent": 50,
+  "status": "completed",
+  "progressPercent": 55,
   "owner": "project-maintainer",
-  "nextAction": "P12 实现（分支 feat/p12-agent-e2e）：RB-E2E 端到端冒烟（场景 A/B/B2/C/D，干净库 DROP+重迁移连续三次，计时留档）→ 插件页（inventory 版本/激活尝试/失败诊断）→ 演示脚本与预置账号 → 子代理审查 → PR → 出口",
-  "exitGate": "P11 出口证据（验收七项，复审者核对+修复后全部成立）：①模型可用生成合法规格——fixture 全链（clarify×2→valid 规格→批准→生成→IN_TESTING，IssueAiApiTest）+在线路径经 HttpModelPort 本地 stub 实测（200 解析；接口确认前 fixture 优先为 docs/09 P11 原文口径，真机接入记 Issue #22-31）②模型不可用手工兜底——IssueAiFailureApiTest（503 后 PUT 手工规格继续流程）+ manualSpec 用例③非法输出不产可安装包——ClarifyEngineTest 非法 JSON/越权 fieldType 重试与上限 + Generator 只派生内置 renderer +非法规格拒绝生成④AI 无 DB/shell/FS/发布权限——编排纯函数、输出经 Schema+P07 标准导入链（复审逐点核验）⑤切换实现不改主流程——ModelPort 注入+条件装配（fixture 默认/http 显式），compose/.env 配置链贯通⑥超时/限流/离线可诊断、密钥不入库日志——model_unavailable 503/model_output_invalid 400 API 级断言；密钥仅环境变量、V011 无密钥/全文/请求头⑦结构化记录落库+可导出——V011 七字段 + IssueAiApiTest 断言 +export-thesis-data.mjs 四数据面（compose 服务名修正后可用）。一轮子代理审查（2 P1+6 P2 全修：导出脚本服务名/生成版本死锁（迭代回路 0.1.1→0.1.2 回归）+注入围栏/JSON 安全 manifest/日志语义/配置链/非 JSON 分类/API 级失败证据；P3 记 Issue #22 #23-31）；后端 264 tests 全绿、门禁 20/1/0、main CI 全绿（PR #26）",
+  "nextAction": "P14 启动（质量收敛与答辩交付：L4 全量回归、发布候选、答辩物料固化 docs/00 §5 十分钟流程含离线兜底；用户要求验收阶段统一重建容器并 live 演练 demo-e2e.sh）",
+  "exitGate": "P12 出口证据（docs/09 P12 验收四项，逐项实证）：①干净库连续三次完整演示+耗时记录——AgentIssueE2eTest 同上下文 DROP SCHEMA→Flyway 重迁移→重种子三轮全绿（total 748/448/414ms），逐环节计时行 RB-E2E,iter,stage,ms 入 CI 日志（docs/12 §\"端到端演示各环节耗时\"数据源；对照 docs/00 §5 十分钟目标余量充足）②三类失败回到可操作状态——AI 失败→503+手工规格兜底（IssueAiFailureApiTest，P11）；包验证失败→明确错误码（PluginApiTest，P07）；安装失败→B2 dependency_missing HTTP400+activation FAILED/DEPENDENCY_CHECK+零残留+卸载清理可重试（E2eDemoScript B2 与 demo-e2e.sh 双断言）③Issue↔插件版本↔activation↔审计互追——assertCrossTraceability：ai_task_log 3 条（clarify×2+generate）/issue_transition 链/审计 issue.generate+plugin.activate(×3 口径核实：失败激活不写审计)/inventory 聚合含 gen.* 与版本 0.1.1；pluginId=gen.i{issueId} 结构性关联④人工审核前不启用——assertGenerateRequiresApproval：SUBMITTED 下 generate 4xx 且 gen.% 插件实例为 0；实施内容全覆盖（全链含 TESTED→DONE 收口/状态机含 CLOSED 取消与 DEV_FAILED 恢复（P10/P11 回归）/demo-e2e.sh+fixture/PluginsView 版本+激活尝试+失败诊断）。一轮子代理审查 1 P0+4 P3：P0（demo 脚本 B2 断言反转，live 必崩）当场修复并升级为 HTTP+错误码双断言，P3 三项顺手修（计时改 EPOCHREALTIME 免子进程开销/口令等价注明/样板下沉 400→377 行）+两项记 Issue #22 #11-12；DROP SCHEMA 跨轮内存状态、计数口径、前端契约等 8 项假设逐项验证无缺陷。后端全量 verify BUILD SUCCESS（app 125 tests/总 265+）、前端 53 tests、门禁 20/1/0、PR #27 CI 六项全绿后合并（92f6ef3）",
   "blockers": [],
   "stages": [
     {
@@ -73,7 +73,7 @@
     {
       "id": "P12",
       "name": "Agent Issue 端到端闭环",
-      "status": "in_progress"
+      "status": "completed"
     },
     {
       "id": "P13",
@@ -83,7 +83,7 @@
     {
       "id": "P14",
       "name": "质量收敛与答辩交付",
-      "status": "pending"
+      "status": "ready_to_start"
     }
   ]
 }
