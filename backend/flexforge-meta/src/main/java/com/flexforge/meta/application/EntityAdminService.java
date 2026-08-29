@@ -102,6 +102,7 @@ public class EntityAdminService {
             throw new IllegalArgumentException("实体名已存在: " + name);
         }
         if (rows != 1) {
+            // 0 行 = 不存在或并发离开 draft（draft 守卫在 SQL 内），重查区分 400/404
             requireUnchangedOrMissing(repository.findEntity(entityId).isPresent(), "实体改名");
             throw new NoSuchElementException("实体不存在: " + entityId);
         }
@@ -136,6 +137,7 @@ public class EntityAdminService {
             throw new IllegalArgumentException(e.getMessage());
         }
         if (rows != 1) {
+            // 同 updateEntity：draft 守卫（EXISTS 子查询）在 SQL 内，0 行重查区分 400/404
             requireUnchangedOrMissing(repository.findField(fieldId).isPresent(), "字段语义变更");
             throw new NoSuchElementException("字段不存在: " + fieldId);
         }
@@ -179,6 +181,11 @@ public class EntityAdminService {
         return merged;
     }
 
+    /**
+     * 写后失效 + 审计。失效必须在仓储写入已落库后执行（本服务仓储各方法独立自动提交，
+     * 无外层事务），保证 MetaRegistry 下次装载读到的是新定义；审计在失效之后记录，
+     * 两者不原子——写成功而审计失败时数据已生效但缺审计事件（可接受，见审计发现）。
+     */
     private void publish(String actor, String action, String objectId, String entityId) {
         registry.evict(entityId);
         audit.record(AuditEvents.of(actor, action, objectId, "success", clock));
@@ -200,6 +207,7 @@ public class EntityAdminService {
         }
         requireDraft(current, "实体改名");
         Identifiers.validateName(cmd.name(), "实体名");
+        // 预检只为友好报错；"查名与更新"之间的并发抢名由 meta_entity 唯一约束兜底（下方 catch）
         boolean nameTaken = repository.findEntityByName(cmd.name())
                 .filter(other -> !other.id().equals(current.id())).isPresent();
         if (nameTaken) {

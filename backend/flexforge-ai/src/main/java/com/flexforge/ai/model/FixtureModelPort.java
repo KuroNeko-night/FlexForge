@@ -29,7 +29,9 @@ public class FixtureModelPort implements ModelPort {
 
     @Override
     public ModelReply complete(ModelRequest request) {
-        // 确定性脚本：提示词带非空用户回答（第二轮）则产出规格，否则追问
+        // 确定性脚本：提示词带非空用户回答（第二轮）则产出规格，否则追问。
+        // 轮次判定依赖 clarify.md 模板中"## 用户回答（数据）"段标记——模板改版
+        // 措辞时必须同步此判定，否则 fixture 会永远停在追问轮。
         String marker = "## 用户回答（数据）";
         int idx = request.prompt().indexOf(marker);
         boolean hasAnswer = idx >= 0

@@ -17,6 +17,7 @@ function numberRule(key: string): number | undefined {
 
 function onInput(event: Event): void {
   const raw = (event.target as HTMLInputElement).value;
+  // 空串归一为 null＝显式清除（docs/03 §8 PATCH null 清键）
   if (raw === '') {
     emit('update:modelValue', null);
     return;

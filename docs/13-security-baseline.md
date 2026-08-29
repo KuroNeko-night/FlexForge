@@ -58,14 +58,14 @@
 ### 3.3 输入校验与注入防护
 
 1. 所有请求 DTO 使用 Bean Validation 在 api 层校验（非空、长度、格式）；未过校验的输入不进领域层。
-2. 动态查询：排序/筛选字段白名单、`pageSize ≤ 200`（对齐 `docs/09` P02 冻结契约）；JSONB 查询构造只允许登记过的操作符集合。
+2. 动态查询：排序/筛选字段白名单、`pageSize ≤ 200`、`pageNumber` 1..100000（OFFSET 溢出防线，`PageQuery` 中央实现）；JSONB 查询构造只允许登记过的操作符集合。
 3. 用户输入不拼接 SQL、命令或文件路径（`NFR-SEC-02`）。
 
 ### 3.4 前端与 XSS
 
 1. 用户内容一律文本插值渲染；MVP 不提供富文本（`docs/02` 未定义富文本字段类型）。
 2. CSP：生产构建启用基础策略（`default-src 'self'` 起步，按需放宽并在本文登记）；开发环境如需放宽（Vite HMR）仅限 dev 配置。
-3. Token 存储 tradeoff（已决策）：MVP 用 `localStorage` + 短 TTL + 严格 XSS 防护（S5 + CSP）；不引入 HttpOnly Cookie（避免连带 CSRF 防护范围）。答辩被问时按此口径回答。
+3. Token 存储 tradeoff（已决策，2026-08-25 P06 落地口径）：MVP 用 `sessionStorage`（刷新可恢复、关标签即清，残留面小于 localStorage）+ 短 TTL + 严格 XSS 防护（S5 + CSP）；不引入 HttpOnly Cookie（避免连带 CSRF 防护范围）。答辩被问时按此口径回答。
 
 ### 3.5 插件包与文件上传
 

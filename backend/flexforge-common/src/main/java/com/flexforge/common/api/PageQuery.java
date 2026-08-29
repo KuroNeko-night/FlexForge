@@ -47,6 +47,7 @@ public record PageQuery(int pageNumber, int pageSize, String sortBy, SortDirecti
      */
     public static PageQuery of(int pageNumber, int pageSize, String sortBy,
                                SortDirection sortDirection, Set<String> allowedSortFields) {
+        // 不排序时方向无语义：默认 ASC 而非强制必填，避免调用方为 null sortBy 配 null 方向报错
         PageQuery query = new PageQuery(pageNumber, pageSize, sortBy,
                 sortBy == null ? SortDirection.ASC : Objects.requireNonNull(sortDirection, "sortDirection"));
         if (query.sortBy() != null

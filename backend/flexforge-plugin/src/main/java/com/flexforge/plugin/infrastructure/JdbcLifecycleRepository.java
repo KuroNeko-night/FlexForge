@@ -67,6 +67,7 @@ public class JdbcLifecycleRepository implements LifecycleRepository {
     @Override
     public int updateStatus(String activationId, ActivationStatus status, String stage,
                             String errorCode) {
+        // finished_at 仅终态回填：STARTING/STOPPING 瞬态重复更新不得覆盖时间戳语义
         int updated = jdbc.update("UPDATE plugin_activation SET status = ?, stage = ?, error_code = ?,"
                         + " finished_at = CASE WHEN ? IN ('ACTIVE','STOPPED','FAILED') THEN now()"
                         + " ELSE finished_at END WHERE id = ?",

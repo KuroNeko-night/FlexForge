@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { ROOT } from './gates.mjs';
 
 /**
  * R-GOV-09 骨架纯净性（NFR-SKEL-01，docs/09 P09 起）：后端 main 源码与前端 src
@@ -12,6 +13,9 @@ const MAIN_SOURCE_ONLY = /\/src\/main\//;
 
 export function checkRgov09(files, record) {
   const offenders = [];
+  // file 是仓库根相对路径（与 git ls-files 输出一致）；路径锚定 gates.mjs 的 ROOT
+  // 而非 process.cwd()——否则从子目录运行时 read 全部失败被 continue 吞掉，
+  // 扫描 0 个文件却报 pass（fail-open，注释审计 P2 修复）
   for (const file of files) {
     if (!SCAN_PREFIXES.some((p) => file.startsWith(p))) continue;
     if (!file.endsWith('.java') && !file.endsWith('.ts') && !file.endsWith('.vue')) continue;
@@ -19,9 +23,11 @@ export function checkRgov09(files, record) {
     if (file.startsWith('backend/') && !MAIN_SOURCE_ONLY.test(`/${file}`)) continue;
     let content;
     try {
-      content = fs.readFileSync(path.resolve(process.cwd(), file), 'utf8');
-    } catch {
-      continue;
+      content = fs.readFileSync(path.join(ROOT, file), 'utf8');
+    } catch (err) {
+      // 单文件读失败必须可见：静默 continue 会让"扫描不到"伪装成"扫描通过"
+      record('R-GOV-09', 'fail', [`骨架纯净性扫描读取失败: ${file}（${err.code ?? err.message}）`]);
+      return;
     }
     if (DEMO_PLUGIN_PATTERN.test(content)) {
       offenders.push(file);

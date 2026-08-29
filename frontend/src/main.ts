@@ -9,6 +9,8 @@ import { router } from './router';
 
 const app = createApp(App);
 
+// 内置注册必须先于 mount：registry 是模块级数据，首帧渲染即同步解析
+// renderer/widget，晚注册首屏会落到回退组件；两个 register 均幂等（HMR 安全）
 registerBuiltins();
 registerBuiltinContributions();
 onUnauthorized(() => {

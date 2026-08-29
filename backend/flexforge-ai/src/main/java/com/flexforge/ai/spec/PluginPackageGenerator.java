@@ -83,6 +83,7 @@ public final class PluginPackageGenerator {
         contributions.commaBefore(contributions.entitiesDecl);
         contributions.entitiesDecl.append('"').append(entityPath).append('"');
         contributions.commaBefore(contributions.navigation);
+        // 注册表键全局共享：导航键带 pluginId 前缀防跨插件实体同名冲突
         contributions.navigation.append('"').append(pluginId).append('.')
                 .append(entity.path("name").asString()).append('"');
         JsonNode fields = entity.path("fields");

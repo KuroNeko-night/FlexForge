@@ -32,6 +32,8 @@ final class SimpleRegistration implements Registration {
 
     @Override
     public void close() {
+        // 先 CAS 置非活跃再执行 dispose：注册表监视器依赖"dispose 运行时自身必已非活跃"
+        // 这一次序，才能区分"自身已关闭待清理"与"条目已被新注册覆盖"两种情形
         if (active.compareAndSet(true, false)) {
             disposeAction.run();
         }

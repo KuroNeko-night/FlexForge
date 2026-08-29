@@ -40,6 +40,7 @@ import java.util.Objects;
  */
 @PublicApi
 @Component
+// RequestIdFilter 占 HIGHEST_PRECEDENCE，本过滤器紧随其后：401 响应体里的 requestId 依赖其先写入 MDC
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 public class JwtAuthFilter extends OncePerRequestFilter {
 

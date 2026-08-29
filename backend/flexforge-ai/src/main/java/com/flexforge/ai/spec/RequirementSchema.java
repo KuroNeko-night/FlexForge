@@ -27,6 +27,9 @@ public final class RequirementSchema {
 
     public static final int CURRENT_VERSION = 1;
 
+    // 点分权限键（与平台 permissionKey 常量同形，如 issue.create）；只做形状校验，
+    // 不对照登记册白名单——插件导入链（ManifestValidator）用同一形状规则复检，
+    // MVP 中 permissions 为声明性元数据，授权判定不依赖它
     private static final Pattern KEY_PATTERN =
             Pattern.compile("^[a-z][a-z0-9_]*(\\.[a-z0-9_]*)*$");
 

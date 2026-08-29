@@ -22,7 +22,8 @@ public final class PromptTemplates {
     private PromptTemplates() {
     }
 
-    /** 按名装载模板并以参数填充 {{key}} 占位。 */
+    /** 按名装载模板并以参数填充 {@code {{key}}} 占位。参数值视为数据段原样嵌入
+     * （docs/13 §3.6-2，用户输入不做二次转义），由模型侧约束与 Schema 校验兜底。 */
     public static String render(String name, Map<String, String> params) {
         String template = CACHE.computeIfAbsent(name, PromptTemplates::load);
         for (var entry : params.entrySet()) {

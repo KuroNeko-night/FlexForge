@@ -26,6 +26,7 @@ public final class InMemoryExtensionRegistry {
         }
     }
 
+    // CHM + COW：读路径 contributions() 无锁遍历（COW 迭代即稳定快照），写路径在 synchronized 内串行
     private final Map<String, CopyOnWriteArrayList<Holder>> contributionsByPoint = new ConcurrentHashMap<>();
     private final Map<String, List<SimpleRegistration>> byActivation = new ConcurrentHashMap<>();
 

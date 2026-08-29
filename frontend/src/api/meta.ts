@@ -3,6 +3,8 @@ import type { EntityDetail, EntitySummary, PageResult } from '@/api/types';
 
 /** 已启用实体列表（普通用户视角；开发者另见 /meta/entities 全量——管理页 P06 不做）。 */
 export function listEnabledEntities(): Promise<EntitySummary[]> {
+  // pageSize=200 即后端分页硬上限（ApiConstants.MAX_PAGE_SIZE）：一次取全，
+  // 实体数超上限会被静默截断（MVP 实体规模假设远小于此）
   return apiFetch<PageResult<EntitySummary>>('/meta/entities?page=1&pageSize=200').then(
     (page) => page.items,
   );

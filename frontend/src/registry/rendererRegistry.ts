@@ -37,6 +37,8 @@ export function registerRenderer(id: string, component: Component): void {
 }
 
 export function resolveRenderer(field: FieldDefinition): Component {
+  // 未知 rendererId（插件已停用、元数据引用漂移）回退 text.default：
+  // 动态列表/表单保持纯文本可渲染，不因悬空引用整页失败
   return registry.resolve(field.rendererId) ?? TextField;
 }
 

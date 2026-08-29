@@ -271,6 +271,7 @@ onMounted(refresh);
       </div>
     </dl>
 
+    <!-- :key 绑定实体+记录 ID：DynamicForm 的 values 是 setup 快照，防跨记录复用残留 -->
     <DynamicForm
       v-else
       :key="`${entityName}-${String(route.params.id ?? 'new')}`"

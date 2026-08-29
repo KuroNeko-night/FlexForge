@@ -80,6 +80,7 @@ public class DependencyResolver {
         return parts(version)[1];
     }
 
+    // 输入均已过 VERSION_PATTERN/RANGE_PATTERN 三段式校验，此处无需防御性解析分支
     private static int[] parts(String version) {
         String[] segments = version.split("\\.");
         return new int[]{Integer.parseInt(segments[0]), Integer.parseInt(segments[1]),

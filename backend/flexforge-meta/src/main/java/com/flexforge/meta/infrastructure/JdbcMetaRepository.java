@@ -78,6 +78,10 @@ public class JdbcMetaRepository implements MetaRepository {
     @Override
     public int updateEntity(String id, String name, String displayName, EntityStatus status,
                             boolean requireDraftStatus) {
+        // 布尔守卫内嵌 SQL（? 绑定）：requireDraftStatus=true（改名等 breaking 路径）时
+        // 仅实体仍为 draft 才生效，把 TOCTOU 窗口关闭在单条 UPDATE 内；
+        // 状态迁移路径（rename=false）不设守卫——写目标恒为 enabled/disabled，
+        // 并发下最后写入者胜，不会产生非法状态
         return jdbc.update("UPDATE meta_entity SET name = ?, display_name = ?, status = ?,"
                         + " updated_at = now() WHERE id = ? AND (NOT ? OR status = 'draft')",
                 name, displayName, status.wireName(), id, requireDraftStatus);
@@ -99,6 +103,11 @@ public class JdbcMetaRepository implements MetaRepository {
         return new PageResult<>(items, total == null ? 0 : total, query.pageNumber(), query.pageSize());
     }
 
+    /**
+     * 弱一致装配：实体行、字段、视图来自三条独立查询（无共享快照），
+     * 极端并发下可能拼出跨版本的混合定义；由 MetaRegistry 写后失效 + 版本比对兜底，
+     * 缓存中的定义最终收敛到最新（本类不引入事务读以保证读路径无锁）。
+     */
     @Override
     public Optional<EntityDefinition> loadDefinition(String entityId) {
         return findEntity(entityId).map(entity -> new EntityDefinition(
@@ -125,6 +134,8 @@ public class JdbcMetaRepository implements MetaRepository {
                     field.required(), jsonOf(field.defaultValue()), jsonOf(field.validation()),
                     field.rendererId(), field.position());
         } catch (DuplicateKeyException e) {
+            // 表上仅有 (entity_id, name) 业务唯一约束与主键，此处默认冲突源为前者；
+            // 未来新增其他唯一约束时须按约束名区分转写
             throw new DuplicateKeyException("字段名已存在: " + field.name());
         }
         return field;
@@ -138,6 +149,8 @@ public class JdbcMetaRepository implements MetaRepository {
 
     @Override
     public int updateField(FieldDefinition field, boolean requireDraftEntity) {
+        // draft 守卫用 EXISTS 子查询而非应用层读状态：更新判定与写入在同一条语句内完成，
+        // 关闭"读取后实体被并发启用"窗口（语义列变更仅 draft 实体放行）
         return jdbc.update("UPDATE meta_field f SET name = ?, display_name = ?, field_type = ?,"
                         + " required = ?, default_value = ?, validation = ?::jsonb, renderer_id = ?,"
                         + " position = ?, updated_at = now()"

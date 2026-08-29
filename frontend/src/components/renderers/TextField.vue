@@ -10,6 +10,7 @@ const props = defineProps<{
   disabled?: boolean;
 }>();
 
+// 空输入归一为 null＝显式清除（docs/03 §8 PATCH null 清键），与表单提交口径一致
 const emit = defineEmits<{ 'update:modelValue': [value: string | null] }>();
 
 function numberRule(key: string): number | undefined {

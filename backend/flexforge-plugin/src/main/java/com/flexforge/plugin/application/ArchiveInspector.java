@@ -78,6 +78,7 @@ public class ArchiveInspector {
             throw new PluginValidationException(com.flexforge.common.api.ErrorCodes.VALIDATION_ERROR,
                     "插件包超过压缩大小上限 " + maxCompressedBytes + " 字节");
         }
+        // 魔数仅认 PK\x03/\x05/\x07（本地头/空归档/分卷），即 ZipFile 可解析的全部形态
         boolean zipMagic = zipBytes[0] == 'P' && zipBytes[1] == 'K'
                 && (zipBytes[2] == 3 || zipBytes[2] == 5 || zipBytes[2] == 7);
         if (!zipMagic) {
@@ -193,6 +194,7 @@ public class ArchiveInspector {
     /** 资产魔数嗅探（docs/13 §3.5-3：不信任类型声明；svg/css/json 拒二进制与脚本内容）。 */
     private static void sniffAsset(String entryName, Path file) throws IOException {
         String name = entryName.toLowerCase(Locale.ROOT);
+        // 顶层 assets/ 外仍兜底嵌套 /assets/（区域白名单之外的第二道嗅探防线）
         if (!name.startsWith("assets/") && !name.contains("/assets/")) {
             return;
         }

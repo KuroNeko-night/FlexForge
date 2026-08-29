@@ -40,6 +40,9 @@ public class JdbcIssueRepository implements IssueRepository {
                 issueRow, issueId).stream().findFirst().orElse(null);
     }
 
+    /** 乐观锁 CAS：UPDATE 带 {@code status = from} 条件，并发双迁时只有一方生效，
+     * 败者更新 0 行并得到可诊断冲突（而非静默覆盖）；状态更新与 issue_transition
+     * 行在同一事务，避免出现无记录或记录指向未发生状态的状态。 */
     @Override
     @Transactional
     public IssueRecord applyTransition(String issueId, IssueStatus from, IssueStatus to,
@@ -104,7 +107,10 @@ public class JdbcIssueRepository implements IssueRepository {
                         + " ORDER BY created_at", transitionRow, issueId);
     }
 
-    /** 原子取号 + 唯一约束冲突重试：并发保存规格败者换号重插（最多 3 次）。 */
+    /** 原子取号 + 唯一约束冲突重试：并发保存规格败者换号重插（最多 3 次）。
+     * 刻意不加方法级事务：Spring 事务内捕获 DuplicateKeyException（RuntimeException
+     * 子类）会把事务标记 rollback-only，循环重试在单事务内必然整体回滚；无事务时
+     * 每次尝试独立提交，重试语句才能取到包含胜者新号的新快照。 */
     @Override
     public SpecRevisionRecord insertSpec(String issueId, SpecContent content, String createdBy) {
         for (int attempt = 0; attempt < 3; attempt++) {

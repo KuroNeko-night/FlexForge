@@ -25,6 +25,8 @@ public record ThemeAssetContribution(
         if (kind == null || !KINDS.contains(kind)) {
             throw new IllegalArgumentException("themeAsset kind 非法: " + kind);
         }
+        // 契约层仅做前缀防线：穿越/段合法性由 flexforge-plugin 导入链强校验（S6，docs/13 §3.5），
+        // serve 端点按存储键精确匹配兜底；此处不重复整套路径算法，避免两处规则漂移
         if (path == null || path.isBlank() || !path.startsWith("assets/")) {
             throw new IllegalArgumentException("themeAsset path 必须是包内 assets/ 相对路径");
         }

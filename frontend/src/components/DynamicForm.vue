@@ -31,6 +31,8 @@ const formFields = computed<FieldDefinition[]>(() => {
     .filter((field): field is FieldDefinition => field !== undefined);
 });
 
+// values 是 setup 时的一次性快照：不随 props.initial 变化重置，
+// 跨记录/实体复用必须由调用方以 :key 强制重建组件（见 DynamicEntityView）
 const values = reactive<Record<string, unknown>>({ ...initialValue() });
 
 function initialValue(): Record<string, unknown> {

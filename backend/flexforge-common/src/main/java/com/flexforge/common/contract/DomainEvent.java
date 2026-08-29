@@ -27,6 +27,7 @@ public record DomainEvent(
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(aggregateId, "aggregateId");
         Objects.requireNonNull(occurredAt, "occurredAt");
+        // Map.copyOf 一步完成不可变快照与 null 键值拒绝（对齐类契约）；仅浅层不可变，值对象自担
         payload = payload == null ? Map.of() : Map.copyOf(payload);
     }
 }
