@@ -63,6 +63,10 @@ public class IssueAiService {
     /** 澄清（FR-ISSUE-03）：模板化提示词 → 模型 → 校验/重试 → 规格草稿版本。 */
     public ClarifyOutcome clarify(String operator, String issueId, String answer) {
         IssueRepository.IssueRecord issue = requireIssue(issueId);
+        if (issue.status() == IssueStatus.DONE || issue.status() == IssueStatus.CLOSED) {
+            throw new IllegalArgumentException(
+                    "Issue 已完结（" + issue.status().displayName() + "），不能继续澄清");
+        }
         ClarifyCall call = new ClarifyCall(issueId,
                 taskLog.countOf(issueId, "clarify") + 1, System.nanoTime());
         String prompt = PromptTemplates.render("clarify", Map.of(

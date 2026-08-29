@@ -242,6 +242,10 @@ final class E2eDemoScript {
                 versionId);
         assertThat(failed.get("status")).isEqualTo("FAILED");
         assertThat(failed.get("stage")).isEqualTo("DEPENDENCY_CHECK");
+        // 实例状态随失败派生为 failed（Issue #22 评论-16，插件页诊断消费）
+        Map<String, Object> instance = jdbc.queryForMap(
+                "SELECT status FROM plugin_instance WHERE plugin_id = 'e2e.dep'");
+        assertThat(instance.get("status")).isEqualTo("failed");
         assertThat(count("meta_entity", "name", "e2e_dep_item")).isZero();
         // 失败可恢复：卸载清理失败实例与依赖，系统回到可操作状态
         for (String pluginId : List.of("e2e.dep", "e2e.dep.base")) {

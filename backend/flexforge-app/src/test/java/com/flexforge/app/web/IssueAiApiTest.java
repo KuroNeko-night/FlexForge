@@ -42,6 +42,14 @@ class IssueAiApiTest {
             "acceptance":["可查询"]}
             """;
 
+    /** 终态门用例专用规格：独立实体名避免共享容器内跨用例所有权冲突（P11 教训）。 */
+    private static final String TERMINAL_SPEC = """
+            {"schemaVersion":1,"summary":"终态门规格","entities":[
+            {"name":"terminal_item","displayName":"终态项","fields":[
+            {"name":"name","displayName":"名称","fieldType":"text","required":true}]}],
+            "acceptance":["可查询"]}
+            """;
+
     @Autowired
     private MockMvc mockMvc;
 
@@ -289,6 +297,33 @@ class IssueAiApiTest {
                 .andReturn().getResponse().getContentAsString();
         assertThat((String) com.jayway.jsonpath.JsonPath.read(second, "$.version"))
                 .isEqualTo("0.1.2");
+    }
+
+    // ===== Issue #22 评论-24：终态 Issue（DONE/CLOSED）拒绝澄清与规格写入 =====
+    @Test
+    void terminalIssueRejectsClarifyAndSpecSave() throws Exception {
+        String issueId = createIssue("终态门", "完成后不再接受写入");
+        saveManualSpec(issueId, TERMINAL_SPEC);
+        approve(issueId);
+        generateAndAssertTesting(issueId);
+        for (String to : new String[] {"TESTED", "DONE"}) {
+            mockMvc.perform(MockMvcRequestBuilders.post(
+                            "/api/v1/issues/" + issueId + "/transition")
+                            .header("Authorization", developerBearer)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"to\":\"" + to + "\"}"))
+                    .andExpect(status().isOk());
+        }
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/issues/" + issueId + "/clarify")
+                        .header("Authorization", userBearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/v1/issues/" + issueId + "/spec")
+                        .header("Authorization", developerBearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(MANUAL_SPEC))
+                .andExpect(status().isBadRequest());
     }
 
     private static String iterSpec(String entityName) {
