@@ -68,7 +68,9 @@ class PluginApiTest {
                 + "\",\"version\":\"" + version + "\",\"capabilityLevel\":1,"
                 + "\"minPlatformVersion\":\"0.1.0\",\"dependencies\":" + dependencies + ","
                 + "\"contributions\":{\"navigation\":[\"" + pluginId + ".items\"],"
-                + "\"renderers\":[\"enum.default\"]},"
+                + "\"renderers\":[\"enum.default\"],"
+                + "\"themeAssets\":[{\"key\":\"" + pluginId + ".logo\",\"kind\":\"icon\","
+                + "\"path\":\"assets/logo.png\"}]},"
                 + "\"resources\":{\"entities\":[\"metadata/entities/item.json\"],"
                 + "\"views\":[],\"migrations\":" + migrations + "}}";
         Map<String, byte[]> entries = new LinkedHashMap<>();

@@ -110,7 +110,11 @@ public class PluginImportService {
         return manifest;
     }
 
-    /** 声明核对：声明资源必须存在；metadata/migrations 下未声明文件拒绝（docs/08 §4）。 */
+    /**
+     * 声明核对：声明资源必须存在；metadata/migrations 下未声明文件拒绝（docs/08 §4）；
+     * assets/ 逐文件声明收紧（Issue #20 第 3 项）——每个资产必须被某条 themeAssets
+     * 贡献引用，themeAssets 引用的资产必须存在于包内。
+     */
     private static void crossCheckDeclared(PluginManifest manifest, SafeArchive archive) {
         Set<String> entries = archive.entryNames();
         Set<String> declared = Set.copyOf(allDeclared(manifest));
@@ -120,9 +124,34 @@ public class PluginImportService {
             }
         }
         for (String entry : entries) {
-            if ((entry.startsWith("metadata/") || entry.startsWith("migrations/"))
-                    && !declared.contains(entry)) {
+            if (isUndeclaredManagedFile(entry, declared)) {
                 throw PluginValidationException.invalidManifest("包内文件未在 resources 声明: " + entry);
+            }
+        }
+        requireAssetsDeclared(manifest, entries);
+    }
+
+    private static boolean isUndeclaredManagedFile(String entry, Set<String> declared) {
+        boolean managed = entry.startsWith("metadata/") || entry.startsWith("migrations/");
+        return managed && !declared.contains(entry);
+    }
+
+    /** assets/ 双向核对：声明必在包内、包内必有声明（Issue #20 第 3 项收紧）。 */
+    private static void requireAssetsDeclared(PluginManifest manifest, Set<String> entries) {
+        Set<String> declaredAssets = new java.util.HashSet<>();
+        for (com.flexforge.plugin.domain.ThemeAssetSpec asset : manifest.themeAssets()) {
+            declaredAssets.add(asset.path());
+        }
+        for (String assetPath : declaredAssets) {
+            if (!entries.contains(assetPath)) {
+                throw PluginValidationException.invalidManifest(
+                        "themeAssets 声明的资产在包内缺失: " + assetPath);
+            }
+        }
+        for (String entry : entries) {
+            if (entry.startsWith("assets/") && !declaredAssets.contains(entry)) {
+                throw PluginValidationException.invalidManifest(
+                        "包内资产文件未被 contributions.themeAssets 声明: " + entry);
             }
         }
     }
@@ -160,9 +189,14 @@ public class PluginImportService {
             resourcePayloads.put(path,
                     new String(archive.fileBytes(path), java.nio.charset.StandardCharsets.UTF_8));
         }
+        Map<String, String> assetPayloads = new java.util.LinkedHashMap<>();
+        for (com.flexforge.plugin.domain.ThemeAssetSpec asset : manifest.themeAssets()) {
+            assetPayloads.putIfAbsent(asset.path(),
+                    java.util.Base64.getEncoder().encodeToString(archive.fileBytes(asset.path())));
+        }
         return new PluginVersionRecord("pv-" + UUID.randomUUID(), manifest.id(),
                 manifest.version(), hash, manifest.capabilityLevel(), manifest.raw().toString(),
-                checksums, size, null, scriptPayloads, resourcePayloads);
+                checksums, size, null, scriptPayloads, resourcePayloads, assetPayloads);
     }
 
     private InstallPreview transientPreview(PluginManifest manifest, String hash,

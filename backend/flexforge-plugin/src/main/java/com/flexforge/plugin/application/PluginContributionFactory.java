@@ -1,8 +1,10 @@
 package com.flexforge.plugin.application;
 
 import com.flexforge.common.contract.NavigationContribution;
+import com.flexforge.common.contract.ThemeAssetContribution;
 import com.flexforge.plugin.domain.LifecycleRepository;
 import com.flexforge.plugin.domain.PluginVersionRecord;
+import com.flexforge.plugin.domain.ThemeAssetSpec;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -61,6 +63,34 @@ final class PluginContributionFactory {
         return manifestContributions(version).getOrDefault("renderers", List.of());
     }
 
+    /** themeAssets 贡献（对象数组，登记册 §2.2）：激活期从 manifestJson 原始解析。 */
+    static List<ThemeAssetSpec> themeAssetsOf(PluginVersionRecord version) {
+        JsonNode node = JSON.readTree(version.manifestJson())
+                .path("contributions").path("themeAssets");
+        if (!node.isArray()) {
+            return List.of();
+        }
+        List<ThemeAssetSpec> result = new ArrayList<>();
+        for (int i = 0; i < node.size(); i++) {
+            JsonNode item = node.get(i);
+            JsonNode scope = item.get("scope");
+            result.add(new ThemeAssetSpec(item.path("key").asString(),
+                    item.path("kind").asString(), item.path("path").asString(),
+                    scope == null || scope.isNull() ? null : scope.asText()));
+        }
+        return List.copyOf(result);
+    }
+
+    /** 内存注册对象（§2.2 契约类型）。 */
+    static ThemeAssetContribution themeAssetContribution(ThemeAssetSpec spec) {
+        return new ThemeAssetContribution(spec.key(), spec.kind(), spec.path(), spec.scope());
+    }
+
+    /** plugin_registration 持久化载荷（§2.2 契约完整字段）。 */
+    static String themeAssetPayload(ThemeAssetSpec spec) {
+        return JSON.writeValueAsString(themeAssetContribution(spec));
+    }
+
     /** 内存注册对象（MenuService 消费 §2.2 契约类型）。 */
     static NavigationContribution navigationContribution(String key, PluginVersionRecord version,
                                                           JsonNode entities) {
@@ -100,6 +130,9 @@ final class PluginContributionFactory {
         }
         Map<String, List<String>> result = new HashMap<>();
         for (String key : contributions.propertyNames()) {
+            if ("themeAssets".equals(key)) {
+                continue; // 对象数组贡献，经 themeAssetsOf 单独解析
+            }
             JsonNode array = contributions.get(key);
             if (array != null && array.isArray()) {
                 List<String> values = new ArrayList<>();

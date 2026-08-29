@@ -22,6 +22,7 @@ public record PluginManifest(
         List<DependencySpec> dependencies,
         List<String> permissions,
         Map<String, List<String>> contributions,
+        List<ThemeAssetSpec> themeAssets,
         Resources resources,
         JsonNode raw) {
 
@@ -44,6 +45,7 @@ public record PluginManifest(
         dependencies = dependencies == null ? List.of() : List.copyOf(dependencies);
         permissions = permissions == null ? List.of() : List.copyOf(permissions);
         contributions = contributions == null ? Map.of() : Map.copyOf(contributions);
+        themeAssets = themeAssets == null ? List.of() : List.copyOf(themeAssets);
         Objects.requireNonNull(resources, "resources");
         Objects.requireNonNull(raw, "raw");
     }

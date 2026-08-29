@@ -69,13 +69,15 @@ public class JdbcPluginRepository implements PluginPackageRepository {
         try {
             jdbc.update("INSERT INTO plugin_version (id, plugin_id, version, content_hash,"
                             + " capability_level, manifest_json, script_checksums, size_bytes,"
-                            + " script_payloads, resource_payloads)"
-                            + " VALUES (?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?::jsonb)",
+                            + " script_payloads, resource_payloads, asset_payloads)"
+                            + " VALUES (?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::jsonb, ?::jsonb,"
+                            + " ?::jsonb)",
                     version.id(), version.pluginId(), version.version(), version.contentHash(),
                     version.capabilityLevel(), version.manifestJson(),
                     checksumsJson(version.scriptChecksums()), version.sizeBytes(),
                     payloadsJson(version.scriptPayloads()),
-                    payloadsJson(version.resourcePayloads()));
+                    payloadsJson(version.resourcePayloads()),
+                    payloadsJson(version.assetPayloads()));
         } catch (DuplicateKeyException e) {
             throw e;
         }
@@ -99,18 +101,19 @@ public class JdbcPluginRepository implements PluginPackageRepository {
     private String versionSelect() {
         return "SELECT id, plugin_id, version, content_hash, capability_level,"
                 + " manifest_json, script_checksums, size_bytes, created_at,"
-                + " script_payloads, resource_payloads FROM plugin_version";
+                + " script_payloads, resource_payloads, asset_payloads FROM plugin_version";
     }
 
     private PluginVersionRecord mapRow(ResultSet rs, int rowNum) throws SQLException {
         Map<String, String> checksums = stringMapOf(rs.getString("script_checksums"));
         Map<String, String> scripts = stringMapOf(rs.getString("script_payloads"));
         Map<String, String> resources = stringMapOf(rs.getString("resource_payloads"));
+        Map<String, String> assets = stringMapOf(rs.getString("asset_payloads"));
         return new PluginVersionRecord(rs.getString("id"), rs.getString("plugin_id"),
                 rs.getString("version"), rs.getString("content_hash"),
                 rs.getInt("capability_level"), rs.getString("manifest_json"), checksums,
                 rs.getLong("size_bytes"), rs.getTimestamp("created_at").toInstant(),
-                scripts, resources);
+                scripts, resources, assets);
     }
 
     private static Map<String, String> stringMapOf(String json) {

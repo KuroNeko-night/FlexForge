@@ -51,7 +51,7 @@ class PluginImportServiceTest {
 
     private static PluginVersionRecord record(String hash) {
         return new PluginVersionRecord("pv-winner", "demo.race", "1.0.0", hash, 1,
-                "{\"name\":\"race\"}", Map.of(), 100, null, Map.of(), Map.of());
+                "{\"name\":\"race\"}", Map.of(), 100, null, Map.of(), Map.of(), Map.of());
     }
 
     /** 并发窗口：storeVersion 撞唯一约束 → 复查 content hash 命中 → 幂等返回。 */

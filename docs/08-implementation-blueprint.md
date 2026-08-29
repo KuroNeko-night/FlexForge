@@ -144,7 +144,10 @@ example-inventory/
   "permissions": ["inventory.read", "inventory.write"],
   "contributions": {
     "navigation": ["inventory.items"],
-    "renderers": ["table.default", "form.default"]
+    "renderers": ["integer.default"],
+    "themeAssets": [
+      {"key": "example.inventory.bg", "kind": "background", "path": "assets/bg.webp"}
+    ]
   },
   "resources": {
     "entities": ["metadata/entities/inventory-item.json"],
@@ -154,7 +157,8 @@ example-inventory/
 }
 ```
 
-资源路径必须是包内相对路径，禁止 `..`、绝对路径、脚本文件和未声明文件。renderer 只能引用平台注册的 ID。
+资源路径必须是包内相对路径，禁止 `..`、绝对路径、脚本文件和未声明文件。renderer 只能引用平台注册的 ID（六类内置 `<type>.default`，见登记册 §2.2）。
+`contributions.themeAssets` 为对象数组（登记册 §2.2 契约：`key/kind/path` 必填，`scope` 可选）；P08 起 `assets/` 区域**逐文件声明**——包内每个资产文件必须被某条 themeAssets 贡献引用，themeAssets 引用的资产必须存在于包内（双向核对，Issue #20 第 3 项）。资产经导入存储（`plugin_version.asset_payloads` base64），由激活身份限定的 serve 端点取回（响应头 `Content-Security-Policy: default-src 'none'` + `Content-Disposition: attachment` + `X-Content-Type-Options: nosniff`，svg 事件属性纵深，Issue #20 第 4 项）。
 
 `plugins/example-inventory` 与任何第三方包同权：预置但不自动安装；演示脚本只能调用标准导入/安装/启停/卸载 API；禁止在前后端骨架中为其写死菜单、路由、页面或权限。
 
