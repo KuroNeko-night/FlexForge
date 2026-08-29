@@ -159,6 +159,21 @@ function checkHygiene(files) {
     problems.length ? problems : ['无 >1MB 文件；无受保护文件被跟踪；.gitignore 覆盖 .env；无未挂 Issue 的标记']);
 }
 
+// 演示脚本语法检查（Issue #22 第 11 项）：bash -n 拦截语法级事故（P12 审查 P0 教训）
+function checkScriptSyntax(files) {
+  const scripts = files.filter((f) => /^scripts\/.+\.sh$/.test(f));
+  const problems = [];
+  for (const f of scripts) {
+    try {
+      execFileSync('bash', ['-n', path.join(ROOT, f)], { stdio: 'pipe' });
+    } catch (e) {
+      problems.push(`${f}: ${(e.stderr ? e.stderr.toString() : e.message).trim().split('\n')[0]}`);
+    }
+  }
+  record('SCRIPT-SYNTAX', problems.length ? 'fail' : 'pass',
+    problems.length ? problems : [`bash -n 通过：${scripts.length} 个脚本`]);
+}
+
 function checkRgov01() {
   try {
     const result = checkLintThresholds(ROOT);
@@ -188,6 +203,7 @@ checkIndexTree(files);
 checkDocRegistration(files);
 checkStatusMirror();
 checkHygiene(files);
+checkScriptSyntax(files);
 checkRgov01();
 const frontendOk = runFrontendGates(record);
 const backend = runBackendVerify(record);
