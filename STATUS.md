@@ -5,11 +5,11 @@
 <!-- FLEXFORGE_STATUS:BEGIN -->
 CURRENT_STAGE_ID: P12
 CURRENT_STAGE_NAME: Agent Issue 端到端闭环
-STAGE_STATUS: ready_to_start
+STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 50%
 LAST_UPDATED: 2026-08-29
 OWNER: project-maintainer
-NEXT_ACTION: P12 启动（分支 feat/p12-agent-e2e，docs/09 P12 + RB-E2E 五场景）：端到端冒烟脚本/测试（动态实体 CRUD、插件生命周期、Issue→规格→骨架→审核→安装，干净数据库连续三次）→ 演示准备（预置账号/数据/脚本演练）→ 子代理审查 → PR → 出口
+NEXT_ACTION: P12 实现（分支 feat/p12-agent-e2e）：RB-E2E 端到端冒烟（场景 A/B/B2/C/D，干净库 DROP+重迁移连续三次，计时留档）→ 插件页（inventory 版本/激活尝试/失败诊断）→ 演示脚本与预置账号 → 子代理审查 → PR → 出口
 EXIT_GATE: P11 出口证据（验收七项，复审者核对+修复后全部成立）：①模型可用生成合法规格——fixture 全链（clarify×2→valid 规格→批准→生成→IN_TESTING，IssueAiApiTest）+在线路径经 HttpModelPort 本地 stub 实测（200 解析；接口确认前 fixture 优先为 docs/09 P11 原文口径，真机接入记 Issue #22-31）②模型不可用手工兜底——IssueAiFailureApiTest（503 后 PUT 手工规格继续流程）+ manualSpec 用例③非法输出不产可安装包——ClarifyEngineTest 非法 JSON/越权 fieldType 重试与上限 + Generator 只派生内置 renderer +非法规格拒绝生成④AI 无 DB/shell/FS/发布权限——编排纯函数、输出经 Schema+P07 标准导入链（复审逐点核验）⑤切换实现不改主流程——ModelPort 注入+条件装配（fixture 默认/http 显式），compose/.env 配置链贯通⑥超时/限流/离线可诊断、密钥不入库日志——model_unavailable 503/model_output_invalid 400 API 级断言；密钥仅环境变量、V011 无密钥/全文/请求头⑦结构化记录落库+可导出——V011 七字段 + IssueAiApiTest 断言 +export-thesis-data.mjs 四数据面（compose 服务名修正后可用）。一轮子代理审查（2 P1+6 P2 全修：导出脚本服务名/生成版本死锁（迭代回路 0.1.1→0.1.2 回归）+注入围栏/JSON 安全 manifest/日志语义/配置链/非 JSON 分类/API 级失败证据；P3 记 Issue #22 #23-31）；后端 264 tests 全绿、门禁 20/1/0、main CI 全绿（PR #26）
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -30,7 +30,7 @@ BLOCKERS: none
 | P09 | 库存示例插件 | completed | 库存插件可安装并完成演示 |
 | P10 | Issue 与规格 Schema | completed | Issue 状态机和规格版本可审计 |
 | P11 | AI 适配器与生成器 | completed | 在线/fixture/手工三条路径可用 |
-| P12 | Agent Issue 端到端闭环 | ready_to_start | 干净数据库连续三次完成主流程 |
+| P12 | Agent Issue 端到端闭环 | in_progress | 干净数据库连续三次完成主流程 |
 | P13 | 加分项与体验优化 | optional | 不影响主线稳定性 |
 | P14 | 质量收敛与答辩交付 | pending | 全量验收通过，进入 release candidate |
 
@@ -128,3 +128,4 @@ BLOCKERS: none
 | 2026-08-29 | P11 | P11 启动并迭代 1 完成（分支 feat/p11-ai-generator，单迭代交付全阶段）：①V011 ai_task_log（模型/提示词版本/澄清轮次/重试/校验结果/耗时；不存提示词全文与密钥，docs/12 §3 数据随实现积累）②ModelPort 端口收敛（flexforge-ai）：FixtureModelPort（默认装配，两轮脚本化澄清，规格资源文件化与 prompts/v1 一一对应）+ HttpModelPort（OpenAI 兼容，provider=http 才装配；密钥仅环境变量 FLEXFORGE_AI_API_KEY；超时 60s/限流 429/离线统一转 model_unavailable 503，任务不落状态）③提示词模板文件化 prompts/v1/clarify.md（代码零散落提示词；{{title}}/{{description}}/{{answer}} 占位）④ClarifyEngine：解析→RequirementSchema 校验→有限重试（上限 3 次含校验错误反馈）→超限 model_output_invalid 400（可走手工规格）⑤PluginPackageGenerator：确认后规格→确定性 Level 1 包（与 SpecPreview 同规则；pluginId=gen.i<hex> 合法段首；renderer 只内置 ID）⑥IssueAiService 编排：clarify（作者或开发者）两轮→规格草稿落版本；generate（开发者，需 APPROVED+valid 规格）→标准导入+激活（与第三方同权）→issue IN_TESTING，失败转 DEV_FAILED 带原因⑦导出脚本 scripts/export-thesis-data.mjs（docs/12 §3 四数据面 CSV，存档不进仓库）。测试：ai 21（ClarifyEngine 6 含非法 JSON/越权类型重试与上限/HttpModelPort 4 含 429/缺 content/fixture 脚本/Generator 2）+ app IssueAiApiTest 6（fixture 两轮+任务记录/手工兜底全链 IN_TESTING+USER CRUD/fixture 端到端/前置拒绝/DEV_FAILED 冲突转译/角色矩阵含 ADMIN 非作者 400）。过程修复：fixture 规格字面量触发 FieldTypeRegistry 单点扫描→资源文件化；生成 manifest 数组未闭合；pluginId UUID 连字符与段首数字两轮修正。后端 261 tests 全绿、门禁 20/1/0 | docs/09 P11、docs/03 §6/§8、docs/12 §3、docs/13 §3.6、RB-AI、FR-ISSUE-03..05 |
 | 2026-08-29 | P11 | PR #26 独立子代理交叉审查：0 P0 + 2 P1 + 6 P2 + 9 P3，结论"修复 P1 后可合并"，验收七项逐项核对（4/7 满足、3 部分满足因 P1/P2）。全部当场修复——P1-1：导出脚本 compose 服务名 postgres→db（仓库环境直接跑不通）；P1-2：生成版本写死 0.1.0 致同 Issue 修改规格再生成必撞"同版本不可变"（FR-ISSUE-06 迭代回路断裂）→ version=0.1.<specRevision> + generate 改 upgrade 语义（停旧激活→激活新→补偿，此前二次激活被占用检查拒绝）+ 迭代回路回归用例（0.1.1→反馈→0.1.2 双版本 IN_TESTING）；P2-1：提示词模板补数据段围栏（docs/13 §3.6-2 落实）；P2-2：manifest 改 ObjectNode 构造（summary 含引号/反斜杠不再产破损包）；P2-3：ai_task_log 语义统一（retries=模型重试次数同口径、失败也记真实耗时、clarify_rounds=该 Issue 累计轮次、先落规格再记成功防假 valid）；P2-4：compose 传 FLEXFORGE_AI_PROVIDER/BASE_URL、.env.example 补三键、base-url 空默认不启动崩溃；P2-5：200+非 JSON 归类 model_unavailable、questions 非文本元素交重试口径；P2-6：新增 IssueAiFailureApiTest（@Primary 桩 503 model_unavailable/400 model_output_invalid + FR-ISSUE-06 手工兜底，API 级证据）。P3 九项记 Issue #22 #23-31（markDevFailed 竞态/终态 clarify 无门/400 vs 403/fixture 标记脆弱/zip 确定性已顺手修（setTime(0)+双调相等断言）/导出目录 gitignore/文案依赖断言/重复视图覆盖/generate 前置失败不落日志口径）。过程修复：模板改动破坏 fixture 判轮标记→标记与模板头同步、跨用例实体名冲突→用例独立实体名。后端 264 tests 全绿、门禁 20/1/0 | PR #26 评论、Issue #22 |
 | 2026-08-29 | P11 | **P11 出口复核通过，置 completed**（P12 置 ready_to_start，进度 50%）。验收七项逐项核验（证据见 EXIT_GATE；在线真机接入为 docs/09 P11 明文允许的延后项——"接口确认后接入"，fixture 优先，记 Issue #22-31）。交付：ModelPort 双实现+ClarifyEngine+确定性生成器+V011 任务记录+导出脚本。一轮子代理审查 2 P1+6 P2 全修（关键：生成版本绑定 specRevision+upgrade 语义打通迭代回路）。后端 264 tests、门禁 20/1/0、main CI 全绿 | docs/09 P11 验收、PR #26、RB-AI、docs/12 §3 |
+| 2026-08-29 | P12 | RB-E2E 五场景冒烟落地：干净库（DROP SCHEMA+Flyway 重迁移+重种子）连续三轮全绿，逐环节计时行 `RB-E2E,iter,stage,ms`（total 743/539/449ms，docs/12 §"端到端演示各环节耗时"数据源）；插件页 PluginsView（/plugins 路由+ADMIN 本地菜单+inventory 只读：版本/激活尝试/失败诊断 stage+errorCode）；scripts/demo-e2e.sh 五场景演示脚本（E2E-DEMO 计时行+可选 CSV 留档+干净库前置检查+演示账号经 API 预置）；.env.example 补演示变量。live 容器演练按用户要求推迟到验收阶段统一重建后进行 | `AgentIssueE2eTest`/`E2eDemoScript`、`frontend/src/views/PluginsView.vue`+4 测试、`scripts/demo-e2e.sh` |

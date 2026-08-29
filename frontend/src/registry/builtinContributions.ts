@@ -1,10 +1,11 @@
 import { deleteRecord } from '@/api/data';
 import EntityCards from '@/components/EntityCards.vue';
+import { registerMenu } from '@/registry/menuRegistry';
 import { registerRecordAction, type ActionContext } from '@/registry/recordActionRegistry';
 import { registerWidget } from '@/registry/layoutRegistry';
 
 /**
- * 平台内置贡献注册（应用启动装配一次）：内置部件与内置记录动作。
+ * 平台内置贡献注册（应用启动装配一次）：内置部件、内置记录动作与本地菜单。
  * 新增内置 renderer/部件/动作 = 在此登记一行映射；插件贡献（P08）经
  * manifest 校验后由 PluginRuntime 调用同一组 register API 接入。
  */
@@ -16,6 +17,14 @@ export function registerBuiltinContributions(): void {
   }
   registered = true;
   registerWidget('workbench.entities', EntityCards);
+  // 插件管理入口（P12）：本地注册菜单，仅 ADMIN 可见（服务端 /plugins/inventory 为边界）
+  registerMenu({
+    key: 'platform.plugins',
+    title: '插件管理',
+    route: '/plugins',
+    order: 40,
+    permissionKey: 'ADMIN',
+  });
   registerRecordAction({
     key: 'record.detail',
     label: '详情',

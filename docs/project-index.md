@@ -26,6 +26,9 @@ FlexForge/
 ├── scripts/
 │   ├── check-repo-health.mjs       一条命令：格式/lint/test/build + R-GOV-01/02/03/04/05/06
 │   ├── sync-status.mjs             STATUS.md → project-status.json 单向生成/校验
+│   ├── demo-example-inventory.sh   库存插件生命周期演示（安装→CRUD→停启→卸载，P09）
+│   ├── demo-e2e.sh                 五场景端到端演示脚本+逐环节计时 CSV（P12）
+│   ├── export-thesis-data.mjs      论文四数据面 CSV 导出（compose 内 psql，P11）
 │   └── lib/
 │       ├── gates.mjs              前后端门禁执行层（ComSpec/工具链/R-GOV-02/06）
 │       ├── rgov-extension-points.mjs R-GOV-03 门禁（登记册常量比对 + 解析器负样本自检，P02）
@@ -44,7 +47,7 @@ FlexForge/
 │   ├── flexforge-issue/             Issue/评论/标签/状态机/版本化规格（P10）；P11：clarify/generate 编排+ai_task_log
 │   ├── flexforge-ai/                规格 Schema（RequirementSchema v1）+预览派生（P10）；P11：ModelPort（fixture/http）+ClarifyEngine+PluginPackageGenerator+prompts/v1 资源
 │   │   └── src/main/resources/prompts/v1/   提示词与 fixture 资源（clarify.md + fixture-spec.json，版本一一对应）
-│   └── flexforge-app/              启动、配置、健康检查；web/ 统一错误装配 + requestId 过滤器 + logback 脱敏基线（P02 迭代 2）；Testcontainers 冒烟 + ArchUnit（5 规则）+ R-GOV-06 fixture 测试
+│   └── flexforge-app/              启动、配置、健康检查；web/ 统一错误装配 + requestId 过滤器 + logback 脱敏基线（P02 迭代 2）；Testcontainers 冒烟 + ArchUnit（5 规则）+ R-GOV-06 fixture 测试 + AgentIssueE2eTest/E2eDemoScript（RB-E2E 五场景×3 干净库，P12）
 ├── frontend/                       Vue 3 + TS + Vite（P01 骨架 + P06 动态渲染）
 │   ├── package.json / package-lock.json   +vue-router；dev 依赖 +@vue/test-utils/happy-dom/globals（P06）
 │   ├── Dockerfile                  Vite dev 镜像（非 root；生产静态服务 P06 引入）
@@ -53,12 +56,12 @@ FlexForge/
 │   ├── eslint.config.js / eslint.config.targets.js   硬上限 error / 建议目标 warn（P06 补浏览器 globals）
 │   └── src/
 │       ├── main.ts / App.vue / router.ts   路由壳（登录守卫体验跳转，安全边界在服务端 S2）
-│       ├── api/                    client（错误规范化/令牌注入/401 回调）+ auth/meta/data 客户端 + 契约类型
+│       ├── api/                    client（错误规范化/令牌注入/401 回调）+ auth/meta/data/plugins 客户端 + 契约类型
 │       ├── auth/token.ts           会话令牌（sessionStorage）与当前用户
-│       ├── registry/               keyed.ts 通用基座 + renderer/menu/layout/theme/recordAction registry + builtinContributions（内置部件与动作）
+│       ├── registry/               keyed.ts 通用基座 + renderer/menu/layout/theme/recordAction registry + builtinContributions（内置部件/动作/本地菜单）
 │       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards
 │       ├── composables/            useEntityMetadata（metaVersion 比对 → stale 刷新）
-│       └── views/                  Login/Workbench/Home/DynamicEntity（列表/详情/新建/编辑）/Placeholder
+│       └── views/                  Login/Workbench/Home/DynamicEntity（列表/详情/新建/编辑）/Plugins（清单只读，P12）/Placeholder
 ├── database/
 │   ├── migrations/V001__init.sql   平台骨架表（sys_user/sys_role/sys_user_role）
 │   ├── migrations/V002-004         V002 审计表 / V003 角色种子 / V004 meta_entity+meta_field+meta_view（P04）
@@ -229,3 +232,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-29 | §1 树更新：V009 占用唯一索引；plugins/ 目录（example-inventory 包+包外 README）；flexforge-plugin +PluginInventoryService/视图注册端口；app 测试 +ExampleInventoryPluginTest；scripts +demo-example-inventory.sh +lib/rgov-skeleton-purity.mjs（R-GOV-09 激活） | P09：库存示例插件（FR-DEMO-01..03、NFR-SKEL-01、Issue #22 第 1/2 项守卫） |
 | 2026-08-29 | §1 树更新：flexforge-issue/flexforge-ai 新模块；V010 issue_* 五表；ErrorCodes +invalid_transition；app 测试 +IssueApiTest | P10：Issue 与规格 Schema（RB-ISSUE） |
 | 2026-08-29 | §1 树更新：V011 ai_task_log；ai +ModelPort/HttpModelPort/FixtureModelPort/ClarifyEngine/PromptTemplates/PluginPackageGenerator +prompts/v1 资源；issue +AiTaskLogPort/IssueAiService/IssueAiConfig +clarify/generate 端点；ErrorCodes +model_unavailable/model_output_invalid；scripts +export-thesis-data.mjs；app 测试 +IssueAiApiTest | P11：AI 适配器与生成器（RB-AI） |
+| 2026-08-29 | §1 树更新：scripts +demo-e2e.sh（五场景演示+计时；顺带回填 P09/P11 遗漏的 demo-example-inventory.sh 与 export-thesis-data.mjs 两行）；frontend api +plugins.ts、views +PluginsView、router +/plugins、builtinContributions +本地菜单；app 测试 +AgentIssueE2eTest/E2eDemoScript | P12：Agent Issue 端到端闭环（RB-E2E + 插件页，docs/12 §"端到端演示各环节耗时"数据源落地） |
