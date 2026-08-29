@@ -39,7 +39,13 @@ api() { # api METHOD PATH TOKEN [JSON_BODY] -> 响应体（curl -sf，非 2xx �
     curl -sf -X "$method" "$BASE_URL$path"
   fi
 }
-now_ms() { python3 -c 'import time;print(int(time.time()*1000))'; }
+now_ms() { # 毫秒时间戳：bash5 内建 EPOCHREALTIME 免子进程开销；老 bash 回退 python3
+  if [ -n "${EPOCHREALTIME:-}" ]; then
+    echo "$(( ${EPOCHREALTIME%.*} * 1000 + 10#${EPOCHREALTIME#*.} / 1000 ))"
+  else
+    python3 -c 'import time;print(int(time.time()*1000))'
+  fi
+}
 STAGE_NAME="" STAGE_START=0
 stage_begin() { STAGE_NAME="$1"; STAGE_START="$(now_ms)"; printf '\n== 场景 %s ==\n' "$STAGE_NAME"; }
 stage_end() {
@@ -50,7 +56,14 @@ stage_end() {
   fi
 }
 
-login() { api POST /api/v1/auth/login '' "{\"username\":\"$1\",\"password\":\"$2\"}" | json "['token']"; }
+login() {
+  local token
+  if ! token="$(api POST /api/v1/auth/login '' "{\"username\":\"$1\",\"password\":\"$2\"}" | json "['token']")"; then
+    echo "登录失败：$1——检查口令（管理员须与 FLEXFORGE_BOOTSTRAP_ADMIN_PASSWORD 一致；演示账号口令是否被改过）" >&2
+    exit 1
+  fi
+  echo "$token"
+}
 
 # 0. 打包演示插件（与仓库内源同步）
 python3 - "$PKG_DIR" "$ZIP_FILE" << 'PY'
@@ -150,17 +163,25 @@ with zipfile.ZipFile(path, "w") as z:
 print(path)
 PY
 }
-import_and_activate_must_fail() { # import_and_activate_must_fail ZIP EXPECT_CODE
-  local vid
-  vid="$(curl -sf -H "Authorization: Bearer $admin_token" -F "file=@$1" \
-    "$BASE_URL/api/v1/plugins/import" | json "['versionId']")"
-  if curl -sf -X POST -H "Authorization: Bearer $admin_token" \
-    "$BASE_URL/api/v1/plugins/$vid/activate" >/dev/null 2>&1; then
-    echo "依赖未激活却激活成功（应 $2）" >&2; exit 1
+import_plugin() { # import_plugin ZIP -> versionId（只导入不激活）
+  curl -sf -H "Authorization: Bearer $admin_token" -F "file=@$1" \
+    "$BASE_URL/api/v1/plugins/import" | json "['versionId']"
+}
+activate_must_fail_with() { # activate_must_fail_with ZIP EXPECT_HTTP EXPECT_CODE
+  local vid body http
+  vid="$(import_plugin "$1")"
+  body="$(curl -s -w '\n%{http_code}' -X POST -H "Authorization: Bearer $admin_token" \
+    "$BASE_URL/api/v1/plugins/$vid/activate")"
+  http="$(echo "$body" | tail -1)"
+  body="$(echo "$body" | head -n -1)"
+  if [ "$http" != "$2" ] || [ "$(echo "$body" | json "['code']")" != "$3" ]; then
+    echo "激活未按预期失败（期望 HTTP $2/$3，实际 HTTP $http：$body）" >&2
+    exit 1
   fi
 }
-import_and_activate_must_fail "$(dep_zip e2e.dep.base base '[]')" ''
-import_and_activate_must_fail "$(dep_zip e2e.dep child '[{"pluginId":"e2e.dep.base","versionRange":"^1.0.0"}]')" dependency_missing
+# 依赖插件只导入不激活（base 本身是合法包，激活会成功——不能断言其失败）
+import_plugin "$(dep_zip e2e.dep.base base '[]')" >/dev/null
+activate_must_fail_with "$(dep_zip e2e.dep child '[{"pluginId":"e2e.dep.base","versionRange":"^1.0.0"}]')" 400 dependency_missing
 api DELETE /api/v1/plugins/e2e.dep "$admin_token" >/dev/null
 api DELETE /api/v1/plugins/e2e.dep.base "$admin_token" >/dev/null
 stage_end

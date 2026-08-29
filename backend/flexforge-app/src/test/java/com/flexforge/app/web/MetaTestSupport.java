@@ -67,4 +67,31 @@ public final class MetaTestSupport {
                 .andExpect(status().is(expectedStatus))
                 .andReturn().getResponse().getContentAsString();
     }
+
+    /** RB-E2E 场景 A 物料样板：四字段（text 必填/integer 非负/decimal/enum）+ list/form 视图。 */
+    public static void seedMaterialFieldsAndViews(MockMvc mockMvc, String bearer,
+                                                  String entityId) throws Exception {
+        addField(mockMvc, bearer, entityId, "{\"name\":\"name\",\"displayName\":\"名称\","
+                + "\"fieldType\":\"text\",\"required\":true,\"position\":0}", 200);
+        addField(mockMvc, bearer, entityId, "{\"name\":\"qty\",\"displayName\":\"数量\","
+                + "\"fieldType\":\"integer\",\"validation\":{\"min\":0},\"position\":1}", 200);
+        addField(mockMvc, bearer, entityId, "{\"name\":\"unit_price\",\"displayName\":\"单价\","
+                + "\"fieldType\":\"decimal\",\"position\":2}", 200);
+        addField(mockMvc, bearer, entityId, "{\"name\":\"status\",\"displayName\":\"状态\","
+                + "\"fieldType\":\"enum\",\"validation\":{\"options\":[\"in_stock\",\"sold_out\"]},"
+                + "\"position\":3}", 200);
+        addView(mockMvc, bearer, entityId, "{\"viewType\":\"list\",\"name\":\"物料列表\","
+                + "\"columns\":[{\"field\":\"name\"},{\"field\":\"qty\",\"visible\":true}]}");
+        addView(mockMvc, bearer, entityId, "{\"viewType\":\"form\",\"name\":\"物料表单\","
+                + "\"columns\":[{\"field\":\"name\"},{\"field\":\"status\"}]}");
+    }
+
+    private static void addView(MockMvc mockMvc, String bearer, String entityId,
+                                String viewJson) throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/meta/entities/" + entityId + "/views")
+                        .header("Authorization", bearer)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(viewJson))
+                .andExpect(status().isOk());
+    }
 }

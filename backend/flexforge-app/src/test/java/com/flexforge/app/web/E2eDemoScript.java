@@ -100,33 +100,9 @@ final class E2eDemoScript {
     private void scenarioDynamicEntity() throws Exception {
         String entityName = "demo_material";
         String entityId = MetaTestSupport.createEntity(mockMvc, actors.developer(), entityName);
-        addField("{\"name\":\"name\",\"displayName\":\"名称\",\"fieldType\":\"text\","
-                + "\"required\":true,\"position\":0}", entityId);
-        addField("{\"name\":\"qty\",\"displayName\":\"数量\",\"fieldType\":\"integer\","
-                + "\"validation\":{\"min\":0},\"position\":1}", entityId);
-        addField("{\"name\":\"unit_price\",\"displayName\":\"单价\",\"fieldType\":\"decimal\","
-                + "\"position\":2}", entityId);
-        addField("{\"name\":\"status\",\"displayName\":\"状态\",\"fieldType\":\"enum\","
-                + "\"validation\":{\"options\":[\"in_stock\",\"sold_out\"]},\"position\":3}",
-                entityId);
-        addView(entityId, "{\"viewType\":\"list\",\"name\":\"物料列表\",\"columns\":"
-                + "[{\"field\":\"name\"},{\"field\":\"qty\",\"visible\":true}]}");
-        addView(entityId, "{\"viewType\":\"form\",\"name\":\"物料表单\",\"columns\":"
-                + "[{\"field\":\"name\"},{\"field\":\"status\"}]}");
+        MetaTestSupport.seedMaterialFieldsAndViews(mockMvc, actors.developer(), entityId);
         MetaTestSupport.transition(mockMvc, actors.developer(), entityId, "enabled", 200);
         userSeesAndEditsMaterial(entityName);
-    }
-
-    private void addField(String fieldJson, String entityId) throws Exception {
-        MetaTestSupport.addField(mockMvc, actors.developer(), entityId, fieldJson, 200);
-    }
-
-    private void addView(String entityId, String viewJson) throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/meta/entities/" + entityId + "/views")
-                        .header("Authorization", actors.developer())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(viewJson))
-                .andExpect(status().isOk());
     }
     private void userSeesAndEditsMaterial(String entityName) throws Exception {
         String entityList = mockMvc.perform(
@@ -135,7 +111,8 @@ final class E2eDemoScript {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         List<String> names = JsonPath.read(entityList, "$.items[*].name");
-        assertThat(names).containsExactly(entityName);        String created = mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/data/" + entityName)
+        assertThat(names).containsExactly(entityName);
+        String created = mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/data/" + entityName)
                         .header("Authorization", actors.user())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"M6 螺栓\",\"qty\":10,\"unit_price\":0.5,"
