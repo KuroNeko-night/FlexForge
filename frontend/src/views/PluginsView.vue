@@ -2,7 +2,11 @@
 import { onMounted, ref } from 'vue';
 
 import { ApiError } from '@/api/client';
-import { fetchPluginInventory, type PluginActivationEntry, type PluginInventoryEntry } from '@/api/plugins';
+import {
+  fetchPluginInventory,
+  type PluginActivationEntry,
+  type PluginInventoryEntry,
+} from '@/api/plugins';
 import StateView from '@/components/StateView.vue';
 
 /**
@@ -64,12 +68,23 @@ onMounted(load);
           版本：{{ plugin.versions.map((v) => v.version).join('、') || '—' }}
         </p>
         <table class="activation-table" data-testid="activation-table">
-          <caption class="sr-only">激活尝试</caption>
+          <caption class="sr-only">
+            激活尝试
+          </caption>
           <thead>
-            <tr><th scope="col">状态</th><th scope="col">阶段 / 诊断</th><th scope="col">操作者</th><th scope="col">开始时间</th></tr>
+            <tr>
+              <th scope="col">状态</th>
+              <th scope="col">阶段 / 诊断</th>
+              <th scope="col">操作者</th>
+              <th scope="col">开始时间</th>
+            </tr>
           </thead>
           <tbody>
-            <tr v-for="activation in plugin.activations" :key="activation.id" :data-status="activation.status">
+            <tr
+              v-for="activation in plugin.activations"
+              :key="activation.id"
+              :data-status="activation.status"
+            >
               <td>{{ activation.status }}</td>
               <td data-testid="activation-diagnosis">{{ diagnosisOf(activation) }}</td>
               <td>{{ activation.requestedBy ?? '—' }}</td>
