@@ -86,7 +86,7 @@ CI 入口：`.github/workflows/ci.yml`（push `main` 与 PR 触发）；本地�
 
 ## 5. 数据库和插件约束
 
-- 数据库结构只能通过编号迁移变更；根 `database/migrations/` 只允许平台骨架迁移（`sys_*`/`meta_*`/`data_*`/`plugin_*`/`issue_*` 及 `issue`/`requirement_spec`，`data_*` 为动态记录存储 2026-08-24 P05 定案；`issue*`/`requirement_spec` 为 P10 Issue 域平台表），业务表迁移必须位于插件包内并由插件安装流程执行（ADR-0004）。
+- 数据库结构只能通过编号迁移变更；根 `database/migrations/` 只允许平台骨架迁移（`sys_*`/`meta_*`/`data_*`/`plugin_*`/`issue_*` 及 `issue`/`requirement_spec`，`data_*` 为动态记录存储 2026-08-24 P05 定案；`issue*`/`requirement_spec` 为 P10 Issue 域平台表，`ai_*` 为 P11 AI 任务记录表），业务表迁移必须位于插件包内并由插件安装流程执行（ADR-0004）。
 - 迁移必须幂等或明确记录不可逆操作；破坏性变更需要备份和回滚说明。
 - 插件必须经过 manifest Schema、依赖、路径和资源大小校验。
 - 插件必须声明能力等级；Level 1 只能引用白名单扩展点和 renderer ID，禁止提交任意可执行源码。

@@ -28,6 +28,9 @@ services:
       AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?请在 .env 设置 AUTH_JWT_SECRET（openssl rand -base64 48）}
       AUTH_JWT_TTL: ${AUTH_JWT_TTL:-PT8H}
       FLEXFORGE_BOOTSTRAP_ADMIN_PASSWORD: ${FLEXFORGE_BOOTSTRAP_ADMIN_PASSWORD:-}
+      # P11：模型端口选择与在线凭据（fixture 默认；密钥仅环境变量，docs/13 §3.6）
+      FLEXFORGE_AI_PROVIDER: ${FLEXFORGE_AI_PROVIDER:-fixture}
+      FLEXFORGE_AI_BASE_URL: ${FLEXFORGE_AI_BASE_URL:-}
     ports:
       # 宿主端口默认 8088，避免与本机其他 8080 服务冲突；可用 .env 的 BACKEND_PORT 覆盖
       - "127.0.0.1:${BACKEND_PORT:-8088}:8080"

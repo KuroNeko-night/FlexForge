@@ -8,6 +8,7 @@ import com.flexforge.auth.api.RequireRole;
 import com.flexforge.auth.core.AuthService;
 import com.flexforge.common.ApiConstants;
 import com.flexforge.common.PublicApi;
+import com.flexforge.issue.application.IssueAiService;
 import com.flexforge.issue.application.IssueService;
 import com.flexforge.issue.application.IssueWorkflowService;
 import com.flexforge.issue.domain.IssueRepository;
@@ -38,12 +39,14 @@ public class IssueController {
 
     private final IssueService issues;
     private final IssueWorkflowService workflow;
+    private final IssueAiService ai;
     private final AuthService authService;
 
     public IssueController(IssueService issues, IssueWorkflowService workflow,
-                           AuthService authService) {
+                           IssueAiService ai, AuthService authService) {
         this.issues = issues;
         this.workflow = workflow;
+        this.ai = ai;
         this.authService = authService;
     }
 
@@ -60,6 +63,9 @@ public class IssueController {
     }
 
     public record TransitionRequest(String to, String reason) {
+    }
+
+    public record ClarifyRequest(String answer) {
     }
 
     @PostMapping
@@ -151,6 +157,29 @@ public class IssueController {
     @RequireRole(Roles.DEVELOPER)
     public SpecPreview.Preview preview(@PathVariable String issueId) {
         return workflow.preview(issueId);
+    }
+
+    /** AI 澄清（docs/03 §8 clarify；FR-ISSUE-03）：Issue 作者或开发者。 */
+    @PostMapping("/{issueId}/clarify")
+    public IssueAiService.ClarifyOutcome clarify(
+            @RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
+            @PathVariable String issueId, @RequestBody(required = false) ClarifyRequest request) {
+        String actor = actor(principal);
+        boolean developer = principal.roles().contains(Roles.DEVELOPER);
+        boolean author = issues.require(issueId).createdBy().equals(actor);
+        if (!developer && !author) {
+            throw new IllegalArgumentException("仅 Issue 作者或开发者可以触发澄清");
+        }
+        return ai.clarify(actor, issueId, request == null ? null : request.answer());
+    }
+
+    /** 生成插件骨架（docs/03 §8 generate；FR-ISSUE-05，开发者）。 */
+    @PostMapping("/{issueId}/generate")
+    @RequireRole(Roles.DEVELOPER)
+    public IssueAiService.GenerateOutcome generate(
+            @RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
+            @PathVariable String issueId) throws java.io.IOException {
+        return ai.generate(actor(principal), issueId);
     }
 
     private String actor(AuthPrincipal principal) {
