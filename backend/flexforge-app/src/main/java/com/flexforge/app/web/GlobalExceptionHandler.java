@@ -57,6 +57,22 @@ public class GlobalExceptionHandler {
         return envelope(HttpStatus.CONFLICT, ErrorCodes.STALE_ACTIVATION, exception.getMessage());
     }
 
+    /** 模型访问失败（docs/09 P11）：503 + model_unavailable，任务未落状态可重试。 */
+    @ExceptionHandler(com.flexforge.ai.model.ModelUnavailableException.class)
+    public ResponseEntity<ErrorResponse> handleModelUnavailable(
+            com.flexforge.ai.model.ModelUnavailableException exception) {
+        return envelope(HttpStatus.SERVICE_UNAVAILABLE, ErrorCodes.MODEL_UNAVAILABLE,
+                exception.getMessage());
+    }
+
+    /** 模型输出重试超限（RB-AI）：400 + model_output_invalid，可走手工规格。 */
+    @ExceptionHandler(com.flexforge.ai.spec.ClarifyEngine.ModelOutputInvalidException.class)
+    public ResponseEntity<ErrorResponse> handleModelOutputInvalid(
+            com.flexforge.ai.spec.ClarifyEngine.ModelOutputInvalidException exception) {
+        return envelope(HttpStatus.BAD_REQUEST, ErrorCodes.MODEL_OUTPUT_INVALID,
+                exception.getMessage());
+    }
+
     /** Issue 非法状态迁移（FR-ISSUE-02）：400 + invalid_transition，可诊断。 */
     @ExceptionHandler(com.flexforge.issue.domain.InvalidTransitionException.class)
     public ResponseEntity<ErrorResponse> handleInvalidTransition(

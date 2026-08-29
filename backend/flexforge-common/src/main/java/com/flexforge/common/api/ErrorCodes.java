@@ -31,6 +31,10 @@ public final class ErrorCodes {
     public static final String STALE_ACTIVATION = "stale_activation";
     /** P10：Issue 非法状态迁移/缺原因/缺合法规格批准门（docs/08 §7 只增）。 */
     public static final String INVALID_TRANSITION = "invalid_transition";
+    /** P11：模型访问失败（超时/取消/限流/离线，docs/09 P11 验收）。 */
+    public static final String MODEL_UNAVAILABLE = "model_unavailable";
+    /** P11：模型输出经有限重试仍不合法（非法 JSON/Schema 违约）。 */
+    public static final String MODEL_OUTPUT_INVALID = "model_output_invalid";
 
     /** 权限不足。 */
     public static final String PERMISSION_DENIED = "permission_denied";

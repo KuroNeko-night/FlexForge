@@ -1,0 +1,20 @@
+{
+  "spec": {
+    "schemaVersion": 1,
+    "summary": "fixture 澄清规格",
+    "entities": [
+      {
+        "name": "clarify_item",
+        "displayName": "澄清项",
+        "fields": [
+          {"name": "name", "displayName": "名称", "fieldType": "text", "required": true},
+          {"name": "qty", "displayName": "数量", "fieldType": "integer",
+           "validation": {"min": 0}}
+        ]
+      }
+    ],
+    "permissions": ["clarify.read"],
+    "rules": [{"name": "非负", "description": "数量不得小于 0"}],
+    "acceptance": ["qty=-1 被拒绝", "列表可见"]
+  }
+}
