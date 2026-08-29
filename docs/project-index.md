@@ -40,7 +40,7 @@ FlexForge/
 │   ├── flexforge-system/           用户/角色/菜单/审计：管理接口+菜单聚合（extension.navigation 消费方）+审计查询+落库（P03）
 │   ├── flexforge-meta/             元数据写模型：FieldTypeRegistry 单点+MetaRegistry 缓存/版本+实体/字段/视图配置 API（service.meta，P04）
 │   ├── flexforge-data/             动态数据访问：data_record 单 JSONB 存储+实体级记录校验+白名单 SQL 构造+动态 CRUD API（service.data-access，P05）
-│   ├── flexforge-plugin/            插件包校验与版本存储：上传安全基线+manifest 校验（schemaVersion 分派）+迁移脚本校验层+依赖解析+幂等导入（P07）
+│   ├── flexforge-plugin/            插件包校验+版本存储+生命周期：P07 导入链路；P08 生命周期（激活/停用/升级/卸载/stale/重启恢复+MigrationScriptRunner+资产 serve）
 │   └── flexforge-app/              启动、配置、健康检查；web/ 统一错误装配 + requestId 过滤器 + logback 脱敏基线（P02 迭代 2）；Testcontainers 冒烟 + ArchUnit（5 规则）+ R-GOV-06 fixture 测试
 ├── frontend/                       Vue 3 + TS + Vite（P01 骨架 + P06 动态渲染）
 │   ├── package.json / package-lock.json   +vue-router；dev 依赖 +@vue/test-utils/happy-dom/globals（P06）
@@ -61,6 +61,8 @@ FlexForge/
 │   ├── migrations/V002-004         V002 审计表 / V003 角色种子 / V004 meta_entity+meta_field+meta_view（P04）
 │   ├── migrations/V005__data_record.sql 动态记录单 JSONB 表 + GIN 索引（P05，docs/03 §4 存储定案）
 │   ├── migrations/V006__plugin_tables.sql plugin_instance/version/dependency/migration 版本存储（P07）
+│   ├── migrations/V007__plugin_lifecycle.sql plugin_activation/registration/audit_event + plugin_version 载荷列（P08）
+│   ├── migrations/V008__plugin_asset_payloads.sql 资产载荷列（asset_payloads，P08）
 │   └── init/                       Compose 首次初始化：应用专用账号
 ├── tests/
 │   └── fixtures/
@@ -213,3 +215,5 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-25 | §1 树更新：frontend 新增 api/auth/registry/components/composables/views 分层与 router.ts；依赖 +vue-router、dev +@vue/test-utils/happy-dom/globals；后端 meta 增 by-name 端点 | P06 迭代 1：前端动态渲染核心（RB-UI） |
 | 2026-08-25 | §1 树更新：registry 增 layout/theme/recordAction/builtinContributions；components 增 LayoutRenderer/EntityCards；common ExtensionPoints +LAYOUT/THEME_ASSET | P06 迭代 2：GUI 澄清消费面（FR-PLUGIN-10/11） |
 | 2026-08-28 | §1 树更新：flexforge-plugin 新模块（四层）；V006 plugin_* 四表；ErrorCodes +unsupported_schema_version；app multipart 上限配置 | P07：插件包校验与版本存储（RB-PLUGIN-VALID） |
+| 2026-08-29 | §1 树更新（补记）：V007 plugin_activation/registration/audit_event + plugin_version 载荷列；flexforge-plugin 生命周期四层（ActivationStatus 状态机/LifecycleRepository 端口/PluginLifecycleService+MigrationScriptRunner+PluginContributionFactory/PluginLifecycleController）；common +StaleActivationException；app 测试 +PluginPackageTestSupport/PluginActivationApiTest | P08 迭代 1：PluginRuntime 生命周期（PR #21，RB-PLUGIN-LIFE） |
+| 2026-08-29 | §1 树更新：V008 plugin_version.asset_payloads；flexforge-plugin +ThemeAssetSpec/PluginAssetService/PluginRestoreRunner；common +ThemeAssetContribution；app 测试 +PluginAssetApiTest | P08 迭代 2：theme-asset 注册+资产存储/serve 端点（Issue #20 第 3/4 项） |

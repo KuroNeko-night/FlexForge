@@ -79,3 +79,4 @@ MVP 消费方: <至少一个真实消费方>
 | 2026-08-24 | `extension.field-renderer` 内置 renderer ID 集落定为六类默认 ID（`<type>.default`，FieldTypeRegistry 校验 + P06 前端按 ID 实现组件） | additive |
 | 2026-08-24 | `service.data-access` P05 落地：flexforge-data 为责任模块（data_record 单 JSONB 记录表，docs/03 §4 存储定案） | additive |
 | 2026-08-25 | `extension.layout` 与 `extension.theme-asset` 由 proposed 转 active：前端消费面（layout/theme registry：槽位编排渲染、CSS 变量注入、缺省兜底与撤销恢复）随 P06 迭代 2 落地；插件侧注册 P07/P08 接入；常量同步 flexforge-common ExtensionPoints（R-GOV-03 对齐） | additive |
+| 2026-08-29 | P08 插件侧注册落地：plugin.json `contributions.themeAssets`（对象数组）→ 导入校验+逐文件声明收紧（assets/ 双向核对，Issue #20 第 3 项）→ 激活注册（plugin_registration + 内存 ThemeAssetContribution）→ serve 端点（CSP/attachment/nosniff，Issue #20 第 4 项）；载荷契约不变 | additive |

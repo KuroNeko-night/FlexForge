@@ -72,6 +72,7 @@
 1. 上传接口仅管理员可用（对齐 `FR-PLUGIN-02`）；包校验全链路以 `docs/09` P07 为准（压缩 ≤ 10 MB、解压 ≤ 50 MB、zip-slip、路径与脚本资源拒绝、临时目录清理）。
 2. 本文补充（数值以本节为唯一来源）：解压后文件数量 ≤ **1000**；解压必须流式进行并累计字节数，超限立即中止，不得解压完成后再检查；文件名拒绝控制字符与超长路径。
 3. 上传时校验 Content-Type 并做魔数嗅探，不信任客户端文件名与类型声明。
+4. 插件资产 serve（P08）：响应头固定 `Content-Security-Policy: default-src 'none'` + `Content-Disposition: attachment` + `X-Content-Type-Options: nosniff`（svg 事件属性纵深，与 §3.5-3 导入期魔数/文本嗅探构成两层防御）；按 activationId 做 stale 校验，路径为存储键精确匹配（无文件系统访问面）。
 
 ### 3.6 AI 链路
 
