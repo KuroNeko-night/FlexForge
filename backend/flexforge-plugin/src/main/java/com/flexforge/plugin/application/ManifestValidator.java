@@ -5,6 +5,7 @@ import com.flexforge.meta.domain.FieldTypeRegistry;
 import com.flexforge.plugin.domain.DependencySpec;
 import com.flexforge.plugin.domain.PluginManifest;
 import com.flexforge.plugin.domain.PluginValidationException;
+import com.flexforge.plugin.domain.ThemeAssetSpec;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 
@@ -28,7 +29,11 @@ public class ManifestValidator {
     private static final Pattern VERSION_PATTERN = Pattern.compile("^\\d+\\.\\d+\\.\\d+$");
     private static final Pattern RANGE_PATTERN = Pattern.compile("^(\\*|\\^?\\d+\\.\\d+\\.\\d+)$");
     private static final Pattern KEY_PATTERN = Pattern.compile("^[a-z][a-z0-9_]*(\\.[a-z0-9_]*)*$");
-    private static final Set<String> CONTRIBUTION_KEYS = Set.of("navigation", "renderers");
+    private static final Pattern ASSET_PATH_PATTERN =
+            Pattern.compile("^assets/[a-z0-9_./-]+\\.(png|svg|webp|css|json)$");
+    /** themeAssets 为对象数组，单独解析；字符串贡献键仅 navigation/renderers。 */
+    private static final Set<String> STRING_CONTRIBUTION_KEYS = Set.of("navigation", "renderers");
+    private static final Set<String> CONTRIBUTION_KEYS = Set.of("navigation", "renderers", "themeAssets");
 
     public PluginManifest validate(JsonNode root, int schemaVersion) {
         if (schemaVersion != 1) {
@@ -54,10 +59,12 @@ public class ManifestValidator {
         }
         List<DependencySpec> dependencies = dependenciesOf(root, id);
         List<String> permissions = stringList(root.get("permissions"), "permissions", KEY_PATTERN);
-        Map<String, List<String>> contributions = contributionsOf(root);
+        JsonNode contributionsNode = root.get("contributions");
+        List<ThemeAssetSpec> themeAssets = themeAssetsOf(contributionsNode);
+        Map<String, List<String>> contributions = contributionsOf(contributionsNode);
         PluginManifest.Resources resources = resourcesOf(root);
         return new PluginManifest(1, id, name, version, 1, minPlatform,
-                dependencies, permissions, contributions, resources, root);
+                dependencies, permissions, contributions, themeAssets, resources, root);
     }
 
     private static void requireLevel1(JsonNode root, String id) {
@@ -95,18 +102,62 @@ public class ManifestValidator {
         return List.copyOf(result);
     }
 
-    private static Map<String, List<String>> contributionsOf(JsonNode root) {
-        JsonNode node = root.get("contributions");
+    /** themeAssets 贡献（对象数组，登记册 §2.2）：key/kind/path 必填，scope 可选；key 不得重复。 */
+    private static List<ThemeAssetSpec> themeAssetsOf(JsonNode contributionsNode) {
+        if (contributionsNode == null || !contributionsNode.isObject()) {
+            return List.of();
+        }
+        JsonNode node = contributionsNode.get("themeAssets");
         if (node == null || node.isNull()) {
+            return List.of();
+        }
+        if (!node.isArray()) {
+            throw PluginValidationException.invalidManifest("contributions.themeAssets 必须是数组");
+        }
+        List<ThemeAssetSpec> result = new ArrayList<>();
+        for (JsonNode item : node) {
+            ThemeAssetSpec spec = themeAssetOf(item);
+            if (result.contains(spec)) {
+                throw PluginValidationException.invalidManifest("themeAsset key 重复: " + spec.key());
+            }
+            result.add(spec);
+        }
+        return List.copyOf(result);
+    }
+
+    private static ThemeAssetSpec themeAssetOf(JsonNode item) {
+        if (item == null || !item.isObject()) {
+            throw PluginValidationException.invalidManifest("contributions.themeAssets 含非对象项");
+        }
+        String key = fieldText(item, "key");
+        if (!KEY_PATTERN.matcher(key).matches()) {
+            throw PluginValidationException.invalidManifest("themeAsset key 非法: " + key);
+        }
+        String path = fieldText(item, "path");
+        if (!ASSET_PATH_PATTERN.matcher(path).matches()) {
+            throw PluginValidationException.invalidManifest(
+                    "themeAsset path 须为包内 assets/ 白名单扩展名相对路径: " + path);
+        }
+        JsonNode scope = item.get("scope");
+        if (scope != null && scope.isTextual()
+                && !KEY_PATTERN.matcher(scope.asText()).matches()) {
+            throw PluginValidationException.invalidManifest("themeAsset scope 非法: " + scope);
+        }
+        return new ThemeAssetSpec(key, fieldText(item, "kind"), path,
+                scope == null || scope.isNull() ? null : scope.asText());
+    }
+
+    private static Map<String, List<String>> contributionsOf(JsonNode contributionsNode) {
+        if (contributionsNode == null || contributionsNode.isNull()) {
             return Map.of();
         }
-        if (!node.isObject()) {
+        if (!contributionsNode.isObject()) {
             throw PluginValidationException.invalidManifest("contributions 必须是对象");
         }
+        requireKnownContributionKeys(contributionsNode);
         Map<String, List<String>> result = new HashMap<>();
-        int size = node.size();
-        for (String key : CONTRIBUTION_KEYS) {
-            JsonNode value = node.get(key);
+        for (String key : STRING_CONTRIBUTION_KEYS) {
+            JsonNode value = contributionsNode.get(key);
             if (value == null) {
                 continue;
             }
@@ -116,17 +167,26 @@ public class ManifestValidator {
             }
             result.put(key, stringList(value, "contributions." + key, KEY_PATTERN));
         }
-        if (size > result.size()) {
-            throw new PluginValidationException(ErrorCodes.VALIDATION_ERROR,
-                    "contributions 含登记册外的贡献类型（允许: " + CONTRIBUTION_KEYS + "）");
+        requireBuiltInRenderers(result.getOrDefault("renderers", List.of()));
+        return result;
+    }
+
+    private static void requireKnownContributionKeys(JsonNode contributionsNode) {
+        for (String key : contributionsNode.propertyNames()) {
+            if (!CONTRIBUTION_KEYS.contains(key)) {
+                throw new PluginValidationException(ErrorCodes.VALIDATION_ERROR,
+                        "contributions 含登记册外的贡献类型（允许: " + CONTRIBUTION_KEYS + "）: " + key);
+            }
         }
-        for (String rendererId : result.getOrDefault("renderers", List.of())) {
+    }
+
+    private static void requireBuiltInRenderers(List<String> rendererIds) {
+        for (String rendererId : rendererIds) {
             if (!FieldTypeRegistry.isBuiltInRendererId(rendererId)) {
                 throw new PluginValidationException(ErrorCodes.VALIDATION_ERROR,
                         "rendererId 不在平台内置白名单: " + rendererId);
             }
         }
-        return result;
     }
 
     private static PluginManifest.Resources resourcesOf(JsonNode root) {

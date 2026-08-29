@@ -19,11 +19,13 @@ public record PluginVersionRecord(
         long sizeBytes,
         Instant createdAt,
         Map<String, String> scriptPayloads,
-        Map<String, String> resourcePayloads) {
+        Map<String, String> resourcePayloads,
+        Map<String, String> assetPayloads) {
 
     public PluginVersionRecord {
         Objects.requireNonNull(id, "id");
         scriptPayloads = scriptPayloads == null ? Map.of() : Map.copyOf(scriptPayloads);
         resourcePayloads = resourcePayloads == null ? Map.of() : Map.copyOf(resourcePayloads);
+        assetPayloads = assetPayloads == null ? Map.of() : Map.copyOf(assetPayloads);
     }
 }

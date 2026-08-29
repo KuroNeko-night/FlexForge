@@ -48,6 +48,9 @@ public interface LifecycleRepository {
     /** 从 plugin_version 读 resource_payloads（注册编排用）。 */
     String resourcePayloadsOf(String pluginVersionId);
 
+    /** 从 plugin_version 读 asset_payloads（资产 serve 端点用）。 */
+    String assetPayloadsOf(String pluginVersionId);
+
     /** 实体注册接口：metadata 贡献写 meta_entity/meta_field（复用 P04 服务）。 */
     String insertEntityWithFields(String entityName, String displayName, String pluginId,
                                   List<FieldSpec> fields);

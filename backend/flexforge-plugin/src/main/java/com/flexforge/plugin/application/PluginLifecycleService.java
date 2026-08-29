@@ -13,6 +13,7 @@ import com.flexforge.plugin.domain.PluginPackageRepository;
 import com.flexforge.plugin.domain.PluginValidationException;
 import com.flexforge.plugin.domain.PluginVersionRecord;
 import com.flexforge.plugin.domain.StaleActivationException;
+import com.flexforge.plugin.domain.ThemeAssetSpec;
 import com.flexforge.runtime.InMemoryExtensionRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -147,8 +148,8 @@ public class PluginLifecycleService {
         }
     }
 
-    /** 业务 API 前置校验（FR-PLUGIN-07）：仅当前 ACTIVE 激活可用。 */
-    public void requireCurrentActivation(String activationId) {
+    /** 业务 API 前置校验（FR-PLUGIN-07）：仅当前 ACTIVE 激活可用；返回该激活记录。 */
+    public ActivationRecord requireCurrentActivation(String activationId) {
         ActivationRecord activation = requireActivation(activationId);
         if (activation.status() != ActivationStatus.ACTIVE) {
             throw new StaleActivationException();
@@ -156,6 +157,7 @@ public class PluginLifecycleService {
         kernel.lifecycle().findOccupying(activation.pluginId())
                 .filter(current -> current.id().equals(activationId))
                 .orElseThrow(StaleActivationException::new);
+        return activation;
     }
 
     /** 激活注册清单查询（stale 校验后的只读视图）。 */
@@ -251,6 +253,10 @@ public class PluginLifecycleService {
             kernel.lifecycle().insertRegistration(activation.id(), ExtensionPoints.FIELD_RENDERER,
                     rendererId, "{\"rendererId\":\"" + rendererId + "\"}");
         }
+        for (ThemeAssetSpec asset : PluginContributionFactory.themeAssetsOf(version)) {
+            kernel.lifecycle().insertRegistration(activation.id(), ExtensionPoints.THEME_ASSET,
+                    asset.key(), PluginContributionFactory.themeAssetPayload(asset));
+        }
     }
 
     /** 归属校验：同名实体归属其他插件或平台（元数据管理创建）时拒绝，防静默覆盖。 */
@@ -264,7 +270,7 @@ public class PluginLifecycleService {
                 });
     }
 
-    /** 内存注册（激活与重启恢复共用）：navigation 以 NavigationContribution 进注册表。 */
+    /** 内存注册（激活与重启恢复共用）：navigation/theme-asset 以契约类型进注册表。 */
     private void registerInMemory(String activationId, PluginVersionRecord version) {
         JsonNode entities = PluginContributionFactory.parseEntities(
                 kernel.lifecycle().resourcePayloadsOf(version.id()));
@@ -272,6 +278,10 @@ public class PluginLifecycleService {
             kernel.extensions().register(ExtensionPoints.NAVIGATION,
                     PluginContributionFactory.navigationContribution(navigationKey, version,
                             entities), activationId);
+        }
+        for (ThemeAssetSpec asset : PluginContributionFactory.themeAssetsOf(version)) {
+            kernel.extensions().register(ExtensionPoints.THEME_ASSET,
+                    PluginContributionFactory.themeAssetContribution(asset), activationId);
         }
     }
 
