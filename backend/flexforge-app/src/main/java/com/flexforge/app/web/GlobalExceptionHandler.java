@@ -57,6 +57,14 @@ public class GlobalExceptionHandler {
         return envelope(HttpStatus.CONFLICT, ErrorCodes.STALE_ACTIVATION, exception.getMessage());
     }
 
+    /** Issue 非法状态迁移（FR-ISSUE-02）：400 + invalid_transition，可诊断。 */
+    @ExceptionHandler(com.flexforge.issue.domain.InvalidTransitionException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidTransition(
+            com.flexforge.issue.domain.InvalidTransitionException exception) {
+        return envelope(HttpStatus.BAD_REQUEST, ErrorCodes.INVALID_TRANSITION,
+                exception.getMessage());
+    }
+
     /** 上传超过 multipart 上限（docs/13 §3.5）：4xx 可诊断，不落 500 兜底。 */
     @ExceptionHandler({org.springframework.web.multipart.MaxUploadSizeExceededException.class})
     public ResponseEntity<ErrorResponse> handleUploadSize(

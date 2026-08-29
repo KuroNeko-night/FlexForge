@@ -131,6 +131,9 @@ AI 不直接获得数据库管理员权限、服务器命令权限或生产发�
 待审核 -> 已批准 -> 待测试 -> 测试通过 -> 已完成
    |         |          |           |
 退回修改   开发失败   反馈修复     关闭
+   |         ↑    └──┐  │           （终态）
+   ↓         └──────┴──┘
+待审核（修改后重新提交）/已批准（修复或失败重试，2026-08-29 P10 补记迭代回退）
 ```
 
 状态迁移必须由领域服务统一执行，记录操作者、原因和时间。前端不允许自行修改状态字段绕过规则。
@@ -159,7 +162,12 @@ AI 不直接获得数据库管理员权限、服务器命令权限或生产发�
 | `POST` | `/api/v1/issues` | 创建 Issue |
 | `POST` | `/api/v1/issues/{id}/clarify` | AI 澄清需求 |
 | `POST` | `/api/v1/issues/{id}/generate` | 生成插件骨架 |
-| `POST` | `/api/v1/issues/{id}/transition` | 执行合法状态迁移 |
+| `POST` | `/api/v1/issues/{id}/transition` | 执行合法状态迁移（开发者；批准门=最新规格 valid） |
+| `POST` | `/api/v1/issues/{id}/comments` / `GET` 同路径 | 评论（登录用户） |
+| `PATCH` | `/api/v1/issues/{id}/labels` / `assignee` | 标签替换 / 指派（登录用户） |
+| `PUT` | `/api/v1/issues/{id}/spec` | 保存规格新版本（开发者；校验快照随版本留存，FR-ISSUE-04/06） |
+| `GET` | `/api/v1/issues/{id}/spec` / `spec/revisions` | 最新规格 / 版本历史 |
+| `GET` | `/api/v1/issues/{id}/preview` | 预览将要生成的插件资源（开发者，P10） |
 
 ## 9. 可观测性与失败处理
 
