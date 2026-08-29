@@ -21,8 +21,9 @@ import java.util.regex.Pattern;
  * （sys_/meta_/data_/plugin_ 前缀）、逐脚本 sha256 checksum。
  *
  * <p>越界扫描先做字符串感知的词法清洗：单引号（'' 转义）与 dollar-quote
- * 内容替换为空串、行/块注释剥除——防字符串字面量内的 `--`/`/*` 把越界语句
- * 从扫描中隐藏（PR #19 审查 P1），同时消除字符串含平台前缀的假阳性。
+ * （含 {@code $tag$} 带标签形态）内容替换为空串、行/块注释剥除——防字符串
+ * 字面量内的 `--`/`/*` 把越界语句从扫描中隐藏（PR #19 审查 P1），同时消除
+ * 字符串含平台前缀的假阳性。
  * 执行与 plugin_migration 记录在 P08 安装期由 runner 完成（同事务）。
  */
 @Component
@@ -48,10 +49,6 @@ public class MigrationScriptScanner {
         return checksums;
     }
 
-    /**
-     * 字符集白名单：拒绝反斜杠。合法顺序 DDL/DML 几乎不含 `\`；同时封死
-     * E-string/U&'...' 反斜杠转义引号与词法机的闭合点分歧（PR #19 复审 N1）。
-     */
     /** 执行前二次校验（纵深防御，docs/13 §4）：命名 + 字符集 + 越界。 */
     void requireExecutable(String scriptName, String sql) {
         requireOrderedName(scriptName, 0);
@@ -59,6 +56,10 @@ public class MigrationScriptScanner {
         requireNoPlatformObjects(scriptName, sql);
     }
 
+    /**
+     * 字符集白名单：拒绝反斜杠。合法顺序 DDL/DML 几乎不含 `\`；同时封死
+     * E-string/U&'...' 反斜杠转义引号与词法机的闭合点分歧（PR #19 复审 N1）。
+     */
     private static void requirePlainCharacters(String name, String sql) {
         if (sql.indexOf('\\') >= 0) {
             throw PluginValidationException.invalidManifest(
@@ -118,7 +119,31 @@ public class MigrationScriptScanner {
     }
 
     private static boolean isDollarQuoteStart(String sql, int i) {
-        return sql.charAt(i) == '$' && i + 1 < sql.length() && sql.charAt(i + 1) == '$';
+        return dollarDelimiterAt(sql, i) != null;
+    }
+
+    /**
+     * 提取位置 i 处的 dollar-quote 定界符（PG 语法 {@code $标签$}，标签可空）。
+     * 标签字符取字母/数字/下划线（含多字节字母）：比 PG 的无引号标识符规则略宽，
+     * 偏差方向安全——标签不合规的裸 {@code $..$} 在 PG 里是语法错误，扫描器按
+     * 字符串跳过只会导致执行期拒绝（fail-closed），不会放行越界语句；反之若比
+     * PG 窄（如漏认 {@code $表$}），词法机会在字符串内容里的单引号处误开字符串、
+     * 吞掉后续真正的越界语句（本次审计 P1，与 PR #19 的 -- 绕过同构）。
+     */
+    private static String dollarDelimiterAt(String sql, int i) {
+        if (sql.charAt(i) != '$') {
+            return null;
+        }
+        int end = i + 1;
+        while (end < sql.length() && isTagChar(sql.charAt(end))) {
+            end++;
+        }
+        boolean closed = end < sql.length() && sql.charAt(end) == '$';
+        return closed ? sql.substring(i, end + 1) : null;
+    }
+
+    private static boolean isTagChar(char c) {
+        return Character.isLetterOrDigit(c) || c == '_';
     }
 
     private static boolean isLineCommentStart(String sql, int i) {
@@ -142,17 +167,17 @@ public class MigrationScriptScanner {
             }
             i++;
         }
+        // 未闭合引号吞至结尾：PostgreSQL 同样拒绝该脚本，扫描侧漏扫即 fail-closed
         return i;
     }
 
     private static int skipDollarQuoted(String sql, int start, StringBuilder out) {
         out.append("''");
-        int i = start + 2;
-        while (i + 1 < sql.length()
-                && !(sql.charAt(i) == '$' && sql.charAt(i + 1) == '$')) {
-            i++;
-        }
-        return Math.min(i + 2, sql.length());
+        String delimiter = dollarDelimiterAt(sql, start);
+        // 只认同标签定界符：PG 允许 $a$ $b$ .. $b$ $a$ 嵌套，内层异标签属外层内容
+        int close = sql.indexOf(delimiter, start + delimiter.length());
+        // 未闭合吞至结尾：PostgreSQL 同样拒绝该脚本，扫描侧漏扫即 fail-closed
+        return close < 0 ? sql.length() : close + delimiter.length();
     }
 
     private static int skipLineComment(String sql, int start) {

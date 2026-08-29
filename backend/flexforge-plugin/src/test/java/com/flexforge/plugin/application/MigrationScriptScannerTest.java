@@ -83,6 +83,25 @@ class MigrationScriptScannerTest {
     }
 
     @Test
+    void taggedDollarQuotesCannotHidePlatformObjects() {
+        // 注释审计 P1：$tag$ 带标签 dollar-quote 若只按 $$ 识别，词法机会把标签当
+        // 代码、在其内容里的单引号处误开字符串，吞掉 PG 实际执行的越界语句
+        assertThatThrownBy(() -> scan(List.of("migrations/V001__evil.sql"),
+                        "SELECT $tag$ x'$tag$; DROP TABLE meta_entity; --'"))
+                .hasMessageContaining("越界")
+                .hasMessageContaining("meta_entity");
+        // 多字节标签同口径封堵
+        assertThatThrownBy(() -> scan(List.of("migrations/V001__evil.sql"),
+                        "SELECT $表$ x'$表$; DELETE FROM sys_user; --'"))
+                .hasMessageContaining("越界")
+                .hasMessageContaining("sys_user");
+        // 正例：带标签 dollar-quote 里的平台前缀是字符串数据，不误报
+        Map<String, String> checksums = scan(List.of("migrations/V001__ok.sql"),
+                "INSERT INTO inv_x VALUES ($tag$refs sys_user$tag$);");
+        assertThat(checksums).containsKey("migrations/V001__ok.sql");
+    }
+
+    @Test
     void backslashRejectedToCloseEscapeStringBypass() {
         // PR #19 复审 N1：E'a\'' 依赖反斜杠转义引号构造闭合点分歧——字符集白名单整体拒绝
         assertThatThrownBy(() -> scan(List.of("migrations/V001__evil.sql"),
