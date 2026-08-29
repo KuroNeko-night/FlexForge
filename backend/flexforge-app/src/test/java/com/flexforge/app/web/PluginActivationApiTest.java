@@ -137,7 +137,7 @@ class PluginActivationApiTest {
                         org.hamcrest.Matchers.containsString("已有进行中激活")));
     }
 
-    // ===== §5-4 同一版本重复安装返回同一结果 =====
+    // ===== §5-4 同一版本重复安装返回同一结果；卸载后重导入回到 imported =====
     @Test
     void repeatedActivationIsIdempotent() throws Exception {
         String first = importAndActivate(mockMvc, adminBearer, "life.two", "1.0.0");
@@ -152,6 +152,17 @@ class PluginActivationApiTest {
                 Integer.class, first);
         assertThat(registrations).isGreaterThanOrEqualTo(3);
         assertThat(menuKeys(mockMvc, adminBearer)).contains("life.two.items");
+
+        // PR #28 审查 P3：uninstalled 后重导入，实例状态须回 imported 而非残留 uninstalled
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/plugins/life.two")
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isOk());
+        importVersion(mockMvc, adminBearer, "life.two", "1.0.0",
+                defaultBody("life_two_item", "life_two_item"));
+        String reimported = jdbc.queryForObject(
+                "SELECT status FROM plugin_instance WHERE plugin_id = 'life.two'",
+                String.class);
+        assertThat(reimported).isEqualTo("imported");
     }
 
     // ===== 实体归属冲突：同名实体归属其他插件时拒绝，不静默覆盖 =====

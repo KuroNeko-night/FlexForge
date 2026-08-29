@@ -156,6 +156,23 @@ class PluginAssetApiTest {
                 .andExpect(status().isNotFound());
     }
 
+    // ===== Issue #22 评论-12：URL 编码穿越形态同样不逃出 assets/（键精确匹配） =====
+    @Test
+    void encodedTraversalFormsNeverEscapeAssetsRegion() throws Exception {
+        String activationId = importAndActivateAssetPlugin("asset.enc",
+                "\"themeAssets\":[{\"key\":\"asset.enc.bg\",\"kind\":\"background\","
+                        + "\"path\":\"assets/bg.svg\"}]");
+        for (String encoded : java.util.List.of("%2e%2e/plugin.json", "..%2fplugin.json",
+                "%2e%2e%2fplugin.json")) {
+            String body = mockMvc.perform(MockMvcRequestBuilders.get(
+                            "/api/v1/plugins/activations/" + activationId + "/assets/" + encoded)
+                            .header("Authorization", adminBearer))
+                    .andExpect(status().is4xxClientError())
+                    .andReturn().getResponse().getContentAsString();
+            assertThat(body).doesNotContain("schemaVersion");
+        }
+    }
+
     // ===== serve 失败路径：stale 激活 409 / 未认证 401；停用撤销内存注册 =====
     @Test
     void staleAndUnauthenticatedAssetRequestsRejected() throws Exception {

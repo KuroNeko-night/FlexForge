@@ -124,15 +124,20 @@ class ExampleInventoryPluginTest {
         assertThat(seeds).isEqualTo(3);
 
         // inventory 清单（Issue #20 第 2 项消费方）：非管理员拒绝
+        assertInventoryListedActiveForAdmin();
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/plugins/inventory")
+                        .header("Authorization", userBearer))
+                .andExpect(status().isForbidden());
+    }
+
+    private void assertInventoryListedActiveForAdmin() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/plugins/inventory")
                         .header("Authorization", adminBearer))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].pluginId").value("example.inventory"))
+                .andExpect(jsonPath("$[0].instanceStatus").value("active"))
                 .andExpect(jsonPath("$[0].versions.length()").value(1))
                 .andExpect(jsonPath("$[0].activations[0].status").value("ACTIVE"));
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/plugins/inventory")
-                        .header("Authorization", userBearer))
-                .andExpect(status().isForbidden());
     }
 
     // ===== FR-DEMO-02：普通用户查询/编辑 + 非负规则 =====
@@ -230,6 +235,11 @@ class ExampleInventoryPluginTest {
         Map<String, Object> entity = jdbc.queryForMap(
                 "SELECT status FROM meta_entity WHERE name = 'inventory_item'");
         assertThat(entity.get("status")).isEqualTo("disabled");
+        // Issue #22 评论-16：实例状态随生命周期派生（active→stopped→uninstalled）
+        String instanceStatus = jdbc.queryForObject(
+                "SELECT status FROM plugin_instance WHERE plugin_id = 'example.inventory'",
+                String.class);
+        assertThat(instanceStatus).isEqualTo("uninstalled");
         Integer audit = jdbc.queryForObject(
                 "SELECT count(*) FROM sys_audit_event WHERE action = 'plugin.uninstall'"
                         + " AND object_id = 'example.inventory'", Integer.class);

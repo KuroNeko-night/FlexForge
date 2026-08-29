@@ -74,12 +74,22 @@ public class JdbcPluginRepository implements PluginPackageRepository {
     }
 
     @Override
+    public void resetUninstalledInstance(String pluginId) {
+        jdbc.update("UPDATE plugin_instance SET status = 'imported', updated_at = now()"
+                + " WHERE plugin_id = ? AND status = 'uninstalled'", pluginId);
+    }
+
+    @Override
     @Transactional
     public PluginVersionRecord storeVersion(String pluginName, PluginVersionRecord version,
                                             List<DependencySpec> dependencies) {
         jdbc.update("INSERT INTO plugin_instance (id, plugin_id, name)"
                         + " VALUES (?, ?, ?)"
-                        + " ON CONFLICT (plugin_id) DO UPDATE SET name = EXCLUDED.name, updated_at = now()",
+                        + " ON CONFLICT (plugin_id) DO UPDATE SET name = EXCLUDED.name,"
+                        + " updated_at = now(),"
+                        // 卸载后重导入回到 imported（PR #28 审查 P3：派生实装后 uninstalled 成为可达值）
+                        + " status = CASE WHEN plugin_instance.status = 'uninstalled'"
+                        + " THEN 'imported' ELSE plugin_instance.status END",
                 "pi-" + UUID.randomUUID(), version.pluginId(), pluginName);
         try {
             jdbc.update("INSERT INTO plugin_version (id, plugin_id, version, content_hash,"

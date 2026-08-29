@@ -19,6 +19,9 @@ public interface PluginPackageRepository {
     /** 按 content hash 查版本（幂等导入命中）。 */
     Optional<PluginVersionRecord> findByContentHash(String contentHash);
 
+    /** 卸载后幂等重导入：实例状态回 imported（非 uninstalled 则忽略，PR #28 审查 P3）。 */
+    void resetUninstalledInstance(String pluginId);
+
     /** 按稳定 ID + 版本号查版本（同版本异内容冲突检测）。 */
     Optional<PluginVersionRecord> findVersion(String pluginId, String version);
 

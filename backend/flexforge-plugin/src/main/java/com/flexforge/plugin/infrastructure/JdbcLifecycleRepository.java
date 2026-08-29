@@ -67,10 +67,28 @@ public class JdbcLifecycleRepository implements LifecycleRepository {
     @Override
     public int updateStatus(String activationId, ActivationStatus status, String stage,
                             String errorCode) {
-        return jdbc.update("UPDATE plugin_activation SET status = ?, stage = ?, error_code = ?,"
+        int updated = jdbc.update("UPDATE plugin_activation SET status = ?, stage = ?, error_code = ?,"
                         + " finished_at = CASE WHEN ? IN ('ACTIVE','STOPPED','FAILED') THEN now()"
                         + " ELSE finished_at END WHERE id = ?",
                 status.wireName(), stage, errorCode, status.wireName(), activationId);
+        updateInstanceStatusByActivation(activationId, status);
+        return updated;
+    }
+
+    /** 实例状态随激活终态派生（Issue #22 评论-16）：active/stopped/failed；瞬态不变。 */
+    private void updateInstanceStatusByActivation(String activationId, ActivationStatus status) {
+        String instanceStatus = switch (status) {
+            case ACTIVE -> "active";
+            case STOPPED -> "stopped";
+            case FAILED -> "failed";
+            default -> null;
+        };
+        if (instanceStatus != null) {
+            jdbc.update("UPDATE plugin_instance SET status = ?, updated_at = now()"
+                            + " WHERE plugin_id = (SELECT plugin_id FROM plugin_activation"
+                            + " WHERE id = ?)",
+                    instanceStatus, activationId);
+        }
     }
 
     @Override
@@ -213,6 +231,10 @@ public class JdbcLifecycleRepository implements LifecycleRepository {
         jdbc.update("INSERT INTO plugin_audit_event (id, plugin_id, activation_id, event_type)"
                 + " VALUES (?, ?, ?, ?)", "pae-" + UUID.randomUUID(), pluginId, activationId,
                 eventType);
+        if ("PLUGIN_UNINSTALLED".equals(eventType)) {
+            jdbc.update("UPDATE plugin_instance SET status = 'uninstalled', updated_at = now()"
+                    + " WHERE plugin_id = ?", pluginId);
+        }
     }
 
     private String activationSelect() {

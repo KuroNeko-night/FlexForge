@@ -4,13 +4,15 @@
 
 | 表 | 作用 | 关键字段 |
 | --- | --- | --- |
-| `plugin_instance` | 稳定的插件实例 | `plugin_id`、`owner_id`、`status`、`current_version_id`、`next_version_id` |
-| `plugin_version` | 不可变的插件包版本 | `plugin_version_id`、`plugin_id`、`version`、`content_hash`、`manifest_json`、`capability_level` |
+| `plugin_instance` | 稳定的插件实例 | `plugin_id`、`name`、`status`（随生命周期派生：`imported/active/stopped/failed/uninstalled`，Issue #22 评论-16） |
+| `plugin_version` | 不可变的插件包版本 | `plugin_version_id`、`plugin_id`、`version`、`content_hash`、`manifest_json`、`capability_level`、`script_payloads`、`resource_payloads`、`asset_payloads` |
 | `plugin_dependency` | 版本依赖关系 | `plugin_version_id`、`dependency_id`、`version_range` |
 | `plugin_activation` | 一次安装/启停/升级尝试 | `activation_id`、`plugin_version_id`、`operation`、`status`、`stage`、`error_code`、`requested_by` |
 | `plugin_registration` | 激活期间产生的注册记录 | `activation_id`、`extension_type`、`registration_key`、`payload_json` |
 | `plugin_migration` | 插件版本内已应用的迁移脚本（PluginRuntime runner 记录，非 Flyway） | `plugin_version_id`、`activation_id`、`script_name`、`checksum`、`applied_at` |
 | `plugin_audit_event` | 追加式插件领域事件 | `event_id`、`plugin_id`、`activation_id`、`event_type`、`payload_json`、`occurred_at` |
+
+> MVP 实现口径（对齐 V006/V007）：`plugin_instance` 不设 `current_version_id/next_version_id/owner_id` 列；"当前版本"语义由 `plugin_activation` 的同插件唯一占用（V009 部分唯一索引 + 应用层检查）承载，升级失败走补偿性重新激活旧版本而非 next 列状态位。
 
 ## 2. 内存对象
 
@@ -24,7 +26,7 @@ PluginRuntime
             -> Service/Extension contributions
 ```
 
-`Disposable` 不作为函数持久化。激活时根据 `plugin_registration` 重新建立注册并持有撤销句柄；停用或回滚时先撤销内存句柄，再更新持久化状态。这样数据库不会保存不可执行的运行时对象。
+`Disposable` 不作为函数持久化。重启恢复时从 `plugin_version` 落库载荷（`manifest_json` + `resource_payloads`）重建 ACTIVE 插件的注册并持有撤销句柄（`plugin_registration` 是激活期注册记录与排障线索，非恢复事实源——V007 建表注释中"恢复依据 plugin_registration"为历史口径；迁移文件不可改，以本节为准）；停用或回滚时先撤销内存句柄，再更新持久化状态。这样数据库不会保存不可执行的运行时对象。
 
 ## 3. 状态与幂等
 
@@ -53,7 +55,7 @@ VALIDATE -> DEPENDENCY_CHECK -> MIGRATION -> REGISTER -> READY
 3. 迁移中途失败时，已注册贡献和事务数据均回滚。
 4. 同一版本重复安装返回同一结果，不产生重复菜单或权限。
 5. 停用后旧 `activation_id` 的 API、异步任务和前端请求均被拒绝。
-6. 升级失败时 `current_version_id` 保持可用，`next_version_id` 进入失败状态。
+6. 升级失败时补偿性重新激活旧版本，"当前版本"保持可用；新版本激活记录进入失败状态（无 next 列，语义由占用行+补偿承载，见 §1 口径注）。
 7. 卸载后注册表、菜单、权限和监听器全部撤销，审计记录仍保留。
 8. 重启后只恢复持久化的 ACTIVE 插件，并重新建立内存 disposer。
 

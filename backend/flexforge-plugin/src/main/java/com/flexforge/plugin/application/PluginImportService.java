@@ -71,7 +71,9 @@ public class PluginImportService {
         String hash = sha256(zipBytes);
         var existing = repository.findByContentHash(hash);
         if (existing.isPresent()) {
-            return previewOf(existing.orElseThrow(), false);
+            PluginVersionRecord hit = existing.orElseThrow();
+            repository.resetUninstalledInstance(hit.pluginId());
+            return previewOf(hit, false);
         }
         try (SafeArchive archive = kernel.inspector().inspect(zipBytes)) {
             PluginManifest manifest = inspectManifest(archive);
