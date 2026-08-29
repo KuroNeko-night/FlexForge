@@ -129,9 +129,19 @@ public class MigrationScriptScanner {
      * 字符串跳过只会导致执行期拒绝（fail-closed），不会放行越界语句；反之若比
      * PG 窄（如漏认 {@code $表$}），词法机会在字符串内容里的单引号处误开字符串、
      * 吞掉后续真正的越界语句（本次审计 P1，与 PR #19 的 -- 绕过同构）。
+     *
+     * <p>前驱守卫：PG 无引号标识符的**后续**字符允许 {@code $}（{@code zz$e$}
+     * 是单个标识符而非 dollar-quote 起点），故 {@code $} 紧跟标识符字符或
+     * {@code $} 时不是定界符——否则词法机会在标识符中部误开字符串、把越界语句
+     * 吞进"字符串内容"（PR #31 交叉审查 P1，含空标签紧贴 {@code zz$$} 形态）。
+     * 数字前缀（{@code 1$e$}）PG 按数字字面量结束后走 dollar-quote，此处按
+     * 标识符延续拒绝——扫描器看到更多代码只会假阳性拒绝（fail-closed，可接受）。
      */
     private static String dollarDelimiterAt(String sql, int i) {
         if (sql.charAt(i) != '$') {
+            return null;
+        }
+        if (i > 0 && (isTagChar(sql.charAt(i - 1)) || sql.charAt(i - 1) == '$')) {
             return null;
         }
         int end = i + 1;

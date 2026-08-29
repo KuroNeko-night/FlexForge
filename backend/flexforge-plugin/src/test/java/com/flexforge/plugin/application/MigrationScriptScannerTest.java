@@ -102,6 +102,25 @@ class MigrationScriptScannerTest {
     }
 
     @Test
+    void identifiersGluedToDollarDelimitersCannotHidePlatformObjects() {
+        // PR #31 交叉审查 P1：PG 无引号标识符后续字符允许 $，zz$e$ 是单个标识符——
+        // 词法机若在其 $ 处误开字符串，越界语句被吞进"字符串内容"而导入放行
+        assertThatThrownBy(() -> scan(List.of("migrations/V001__evil.sql"),
+                        "CREATE TABLE zz$e$(a int); DROP TABLE meta_entity; SELECT * FROM zz$e$;"))
+                .hasMessageContaining("越界")
+                .hasMessageContaining("meta_entity");
+        // 空标签紧贴标识符同型（main 既有形态，随前驱守卫一并封堵）
+        assertThatThrownBy(() -> scan(List.of("migrations/V001__evil.sql"),
+                        "CREATE TABLE zz$$(a int); DROP TABLE meta_entity; SELECT * FROM zz$$;"))
+                .hasMessageContaining("越界")
+                .hasMessageContaining("meta_entity");
+        // 正例：双引号标识符内的 $e$ 是标识符内容，PG 与扫描器都不视为字符串
+        Map<String, String> checksums = scan(List.of("migrations/V001__ok.sql"),
+                "CREATE TABLE \"a$e$\" AS SELECT 1; INSERT INTO inv_x VALUES ('x');");
+        assertThat(checksums).containsKey("migrations/V001__ok.sql");
+    }
+
+    @Test
     void backslashRejectedToCloseEscapeStringBypass() {
         // PR #19 复审 N1：E'a\'' 依赖反斜杠转义引号构造闭合点分歧——字符集白名单整体拒绝
         assertThatThrownBy(() -> scan(List.of("migrations/V001__evil.sql"),
