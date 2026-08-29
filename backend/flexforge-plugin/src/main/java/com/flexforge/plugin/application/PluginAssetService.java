@@ -58,6 +58,13 @@ public class PluginAssetService {
         if (contentType == null) {
             throw new NoSuchElementException("资源类型不在白名单: " + normalized);
         }
-        return new AssetContent(Base64.getDecoder().decode(value.asText()), contentType);
+        byte[] content;
+        try {
+            content = Base64.getDecoder().decode(value.asText());
+        } catch (IllegalArgumentException e) {
+            // 存储内容损坏属服务端数据问题，不得误报为客户端 400
+            throw new IllegalStateException("资产载荷损坏（base64 非法）: " + normalized, e);
+        }
+        return new AssetContent(content, contentType);
     }
 }

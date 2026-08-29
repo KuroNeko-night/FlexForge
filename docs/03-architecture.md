@@ -151,7 +151,7 @@ AI 不直接获得数据库管理员权限、服务器命令权限或生产发�
 | `POST` | `/api/v1/plugins/validate` | 校验插件包 |
 | `POST` | `/api/v1/plugins/import` | 导入插件包（幂等，P07 落地） |
 | `GET` | `/api/v1/plugins/activations/{activationId}/registrations` | 激活注册清单（旧 activationId 返回 `stale_activation`，P08 落地） |
-| `GET` | `/api/v1/plugins/activations/{activationId}/assets/{path}` | 插件静态资产（theme-asset 消费面，登录可读；CSP/attachment/nosniff 响应头纵深，P08 落地） |
+| `GET` | `/api/v1/plugins/activations/{activationId}/assets/{path}` | 插件静态资产（theme-asset 消费面，登录可读；path 为完整存储键含 `assets/` 前缀；CSP/attachment/nosniff 响应头纵深，P08 落地） |
 | `POST` | `/api/v1/plugins/install` | 安装插件（P07 起由 import 承担） |
 | `POST` | `/api/v1/plugins/{id}/activate` | 启用指定插件版本 |
 | `POST` | `/api/v1/plugins/{id}/stop` | 停用当前激活 |

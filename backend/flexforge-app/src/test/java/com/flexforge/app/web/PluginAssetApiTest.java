@@ -100,7 +100,7 @@ class PluginAssetApiTest {
     // ===== Issue #20 第 3 项：assets/ 逐文件声明收紧 =====
     @Test
     void undeclaredAssetFileRejected() throws Exception {
-        byte[] bytes = assetZip("asset.two", "\"themeAssets\":[]",
+        byte[] bytes = assetZip("asset.two", "1.0.0", "\"themeAssets\":[]",
                 Map.of("assets/undeclared.png", pngBytes()));
         mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/plugins/import")
                         .file(new MockMultipartFile("file", "pkg.zip", "application/zip", bytes))
@@ -114,7 +114,7 @@ class PluginAssetApiTest {
     // ===== themeAssets 声明的资产包内缺失 =====
     @Test
     void declaredAssetMissingRejected() throws Exception {
-        byte[] bytes = assetZip("asset.three",
+        byte[] bytes = assetZip("asset.three", "1.0.0",
                 "\"themeAssets\":[{\"key\":\"asset.three.bg\",\"kind\":\"background\","
                         + "\"path\":\"assets/ghost.svg\"}]",
                 Map.of());
@@ -130,7 +130,7 @@ class PluginAssetApiTest {
     // ===== kind 非法拒绝 =====
     @Test
     void invalidThemeAssetKindRejected() throws Exception {
-        byte[] bytes = assetZip("asset.four",
+        byte[] bytes = assetZip("asset.four", "1.0.0",
                 "\"themeAssets\":[{\"key\":\"asset.four.bg\",\"kind\":\"wallpaper\","
                         + "\"path\":\"assets/bg.svg\"}]",
                 Map.of("assets/bg.svg", SVG.getBytes(StandardCharsets.UTF_8)));
@@ -175,9 +175,75 @@ class PluginAssetApiTest {
                         .jsonPath("$.code").value("stale_activation"));
     }
 
+    // ===== 复审 P2-1：同 key 异 path 重复声明拒绝（key 维度去重）=====
+    @Test
+    void duplicateThemeAssetKeyRejected() throws Exception {
+        String otherSvg = "<svg xmlns=\"http://www.w3.org/2000/svg\""
+                + " viewBox=\"0 0 4 4\"><rect width=\"4\" height=\"4\" fill=\"#111\"/></svg>";
+        byte[] bytes = assetZip("asset.seven", "1.0.0",
+                "\"themeAssets\":[{\"key\":\"asset.seven.bg\",\"kind\":\"background\","
+                        + "\"path\":\"assets/bg.svg\"},"
+                        + "{\"key\":\"asset.seven.bg\",\"kind\":\"icon\","
+                        + "\"path\":\"assets/other.svg\"}]",
+                Map.of("assets/bg.svg", SVG.getBytes(StandardCharsets.UTF_8),
+                        "assets/other.svg", otherSvg.getBytes(StandardCharsets.UTF_8)));
+        mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/plugins/import")
+                        .file(new MockMultipartFile("file", "pkg.zip", "application/zip", bytes))
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isBadRequest())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .jsonPath("$.code").value("invalid_manifest"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .jsonPath("$.message").value(
+                                org.hamcrest.Matchers.containsString("key 重复")));
+    }
+
+    // ===== 升级后旧 activationId 的资产请求 409（stale）=====
+    @Test
+    void upgradedActivationAssetRequestRejectedAsStale() throws Exception {
+        String oldActivationId = importAndActivateAssetPlugin("asset.eight",
+                "\"themeAssets\":[{\"key\":\"asset.eight.bg\",\"kind\":\"background\","
+                        + "\"path\":\"assets/bg.svg\"}]");
+        // v2：升级包只声明新增内容——无新迁移（V001 已在 v1 应用）、无资产
+        byte[] v2 = upgradeZip("asset.eight", "2.0.0");
+        String importBody = mockMvc.perform(
+                        MockMvcRequestBuilders.multipart("/api/v1/plugins/import")
+                                .file(new MockMultipartFile("file", "pkg.zip", "application/zip",
+                                        v2))
+                                .header("Authorization", adminBearer))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String newVersionId = JsonPath.read(importBody, "$.versionId");
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/plugins/" + newVersionId + "/upgrade")
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isOk());
+        mockMvc.perform(MockMvcRequestBuilders.get(assetUrl(oldActivationId, "assets/bg.svg"))
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isConflict())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .jsonPath("$.code").value("stale_activation"));
+    }
+
+    /** 升级包：保留实体贡献、无迁移无资产（迁移历史按版本记录，升级只声明新增脚本）。 */
+    private static byte[] upgradeZip(String pluginId, String version) {
+        String manifest = "{\"schemaVersion\":1,\"id\":\"" + pluginId + "\",\"name\":\"" + pluginId
+                + "\",\"version\":\"" + version + "\",\"capabilityLevel\":1,"
+                + "\"minPlatformVersion\":\"0.1.0\",\"dependencies\":[],"
+                + "\"contributions\":{\"navigation\":[\"" + pluginId + ".items\"],"
+                + "\"renderers\":[\"enum.default\"],\"themeAssets\":[]},"
+                + "\"resources\":{\"entities\":[\"metadata/entities/item.json\"],\"views\":[],"
+                + "\"migrations\":[]}}";
+        String table = pluginId.replace('.', '_') + "_item";
+        Map<String, byte[]> entries = new LinkedHashMap<>();
+        entries.put("plugin.json", manifest.getBytes(StandardCharsets.UTF_8));
+        entries.put("metadata/entities/item.json",
+                entitiesJson(table).getBytes(StandardCharsets.UTF_8));
+        return zip(entries);
+    }
+
     private String importAndActivateAssetPlugin(String pluginId, String themeAssetsJson)
             throws Exception {
-        byte[] bytes = assetZip(pluginId, themeAssetsJson,
+        byte[] bytes = assetZip(pluginId, "1.0.0", themeAssetsJson,
                 Map.of("assets/bg.svg", SVG.getBytes(StandardCharsets.UTF_8)));
         String importBody = mockMvc.perform(
                         MockMvcRequestBuilders.multipart("/api/v1/plugins/import")
@@ -196,10 +262,10 @@ class PluginAssetApiTest {
     }
 
     /** themeAssets 注入 contributions 的包（默认含实体+迁移，资产按参数附加）。 */
-    private static byte[] assetZip(String pluginId, String themeAssetsJson,
+    private static byte[] assetZip(String pluginId, String version, String themeAssetsJson,
                                    Map<String, byte[]> assetFiles) {
         String manifest = "{\"schemaVersion\":1,\"id\":\"" + pluginId + "\",\"name\":\"" + pluginId
-                + "\",\"version\":\"1.0.0\",\"capabilityLevel\":1,"
+                + "\",\"version\":\"" + version + "\",\"capabilityLevel\":1,"
                 + "\"minPlatformVersion\":\"0.1.0\",\"dependencies\":[],"
                 + "\"contributions\":{\"navigation\":[\"" + pluginId + ".items\"],"
                 + "\"renderers\":[\"enum.default\"]," + themeAssetsJson + "},"

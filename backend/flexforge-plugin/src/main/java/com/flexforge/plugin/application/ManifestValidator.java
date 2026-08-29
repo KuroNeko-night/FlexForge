@@ -30,7 +30,7 @@ public class ManifestValidator {
     private static final Pattern RANGE_PATTERN = Pattern.compile("^(\\*|\\^?\\d+\\.\\d+\\.\\d+)$");
     private static final Pattern KEY_PATTERN = Pattern.compile("^[a-z][a-z0-9_]*(\\.[a-z0-9_]*)*$");
     private static final Pattern ASSET_PATH_PATTERN =
-            Pattern.compile("^assets/[a-z0-9_./-]+\\.(png|svg|webp|css|json)$");
+            Pattern.compile("^assets/[a-z0-9_-]+(/[a-z0-9_-]+)*\\.(png|svg|webp|css|json)$");
     /** themeAssets 为对象数组，单独解析；字符串贡献键仅 navigation/renderers。 */
     private static final Set<String> STRING_CONTRIBUTION_KEYS = Set.of("navigation", "renderers");
     private static final Set<String> CONTRIBUTION_KEYS = Set.of("navigation", "renderers", "themeAssets");
@@ -115,9 +115,10 @@ public class ManifestValidator {
             throw PluginValidationException.invalidManifest("contributions.themeAssets 必须是数组");
         }
         List<ThemeAssetSpec> result = new ArrayList<>();
+        Set<String> seenKeys = new java.util.HashSet<>();
         for (JsonNode item : node) {
             ThemeAssetSpec spec = themeAssetOf(item);
-            if (result.contains(spec)) {
+            if (!seenKeys.add(spec.key())) {
                 throw PluginValidationException.invalidManifest("themeAsset key 重复: " + spec.key());
             }
             result.add(spec);
@@ -138,13 +139,24 @@ public class ManifestValidator {
             throw PluginValidationException.invalidManifest(
                     "themeAsset path 须为包内 assets/ 白名单扩展名相对路径: " + path);
         }
+        String kind = fieldText(item, "kind");
+        if (!ThemeAssetSpec.KINDS.contains(kind)) {
+            throw PluginValidationException.invalidManifest(
+                    "themeAsset kind 非法（允许 background/icon/animation）: " + kind);
+        }
+        return new ThemeAssetSpec(key, kind, path, scopeOf(item));
+    }
+
+    /** scope 可选：存在时必须是非空 KEY_PATTERN 文本（非文本值拒绝，不静默折叠）。 */
+    private static String scopeOf(JsonNode item) {
         JsonNode scope = item.get("scope");
-        if (scope != null && scope.isTextual()
-                && !KEY_PATTERN.matcher(scope.asText()).matches()) {
+        if (scope == null || scope.isNull()) {
+            return null;
+        }
+        if (!scope.isTextual() || !KEY_PATTERN.matcher(scope.asText()).matches()) {
             throw PluginValidationException.invalidManifest("themeAsset scope 非法: " + scope);
         }
-        return new ThemeAssetSpec(key, fieldText(item, "kind"), path,
-                scope == null || scope.isNull() ? null : scope.asText());
+        return scope.asText();
     }
 
     private static Map<String, List<String>> contributionsOf(JsonNode contributionsNode) {
