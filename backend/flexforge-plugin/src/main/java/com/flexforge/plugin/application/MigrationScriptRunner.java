@@ -41,6 +41,7 @@ public class MigrationScriptRunner {
             throw new PluginValidationException(ErrorCodes.MIGRATION_FAILED,
                     "迁移脚本读取失败（" + scriptName + "）: " + e.getClass().getSimpleName());
         }
+        // jsonb ->> 对 JSON null 返回 SQL NULL；字面 "null" 为读取路径的防御性兜底
         if (sql == null || sql.equals("null") || sql.isEmpty()) {
             return;
         }

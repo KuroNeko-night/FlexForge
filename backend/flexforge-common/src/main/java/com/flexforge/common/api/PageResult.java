@@ -11,6 +11,7 @@ import java.util.List;
 public record PageResult<T>(List<T> items, long total, int pageNumber, int pageSize) {
 
     public PageResult {
+        // null 归一为空列表（查询无结果路径不必特判）；copyOf 给出不可变快照并顺带拒绝 null 元素
         items = items == null ? List.of() : List.copyOf(items);
     }
 }

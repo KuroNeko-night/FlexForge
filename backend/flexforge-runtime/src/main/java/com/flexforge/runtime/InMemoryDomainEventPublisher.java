@@ -30,6 +30,7 @@ public final class InMemoryDomainEventPublisher {
         }
     }
 
+    // COW：publish 无锁遍历（迭代即数组快照，不因并发撤销抛 ConcurrentModificationException）
     private final CopyOnWriteArrayList<Holder> listeners = new CopyOnWriteArrayList<>();
     private final Map<String, List<SimpleRegistration>> byActivation = new ConcurrentHashMap<>();
 

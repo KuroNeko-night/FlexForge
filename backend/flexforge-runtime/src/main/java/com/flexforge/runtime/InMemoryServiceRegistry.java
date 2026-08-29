@@ -28,6 +28,8 @@ public final class InMemoryServiceRegistry {
     }
 
     private final Map<String, ActiveService> servicesById = new ConcurrentHashMap<>();
+    // 单独 close 的句柄仍保留在本表，直到 closeAll(activationId) 整体清理（close 幂等，无害），
+    // 换取 closeAll 总能取到该身份的全量句柄快照
     private final Map<String, List<SimpleRegistration>> byActivation = new ConcurrentHashMap<>();
 
     /**
@@ -61,6 +63,7 @@ public final class InMemoryServiceRegistry {
     @SuppressWarnings("unchecked")
     public <T> Optional<T> find(ServiceKey<T> key) {
         Objects.requireNonNull(key, "key");
+        // 无锁读：isActive 判定通过后仍可能与并发 close 瞬时交叠（弱一致窗口），不承诺强一致
         ActiveService active = servicesById.get(key.id());
         if (active == null || !active.registration().isActive()) {
             return Optional.empty();

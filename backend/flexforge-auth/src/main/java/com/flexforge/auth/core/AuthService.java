@@ -70,6 +70,7 @@ public class AuthService {
         UserRecord user = users.findById(principal.userId())
                 .orElseThrow(() -> new NoSuchElementException("user not found: " + principal.userId()));
         if (!user.active()) {
+            // 停用账号沿用登录统一口径（docs/13 §3.1.3）：防止持有有效旧令牌者借 /me 探测账号当前状态
             throw new InvalidCredentialsException();
         }
         return toCurrentUser(user);
@@ -77,6 +78,7 @@ public class AuthService {
 
     /** 登出 = 审计事件（docs/13 §3.1.5：MVP 不做服务端吊销，前端删除令牌）。 */
     public void logout(AuthPrincipal principal) {
+        // 令牌 TTL 内用户可能已被删除（无服务端吊销）：actor 回退字面量保证登出审计不因取不到用户名而丢失
         String actor = users.findById(principal.userId())
                 .map(UserRecord::username)
                 .orElse("user-" + principal.userId());

@@ -66,6 +66,8 @@ function checkIndexTree(files) {
   const tree = (section1.match(/```text\n([\s\S]*?)```/) || [])[1] || '';
   const names = new Set(files.map((f) => path.posix.basename(f)));
   const missing = [];
+  // 只按文件名比对存在性（同名不同目录不区分）：这是"索引列出的文件存在"检查，
+  // 目录位置正确性由 R-GOV-05c/评审负责，避免本检查做路径级误报
   for (const token of tree.split(/\s+/)) {
     if (token.endsWith('/')) continue; // 目录条目只做结构提示，不检查存在性
     const t = token.replace(/^[|├└─\s]+/, '');

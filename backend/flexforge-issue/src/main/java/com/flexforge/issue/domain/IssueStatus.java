@@ -25,6 +25,7 @@ public enum IssueStatus {
     DONE("已完成"),
     CLOSED("已关闭");
 
+    // DONE/CLOSED 不设出边 = 终态（canTransitionTo 经 getOrDefault 得空集拒绝一切迁移）
     private static final Map<IssueStatus, Set<IssueStatus>> TRANSITIONS = Map.of(
             SUBMITTED, Set.of(APPROVED, RETURNED),
             RETURNED, Set.of(SUBMITTED),

@@ -72,6 +72,7 @@ public final class FieldTypeRegistry {
         map.put(FieldType.DATE, new TypeContract(FieldType.DATE, "date", "DATE",
                 "date.default", Set.of()));
         map.put(FieldType.ENUM, new TypeContract(FieldType.ENUM, "enum", "VARCHAR(64)",
+                // VARCHAR(64) 与 ENUM_OPTION_LENGTH_CAP 对齐：校验通过的选项必可原样落库
                 "enum.default", Set.of("options")));
         map.put(FieldType.BOOLEAN, new TypeContract(FieldType.BOOLEAN, "boolean", "BOOLEAN",
                 "boolean.default", Set.of()));
@@ -143,6 +144,8 @@ public final class FieldTypeRegistry {
                 validateRuleValue(type, key, value);
             }
         }
+        // 数量差检测白名单外键：recognized 计白名单内实际出现的键数，
+        // 源对象更大即存在未登记键，无需枚举未知键名
         if (rules.size() > recognized) {
             throw new IllegalArgumentException(
                     "类型 " + contract.name() + " 不允许该校验键（允许: " + contract.validationKeys() + "）");
@@ -272,6 +275,8 @@ public final class FieldTypeRegistry {
             throw new IllegalArgumentException("decimal 值必须是数值");
         }
         BigDecimal decimal = decimalOf(value);
+        // precision - scale = 整数位数（科学计数法/负 scale 同样成立）；
+        // 应用侧先按 NUMERIC(20,6) 精度拒绝，防 PG 静默舍入到不可逆精度
         if (decimal.precision() - decimal.scale() > DECIMAL_INT_DIGITS
                 || decimal.scale() > DECIMAL_SCALE) {
             throw new IllegalArgumentException(
@@ -322,6 +327,7 @@ public final class FieldTypeRegistry {
     }
 
     private static BigDecimal decimalOf(JsonNode value) {
+        // 整数走 BigDecimal.valueOf(long) 精确转换，避免经 double 中转引入尾差
         return value.isInt() || value.isLong() ? BigDecimal.valueOf(value.longValue())
                 : value.decimalValue();
     }

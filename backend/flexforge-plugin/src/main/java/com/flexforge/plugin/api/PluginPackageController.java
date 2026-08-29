@@ -38,6 +38,7 @@ import java.util.Set;
 @RequestMapping(ApiConstants.API_V1 + "/plugins")
 public class PluginPackageController {
 
+    // octet-stream 容忍：curl/脚本上传的常见缺省类型，真实格式仍由 zip 魔数把关
     private static final Set<String> ZIP_CONTENT_TYPES = Set.of(
             "application/zip", "application/x-zip-compressed", "application/octet-stream");
 

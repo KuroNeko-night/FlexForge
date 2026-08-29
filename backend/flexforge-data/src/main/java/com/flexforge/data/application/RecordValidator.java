@@ -71,6 +71,7 @@ public final class RecordValidator {
         return data;
     }
 
+    /** 用"已匹配键数 = 源对象键数"检测未定义字段（数量差手法，无需枚举未知键名）。 */
     private static void requireNoUnknownKeys(JsonNode source, int matched, EntityDefinition entity) {
         if (source.size() > matched) {
             throw new IllegalArgumentException(
@@ -82,6 +83,7 @@ public final class RecordValidator {
         for (FieldDefinition field : entity.fields()) {
             JsonNode defaultValue = field.defaultValue();
             if (defaultValue != null && !defaultValue.isNull() && data.get(field.name()) == null) {
+                // deepCopy：记录数据不得与元数据默认值共享可变节点，防记录写入污染缓存中的定义
                 data.set(field.name(), defaultValue.deepCopy());
             }
         }

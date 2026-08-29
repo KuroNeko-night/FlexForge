@@ -46,6 +46,7 @@ public class JdbcAuditQueryRepository {
         int offset = (query.pageNumber() - 1) * query.pageSize();
         params.add(query.pageSize());
         params.add(offset);
+        // id（主键唯一）作次序键：occurred_at 并列时 LIMIT/OFFSET 分页顺序仍确定，不跨页重排
         return jdbc.query(
                 "SELECT id, actor, action, object_id, result, occurred_at FROM sys_audit_event"
                         + where.sql() + " ORDER BY occurred_at " + direction + ", id ASC LIMIT ? OFFSET ?",

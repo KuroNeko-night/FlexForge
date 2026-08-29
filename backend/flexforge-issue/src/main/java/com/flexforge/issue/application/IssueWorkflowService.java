@@ -104,7 +104,9 @@ public class IssueWorkflowService {
         return issue;
     }
 
-    /** 终态 Issue（DONE/CLOSED）不接受规格写入（Issue #22 评论-24，失败路径有测试）。 */
+    /** 终态 Issue（DONE/CLOSED）不接受规格写入（Issue #22 评论-24，失败路径有测试）。
+     * 检查与 insertSpec 之间无同事务状态守卫：并发迁移到终态后仍可能插入新版本
+     * （宽一拍的审计噪声，不影响状态机本身，与批准门同一接受口径）。 */
     private IssueRepository.IssueRecord requireOpen(String issueId) {
         IssueRepository.IssueRecord issue = requireIssue(issueId);
         if (issue.status() == IssueStatus.DONE || issue.status() == IssueStatus.CLOSED) {
@@ -114,6 +116,9 @@ public class IssueWorkflowService {
         return issue;
     }
 
+    // 批准门口径（docs/03 §8）：迁移前读取最新版本判 valid。check 与下方 CAS 落库之间存在
+    // 窗口——并发保存的 invalid 新版本不阻断本次批准（CAS 只守卫 status 本身）；MVP 接受该口径，
+    // 因批准者与规格保存者同为开发者角色，双写竞态不构成越权面。
     private void requireValidSpec(String issueId) {
         SpecRevisionRecord latest = repository.latestSpec(issueId);
         if (latest == null || !latest.valid()) {

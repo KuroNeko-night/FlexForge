@@ -48,6 +48,10 @@ public class HttpModelPort implements ModelPort {
                 .build();
     }
 
+    /** 单轮补全；所有网络层失败（429/超时/离线/非 JSON 网关页）统一转
+     * {@link ModelUnavailableException}（HTTP 503 口径见 GlobalExceptionHandler）。
+     * 本方法不落任何业务状态：失败发生在编排层写规格/迁移之前，调用方可安全重试，
+     * 不会留下半成品任务。 */
     @Override
     public ModelReply complete(ModelRequest request) {
         if (apiKey == null || apiKey.isBlank()) {
@@ -79,6 +83,8 @@ public class HttpModelPort implements ModelPort {
                         .put("content", request.prompt()));
         ObjectNode bodyNode = JSON.createObjectNode()
                 .put("model", model)
+                // max_tokens 封顶防超长回复撑爆解析；低温度让规格输出偏确定性，
+                // 输出偏差交由 ClarifyEngine 的校验反馈重试纠正
                 .put("max_tokens", 4096)
                 .put("temperature", 0.2);
         bodyNode.set("messages", messages);

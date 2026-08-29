@@ -72,7 +72,7 @@ public class PluginImportService {
         var existing = repository.findByContentHash(hash);
         if (existing.isPresent()) {
             PluginVersionRecord hit = existing.orElseThrow();
-            repository.resetUninstalledInstance(hit.pluginId());
+            repository.resetUninstalledInstance(hit.pluginId()); // 幂等命中也复活 uninstalled 实例（与 storeVersion CASE 同口径）
             return previewOf(hit, false);
         }
         try (SafeArchive archive = kernel.inspector().inspect(zipBytes)) {

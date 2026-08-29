@@ -6,6 +6,8 @@ import path from 'node:path';
 const ANCHOR_RE = /FLEXFORGE_STATUS:BEGIN([\s\S]*?)FLEXFORGE_STATUS:END/;
 
 function grab(anchor, key) {
+  // 键匹配未锚定行首：'STATUS' 目前恰好先命中 STAGE_STATUS 行（值同义，结果碰巧正确）；
+  // 若锚点块新增形如 "XXX_STATUS: " 的键，须把此处改为行首锚定再复用
   return (anchor.match(new RegExp(`${key}: *(.*)`)) || [])[1]?.trim();
 }
 

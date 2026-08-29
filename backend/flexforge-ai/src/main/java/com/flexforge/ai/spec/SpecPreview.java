@@ -36,6 +36,11 @@ public final class SpecPreview {
         return new Preview(true, resourcesOf(spec), JSON.valueToTree(java.util.List.of()));
     }
 
+    /**
+     * 派生确定性资源清单。预览导航键用可读形态（{@code <实体>.items}）；P11
+     * 生成器落定为 {@code <pluginId>.<实体>}（注册表键全局唯一需要插件前缀）
+     * ——预览展示与最终注册键形状有意不同（PluginPackageGenerator 侧同口径注记）。
+     */
     private static Map<String, String> resourcesOf(JsonNode spec) {
         Map<String, String> resources = new LinkedHashMap<>();
         ObjectNode manifest = JSON.createObjectNode();

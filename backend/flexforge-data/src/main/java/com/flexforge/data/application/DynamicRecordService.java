@@ -71,6 +71,7 @@ public class DynamicRecordService {
         RecordEntry current = detail(entityName, recordId);
         JsonNode merged = RecordValidator.validatePatch(entity, current.data(), patch);
         if (repository.updateData(recordId, merged, current.updatedAt()) != 1) {
+            // 0 行重查区分：记录仍在 = 乐观并发冲突（400），已不在 = 404
             if (repository.find(recordId).isPresent()) {
                 throw new IllegalArgumentException("记录已被并发修改，请刷新后重试: " + recordId);
             }

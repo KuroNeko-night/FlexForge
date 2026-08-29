@@ -47,6 +47,8 @@ public class RequestIdFilter extends OncePerRequestFilter {
         }
     }
 
+    /** 入站 requestId 只接受本平台格式（req- + 16 进制）：格式白名单同时挡住
+     * 响应头注入与日志注入（换行/控制字符不匹配即弃用，改用生成值）。 */
     private static String resolveRequestId(HttpServletRequest request) {
         String incoming = request.getHeader(REQUEST_ID_HEADER);
         if (incoming != null && incoming.matches("req-[0-9a-f]{8,64}")) {

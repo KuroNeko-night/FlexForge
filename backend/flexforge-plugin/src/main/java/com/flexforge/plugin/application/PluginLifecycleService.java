@@ -97,7 +97,7 @@ public class PluginLifecycleService {
             rollback(activation, e);
             throw e;
         }
-        kernel.metaRegistry().evictAll();
+        kernel.metaRegistry().evictAll(); // 提交后失效缓存：事务内失效会在回滚后留下空洞
         audit.record(AuditEvents.of(actor, "plugin.activate", activation.id(), "success", clock));
         return requireActivation(activation.id());
     }

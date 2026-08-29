@@ -36,6 +36,7 @@ import java.util.Set;
 @RequestMapping(ApiConstants.API_V1 + "/data")
 public class DataController {
 
+    /** 分页保留键：不在此列的请求参数一律按 "字段.操作符=值" 交 DataQueryParams 白名单解析。 */
     private static final Set<String> PAGING_KEYS =
             Set.of("page", "pageSize", "sortBy", "direction");
 

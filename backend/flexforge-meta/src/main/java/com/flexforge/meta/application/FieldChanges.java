@@ -15,6 +15,7 @@ import tools.jackson.databind.JsonNode;
  */
 final class FieldChanges {
 
+    /** 字段排序位置上限（纯展示序，非行数约束；显式给值须落在 0..999）。 */
     private static final int POSITION_CAP = 999;
 
     private FieldChanges() {
@@ -86,6 +87,8 @@ final class FieldChanges {
         boolean referenced = definition.views().stream()
                 .anyMatch(view -> references(view.columns(), current.name())
                         || references(view.filters(), current.name()));
+        // draft 实体同样拦截：无数据可孤悬，但视图配置会指向不存在的字段名，
+        // 顺序约束 = 先改视图引用再改字段名
         if (referenced) {
             throw new IllegalArgumentException("字段被视图引用，先更新视图引用后再改名: " + current.name());
         }
@@ -103,6 +106,7 @@ final class FieldChanges {
 
     private static JsonNode mergedJson(JsonNode current, JsonNode requested,
                                        EntityRecord entity, String label) {
+        // 结构相等视为"未变更"：PATCH 回传与现状相同的值不算语义变更，不触发 draft 要求
         if (requested == null || requested.equals(current)) {
             return current;
         }

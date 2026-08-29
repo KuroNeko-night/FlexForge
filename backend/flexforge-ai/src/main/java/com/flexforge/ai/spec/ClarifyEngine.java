@@ -38,6 +38,8 @@ public class ClarifyEngine {
     public ClarifyResult clarify(String prompt) {
         String currentPrompt = prompt;
         int attempts = 0;
+        // 反馈不跨轮累积：每次都从原始提示词 + 最近一次错误重建，防止重试对话
+        // 滚雪球撑爆上下文（错误清单已随版本留存，无需在提示词里留全史）
         while (attempts < MAX_ATTEMPTS) {
             attempts++;
             JsonNode parsed = parse(model.complete(new ModelPort.ModelRequest(

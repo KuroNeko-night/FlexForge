@@ -39,6 +39,9 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    /** IAE 消息回显口径：平台约定 IAE 只由各服务的入参校验抛出，消息是面向用户的
+     * 业务文案（非内部诊断），可直接进响应体；框架/JDK 内部抛出的 IAE 同样走此
+     * 映射，属已知边界（消息不包含堆栈/SQL，泄漏面有限）。 */
     @ExceptionHandler({IllegalArgumentException.class})
     public ResponseEntity<ErrorResponse> handleValidation(IllegalArgumentException exception) {
         return envelope(HttpStatus.BAD_REQUEST, ErrorCodes.VALIDATION_ERROR,

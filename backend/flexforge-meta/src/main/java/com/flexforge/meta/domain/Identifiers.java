@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 @PublicApi
 public final class Identifiers {
 
+    /** 与 data 模块 JdbcRecordRepository.SAFE_NAME 同一规则的唯一事实定义（纵深复检层，改此须同步）。 */
     private static final Pattern NAME = Pattern.compile("^[a-z][a-z0-9_]{0,62}$");
 
     private Identifiers() {

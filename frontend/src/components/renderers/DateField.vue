@@ -8,6 +8,7 @@ defineProps<{
   disabled?: boolean;
 }>();
 
+// 空日期归一为 null＝显式清除（docs/03 §8 PATCH null 清键）
 const emit = defineEmits<{ 'update:modelValue': [value: string | null] }>();
 </script>
 

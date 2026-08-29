@@ -32,6 +32,8 @@ public class JdbcUserAdminRepository {
         long total = Optional.ofNullable(
                 jdbc.queryForObject("SELECT count(*) FROM sys_user u", Long.class)).orElse(0L);
         int offset = (query.pageNumber() - 1) * query.pageSize();
+        // 两段式取数：先按 id 分页再逐个补全（每页 1+1+2N 次查询），避免角色 1:N JOIN
+        // 放大行数破坏 count 与分页；次序键 u.id 保证排序列并列时分页顺序确定
         List<Long> ids = jdbc.queryForList(
                 "SELECT u.id FROM sys_user u ORDER BY " + orderColumn + " " + direction
                         + ", u.id ASC LIMIT ? OFFSET ?",
@@ -70,6 +72,8 @@ public class JdbcUserAdminRepository {
     @Transactional
     public void replaceRoles(long userId, List<String> roleCodes) {
         jdbc.update("DELETE FROM sys_user_role WHERE user_id = ?", userId);
+        // INSERT..SELECT 对 sys_role 无匹配 code 时静默插入 0 行（不报错）：
+        // 角色存在性依赖 Service 层 Roles.ALL 白名单与 V003 种子的约定一致
         for (String roleCode : roleCodes) {
             jdbc.update("INSERT INTO sys_user_role (user_id, role_id)"
                     + " SELECT ?, id FROM sys_role WHERE code = ?", userId, roleCode);
