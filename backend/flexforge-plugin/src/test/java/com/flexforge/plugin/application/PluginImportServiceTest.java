@@ -83,6 +83,11 @@ class PluginImportServiceTest {
         public List<PluginPackageRepository.VersionEntry> versionSummariesOf(String pluginId) {
             return List.of();
         }
+
+        @Override
+        public void resetUninstalledInstance(String pluginId) {
+            // 幂等重导入状态重置对桩无副作用
+        }
     }
 
     /** 仓库桩工厂：hash 命中路径（conflictVersion=null）或冲突路径。 */

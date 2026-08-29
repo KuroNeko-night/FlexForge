@@ -5,7 +5,7 @@
 | 表 | 作用 | 关键字段 |
 | --- | --- | --- |
 | `plugin_instance` | 稳定的插件实例 | `plugin_id`、`name`、`status`（随生命周期派生：`imported/active/stopped/failed/uninstalled`，Issue #22 评论-16） |
-| `plugin_version` | 不可变的插件包版本 | `plugin_version_id`、`plugin_id`、`version`、`content_hash`、`manifest_json`、`capability_level`、`script_payloads`、`resource_payloads` |
+| `plugin_version` | 不可变的插件包版本 | `plugin_version_id`、`plugin_id`、`version`、`content_hash`、`manifest_json`、`capability_level`、`script_payloads`、`resource_payloads`、`asset_payloads` |
 | `plugin_dependency` | 版本依赖关系 | `plugin_version_id`、`dependency_id`、`version_range` |
 | `plugin_activation` | 一次安装/启停/升级尝试 | `activation_id`、`plugin_version_id`、`operation`、`status`、`stage`、`error_code`、`requested_by` |
 | `plugin_registration` | 激活期间产生的注册记录 | `activation_id`、`extension_type`、`registration_key`、`payload_json` |
@@ -26,7 +26,7 @@ PluginRuntime
             -> Service/Extension contributions
 ```
 
-`Disposable` 不作为函数持久化。重启恢复时从 `plugin_version` 落库载荷（`manifest_json` + `script_payloads`/`resource_payloads`）重建 ACTIVE 插件的注册并持有撤销句柄（`plugin_registration` 是激活期注册记录与排障线索，非恢复事实源——恢复口径与落库载荷派生逻辑保持同源）；停用或回滚时先撤销内存句柄，再更新持久化状态。这样数据库不会保存不可执行的运行时对象。
+`Disposable` 不作为函数持久化。重启恢复时从 `plugin_version` 落库载荷（`manifest_json` + `resource_payloads`）重建 ACTIVE 插件的注册并持有撤销句柄（`plugin_registration` 是激活期注册记录与排障线索，非恢复事实源——V007 建表注释中"恢复依据 plugin_registration"为历史口径；迁移文件不可改，以本节为准）；停用或回滚时先撤销内存句柄，再更新持久化状态。这样数据库不会保存不可执行的运行时对象。
 
 ## 3. 状态与幂等
 

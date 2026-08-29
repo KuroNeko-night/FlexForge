@@ -167,7 +167,10 @@ function checkScriptSyntax(files) {
     try {
       execFileSync('bash', ['-n', path.join(ROOT, f)], { stdio: 'pipe' });
     } catch (e) {
-      problems.push(`${f}: ${(e.stderr ? e.stderr.toString() : e.message).trim().split('\n')[0]}`);
+      const hint = e.code === 'ENOENT'
+        ? 'bash 不可用（Windows 需 Git Bash；CI 为原生 bash）'
+        : (e.stderr ? e.stderr.toString() : e.message).trim().split('\n')[0];
+      problems.push(`${f}: ${hint}`);
     }
   }
   record('SCRIPT-SYNTAX', problems.length ? 'fail' : 'pass',
