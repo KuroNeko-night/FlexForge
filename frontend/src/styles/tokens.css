@@ -79,7 +79,6 @@
   animation: ff-rise-in var(--ff-motion-slow) var(--ff-ease) both;
 }
 
-
 /* ===== 基建组件（ui/）原语样式：只消费令牌，不写字面量 ===== */
 .ff-btn {
   display: inline-flex;
