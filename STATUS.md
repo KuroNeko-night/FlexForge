@@ -5,12 +5,12 @@
 <!-- FLEXFORGE_STATUS:BEGIN -->
 CURRENT_STAGE_ID: P12.5
 CURRENT_STAGE_NAME: 前端基建与默认主题
-STAGE_STATUS: in_progress
-PROJECT_PROGRESS: 60%
+STAGE_STATUS: completed
+PROJECT_PROGRESS: 65%
 LAST_UPDATED: 2026-08-30
 OWNER: project-maintainer
-NEXT_ACTION: P12.5 迭代 1（分支 feat/p125-frontend-foundation）：三缺陷修复（菜单路由对齐 /system/users 与 /workbench、EntityCards 过滤 enabled、用户管理页消费 P03 API）→ 前端基建（BaseButton/Switch/Card/Drawer+过渡动画+排版 tokens）→ 迭代 2：theme-default SVG 插件+第二插件覆盖验证 → 审查 → PR → 出口。P14 已完成（release_candidate 证据见下方日志，最后全量验证 2026-08-29 20:04；P12.5 合并后需重跑门禁与 RB 回归再确认候选状态）
-EXIT_GATE: P14 出口证据（docs/09 P14 验收四项）：①核心验收场景全过且 P0/P1 为零——L4 干净环境重建（down -v+全新镜像+空库迁移）下 demo-e2e.sh 五场景 live 连续三轮全过（R1 5966ms/R2 6238ms/R3 5838ms+存档跑 6045ms，对照 docs/00 §5 十分钟目标；RB-E2E CI 侧另有 Testcontainers 三轮），全仓开放 Issue 无 P0/P1（余项均 P3 附触发条件，docs/00 §7 论文对账）②新环境按文档可启动完成演示——docker compose 三服务重建 + docs/14 运行手册（启动/账号/演示/三保险/九条排障）实测可用；两轮子代理审查共 2 P1+1 P2+4 P3 全修（开场命令缺 BASE_URL/证据链断链/PYTHONUTF8 未文档化等）③答辩不依赖在线模型——fixture 默认装配，live 三轮均 fixture 链路；在线路径仅增强（docs/00 §7 三保险口径）④release_candidate 标记+最后全量验证时间——本 NEXT_ACTION 首行；迭代 1（PR #28：门禁 bash-n/docs07 对齐/instance 状态派生/安全负例/已知限制 8+1 项，审查 7 P3 全修）+迭代 2（PR #29：docs/14 手册/演示脚本 stdin 跨平台修复/L4 取证与论文数据归档）两轮子代理审查通过后合并；论文数据存档 thesis-data/（gitignored）：e2e-demo-timing-2026-08-29.csv + thesis-data-2026-08-29/ 四数据面 CSV（docs/12 §3 口径）
+NEXT_ACTION: 【项目恢复 release_candidate】P12.5 出口复核通过（live 证据见 EXIT_GATE）。后续可选：P13 加分项（含自助注册/账号停启用/主题热切换等裁剪项，默认不做）、答辩录屏与镜像预导入（docs/14 §4）、Issue #22 余项按触发条件排期
+EXIT_GATE: P12.5 出口证据（docs/09 P12.5 验收四项）：①三缺陷关闭——菜单路由对齐（/workbench→home、/system/users→UsersView 用户管理页，ADMIN 可建号=演示账号外账号获取路径；自助注册按 docs/13 边界记 P13）、EntityCards 只渲染 enabled（特权全量列表不再产出 404 入口，负例测试）②组件库有渲染测试——ui.test.ts 6 例+WorkbenchView 桥接 2 例+UsersView 4 例+EntityCards 3 例③主题插件闭环——不装主题=骨架朴素（R-GOV-09 零硬编码）；安装后完整呈现（live：theme.default 激活→GET /plugins/theme-assets 下发 4 声明含签名 serveUrl→匿名 fetch tokens 200→壳层注入 --ff-*；ThemeAssetApiTest 3 例含篡改/无签名 401）；停用卸载恢复基线（聚合为空断言）④插件 B 覆盖 A——theme-warm 同名 tokens 后应用者胜（registry 测试）+键白名单防 --ff-theme-* 外链注入（负例）。审查：一轮子代理 1 P1+1 P2+7 P3 全修（P1=签名 URL 架构：HMAC 域分隔复用 JWT 密钥+TTL 对齐+filter 仅资产路径匿名放行+registrations 不放宽；掩蔽根因无 loadTheme 测试同修）。后端 130 tests、前端 70 tests、门禁 21/1/0、PR #32 CI 六项全绿合并（45db0af）、live 通道验证 2026-08-30（P14 的 release_candidate 状态随之恢复）
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -31,7 +31,7 @@ BLOCKERS: none
 | P10 | Issue 与规格 Schema | completed | Issue 状态机和规格版本可审计 |
 | P11 | AI 适配器与生成器 | completed | 在线/fixture/手工三条路径可用 |
 | P12 | Agent Issue 端到端闭环 | completed | 干净数据库连续三次完成主流程（RB-E2E 三轮全绿，见前 EXIT_GATE 记录） |
-| P12.5 | 前端基建与默认主题 | in_progress | 三缺陷关闭+组件/动画/排版基建+SVG 主题插件可安装可被其他插件覆盖（docs/09 P12.5，2026-08-30 用户裁决新增） |
+| P12.5 | 前端基建与默认主题 | completed | 三缺陷关闭+组件/动画/排版基建+SVG 主题插件可安装可被其他插件覆盖（live 验证见 EXIT_GATE） |
 | P13 | 加分项与体验优化 | optional | 不影响主线稳定性 |
 | P14 | 质量收敛与答辩交付 | completed | 全量验收通过，进入 release_candidate（见 NEXT_ACTION 验证时间） |
 
@@ -142,3 +142,4 @@ BLOCKERS: none
 | 2026-08-30 | P12.5 | 迭代 1（三缺陷+基建）：①路由对齐后端契约——/workbench 重定向 home、/system/users 用户管理页（UsersView：列表/抽屉建号/角色调整，消费 P03 API；自助注册按 docs/13 边界记 P13 候选）②EntityCards 只渲染 enabled（特权全量列表不再产出 404 入口，含负例测试）③前端基建——styles/tokens.css 设计令牌（--ff-* 40+ 变量+组件原语类+过渡动画，prefers-reduced-motion 收敛）+ ui/ 四组件（BaseButton 四变体/BaseSwitch 键盘可达/ComponentCard 具名插槽/BaseDrawer Teleport+Esc）+ App.vue 全量令牌化（主题插件覆盖变量即换肤）+ Login/Plugins 采用新组件（插件页首次有完整样式：状态徽章/网格卡片/等宽 ID）。前端 67 tests 全绿 | `frontend/src/styles/tokens.css`、`frontend/src/components/ui/`、`UsersView.vue`+4 测试、`EntityCards.test.ts` |
 | 2026-08-30 | P12.5 | 迭代 2（换肤通道闭环+主题包）：①kind=tokens 落地（common/plugin 两处 KINDS+ManifestValidator，登记册 §2.2 additive 演化）②聚合端点 GET /plugins/theme-assets（PluginInventoryService.activeThemeAssets：遍历 ACTIVE 激活展开 themeAssets 声明；登录可读——前端壳层消费面）③前端桥接——api/theme.ts+themeRegistry applyTokenOverrides（键白名单 ^--ff-[a-z0-9-]+$，非字符串值拒绝；后应用者胜；按 activationId 撤销恢复基线）+WorkbenchView 登录后拉取（资产注册 serveUrl/tokens 取回 JSON；失败静默降级基线）④plugins/theme-default（SVG 几何背景/品牌标/SMIL 脉冲+tokens 十项令牌）+theme-warm（同名 tokens 覆盖=其他插件自定义样式证明）。测试：ThemeAssetApiTest 2（聚合可见/serve 取回/停用清空/kind 非法拒）+themeRegistry tokens 2（覆盖与撤销/白名单负例）。门禁 21/1/0 | `ThemeAssetApiTest`、`themeRegistry.test.ts`、`plugins/theme-default/`、`plugins/theme-warm/` |
 | 2026-08-30 | P12.5 | PR #32 独立子代理审查：**1 P1 + 1 P2 + 7 P3**——P1：serve 端点 Bearer 认证与 CSS url()/裸 fetch 根本不兼容，浏览器会话中主题永不呈现（后端 MockMvc 全带 token+前端无 loadTheme 测试=结构性掩蔽；迭代 2"闭环"表述过度，以本条更正）→ 修复：ThemeAssetSigner（HMAC-SHA256 域分隔复用 AUTH_JWT_SECRET，TTL=JWT TTL）+聚合端点下发签名 serveUrl+JwtAuthFilter 仅对 /activations/{id}/assets/* 匿名放行到控制器验签（registrations 等不放宽）+WorkbenchView 消费 serveUrl+新增 WorkbenchView.test.ts 桥接测试（掩蔽根因修复）；P2：空角色提交 400 且整页 error 死局→保存禁用+抽屉内错误；P3 全修：BaseDrawer immediate、BaseSwitch aria-disabled 选择器、tokens 键白名单排除 --ff-theme-*（防 url() 外链绕纵深）、loadTheme 单资产隔离、#a33 令牌化、docs/09 停启用裁剪声明、建号表单预校验属性 | PR #32 评论、`ThemeAssetSigner.java`、`WorkbenchView.test.ts` |
+| 2026-08-30 | P12.5 | **P12.5 出口复核通过，置 completed（进度 65%），项目恢复 release_candidate**。验收四项逐项实证（见 EXIT_GATE）：三缺陷关闭（路由对齐+用户管理建号+enabled 过滤）/组件库 15 个新测试/主题插件安装呈现-停用恢复-签名 URL 匿名通道 live 全通/theme-warm 覆盖验证。live 验证链：新后端镜像→theme.default 激活→聚合端点 4 声明（含 exp+sig serveUrl）→匿名 fetch tokens 200→5173（vite dev 最新代码）登录即见主题。后端 130+前端 70 tests、门禁 21/1/0、PR #32 六项 CI 全绿合并（45db0af） | docs/09 P12.5 验收、PR #32、live 验证 2026-08-30 |

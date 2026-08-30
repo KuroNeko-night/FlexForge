@@ -3,11 +3,11 @@
   "updatedAt": "2026-08-30",
   "currentStageId": "P12.5",
   "currentStageName": "前端基建与默认主题",
-  "status": "in_progress",
-  "progressPercent": 60,
+  "status": "completed",
+  "progressPercent": 65,
   "owner": "project-maintainer",
-  "nextAction": "P12.5 迭代 1（分支 feat/p125-frontend-foundation）：三缺陷修复（菜单路由对齐 /system/users 与 /workbench、EntityCards 过滤 enabled、用户管理页消费 P03 API）→ 前端基建（BaseButton/Switch/Card/Drawer+过渡动画+排版 tokens）→ 迭代 2：theme-default SVG 插件+第二插件覆盖验证 → 审查 → PR → 出口。P14 已完成（release_candidate 证据见下方日志，最后全量验证 2026-08-29 20:04；P12.5 合并后需重跑门禁与 RB 回归再确认候选状态）",
-  "exitGate": "P14 出口证据（docs/09 P14 验收四项）：①核心验收场景全过且 P0/P1 为零——L4 干净环境重建（down -v+全新镜像+空库迁移）下 demo-e2e.sh 五场景 live 连续三轮全过（R1 5966ms/R2 6238ms/R3 5838ms+存档跑 6045ms，对照 docs/00 §5 十分钟目标；RB-E2E CI 侧另有 Testcontainers 三轮），全仓开放 Issue 无 P0/P1（余项均 P3 附触发条件，docs/00 §7 论文对账）②新环境按文档可启动完成演示——docker compose 三服务重建 + docs/14 运行手册（启动/账号/演示/三保险/九条排障）实测可用；两轮子代理审查共 2 P1+1 P2+4 P3 全修（开场命令缺 BASE_URL/证据链断链/PYTHONUTF8 未文档化等）③答辩不依赖在线模型——fixture 默认装配，live 三轮均 fixture 链路；在线路径仅增强（docs/00 §7 三保险口径）④release_candidate 标记+最后全量验证时间——本 NEXT_ACTION 首行；迭代 1（PR #28：门禁 bash-n/docs07 对齐/instance 状态派生/安全负例/已知限制 8+1 项，审查 7 P3 全修）+迭代 2（PR #29：docs/14 手册/演示脚本 stdin 跨平台修复/L4 取证与论文数据归档）两轮子代理审查通过后合并；论文数据存档 thesis-data/（gitignored）：e2e-demo-timing-2026-08-29.csv + thesis-data-2026-08-29/ 四数据面 CSV（docs/12 §3 口径）",
+  "nextAction": "【项目恢复 release_candidate】P12.5 出口复核通过（live 证据见 EXIT_GATE）。后续可选：P13 加分项（含自助注册/账号停启用/主题热切换等裁剪项，默认不做）、答辩录屏与镜像预导入（docs/14 §4）、Issue #22 余项按触发条件排期",
+  "exitGate": "P12.5 出口证据（docs/09 P12.5 验收四项）：①三缺陷关闭——菜单路由对齐（/workbench→home、/system/users→UsersView 用户管理页，ADMIN 可建号=演示账号外账号获取路径；自助注册按 docs/13 边界记 P13）、EntityCards 只渲染 enabled（特权全量列表不再产出 404 入口，负例测试）②组件库有渲染测试——ui.test.ts 6 例+WorkbenchView 桥接 2 例+UsersView 4 例+EntityCards 3 例③主题插件闭环——不装主题=骨架朴素（R-GOV-09 零硬编码）；安装后完整呈现（live：theme.default 激活→GET /plugins/theme-assets 下发 4 声明含签名 serveUrl→匿名 fetch tokens 200→壳层注入 --ff-*；ThemeAssetApiTest 3 例含篡改/无签名 401）；停用卸载恢复基线（聚合为空断言）④插件 B 覆盖 A——theme-warm 同名 tokens 后应用者胜（registry 测试）+键白名单防 --ff-theme-* 外链注入（负例）。审查：一轮子代理 1 P1+1 P2+7 P3 全修（P1=签名 URL 架构：HMAC 域分隔复用 JWT 密钥+TTL 对齐+filter 仅资产路径匿名放行+registrations 不放宽；掩蔽根因无 loadTheme 测试同修）。后端 130 tests、前端 70 tests、门禁 21/1/0、PR #32 CI 六项全绿合并（45db0af）、live 通道验证 2026-08-30（P14 的 release_candidate 状态随之恢复）",
   "blockers": [],
   "stages": [
     {
