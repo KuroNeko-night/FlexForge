@@ -46,24 +46,38 @@ describe('localeRegistry', () => {
     expect(t('plugins.title', '插件管理')).toBe('插件管理');
   });
 
-  it('消息键白名单：驼峰段合法；非界面文案 key（CSS/URL 形态）拒绝', () => {
-    // live 排障回归：en.json 的 camelCase 键（pleaseWait/displayName）曾被全小写
-    // 正则拒绝且被单资产 catch 静默吞掉，语言包注册失败表现为"仅基线"
+  it('setLanguage 拒绝不可用语言（不会切到未注册语言）', () => {
+    setLanguage('en');
+    expect(currentLanguage()).toBe('zh-CN');
+  });
+});
+
+describe('localeRegistry 消息键白名单', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', {
+      getItem: () => null,
+      setItem: () => undefined,
+    });
+    syncRemovedLocalePacks([]);
+    setLanguage('zh-CN');
+  });
+
+  it('驼峰段合法（live 排障回归：en.json 曾被全小写正则拒绝）', () => {
+    // pleaseWait/displayName 等 camelCase 键被拒后遭单资产 catch 静默吞掉，
+    // 表现为"语言缺失仅基线"——此用例固化根因修复
     registerLocalePack('a3', {
       lang: 'xx',
       messages: { 'login.pleaseWait': 'Wait', 'settings.currentLanguage': 'Lang' },
     });
     expect(availableLanguages()).toContain('xx');
+  });
+
+  it('非界面文案 key（CSS/URL 形态）拒绝', () => {
     expect(() =>
       registerLocalePack('a2', { lang: 'fr', messages: { '--ff-primary': 'red' } }),
     ).toThrow('locale 消息键/值非法');
     expect(() =>
       registerLocalePack('a2', { lang: 'fr', messages: { 'javascript:alert': 'x' } }),
     ).toThrow('locale 消息键/值非法');
-  });
-
-  it('setLanguage 拒绝不可用语言（不会切到未注册语言）', () => {
-    setLanguage('en');
-    expect(currentLanguage()).toBe('zh-CN');
   });
 });
