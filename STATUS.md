@@ -3,13 +3,13 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P14
-CURRENT_STAGE_NAME: 质量收敛与答辩交付
-STAGE_STATUS: completed
+CURRENT_STAGE_ID: P12.5
+CURRENT_STAGE_NAME: 前端基建与默认主题
+STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 60%
-LAST_UPDATED: 2026-08-29
+LAST_UPDATED: 2026-08-30
 OWNER: project-maintainer
-NEXT_ACTION: 【项目进入 release_candidate】最后一次全量验证 2026-08-29 20:04（L4 live 三轮 5966/6238/5838ms + 存档跑 6045ms；门禁 21/1/0；main CI 六项全绿）。后续可选：P13 加分项（默认不做）、答辩录屏与镜像预导入（docs/14 §4 三保险）、Issue #22 余项按触发条件排期
+NEXT_ACTION: P12.5 迭代 1（分支 feat/p125-frontend-foundation）：三缺陷修复（菜单路由对齐 /system/users 与 /workbench、EntityCards 过滤 enabled、用户管理页消费 P03 API）→ 前端基建（BaseButton/Switch/Card/Drawer+过渡动画+排版 tokens）→ 迭代 2：theme-default SVG 插件+第二插件覆盖验证 → 审查 → PR → 出口。P14 已完成（release_candidate 证据见下方日志，最后全量验证 2026-08-29 20:04；P12.5 合并后需重跑门禁与 RB 回归再确认候选状态）
 EXIT_GATE: P14 出口证据（docs/09 P14 验收四项）：①核心验收场景全过且 P0/P1 为零——L4 干净环境重建（down -v+全新镜像+空库迁移）下 demo-e2e.sh 五场景 live 连续三轮全过（R1 5966ms/R2 6238ms/R3 5838ms+存档跑 6045ms，对照 docs/00 §5 十分钟目标；RB-E2E CI 侧另有 Testcontainers 三轮），全仓开放 Issue 无 P0/P1（余项均 P3 附触发条件，docs/00 §7 论文对账）②新环境按文档可启动完成演示——docker compose 三服务重建 + docs/14 运行手册（启动/账号/演示/三保险/九条排障）实测可用；两轮子代理审查共 2 P1+1 P2+4 P3 全修（开场命令缺 BASE_URL/证据链断链/PYTHONUTF8 未文档化等）③答辩不依赖在线模型——fixture 默认装配，live 三轮均 fixture 链路；在线路径仅增强（docs/00 §7 三保险口径）④release_candidate 标记+最后全量验证时间——本 NEXT_ACTION 首行；迭代 1（PR #28：门禁 bash-n/docs07 对齐/instance 状态派生/安全负例/已知限制 8+1 项，审查 7 P3 全修）+迭代 2（PR #29：docs/14 手册/演示脚本 stdin 跨平台修复/L4 取证与论文数据归档）两轮子代理审查通过后合并；论文数据存档 thesis-data/（gitignored）：e2e-demo-timing-2026-08-29.csv + thesis-data-2026-08-29/ 四数据面 CSV（docs/12 §3 口径）
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -30,7 +30,8 @@ BLOCKERS: none
 | P09 | 库存示例插件 | completed | 库存插件可安装并完成演示 |
 | P10 | Issue 与规格 Schema | completed | Issue 状态机和规格版本可审计 |
 | P11 | AI 适配器与生成器 | completed | 在线/fixture/手工三条路径可用 |
-| P12 | Agent Issue 端到端闭环 | completed | 干净数据库连续三次完成主流程（RB-E2E 三轮全绿，见 EXIT_GATE） |
+| P12 | Agent Issue 端到端闭环 | completed | 干净数据库连续三次完成主流程（RB-E2E 三轮全绿，见前 EXIT_GATE 记录） |
+| P12.5 | 前端基建与默认主题 | in_progress | 三缺陷关闭+组件/动画/排版基建+SVG 主题插件可安装可被其他插件覆盖（docs/09 P12.5，2026-08-30 用户裁决新增） |
 | P13 | 加分项与体验优化 | optional | 不影响主线稳定性 |
 | P14 | 质量收敛与答辩交付 | completed | 全量验收通过，进入 release_candidate（见 NEXT_ACTION 验证时间） |
 
@@ -137,3 +138,4 @@ BLOCKERS: none
 | 2026-08-29 | P14 | 迭代 2 PR #29 独立子代理审查：修复 2 P1+1 P2+3 P3 后可合并——P1-1 手册开场命令缺 FLEXFORGE_BASE_URL（照抄必撞本机 8080 占用且误导查口令）→命令补齐+排障表改写；P1-2 STATUS 迭代 2 证据断链（四处"路径记进度日志"承诺未兑现）→本条目+锚点翻牌补齐（含存档路径/三轮数字/验证时间）；P2 演示机 PYTHONUTF8 依赖未文档化（Windows 原生 Python 管道 stdin 缺省 ANSI 代码页）→脚本内 export+手册补注；P3：导出示范命令删 bash 分支、JWT 症状描述对照实现修正、-d @- 剥换行约束注明。stdin 修复经审查者 --libcurl dump 实证（GBK 17 字节 vs UTF-8 21 字节）、pipefail 传播/Content-Length 正确性验证无缺陷；审查者全量门禁复跑 21/1/0。**P14 出口复核通过，置 completed，项目进入 release_candidate（最后全量验证 2026-08-29 20:04）** | PR #29 评论、docs/14、docs/09 P14 验收 |
 | 2026-08-29 | P14 | merge 后 CI 复核：main 首跑 repo-health 作业 BACKEND-VERIFY 失败（门禁尾部 6 行未含具体用例），同树独立"后端构建与测试"作业通过 → 判定 runner 侧偶发，`gh run rerun --failed` 重跑**全绿**（success）。处置：无代码缺陷证据；已知限制=check-repo-health 对 mvnw 失败只留尾部 6 行、定位信息不足（记 Issue #22 第 13 项：门禁失败时应留存 surefire 报告摘要）。本机 Docker 意外关闭致前端镜像构建结果丢失，已重建并复启三服务（前端验证见下条） | main run rerun success、Issue #22 #13 |
 | 2026-08-29 | P14 | release_candidate 后全仓注释审计专项（PR #31，merge 0274519，CI 六项全绿）：六个独立子代理按模块"只增注释+缺陷审计"（54 文件补 why 型注释：注入防线分层/事务与并发语义/历史绕过与文档锚点），共 1 P1 + 6 P2 + 约 30 P3 发现。当场修复：①P1 MigrationScriptScanner 词法机只认 `$$` 漏 `$tag$` 带标签 dollar-quote（PG 按字符串解析而扫描器在其内容单引号处误开字符串吞掉越界语句，越界迁移可执行平台 DROP，与 PR #19 同构）；②合并前独立子代理交叉审查又抓出修复自身的 P1 回归——`$` 紧贴标识符字符（`zz$e$`，PG 标识符后续允许 `$`）时误开字符串同型绕过（空标签紧贴 `zz$$` 为 main 既有形态）→ 补前驱守卫一并封堵，负例/正例用例固化（扫描器测试 9/9）；③R-GOV-09 扫描路径从 process.cwd 改锚 gates.mjs ROOT、单文件读失败由静默 continue 改显式 fail（fail-open→fail-closed）；④文档同步：docs/03 §8 接口表按控制器实现补齐 20 端点（menus/system/meta 写面/upgrade/uninstall）并修正 activate/stop 路径参数名、删除不存在的 install 行，docs/13 §3.4 token 存储口径对齐实现（sessionStorage，原 localStorage 与 P06 落地相反）、§3.3 补 pageNumber 1..100000；⑤Checkstyle 拦截 SpecPreview 方法体内注释致 MethodLength 42>40 → 移至方法 javadoc。验证：后端 269 tests 0 失败、前端 type-check + 53 tests、门禁 21 pass/1 skip/0 fail；其余发现去重后（剔除 Issue #10/#22 已跟踪项）开 Issue #30 排期 | PR #31 评论（审查逐条回应）、Issue #30、MigrationScriptScannerTest |
+| 2026-08-30 | P12.5 | 用户验收（P14 后）发现三缺陷并裁决新增 P12.5（docs/01 §2/09 P12.5 已同步）：①菜单路由错位——后端契约 `/workbench`、`/system/users`，前端路由表缺失致 SPA 兜底重定向回 `/`（"系统管理"与"工作台"同页）②EntityCards 渲染 disabled 实体——`/meta/entities` 对 ADMIN/DEVELOPER 返回全量，卸载遗留的 clarify_item/inventory_item 成为 404 入口③账号获取路径缺失——MVP 无自助注册（docs/13 攻击面边界），正解为 `/system/users` 用户管理页（ADMIN 建号，P03 API 消费方）。阶段范围（结构与皮分离红线）：组件/动画/排版=平台基建；SVG 美术+主题参数=Level 1 主题插件（themeAssets→CSS 变量，可被其他插件同名覆盖）；复用既有扩展点不新增 | docs/09 P12.5、docs/01 §2、本条目 |
