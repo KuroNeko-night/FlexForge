@@ -38,7 +38,8 @@ function buildHeaders(init?: RequestInit): Headers {
   if (session.token) {
     headers.set('Authorization', `Bearer ${session.token}`);
   }
-  if (init?.body != null) {
+  // FormData 由浏览器生成 multipart 边界，手工设 Content-Type 反而破坏上传（P15 插件包）
+  if (init?.body != null && !(init.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
   return headers;

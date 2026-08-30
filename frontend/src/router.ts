@@ -3,6 +3,7 @@ import { createRouter, createWebHashHistory } from 'vue-router';
 import { session } from '@/auth/token';
 import DynamicEntityView from '@/views/DynamicEntityView.vue';
 import HomeView from '@/views/HomeView.vue';
+import IssuesView from '@/views/IssuesView.vue';
 import LoginView from '@/views/LoginView.vue';
 import PlaceholderView from '@/views/PlaceholderView.vue';
 import PluginsView from '@/views/PluginsView.vue';
@@ -25,6 +26,7 @@ export const router = createRouter({
       children: [
         { path: '', name: 'home', component: HomeView },
         { path: 'workbench', redirect: { name: 'home' } },
+        { path: 'issues', name: 'issues', component: IssuesView },
         { path: 'data/:entity', name: 'entity-list', component: DynamicEntityView },
         { path: 'data/:entity/new', name: 'entity-new', component: DynamicEntityView },
         { path: 'data/:entity/:id', name: 'entity-detail', component: DynamicEntityView },

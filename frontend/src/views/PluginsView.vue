@@ -3,22 +3,34 @@ import { onMounted, ref } from 'vue';
 
 import { ApiError } from '@/api/client';
 import {
+  activateVersion,
   fetchPluginInventory,
-  type PluginActivationEntry,
+  importPackage,
+  stopActivation,
+  uninstallPlugin,
+  validatePackage,
   type PluginInventoryEntry,
 } from '@/api/plugins';
+import PluginCard from '@/components/PluginCard.vue';
 import StateView from '@/components/StateView.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
-import ComponentCard from '@/components/ui/ComponentCard.vue';
 
 /**
- * 插件管理页（docs/09 P12）：inventory 只读视图——生成/导入版本、激活尝试
- * 与失败诊断（stage + errorCode），供演示排障与"插件页显示生成版本"验收。
- * 写操作（导入/启停/卸载）仍走标准插件 API，本页不复制业务逻辑。
+ * 插件管理页（docs/09 P12 清单 + P15 写操作）：inventory 视图 + zip 上传
+ * （validate→import）/版本激活/停用/卸载（FR-PLUGIN-01/02 消费面，ADMIN；
+ * 服务端 @RequireRole 为边界）。卡片渲染与诊断在 PluginCard。
  */
 const plugins = ref<PluginInventoryEntry[]>([]);
 const state = ref<'loading' | 'ready' | 'error' | 'denied' | 'empty'>('loading');
 const error = ref<string | null>(null);
+
+const fileInput = ref<HTMLInputElement | null>(null);
+const pendingFile = ref<File | null>(null);
+const importing = ref(false);
+const validating = ref(false);
+const opError = ref<string | null>(null);
+const opNotice = ref<string | null>(null);
+const pendingKey = ref<string | null>(null);
 
 async function load(): Promise<void> {
   state.value = 'loading';
@@ -36,13 +48,98 @@ async function load(): Promise<void> {
   }
 }
 
-/** 失败诊断文案：失败尝试展示"阶段（错误码）"，其余展示当前阶段。 */
-function diagnosisOf(activation: PluginActivationEntry): string {
-  if (activation.status === 'FAILED') {
-    const code = activation.errorCode ? `（${activation.errorCode}）` : '';
-    return `失败于 ${activation.stage ?? '?'}${code}`;
+function pickFile(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  pendingFile.value = input.files?.[0] ?? null;
+  opError.value = null;
+  opNotice.value = null;
+}
+
+function describe(e: unknown, fallback: string): string {
+  return e instanceof ApiError
+    ? `${e.message}${e.requestId ? `（${e.requestId}）` : ''}`
+    : fallback;
+}
+
+async function submitValidate(): Promise<void> {
+  if (validating.value || !pendingFile.value) {
+    return;
   }
-  return activation.stage ?? '—';
+  validating.value = true;
+  opError.value = null;
+  opNotice.value = null;
+  try {
+    const report = await validatePackage(pendingFile.value);
+    opNotice.value = report.valid
+      ? '校验通过，可以导入'
+      : `校验未通过：${report.findings.map((f) => f.message).join('；')}`;
+  } catch (e) {
+    opError.value = describe(e, '校验失败，请稍后重试');
+  } finally {
+    validating.value = false;
+  }
+}
+
+async function submitImport(): Promise<void> {
+  if (importing.value || !pendingFile.value) {
+    return;
+  }
+  importing.value = true;
+  opError.value = null;
+  opNotice.value = null;
+  try {
+    const preview = await importPackage(pendingFile.value);
+    opNotice.value = `已导入 ${preview.pluginId}@${preview.version}${
+      preview.isNew ? '' : '（幂等命中既有版本）'
+    }`;
+    pendingFile.value = null;
+    if (fileInput.value) {
+      fileInput.value.value = '';
+    }
+    await load();
+  } catch (e) {
+    opError.value = describe(e, '导入失败，请稍后重试');
+  } finally {
+    importing.value = false;
+  }
+}
+
+/** 单飞守卫：同一时刻仅一个写操作在途，键=动作:目标。 */
+async function run(key: string, action: () => Promise<unknown>, notice: string): Promise<void> {
+  if (pendingKey.value !== null) {
+    return;
+  }
+  pendingKey.value = key;
+  opError.value = null;
+  opNotice.value = null;
+  try {
+    await action();
+    opNotice.value = notice;
+    await load();
+  } catch (e) {
+    opError.value = describe(e, '操作失败，请稍后重试');
+  } finally {
+    pendingKey.value = null;
+  }
+}
+
+function activate(plugin: PluginInventoryEntry, versionId: string, version: string): void {
+  void run(`activate:${versionId}`, () => activateVersion(versionId), `已激活 ${plugin.name}@${version}`);
+}
+
+function stop(plugin: PluginInventoryEntry): void {
+  const activation = plugin.activations.find((item) => item.status === 'ACTIVE');
+  if (!activation) {
+    return;
+  }
+  void run(`stop:${activation.id}`, () => stopActivation(activation.id), `已停用 ${plugin.name}`);
+}
+
+function uninstall(plugin: PluginInventoryEntry): void {
+  if (!window.confirm(`确认卸载 ${plugin.name}（${plugin.pluginId}）？注册与实体将撤销，审计保留。`)) {
+    return;
+  }
+  void run(`uninstall:${plugin.pluginId}`, () => uninstallPlugin(plugin.pluginId), `已卸载 ${plugin.name}`);
 }
 
 onMounted(load);
@@ -54,53 +151,46 @@ onMounted(load);
       <h2>插件管理</h2>
       <BaseButton @click="load">刷新</BaseButton>
     </header>
+
+    <div class="install-bar" data-testid="install-bar">
+      <label class="file-label">
+        插件包（zip）
+        <input
+          ref="fileInput"
+          type="file"
+          accept=".zip,application/zip"
+          data-testid="plugin-file"
+          @change="pickFile"
+        />
+      </label>
+      <BaseButton :disabled="validating || !pendingFile" @click="submitValidate">
+        {{ validating ? '校验中…' : '校验' }}
+      </BaseButton>
+      <BaseButton
+        variant="primary"
+        :disabled="importing || !pendingFile"
+        data-testid="import-button"
+        @click="submitImport"
+      >
+        {{ importing ? '导入中…' : '导入' }}
+      </BaseButton>
+    </div>
+    <p v-if="opNotice" class="op-notice" role="status">{{ opNotice }}</p>
+    <p v-if="opError" class="form-error" role="alert">{{ opError }}</p>
+
     <StateView v-if="state !== 'ready'" :state="state" :message="error">
-      <p v-if="state === 'empty'">尚无插件导入，可经插件包接口导入后查看</p>
+      <p v-if="state === 'empty'">尚无插件导入，可上方上传 zip 导入</p>
     </StateView>
     <ul v-else class="plugin-list">
       <li v-for="plugin in plugins" :key="plugin.pluginId">
-        <ComponentCard :title="plugin.name" :subtitle="plugin.pluginId" hoverable>
-          <template #title>
-            <div class="plugin-head">
-              <strong>{{ plugin.name }}</strong>
-              <span class="plugin-id">{{ plugin.pluginId }}</span>
-              <span class="status-badge" :data-status="plugin.instanceStatus">
-                {{ plugin.instanceStatus }}
-              </span>
-            </div>
-          </template>
-          <p class="plugin-versions" data-testid="plugin-versions">
-            版本：{{ plugin.versions.map((v) => v.version).join('、') || '—' }}
-          </p>
-          <table class="activation-table" data-testid="activation-table">
-            <caption class="sr-only">
-              激活尝试
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">状态</th>
-                <th scope="col">阶段 / 诊断</th>
-                <th scope="col">操作者</th>
-                <th scope="col">开始时间</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="activation in plugin.activations"
-                :key="activation.id"
-                :data-status="activation.status"
-              >
-                <td>{{ activation.status }}</td>
-                <td data-testid="activation-diagnosis">{{ diagnosisOf(activation) }}</td>
-                <td>{{ activation.requestedBy ?? '—' }}</td>
-                <td>{{ activation.startedAt ?? '—' }}</td>
-              </tr>
-              <tr v-if="plugin.activations.length === 0">
-                <td colspan="4">无激活尝试</td>
-              </tr>
-            </tbody>
-          </table>
-        </ComponentCard>
+        <PluginCard
+          :plugin="plugin"
+          :pending="pendingKey !== null"
+          :has-active="plugin.activations.some((item) => item.status === 'ACTIVE')"
+          @activate="(versionId, version) => activate(plugin, versionId, version)"
+          @stop="stop(plugin)"
+          @uninstall="uninstall(plugin)"
+        />
       </li>
     </ul>
   </section>
@@ -112,66 +202,33 @@ onMounted(load);
   align-items: center;
   justify-content: space-between;
 }
+.install-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  padding: var(--ff-space-3);
+  background: var(--ff-surface);
+  border: 1px solid var(--ff-border-soft);
+  border-radius: var(--ff-radius-md);
+  flex-wrap: wrap;
+}
+.file-label {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  font-size: var(--ff-text-sm);
+  color: var(--ff-text-muted);
+}
+.op-notice {
+  margin: var(--ff-space-2) 0 0;
+  color: var(--ff-primary);
+  font-size: var(--ff-text-sm);
+}
 .plugin-list {
   list-style: none;
   padding: 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr));
   gap: var(--ff-space-4);
-}
-.plugin-head {
-  display: flex;
-  align-items: baseline;
-  gap: var(--ff-space-2);
-  flex-wrap: wrap;
-}
-.plugin-id {
-  color: var(--ff-text-muted);
-  font-family: var(--ff-font-mono);
-  font-size: var(--ff-text-sm);
-}
-.status-badge {
-  margin-left: auto;
-  padding: var(--ff-space-1) var(--ff-space-2);
-  border-radius: 999px;
-  font-size: var(--ff-text-sm);
-  background: var(--ff-surface-muted);
-  color: var(--ff-text-muted);
-}
-.status-badge[data-status='active'],
-.status-badge[data-status='ACTIVE'] {
-  background: color-mix(in srgb, var(--ff-primary) 14%, transparent);
-  color: var(--ff-primary);
-}
-.status-badge[data-status='failed'],
-.status-badge[data-status='FAILED'] {
-  background: var(--ff-danger-bg);
-  color: var(--ff-danger);
-}
-.plugin-versions {
-  margin: var(--ff-space-2) 0;
-  color: var(--ff-text-muted);
-  font-size: var(--ff-text-md);
-}
-.activation-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--ff-text-sm);
-}
-.activation-table th,
-.activation-table td {
-  padding: var(--ff-space-1) var(--ff-space-2);
-  border-bottom: 1px solid var(--ff-border-soft);
-  text-align: left;
-}
-.activation-table tr[data-status='FAILED'] td {
-  color: var(--ff-danger);
-}
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
 }
 </style>
