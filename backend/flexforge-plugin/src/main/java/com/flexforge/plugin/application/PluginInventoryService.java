@@ -30,7 +30,7 @@ public class PluginInventoryService {
             List<ActivationRecord> activations) {
     }
 
-    /** 当前生效主题资产声明（P12.5）：前端按 activationId+path 拼 serve URL 取回。 */
+    /** 当前生效主题资产声明（P12.5）：serveUrl 为短期 HMAC 签名 URL（CSS url() 免 Bearer）。 */
     @PublicApi
     public record ActiveThemeAsset(
             String activationId,
@@ -38,16 +38,19 @@ public class PluginInventoryService {
             String key,
             String kind,
             String path,
-            String scope) {
+            String scope,
+            String serveUrl) {
     }
 
     private final PluginPackageRepository packages;
     private final LifecycleRepository lifecycle;
+    private final ThemeAssetSigner signer;
 
     public PluginInventoryService(PluginPackageRepository packages,
-                                  LifecycleRepository lifecycle) {
+                                  LifecycleRepository lifecycle, ThemeAssetSigner signer) {
         this.packages = packages;
         this.lifecycle = lifecycle;
+        this.signer = signer;
     }
 
     public List<PluginInventoryEntry> inventory() {
@@ -70,9 +73,19 @@ public class PluginInventoryService {
                         .map(PluginContributionFactory::themeAssetsOf)
                         .ifPresent(specs -> specs.forEach(spec -> result.add(
                                 new ActiveThemeAsset(activation.id(), instance.pluginId(),
-                                        spec.key(), spec.kind(), spec.path(), spec.scope()))));
+                                        spec.key(), spec.kind(), spec.path(), spec.scope(),
+                                        signedServeUrl(activation.id(), spec.path())))));
             }
         }
         return List.copyOf(result);
+    }
+
+    /** URL 的 {*path} 段为前导斜杠形态；签名与校验使用同一形态（PR #32 审查 P1）。 */
+    private String signedServeUrl(String activationId, String path) {
+        String controllerPath = "/" + path;
+        long exp = signer.expiryFromNow();
+        return "/api/v1/plugins/activations/" + activationId + "/assets"
+                + controllerPath + "?exp=" + exp + "&sig=" + signer.sign(activationId,
+                controllerPath, exp);
     }
 }

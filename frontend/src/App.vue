@@ -219,7 +219,7 @@ button:disabled {
   box-sizing: border-box;
 }
 .required-mark {
-  color: #a33;
+  color: var(--ff-danger);
   margin-left: 0.2rem;
 }
 .form-error {

@@ -64,4 +64,15 @@ describe('ComponentCard / BaseDrawer（docs/09 P12.5）', () => {
     expect(wrapper.emitted('close')).toHaveLength(1);
     wrapper.unmount();
   });
+
+  it('BaseDrawer：初始 open=true 挂载即监听 Esc（PR #32 审查 P3）', async () => {
+    const wrapper = mount(BaseDrawer, {
+      props: { open: true, title: '初始打开' },
+      attachTo: document.body,
+    });
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    await Promise.resolve();
+    expect(wrapper.emitted('close')).toHaveLength(1);
+    wrapper.unmount();
+  });
 });

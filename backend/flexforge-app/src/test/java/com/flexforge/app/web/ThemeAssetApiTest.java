@@ -54,6 +54,12 @@ class ThemeAssetApiTest {
                 AuthTestSupport.USER_USERNAME, AuthTestSupport.userPassword());
     }
 
+    /** 类级单例包：zip 时间戳字节漂移会改变 contentHash，同版本重导入必被"同版本异内容"拒（P09 教训）。 */
+    private static final byte[] THEME_PACKAGE = themeZip(
+            "[{\"key\":\"theme.test.bg\",\"kind\":\"background\",\"path\":\"assets/bg.svg\"},"
+                    + "{\"key\":\"theme.test.tokens\",\"kind\":\"tokens\","
+                    + "\"path\":\"assets/theme.json\"}]");
+
     private static byte[] themeZip(String themeAssetsJson) {
         String manifest = "{\"schemaVersion\":1,\"id\":\"theme.test\",\"name\":\"测试主题\","
                 + "\"version\":\"1.0.0\",\"capabilityLevel\":1,\"minPlatformVersion\":\"0.1.0\","
@@ -84,14 +90,10 @@ class ThemeAssetApiTest {
     }
 
     private String importAndActivateTheme() throws Exception {
-        String themeAssets = "[{\"key\":\"theme.test.bg\",\"kind\":\"background\","
-                + "\"path\":\"assets/bg.svg\"},"
-                + "{\"key\":\"theme.test.tokens\",\"kind\":\"tokens\","
-                + "\"path\":\"assets/theme.json\"}]";
         String importBody = mockMvc.perform(
                         MockMvcRequestBuilders.multipart("/api/v1/plugins/import")
                                 .file(new MockMultipartFile("file", "theme.zip", "application/zip",
-                                        themeZip(themeAssets)))
+                                        THEME_PACKAGE))
                                 .header("Authorization", adminBearer))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
@@ -130,5 +132,38 @@ class ThemeAssetApiTest {
                         .header("Authorization", adminBearer))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("invalid_manifest"));
+    }
+
+    // ===== PR #32 审查 P1：签名 URL 供 CSS url()/裸 fetch（无 Bearer）消费 =====
+    @Test
+    void signedServeUrlServesBrowserChannelsAndRejectsTampering() throws Exception {
+        String activationId = importAndActivateTheme();
+        String aggregate = mockMvc.perform(
+                        MockMvcRequestBuilders.get("/api/v1/plugins/theme-assets")
+                                .header("Authorization", userBearer))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> tokens = ((List<Map<String, Object>>) JsonPath.read(aggregate, "$[*]"))
+                .stream().filter(a -> "tokens".equals(a.get("kind"))).findFirst().orElseThrow();
+        String serveUrl = (String) tokens.get("serveUrl");
+        assertThat(serveUrl).contains("exp=").contains("sig=");
+
+        // 匿名 + 有效签名 → 200（浏览器通道）
+        mockMvc.perform(MockMvcRequestBuilders.get(serveUrl))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.['--ff-primary']").value("#c2571c"));
+        // 匿名 + 篡改签名 → 401
+        mockMvc.perform(MockMvcRequestBuilders.get(
+                        serveUrl.replace("sig=", "sig=deadbeef")))
+                .andExpect(status().isUnauthorized());
+        // 匿名无签名 → 401（资产路径放行不等于公开）
+        mockMvc.perform(MockMvcRequestBuilders.get(
+                        "/api/v1/plugins/activations/" + activationId + "/assets/assets/theme.json"))
+                .andExpect(status().isUnauthorized());
+        // 同路径族的 registrations 端点不放宽（仍必须认证）
+        mockMvc.perform(MockMvcRequestBuilders.get(
+                        "/api/v1/plugins/activations/" + activationId + "/registrations"))
+                .andExpect(status().isUnauthorized());
     }
 }

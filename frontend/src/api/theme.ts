@@ -8,13 +8,10 @@ export interface ActiveThemeAsset {
   kind: 'background' | 'icon' | 'animation' | 'tokens';
   path: string;
   scope: string | null;
+  /** 短期 HMAC 签名 URL（CSS url()/裸 fetch 免 Bearer，PR #32 审查 P1 修复）。 */
+  serveUrl: string;
 }
 
 export function fetchActiveThemeAssets(): Promise<ActiveThemeAsset[]> {
   return apiFetch<ActiveThemeAsset[]>('/plugins/theme-assets');
-}
-
-/** 按 activationId+path 取回主题资产原文（同源 serve 端点；tokens 为 JSON 文本）。 */
-export function themeAssetUrl(asset: ActiveThemeAsset): string {
-  return `/api/v1/plugins/activations/${asset.activationId}/assets/${asset.path}`;
 }

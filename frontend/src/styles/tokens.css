@@ -145,7 +145,7 @@
 .ff-switch:active .ff-switch__knob {
   width: 1.2rem;
 }
-.ff-switch:disabled {
+.ff-switch[aria-disabled='true'] {
   opacity: 0.5;
   cursor: not-allowed;
 }

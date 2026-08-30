@@ -25,6 +25,7 @@ watch(
       document.addEventListener('keydown', onKeydown);
     }
   },
+  { immediate: true },
 );
 onUnmounted(() => document.removeEventListener('keydown', onKeydown));
 </script>

@@ -303,7 +303,7 @@
 
 ### 实施内容
 
-- 验收缺陷修复：①菜单路由对齐后端契约（`/workbench`、`/system/users` 前端缺失致 SPA 兜底重定向回工作台）②`EntityCards` 只渲染 `enabled` 实体（特权角色全量列表把 disabled 实体渲染成 404 入口）③账号获取路径：`/system/users` 用户管理页（ADMIN 建号/停启用/角色，P03 后端 API 消费方）；自助注册不纳入（docs/13 攻击面边界，记 P13 候选）。
+- 验收缺陷修复：①菜单路由对齐后端契约（`/workbench`、`/system/users` 前端缺失致 SPA 兜底重定向回工作台）②`EntityCards` 只渲染 `enabled` 实体（特权角色全量列表把 disabled 实体渲染成 404 入口）③账号获取路径：`/system/users` 用户管理页（ADMIN 建号/角色，P03 后端 API 消费方）；自助注册与账号停启用不纳入（docs/13 攻击面边界与裁剪，记 P13 候选）。
 - 前端基建组件库：BaseButton/BaseSwitch/ComponentCard/BaseDrawer + 过渡动画（页面切换/开关/抽屉，尊重 `prefers-reduced-motion`）+ 排版 tokens（间距/字号/圆角/阴影 CSS 变量基线）。
 - 默认主题插件 `plugins/theme-default`：SVG 美术资源（图标/背景/动画参数）+ themeAssets 声明；工作台壳消费扩展 CSS 变量。
 - 主题自定义验证：轻量第二主题插件覆盖同名变量，证明"其他插件可自定义前端样式"。

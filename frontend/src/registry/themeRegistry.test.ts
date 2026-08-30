@@ -95,5 +95,9 @@ describe('theme registry：P12.5 tokens 通道（--ff-* 键白名单）', () => 
     expect(() => applyTokenOverrides('act-bad', { color: 'red' })).toThrow(/--ff-/);
     expect(() => applyTokenOverrides('act-bad', { '--ff-primary': 42 })).toThrow(/--ff-/);
     expect(() => applyTokenOverrides('act-bad', { '--FF-INJECT': 'x' })).toThrow(/--ff-/);
+    // --ff-theme-* 资产变量不可经 tokens 覆盖（防 url() 外链绕过资产通道纵深）
+    expect(() =>
+      applyTokenOverrides('act-bad', { '--ff-theme-background': 'url(https://evil/x)' }),
+    ).toThrow(/--ff-/);
   });
 });

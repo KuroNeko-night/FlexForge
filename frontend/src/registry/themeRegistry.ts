@@ -79,11 +79,12 @@ export function revokeThemeAssetsByActivation(activationId: string): number {
 
 /**
  * P12.5 tokens 通道：kind=tokens 的 JSON 键值表覆盖 --ff-* 设计令牌。
- * 键白名单 ^--ff-[a-z0-9-]+$（只允许平台令牌名，杜绝任意 CSS 属性/外链注入面）；
+ * 键白名单 ^--ff-(?!theme-)[a-z0-9-]+$（仅平台设计令牌；--ff-theme-* 资产变量
+ * 除外——防 tokens 值注入 url() 外链绕过资产通道的拒绝外链纵深，PR #32 审查 P3）；
  * 值作为 CSS 变量值使用（自定义属性值无脚本执行语义，S5）。同 activation 后写胜，
  * 撤销即恢复平台基线。多个 tokens 插件并存时按注册顺序后应用者覆盖同名键。
  */
-const TOKEN_KEY_PATTERN = /^--ff-[a-z0-9-]+$/;
+const TOKEN_KEY_PATTERN = /^--ff-(?!theme-)[a-z0-9-]+$/;
 const tokenOverrides = ref<Record<string, Record<string, string>>>({});
 
 export function applyTokenOverrides(activationId: string, tokens: Record<string, unknown>) {

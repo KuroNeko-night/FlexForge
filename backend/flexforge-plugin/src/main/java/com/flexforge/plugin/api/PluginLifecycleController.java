@@ -10,6 +10,7 @@ import com.flexforge.common.PublicApi;
 import com.flexforge.plugin.application.PluginAssetService;
 import com.flexforge.plugin.application.PluginInventoryService;
 import com.flexforge.plugin.application.PluginLifecycleService;
+import com.flexforge.plugin.application.ThemeAssetSigner;
 import com.flexforge.plugin.domain.ActivationRecord;
 import com.flexforge.plugin.domain.LifecycleRepository;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -33,13 +35,16 @@ public class PluginLifecycleController {
     private final PluginAssetService assets;
     private final AuthService authService;
     private final PluginInventoryService inventory;
+    private final ThemeAssetSigner signer;
 
     public PluginLifecycleController(PluginLifecycleService lifecycle, PluginAssetService assets,
-                                     AuthService authService, PluginInventoryService inventory) {
+                                     AuthService authService, PluginInventoryService inventory,
+                                     ThemeAssetSigner signer) {
         this.lifecycle = lifecycle;
         this.assets = assets;
         this.authService = authService;
         this.inventory = inventory;
+        this.signer = signer;
     }
 
     /** 当前生效主题资产（P12.5，docs/09）：登录即可读——前端壳层换肤消费面。 */
@@ -57,13 +62,25 @@ public class PluginLifecycleController {
     }
 
     /**
-     * 插件静态资产（theme-asset 消费面，登录即可读）：CSP default-src 'none' +
-     * attachment + nosniff 三重纵深（svg 事件属性不执行，Issue #20 第 4 项；
-     * img/CSS url() 加载不受 attachment 影响）。
+     * 插件静态资产（theme-asset 消费面）：CSP default-src 'none' + attachment +
+     * nosniff 三重纵深（svg 事件属性不执行，Issue #20 第 4 项；img/CSS url() 加载
+     * 不受 attachment 影响）。认证二选一（P12.5，PR #32 审查 P1）：有效 Bearer（登录
+     * 读取），或聚合端点下发的短期 HMAC 签名（exp+sig，CSS url()/裸 fetch 通道）。
      */
     @GetMapping("/activations/{activationId}/assets/{*path}")
-    public ResponseEntity<byte[]> asset(@PathVariable String activationId,
-                                        @PathVariable String path) {
+    public ResponseEntity<byte[]> asset(@RequestAttribute(value =
+            JwtAuthFilter.PRINCIPAL_ATTRIBUTE, required = false) AuthPrincipal principal,
+                                        @PathVariable String activationId,
+                                        @PathVariable String path,
+                                        @RequestParam(required = false) Long exp,
+                                        @RequestParam(required = false) String sig) {
+        if (principal == null && (exp == null || sig == null
+                || !signer.verify(activationId, path, exp, sig))) {
+            return ResponseEntity.status(401)
+                    .header("Content-Type", "application/json")
+                    .body("{\"code\":\"unauthorized\",\"message\":\"theme asset 需登录或有效签名\"}"
+                            .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
         PluginAssetService.AssetContent asset = assets.assetOf(activationId, path);
         return ResponseEntity.ok()
                 .header("Content-Type", asset.contentType())

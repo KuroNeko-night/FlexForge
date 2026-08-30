@@ -27,9 +27,9 @@ function onKeydown(event: KeyboardEvent): void {
     class="ff-switch"
     role="switch"
     :aria-checked="modelValue"
+    :aria-disabled="disabled"
     :aria-label="label"
     :tabindex="disabled ? -1 : 0"
-    :disabled="disabled"
     @click="toggle"
     @keydown="onKeydown"
   >

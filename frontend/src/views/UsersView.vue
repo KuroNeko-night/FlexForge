@@ -23,6 +23,7 @@ const formError = ref<string | null>(null);
 const form = ref({ username: '', password: '', displayName: '' });
 const formRoles = ref<string[]>(['USER']);
 const rolesDraft = ref<{ user: SystemUser; roles: string[] } | null>(null);
+const rolesError = ref<string | null>(null);
 
 async function load(): Promise<void> {
   state.value = 'loading';
@@ -78,16 +79,18 @@ async function submitCreate(): Promise<void> {
 
 async function submitRoles(): Promise<void> {
   const draft = rolesDraft.value;
-  if (!draft) {
+  // P2（PR #32 审查）：空角色后端必拒——保存按钮禁用 + 兜底提示，失败留在抽屉内
+  if (!draft || draft.roles.length === 0) {
+    rolesError.value = '至少保留一个角色';
     return;
   }
   try {
     const updated = await assignRoles(draft.user.id, draft.roles);
     users.value = users.value.map((u) => (u.id === updated.id ? updated : u));
     rolesDraft.value = null;
+    rolesError.value = null;
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : null;
-    state.value = 'error';
+    rolesError.value = e instanceof ApiError ? e.message : '保存失败，请稍后重试';
   }
 }
 
@@ -132,11 +135,18 @@ onMounted(load);
       <form class="user-form" @submit.prevent="submitCreate">
         <label>
           用户名
-          <input v-model="form.username" name="username" autocomplete="off" required />
+          <input
+            v-model="form.username"
+            name="username"
+            autocomplete="off"
+            pattern="[a-z0-9_-]{3,32}"
+            title="3-32 位小写字母/数字/下划线/连字符"
+            required
+          />
         </label>
         <label>
           显示名
-          <input v-model="form.displayName" name="displayName" autocomplete="off" />
+          <input v-model="form.displayName" name="displayName" autocomplete="off" required />
         </label>
         <label>
           初始口令
@@ -145,6 +155,8 @@ onMounted(load);
             name="password"
             type="password"
             autocomplete="new-password"
+            minlength="8"
+            maxlength="128"
             required
           />
         </label>
@@ -185,8 +197,15 @@ onMounted(load);
           {{ role }}
         </label>
       </fieldset>
+      <p v-if="rolesError" class="form-error" role="alert">{{ rolesError }}</p>
       <div class="drawer-actions">
-        <BaseButton variant="primary" @click="submitRoles">保存</BaseButton>
+        <BaseButton
+          variant="primary"
+          :disabled="!rolesDraft || rolesDraft.roles.length === 0"
+          @click="submitRoles"
+        >
+          保存
+        </BaseButton>
         <BaseButton variant="ghost" @click="rolesDraft = null">取消</BaseButton>
       </div>
     </BaseDrawer>

@@ -47,6 +47,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     public static final String PRINCIPAL_ATTRIBUTE = "flexforge.auth.principal";
     private static final String LOGIN_PATH = "/api/v1/auth/login";
     private static final String BEARER_PREFIX = "Bearer ";
+    /** 资产 serve 路径（P12.5）：CSS url()/裸 fetch 无法携带 Bearer，匿名放行到控制器，
+     * 由其校验短期 HMAC 签名（docs/09 P12.5、PR #32 审查 P1）；仅匹配 /assets/ 段。 */
+    private static final java.util.regex.Pattern ANONYMOUS_ASSET_PATH = java.util.regex.Pattern
+            .compile("^/api/v1/plugins/activations/[^/]+/assets/.+$");
 
     private final JwtTokenService tokenService;
     private final ObjectMapper objectMapper;
@@ -68,6 +72,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
         if (!path.startsWith("/api/") || LOGIN_PATH.equals(path)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        if (ANONYMOUS_ASSET_PATH.matcher(path).matches()) {
+            // 匿名放行到资产控制器（验签在控制器）；携带有效令牌时仍附主体走原语义
+            try {
+                request.setAttribute(PRINCIPAL_ATTRIBUTE, parsePrincipal(request));
+            } catch (InvalidTokenException e) {
+                /* 无效/缺失令牌按匿名处理（PR #32 审查 P1） */
+            }
             filterChain.doFilter(request, response);
             return;
         }
