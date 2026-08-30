@@ -45,7 +45,7 @@ FlexForge/
 │   ├── flexforge-data/             动态数据访问：data_record 单 JSONB 存储+实体级记录校验+白名单 SQL 构造+动态 CRUD API（service.data-access，P05）
 │   ├── flexforge-plugin/            插件包校验+版本存储+生命周期：P07 导入链路；P08 生命周期（激活/停用/升级/卸载/stale/重启恢复+MigrationScriptRunner+资产 serve）
 │   ├── flexforge-issue/             Issue/评论/标签/状态机/版本化规格（P10）；P11：clarify/generate 编排+ai_task_log
-│   ├── flexforge-ai/                规格 Schema（RequirementSchema v1）+预览派生（P10）；P11：ModelPort（fixture/http）+ClarifyEngine+PluginPackageGenerator+prompts/v1 资源
+│   ├── flexforge-ai/                规格 Schema（RequirementSchema v1）+预览派生（P10）；P11：ModelPort+ClarifyEngine+PluginPackageGenerator+prompts/v1；P15：config/（AiEnv/AiConfigRepository/SecretCipher/AiConfigService/AiConfigController）+RoutingModelPort 运行时路由
 │   │   └── src/main/resources/prompts/v1/   提示词与 fixture 资源（clarify.md + fixture-spec.json，版本一一对应）
 │   └── flexforge-app/              启动、配置、健康检查；web/ 统一错误装配 + requestId 过滤器 + logback 脱敏基线（P02 迭代 2）；Testcontainers 冒烟 + ArchUnit（5 规则）+ R-GOV-06 fixture 测试 + AgentIssueE2eTest/E2eDemoScript（RB-E2E 五场景×3 干净库，P12）
 ├── frontend/                       Vue 3 + TS + Vite（P01 骨架 + P06 动态渲染）
@@ -241,3 +241,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-29 | §1 树/文档地图 +docs/14-defense-delivery-guide.md（答辩运行手册：启动/账号/演示/三保险/排障/清理），docs/05 索引同步登记 | P14 迭代 2：答辩交付固化（docs/09 P14"故障排查手册/演示账号/三保险"落位） |
 | 2026-08-30 | §1 树更新：plugins +theme-default/theme-warm（P12.5 主题包）；frontend +styles/tokens.css、components/ui/ 四组件、views +Users、api +system/theme；backend plugins 聚合端点 theme-assets + kind=tokens；app 测试 +ThemeAssetApiTest | P12.5：前端基建与默认主题（用户裁决新增阶段，三缺陷修复+组件库+换肤通道闭环） |
 | 2026-08-30 | §1 树更新：frontend api +issues.ts、plugins.ts 扩写操作（multipart FormData）；views +Issues、components +IssueDetail/IssueDevPanel/PluginCard；router +/issues、builtinContributions +Issue 工作台菜单 | P15 迭代 1：Issue/AI 工作台前端（clarify 对话入口/迁移/规格/生成消费面）+ 插件管理页写操作（导入/激活/停用/卸载） |
+| 2026-08-30 | §1 树更新：V012 ai_provider_config；flexforge-ai +config 包与 RoutingModelPort（两 ModelPort 实现退出 Bean 装配）；frontend +api/settings、views +Settings、router +/settings、菜单 +设置入口 | P15 迭代 2：设置页 + AI 运行时配置（FR-SETUP-01；docs/13 S4/§3.6-5 第二密钥通道修订、docs/02 +FR-SETUP、docs/03 §8 +/ai/config） |

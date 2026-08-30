@@ -187,6 +187,8 @@ AI 不直接获得数据库管理员权限、服务器命令权限或生产发�
 | `PUT` | `/api/v1/issues/{id}/spec` | 保存规格新版本（开发者；校验快照随版本留存，FR-ISSUE-04/06） |
 | `GET` | `/api/v1/issues/{id}/spec` / `spec/revisions` | 最新规格 / 版本历史 |
 | `GET` | `/api/v1/issues/{id}/preview` | 预览将要生成的插件资源（开发者，P10） |
+| `GET` | `/api/v1/ai/config` | AI 模型运行时配置（ADMIN；只回 provider/base-url/model 与密钥掩码位，P15） |
+| `PUT` | `/api/v1/ai/config` | 更新 AI 运行时配置（ADMIN；API Key AES-GCM 加密落库，审计，P15） |
 
 ## 9. 可观测性与失败处理
 
