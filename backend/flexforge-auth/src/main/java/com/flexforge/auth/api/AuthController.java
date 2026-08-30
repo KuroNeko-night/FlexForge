@@ -25,6 +25,14 @@ public class AuthController {
     public record LoginRequest(String username, String password) {
     }
 
+    /** 自助注册请求（P13，docs/09 P13）：注册成功即登录，响应与 LoginResponse 同构。 */
+    public record RegisterRequest(String username, String password, String displayName) {
+    }
+
+    /** 注册入口可见性（P13 feature flag 消费面，匿名可读）。 */
+    public record RegistrationStatus(boolean selfRegistrationEnabled) {
+    }
+
     public record UserInfo(long id, String username, String displayName, List<String> roles) {
     }
 
@@ -44,6 +52,25 @@ public class AuthController {
             throw new IllegalArgumentException("username 与 password 必填");
         }
         AuthService.LoginResult result = authService.login(request.username(), request.password());
+        UserInfo user = new UserInfo(result.user().id(), result.user().username(),
+                result.user().displayName(), result.user().roles());
+        return new LoginResponse(result.token(), "Bearer", result.expiresAt(), user);
+    }
+
+    @GetMapping("/registration-status")
+    public RegistrationStatus registrationStatus() {
+        return new RegistrationStatus(authService.isSelfRegistrationEnabled());
+    }
+
+    @PostMapping("/register")
+    public LoginResponse register(@RequestBody RegisterRequest request,
+                                  jakarta.servlet.http.HttpServletRequest servletRequest) {
+        if (request.username() == null || request.username().isBlank()
+                || request.password() == null || request.password().isBlank()) {
+            throw new IllegalArgumentException("username 与 password 必填");
+        }
+        AuthService.LoginResult result = authService.register(request.username(),
+                request.password(), request.displayName(), servletRequest.getRemoteAddr());
         UserInfo user = new UserInfo(result.user().id(), result.user().username(),
                 result.user().displayName(), result.user().roles());
         return new LoginResponse(result.token(), "Bearer", result.expiresAt(), user);

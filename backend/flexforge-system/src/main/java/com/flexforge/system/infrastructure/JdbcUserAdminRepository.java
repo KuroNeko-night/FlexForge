@@ -79,4 +79,9 @@ public class JdbcUserAdminRepository {
                     + " SELECT ?, id FROM sys_role WHERE code = ?", userId, roleCode);
         }
     }
+
+    /** 账号状态更新（P13 停启用）：返回受影响行数，0=用户不存在。 */
+    public int updateStatus(long userId, String status) {
+        return jdbc.update("UPDATE sys_user SET status = ? WHERE id = ?", status, userId);
+    }
 }

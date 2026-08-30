@@ -30,6 +30,39 @@ public class AuthProperties {
     /** 锁定时长。 */
     private Duration loginLockDuration = Duration.ofMinutes(10);
 
+    /** 自助注册开关（P13 feature flag，docs/09 P13）：关闭时 /auth/register 拒绝且前端隐藏入口。 */
+    private boolean selfRegistrationEnabled = true;
+
+    /** 自助注册单 IP 窗口内次数上限（内存口径，docs/13 §3.1）。 */
+    private int registerRateLimit = 5;
+
+    /** 自助注册限流窗口。 */
+    private Duration registerRateWindow = Duration.ofHours(1);
+
+    public boolean isSelfRegistrationEnabled() {
+        return selfRegistrationEnabled;
+    }
+
+    public void setSelfRegistrationEnabled(boolean selfRegistrationEnabled) {
+        this.selfRegistrationEnabled = selfRegistrationEnabled;
+    }
+
+    public int getRegisterRateLimit() {
+        return registerRateLimit;
+    }
+
+    public void setRegisterRateLimit(int registerRateLimit) {
+        this.registerRateLimit = registerRateLimit;
+    }
+
+    public Duration getRegisterRateWindow() {
+        return registerRateWindow;
+    }
+
+    public void setRegisterRateWindow(Duration registerRateWindow) {
+        this.registerRateWindow = registerRateWindow;
+    }
+
     public String getJwtSecret() {
         return jwtSecret;
     }

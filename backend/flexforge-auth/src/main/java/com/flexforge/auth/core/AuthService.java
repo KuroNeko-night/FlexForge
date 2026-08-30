@@ -5,6 +5,7 @@ import com.flexforge.auth.AuthProperties;
 import com.flexforge.auth.AuthPrincipal;
 import com.flexforge.auth.CurrentUser;
 import com.flexforge.auth.InvalidCredentialsException;
+import com.flexforge.auth.Roles;
 import com.flexforge.auth.infrastructure.JdbcUserRepository;
 import com.flexforge.auth.infrastructure.UserRecord;
 import com.flexforge.common.PublicApi;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -35,12 +37,15 @@ public class AuthService {
     private final AuthKernel kernel;
     private final AuditEventPort audit;
     private final Clock clock;
+    private final RegistrationRateLimiter rateLimiter;
 
-    public AuthService(JdbcUserRepository users, AuthKernel kernel, AuditEventPort audit, Clock clock) {
+    public AuthService(JdbcUserRepository users, AuthKernel kernel, AuditEventPort audit,
+                       Clock clock, RegistrationRateLimiter rateLimiter) {
         this.users = users;
         this.kernel = kernel;
         this.audit = audit;
         this.clock = clock;
+        this.rateLimiter = rateLimiter;
     }
 
     public LoginResult login(String username, String password) {
@@ -76,6 +81,11 @@ public class AuthService {
         return toCurrentUser(user);
     }
 
+    /** 注册入口可见性（P13 feature flag：控制器匿名端点消费）。 */
+    public boolean isSelfRegistrationEnabled() {
+        return kernel.properties().isSelfRegistrationEnabled();
+    }
+
     /** 登出 = 审计事件（docs/13 §3.1.5：MVP 不做服务端吊销，前端删除令牌）。 */
     public void logout(AuthPrincipal principal) {
         // 令牌 TTL 内用户可能已被删除（无服务端吊销）：actor 回退字面量保证登出审计不因取不到用户名而丢失
@@ -84,6 +94,57 @@ public class AuthService {
                 .orElse("user-" + principal.userId());
         audit.record(AuditEvents.of(actor, "auth.logout", Long.toString(principal.userId()),
                 "success", clock));
+    }
+
+    /** 自助注册用户名规则（与 UserAdminService.USERNAME_PATTERN 同款；P13 注册边界）。 */
+    private static final java.util.regex.Pattern REGISTER_USERNAME =
+            java.util.regex.Pattern.compile("^[a-z0-9_-]{3,32}$");
+
+    /**
+     * 自助注册（P13，docs/09 P13）：开关 + IP 限流 + 同款口令/用户名策略；
+     * 默认 USER 角色；成功即签发令牌（等价登录，避免二次明文提交）。审计 auth.register。
+     */
+    public LoginResult register(String username, String password, String displayName,
+                                String clientIp) {
+        if (!kernel.properties().isSelfRegistrationEnabled()) {
+            throw new IllegalArgumentException("自助注册未开放");
+        }
+        rateLimiter.check(clientIp);
+        requireRegistrationInput(username, password, displayName);
+        if (users.findWithRoles(username).isPresent()) {
+            throw new IllegalArgumentException("用户名已存在: " + username);
+        }
+        try {
+            users.insertUserWithRoles(username, kernel.hasher().hash(password), displayName,
+                    List.of(Roles.USER));
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            throw new IllegalArgumentException("用户名已存在: " + username);
+        }
+        UserRecord created = users.findWithRoles(username).orElseThrow();
+        if (!kernel.hasher().matches(password, created.passwordHash())) {
+            // 并发重名兜底：insertUserWithRoles 幂等（ON CONFLICT DO NOTHING），若他人
+            // 先建同名账号则本次插入被吞——哈希不匹配即非本次创建，绝不给既有账号发令牌
+            throw new IllegalArgumentException("用户名已存在: " + username);
+        }
+        audit.record(AuditEvents.of(username, "auth.register", Long.toString(created.id()),
+                "success", clock));
+        JwtTokenService.IssuedToken issued = kernel.tokens().issue(created.id(), created.roles(),
+                kernel.properties().getJwtTtl());
+        return new LoginResult(issued.token(), issued.expiresAt(), toCurrentUser(created));
+    }
+
+    /** 注册入参校验（与 UserAdminService.createUser 同规则；S1 API 边界拒绝）。 */
+    private static void requireRegistrationInput(String username, String password,
+                                                 String displayName) {
+        if (username == null || !REGISTER_USERNAME.matcher(username).matches()) {
+            throw new IllegalArgumentException("username 须为 3-32 位小写字母/数字/下划线/连字符");
+        }
+        if (password == null || password.length() < 8 || password.length() > 128) {
+            throw new IllegalArgumentException("password 长度须在 8..128");
+        }
+        if (displayName == null || displayName.isBlank() || displayName.length() > 64) {
+            throw new IllegalArgumentException("displayName 须为 1..64 字符");
+        }
     }
 
     private CurrentUser toCurrentUser(UserRecord user) {

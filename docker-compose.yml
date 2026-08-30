@@ -31,6 +31,8 @@ services:
       # P11：模型端口选择与在线凭据（fixture 默认；密钥仅环境变量，docs/13 §3.6）
       FLEXFORGE_AI_PROVIDER: ${FLEXFORGE_AI_PROVIDER:-fixture}
       FLEXFORGE_AI_BASE_URL: ${FLEXFORGE_AI_BASE_URL:-}
+      # P13：自助注册开关（feature flag，docs/13 §3.1-5；关闭时 /auth/register 拒绝且前端隐藏入口）
+      FLEXFORGE_AUTH_SELFREGISTRATIONENABLED: ${FLEXFORGE_SELF_REGISTRATION:-true}
     ports:
       # 宿主端口默认 8088，避免与本机其他 8080 服务冲突；可用 .env 的 BACKEND_PORT 覆盖
       - "127.0.0.1:${BACKEND_PORT:-8088}:8080"

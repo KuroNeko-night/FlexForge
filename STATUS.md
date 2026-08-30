@@ -3,13 +3,13 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P12.5
-CURRENT_STAGE_NAME: 前端基建与默认主题
-STAGE_STATUS: completed
+CURRENT_STAGE_ID: P13
+CURRENT_STAGE_NAME: 加分项与体验优化
+STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 65%
 LAST_UPDATED: 2026-08-30
 OWNER: project-maintainer
-NEXT_ACTION: 【项目恢复 release_candidate】P12.5 出口复核通过（live 证据见 EXIT_GATE）。后续可选：P13 加分项（含自助注册/账号停启用/主题热切换等裁剪项，默认不做）、答辩录屏与镜像预导入（docs/14 §4）、Issue #22 余项按触发条件排期
+NEXT_ACTION: P13 实施（分支 feat/p13-ux-polish，用户裁决范围=三体验项）：自助注册（开关+IP 限流+注册即登录）→ 账号停启用（status 端点+自停守卫+开关组件）→ 主题热切换（路由切换重拉+差量撤销）→ 审查 → PR → 出口
 EXIT_GATE: P12.5 出口证据（docs/09 P12.5 验收四项）：①三缺陷关闭——菜单路由对齐（/workbench→home、/system/users→UsersView 用户管理页，ADMIN 可建号=演示账号外账号获取路径；自助注册按 docs/13 边界记 P13）、EntityCards 只渲染 enabled（特权全量列表不再产出 404 入口，负例测试）②组件库有渲染测试——ui.test.ts 6 例+WorkbenchView 桥接 2 例+UsersView 4 例+EntityCards 3 例③主题插件闭环——不装主题=骨架朴素（R-GOV-09 零硬编码）；安装后完整呈现（live：theme.default 激活→GET /plugins/theme-assets 下发 4 声明含签名 serveUrl→匿名 fetch tokens 200→壳层注入 --ff-*；ThemeAssetApiTest 3 例含篡改/无签名 401）；停用卸载恢复基线（聚合为空断言）④插件 B 覆盖 A——theme-warm 同名 tokens 后应用者胜（registry 测试）+键白名单防 --ff-theme-* 外链注入（负例）。审查：一轮子代理 1 P1+1 P2+7 P3 全修（P1=签名 URL 架构：HMAC 域分隔复用 JWT 密钥+TTL 对齐+filter 仅资产路径匿名放行+registrations 不放宽；掩蔽根因无 loadTheme 测试同修）。后端 130 tests、前端 70 tests、门禁 21/1/0、PR #32 CI 六项全绿合并（45db0af）、live 通道验证 2026-08-30（P14 的 release_candidate 状态随之恢复）
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -32,7 +32,7 @@ BLOCKERS: none
 | P11 | AI 适配器与生成器 | completed | 在线/fixture/手工三条路径可用 |
 | P12 | Agent Issue 端到端闭环 | completed | 干净数据库连续三次完成主流程（RB-E2E 三轮全绿，见前 EXIT_GATE 记录） |
 | P12.5 | 前端基建与默认主题 | completed | 三缺陷关闭+组件/动画/排版基建+SVG 主题插件可安装可被其他插件覆盖（live 验证见 EXIT_GATE） |
-| P13 | 加分项与体验优化 | optional | 不影响主线稳定性 |
+| P13 | 加分项与体验优化 | in_progress | 三体验项交付且开关关闭主线无影响（2026-08-30 用户裁决改写范围） |
 | P14 | 质量收敛与答辩交付 | completed | 全量验收通过，进入 release_candidate（见 NEXT_ACTION 验证时间） |
 
 ## 更新规则
@@ -143,3 +143,4 @@ BLOCKERS: none
 | 2026-08-30 | P12.5 | 迭代 2（换肤通道闭环+主题包）：①kind=tokens 落地（common/plugin 两处 KINDS+ManifestValidator，登记册 §2.2 additive 演化）②聚合端点 GET /plugins/theme-assets（PluginInventoryService.activeThemeAssets：遍历 ACTIVE 激活展开 themeAssets 声明；登录可读——前端壳层消费面）③前端桥接——api/theme.ts+themeRegistry applyTokenOverrides（键白名单 ^--ff-[a-z0-9-]+$，非字符串值拒绝；后应用者胜；按 activationId 撤销恢复基线）+WorkbenchView 登录后拉取（资产注册 serveUrl/tokens 取回 JSON；失败静默降级基线）④plugins/theme-default（SVG 几何背景/品牌标/SMIL 脉冲+tokens 十项令牌）+theme-warm（同名 tokens 覆盖=其他插件自定义样式证明）。测试：ThemeAssetApiTest 2（聚合可见/serve 取回/停用清空/kind 非法拒）+themeRegistry tokens 2（覆盖与撤销/白名单负例）。门禁 21/1/0 | `ThemeAssetApiTest`、`themeRegistry.test.ts`、`plugins/theme-default/`、`plugins/theme-warm/` |
 | 2026-08-30 | P12.5 | PR #32 独立子代理审查：**1 P1 + 1 P2 + 7 P3**——P1：serve 端点 Bearer 认证与 CSS url()/裸 fetch 根本不兼容，浏览器会话中主题永不呈现（后端 MockMvc 全带 token+前端无 loadTheme 测试=结构性掩蔽；迭代 2"闭环"表述过度，以本条更正）→ 修复：ThemeAssetSigner（HMAC-SHA256 域分隔复用 AUTH_JWT_SECRET，TTL=JWT TTL）+聚合端点下发签名 serveUrl+JwtAuthFilter 仅对 /activations/{id}/assets/* 匿名放行到控制器验签（registrations 等不放宽）+WorkbenchView 消费 serveUrl+新增 WorkbenchView.test.ts 桥接测试（掩蔽根因修复）；P2：空角色提交 400 且整页 error 死局→保存禁用+抽屉内错误；P3 全修：BaseDrawer immediate、BaseSwitch aria-disabled 选择器、tokens 键白名单排除 --ff-theme-*（防 url() 外链绕纵深）、loadTheme 单资产隔离、#a33 令牌化、docs/09 停启用裁剪声明、建号表单预校验属性 | PR #32 评论、`ThemeAssetSigner.java`、`WorkbenchView.test.ts` |
 | 2026-08-30 | P12.5 | **P12.5 出口复核通过，置 completed（进度 65%），项目恢复 release_candidate**。验收四项逐项实证（见 EXIT_GATE）：三缺陷关闭（路由对齐+用户管理建号+enabled 过滤）/组件库 15 个新测试/主题插件安装呈现-停用恢复-签名 URL 匿名通道 live 全通/theme-warm 覆盖验证。live 验证链：新后端镜像→theme.default 激活→聚合端点 4 声明（含 exp+sig serveUrl）→匿名 fetch tokens 200→5173（vite dev 最新代码）登录即见主题。后端 130+前端 70 tests、门禁 21/1/0、PR #32 六项 CI 全绿合并（45db0af） | docs/09 P12.5 验收、PR #32、live 验证 2026-08-30 |
+| 2026-08-30 | P13 | 实施（用户裁决范围=三体验项，docs/09 P13 已改写）：①**自助注册**——POST /auth/register（匿名；AuthProperties 开关默认开+单 IP 滑动窗口限流 5/h 内存口径不采信 XFF+同款用户名/口令校验；重名**双重防线**：服务层显式拒绝+插入后哈希复核，堵住幂等插入并发窗口的账号接管漏洞——测试先行发现）；注册成功即签发令牌+auth.register 审计；GET /auth/registration-status 供前端 feature flag 消费（关闭隐藏入口）；LoginView 登录/注册双模式②**账号停启用**——PUT /system/users/{id}/status（ADMIN/不可自停/两态白名单）；BLOCKED 拒新登录（既有 user.active()）；UsersView 状态列 BaseSwitch（自停禁用+行级错误不毁页）③**主题热切换**——themeRegistry syncRemovedActivations 差量撤销+WorkbenchView 路由切换重拉聚合（停用主题免刷新恢复基线）。测试：RegisterAndStatusApiTest 5（含 429 限流/接管回归/自停 400/非管理员 403）+前端 LoginView 3/UsersView 状态 2/热切换 1=75 全绿；docs/13 §3.1 补第 5/6 条；compose/.env.example 开关链 | `RegisterAndStatusApiTest`、docs/13 §3.1、docs/09 P13 |

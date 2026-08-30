@@ -46,6 +46,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     public static final String PRINCIPAL_ATTRIBUTE = "flexforge.auth.principal";
     private static final String LOGIN_PATH = "/api/v1/auth/login";
+    /** 自助注册（P13）：匿名端点，开关与 IP 限流在 AuthService 层强制。 */
+    private static final String REGISTER_PATH = "/api/v1/auth/register";
+    private static final String REGISTRATION_STATUS_PATH = "/api/v1/auth/registration-status";
     private static final String BEARER_PREFIX = "Bearer ";
     /** 资产 serve 路径（P12.5）：CSS url()/裸 fetch 无法携带 Bearer，匿名放行到控制器，
      * 由其校验短期 HMAC 签名（docs/09 P12.5、PR #32 审查 P1）；仅匹配 /assets/ 段。 */
@@ -71,7 +74,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     "请求路径不合法");
             return;
         }
-        if (!path.startsWith("/api/") || LOGIN_PATH.equals(path)) {
+        if (!path.startsWith("/api/") || LOGIN_PATH.equals(path) || REGISTER_PATH.equals(path)
+                || REGISTRATION_STATUS_PATH.equals(path)) {
             filterChain.doFilter(request, response);
             return;
         }

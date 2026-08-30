@@ -4,7 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const pushMock = vi.fn();
 
-vi.mock('vue-router', () => ({ useRouter: () => ({ push: pushMock }) }));
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push: pushMock }),
+  useRoute: () => ({ path: '/' }),
+}));
 vi.mock('@/api/meta', () => ({ fetchMenus: vi.fn() }));
 vi.mock('@/api/auth', () => ({ fetchMe: vi.fn(), logout: vi.fn() }));
 vi.mock('@/api/theme', () => ({ fetchActiveThemeAssets: vi.fn() }));
@@ -15,6 +18,7 @@ vi.mock('@/registry/themeRegistry', () => ({
   themeStyle: () => ({ value: {} }),
   registerThemeAsset: vi.fn(),
   applyTokenOverrides: vi.fn(),
+  syncRemovedActivations: vi.fn(),
 }));
 
 import { fetchMenus } from '@/api/meta';

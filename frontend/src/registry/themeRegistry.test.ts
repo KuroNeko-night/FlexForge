@@ -6,6 +6,7 @@ import {
   resolveThemeAsset,
   revokeThemeAsset,
   revokeThemeAssetsByActivation,
+  syncRemovedActivations,
   themeStyle,
 } from '@/registry/themeRegistry';
 
@@ -99,5 +100,16 @@ describe('theme registry：P12.5 tokens 通道（--ff-* 键白名单）', () => 
     expect(() =>
       applyTokenOverrides('act-bad', { '--ff-theme-background': 'url(https://evil/x)' }),
     ).toThrow(/--ff-/);
+  });
+});
+
+describe('theme registry：P13 热切换差量撤销', () => {
+  it('syncRemovedActivations 清除消失激活的资产与 tokens', () => {
+    registerThemeAsset({ key: 't.hot', kind: 'background', path: '/api/x' }, 'act-hot');
+    applyTokenOverrides('act-hot', { '--ff-primary': '#111111' });
+    expect(themeStyle().value['--ff-primary']).toBe('#111111');
+    // 聚合中不再有 act-hot → 全部撤销，恢复基线
+    syncRemovedActivations(['act-other']);
+    expect(themeStyle().value['--ff-primary']).toBeUndefined();
   });
 });

@@ -104,6 +104,30 @@ public class UserAdminService {
         return new PageResult<>(result.rows(), result.total(), query.pageNumber(), query.pageSize());
     }
 
+    /**
+     * 账号停启用（P13，docs/09 P13）：仅 ACTIVE/BLOCKED 两态；不可操作自己
+     * （防管理员自锁）。BLOCKED 即拒新登录（login 的 user.active() 既有语义）；
+     * 已持有令牌在 TTL 内仍有效（无状态令牌，docs/13 记录）。
+     */
+    public UserAdminRecord updateStatus(long operatorId, long userId, String status) {
+        String normalized = switch (status == null ? "" : status.trim()) {
+            case "ACTIVE" -> "ACTIVE";
+            case "BLOCKED" -> "BLOCKED";
+            default -> throw new IllegalArgumentException("status 仅允许 ACTIVE/BLOCKED");
+        };
+        if (userId == operatorId) {
+            throw new IllegalArgumentException("不能变更自己的账号状态");
+        }
+        UserAdminRecord existing = users.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("user not found: " + userId));
+        if (!existing.status().equals(normalized)) {
+            users.updateStatus(userId, normalized);
+        }
+        audit.record(AuditEvents.of(resolveActor(operatorId), "user.status.update",
+                Long.toString(userId), normalized, clock));
+        return users.findById(userId).orElseThrow();
+    }
+
     private String resolveActor(long operatorId) {
         return users.findById(operatorId).map(UserAdminRecord::username)
                 .orElse("user-" + operatorId);

@@ -39,6 +39,9 @@ public final class ErrorCodes {
     /** 权限不足。 */
     public static final String PERMISSION_DENIED = "permission_denied";
 
+    /** 请求频率超限（P13：自助注册 IP 限流，429）。 */
+    public static final String RATE_LIMITED = "rate_limited";
+
     /** 请求参数校验失败（含分页白名单、非法枚举等 API 边界拒绝）。 */
     public static final String VALIDATION_ERROR = "validation_error";
 
