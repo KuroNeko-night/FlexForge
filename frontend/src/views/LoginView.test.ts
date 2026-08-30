@@ -23,6 +23,18 @@ const loginMock = vi.mocked(login);
 
 const authUser = { id: 7, username: 'newbie', displayName: '新人', roles: ['USER'] };
 
+/** 切到注册模式并提交（三个用例共用的驱动序列）。 */
+async function submitRegister(password: string): Promise<ReturnType<typeof mount>> {
+  const wrapper = mount(LoginView);
+  await flushPromises();
+  await wrapper.find('a').trigger('click');
+  await wrapper.find('input[name="username"]').setValue('newbie');
+  await wrapper.find('input[name="password"]').setValue(password);
+  wrapper.find('form').trigger('submit');
+  await flushPromises();
+  return wrapper;
+}
+
 describe('LoginView 登录/注册切换（P13）', () => {
   beforeEach(() => {
     statusMock.mockReset();
@@ -40,14 +52,11 @@ describe('LoginView 登录/注册切换（P13）', () => {
       expiresAt: '',
       user: authUser,
     });
-    const wrapper = mount(LoginView);
+    const probe = mount(LoginView);
     await flushPromises();
-    expect(wrapper.text()).toContain('自助注册');
-    await wrapper.find('a').trigger('click');
-    await wrapper.find('input[name="username"]').setValue('newbie');
-    await wrapper.find('input[name="password"]').setValue('Whatever-Pass-9');
-    wrapper.find('form').trigger('submit');
-    await flushPromises();
+    expect(probe.text()).toContain('自助注册');
+    probe.unmount();
+    await submitRegister('Whatever-Pass-9');
     expect(registerMock).toHaveBeenCalledWith('newbie', 'Whatever-Pass-9', 'newbie');
     expect(session.token).toBe('tk-reg');
     expect(session.user?.username).toBe('newbie');
@@ -64,13 +73,7 @@ describe('LoginView 登录/注册切换（P13）', () => {
   it('注册失败在表单内提示（不跳转）', async () => {
     statusMock.mockResolvedValue({ selfRegistrationEnabled: true });
     registerMock.mockRejectedValue(new ApiError('validation_error', '用户名已存在', 400, null));
-    const wrapper = mount(LoginView);
-    await flushPromises();
-    await wrapper.find('a').trigger('click');
-    await wrapper.find('input[name="username"]').setValue('taken');
-    await wrapper.find('input[name="password"]').setValue('Whatever-Pass-9');
-    wrapper.find('form').trigger('submit');
-    await flushPromises();
+    const wrapper = await submitRegister('Whatever-Pass-9');
     expect(wrapper.text()).toContain('用户名已存在');
     expect(pushMock).not.toHaveBeenCalled();
     expect(session.token).toBeNull();
