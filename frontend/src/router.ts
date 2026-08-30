@@ -6,11 +6,14 @@ import HomeView from '@/views/HomeView.vue';
 import LoginView from '@/views/LoginView.vue';
 import PlaceholderView from '@/views/PlaceholderView.vue';
 import PluginsView from '@/views/PluginsView.vue';
+import UsersView from '@/views/UsersView.vue';
 import WorkbenchView from '@/views/WorkbenchView.vue';
 
 /**
  * 路由（hash 模式：静态托管无需服务端 SPA 回退配置，演示部署最简）。
  * 登录守卫只做体验跳转，安全边界在服务端（S2）。
+ * 路径与后端菜单契约对齐（docs/03 §8：/workbench、/meta/entities、/system/users；
+ * P12.5 缺陷②：缺失路径曾落 SPA 兜底重定向回工作台）。
  */
 export const router = createRouter({
   history: createWebHashHistory(),
@@ -21,6 +24,7 @@ export const router = createRouter({
       component: WorkbenchView,
       children: [
         { path: '', name: 'home', component: HomeView },
+        { path: 'workbench', redirect: { name: 'home' } },
         { path: 'data/:entity', name: 'entity-list', component: DynamicEntityView },
         { path: 'data/:entity/new', name: 'entity-new', component: DynamicEntityView },
         { path: 'data/:entity/:id', name: 'entity-detail', component: DynamicEntityView },
@@ -38,9 +42,12 @@ export const router = createRouter({
         },
         {
           path: 'system',
-          name: 'system-placeholder',
-          component: PlaceholderView,
-          props: { title: '系统管理' },
+          redirect: { name: 'system-users' },
+        },
+        {
+          path: 'system/users',
+          name: 'system-users',
+          component: UsersView,
         },
       ],
     },

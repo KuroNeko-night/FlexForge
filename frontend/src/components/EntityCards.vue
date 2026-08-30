@@ -13,7 +13,10 @@ const error = ref<string | null>(null);
 
 onMounted(async () => {
   try {
-    entities.value = await listEnabledEntities();
+    // P12.5 缺陷③：特权角色拿到的 /meta/entities 是全量（含 disabled/draft），
+    // 工作台入口只应渲染 enabled 实体，否则点击即 404
+    const page = await listEnabledEntities();
+    entities.value = page.filter((entity) => entity.status === 'enabled');
     state.value = 'ready';
   } catch (e) {
     if (e instanceof ApiError && e.status === 403) {

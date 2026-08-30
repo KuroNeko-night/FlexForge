@@ -1,0 +1,234 @@
+/*
+ * FlexForge 设计令牌与前端基建基线（docs/09 P12.5"结构与皮分离"）。
+ * 平台只定义朴素可用的缺省值；主题插件（extension.theme-asset，FR-PLUGIN-11）
+ * 通过覆盖 --ff-* 变量改变全局观感——组件/排版结构不随主题变化。
+ * 动效统一走 --ff-motion-* 时长；prefers-reduced-motion 时全部收敛为瞬时。
+ */
+:root {
+  /* 色板（基线） */
+  --ff-bg: #f5f6f8;
+  --ff-surface: #ffffff;
+  --ff-surface-muted: #eef1f6;
+  --ff-text: #1f2430;
+  --ff-text-muted: #6a7286;
+  --ff-border: #c4cad6;
+  --ff-border-soft: #e6e9f0;
+  --ff-primary: #2b5fd9;
+  --ff-primary-ink: #ffffff;
+  --ff-danger: #8a2f2f;
+  --ff-danger-bg: #fbeaea;
+  --ff-warn: #8a5a12;
+  --ff-warn-bg: #fdf3e4;
+  --ff-side-bg: #1f2430;
+  --ff-side-ink: #dfe3ec;
+  --ff-side-active: #2b3350;
+
+  /* 排版 */
+  --ff-font: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --ff-font-mono: 'Cascadia Code', Consolas, monospace;
+  --ff-text-sm: 0.8rem;
+  --ff-text-md: 0.9rem;
+
+  /* 间距 / 圆角 / 阴影 */
+  --ff-space-1: 0.25rem;
+  --ff-space-2: 0.5rem;
+  --ff-space-3: 0.8rem;
+  --ff-space-4: 1.2rem;
+  --ff-radius-sm: 4px;
+  --ff-radius-md: 8px;
+  --ff-radius-lg: 12px;
+  --ff-shadow-1: 0 1px 2px rgb(0 0 0 / 8%);
+  --ff-shadow-2: 0 6px 18px rgb(15 23 42 / 14%);
+
+  /* 动效 */
+  --ff-motion-fast: 120ms;
+  --ff-motion-base: 220ms;
+  --ff-motion-slow: 320ms;
+  --ff-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ff-motion-fast: 0ms;
+    --ff-motion-base: 0ms;
+    --ff-motion-slow: 0ms;
+  }
+}
+
+/* ===== 基建组件（ui/）原语样式：只消费令牌，不写字面量 ===== */
+.ff-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ff-space-1);
+  padding: var(--ff-space-2) var(--ff-space-3);
+  font: inherit;
+  font-size: var(--ff-text-md);
+  border-radius: var(--ff-radius-sm);
+  border: 1px solid var(--ff-border);
+  background: var(--ff-surface);
+  color: var(--ff-text);
+  cursor: pointer;
+  transition:
+    background var(--ff-motion-fast) var(--ff-ease),
+    border-color var(--ff-motion-fast) var(--ff-ease),
+    box-shadow var(--ff-motion-fast) var(--ff-ease),
+    transform var(--ff-motion-fast) var(--ff-ease);
+}
+.ff-btn:hover:not(:disabled) {
+  border-color: var(--ff-primary);
+  box-shadow: var(--ff-shadow-1);
+}
+.ff-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.ff-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ff-btn--primary {
+  background: var(--ff-primary);
+  border-color: var(--ff-primary);
+  color: var(--ff-primary-ink);
+}
+.ff-btn--primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.ff-btn--danger {
+  color: var(--ff-danger);
+  border-color: var(--ff-danger);
+}
+.ff-btn--ghost {
+  border-color: transparent;
+  background: transparent;
+}
+.ff-btn--sm {
+  padding: var(--ff-space-1) var(--ff-space-2);
+  font-size: var(--ff-text-sm);
+}
+
+.ff-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  cursor: pointer;
+}
+.ff-switch__track {
+  width: 2.6rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  background: var(--ff-border);
+  border: 1px solid var(--ff-border);
+  position: relative;
+  transition: background var(--ff-motion-base) var(--ff-ease);
+}
+.ff-switch__knob {
+  position: absolute;
+  top: 50%;
+  left: var(--ff-space-1);
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--ff-surface);
+  box-shadow: var(--ff-shadow-1);
+  transform: translateY(-50%);
+  transition:
+    left var(--ff-motion-base) var(--ff-ease),
+    width var(--ff-motion-fast) var(--ff-ease);
+}
+.ff-switch[aria-checked='true'] .ff-switch__track {
+  background: var(--ff-primary);
+  border-color: var(--ff-primary);
+}
+.ff-switch[aria-checked='true'] .ff-switch__knob {
+  left: calc(100% - 1rem - var(--ff-space-1));
+}
+.ff-switch:active .ff-switch__knob {
+  width: 1.2rem;
+}
+.ff-switch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ff-card {
+  background: var(--ff-surface);
+  border: 1px solid var(--ff-border-soft);
+  border-radius: var(--ff-radius-md);
+  box-shadow: var(--ff-shadow-1);
+  padding: var(--ff-space-4);
+  transition:
+    box-shadow var(--ff-motion-base) var(--ff-ease),
+    transform var(--ff-motion-base) var(--ff-ease);
+}
+.ff-card--hoverable:hover {
+  box-shadow: var(--ff-shadow-2);
+  transform: translateY(-2px);
+}
+.ff-card__title {
+  margin: 0;
+  font-size: 1rem;
+}
+.ff-card__subtitle {
+  margin: var(--ff-space-1) 0 0;
+  color: var(--ff-text-muted);
+  font-size: var(--ff-text-sm);
+}
+
+.ff-drawer__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(15 23 42 / 38%);
+}
+.ff-drawer__panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: min(26rem, 92vw);
+  background: var(--ff-surface);
+  box-shadow: var(--ff-shadow-2);
+  padding: var(--ff-space-4);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ff-space-3);
+}
+
+/* ===== 过渡动画（页面/开关/抽屉） ===== */
+.ff-fade-enter-active,
+.ff-fade-leave-active {
+  transition: opacity var(--ff-motion-base) var(--ff-ease);
+}
+.ff-fade-enter-from,
+.ff-fade-leave-to {
+  opacity: 0;
+}
+
+.ff-slide-up-enter-active,
+.ff-slide-up-leave-active {
+  transition:
+    opacity var(--ff-motion-base) var(--ff-ease),
+    transform var(--ff-motion-base) var(--ff-ease);
+}
+.ff-slide-up-enter-from,
+.ff-slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(0.6rem);
+}
+
+.ff-drawer-enter-active,
+.ff-drawer-leave-active {
+  transition: opacity var(--ff-motion-base) var(--ff-ease);
+}
+.ff-drawer-enter-active .ff-drawer__panel,
+.ff-drawer-leave-active .ff-drawer__panel {
+  transition: transform var(--ff-motion-slow) var(--ff-ease);
+}
+.ff-drawer-enter-from,
+.ff-drawer-leave-to {
+  opacity: 0;
+}
+.ff-drawer-enter-from .ff-drawer__panel,
+.ff-drawer-leave-to .ff-drawer__panel {
+  transform: translateX(100%);
+}

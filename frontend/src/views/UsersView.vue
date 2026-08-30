@@ -1,0 +1,234 @@
+<script setup lang="ts">
+import { onMounted, ref } from 'vue';
+
+import { ApiError } from '@/api/client';
+import { assignRoles, createUser, listUsers, type SystemUser } from '@/api/system';
+import BaseButton from '@/components/ui/BaseButton.vue';
+import BaseDrawer from '@/components/ui/BaseDrawer.vue';
+import StateView from '@/components/StateView.vue';
+
+/**
+ * 系统管理：用户管理页（docs/09 P12.5 缺陷③：演示账号外的账号获取路径）。
+ * 消费 P03 后端 API（list/create/roles，ADMIN）；基建组件构成交互（抽屉表单）。
+ */
+const ROLE_OPTIONS = ['ADMIN', 'DEVELOPER', 'USER'] as const;
+
+const users = ref<SystemUser[]>([]);
+const state = ref<'loading' | 'ready' | 'error' | 'denied' | 'empty'>('loading');
+const error = ref<string | null>(null);
+
+const drawerOpen = ref(false);
+const creating = ref(false);
+const formError = ref<string | null>(null);
+const form = ref({ username: '', password: '', displayName: '' });
+const formRoles = ref<string[]>(['USER']);
+const rolesDraft = ref<{ user: SystemUser; roles: string[] } | null>(null);
+
+async function load(): Promise<void> {
+  state.value = 'loading';
+  try {
+    const page = await listUsers();
+    users.value = page.items;
+    state.value = page.items.length === 0 ? 'empty' : 'ready';
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 403) {
+      state.value = 'denied';
+      return;
+    }
+    state.value = 'error';
+    error.value =
+      e instanceof ApiError ? `${e.message}${e.requestId ? `（${e.requestId}）` : ''}` : null;
+  }
+}
+
+function toggleDraftRole(role: string): void {
+  const draft = rolesDraft.value;
+  if (!draft) {
+    return;
+  }
+  draft.roles = draft.roles.includes(role)
+    ? draft.roles.filter((r) => r !== role)
+    : [...draft.roles, role];
+}
+
+function toggleFormRole(role: string): void {
+  formRoles.value = formRoles.value.includes(role)
+    ? formRoles.value.filter((r) => r !== role)
+    : [...formRoles.value, role];
+}
+
+async function submitCreate(): Promise<void> {
+  if (creating.value || !form.value.username || !form.value.password) {
+    return;
+  }
+  creating.value = true;
+  formError.value = null;
+  try {
+    await createUser({ ...form.value, roles: formRoles.value });
+    drawerOpen.value = false;
+    form.value = { username: '', password: '', displayName: '' };
+    formRoles.value = ['USER'];
+    await load();
+  } catch (e) {
+    formError.value = e instanceof ApiError ? e.message : '创建失败，请稍后重试';
+  } finally {
+    creating.value = false;
+  }
+}
+
+async function submitRoles(): Promise<void> {
+  const draft = rolesDraft.value;
+  if (!draft) {
+    return;
+  }
+  try {
+    const updated = await assignRoles(draft.user.id, draft.roles);
+    users.value = users.value.map((u) => (u.id === updated.id ? updated : u));
+    rolesDraft.value = null;
+  } catch (e) {
+    error.value = e instanceof ApiError ? e.message : null;
+    state.value = 'error';
+  }
+}
+
+onMounted(load);
+</script>
+
+<template>
+  <section class="users-view" data-testid="users-view">
+    <header class="users-header">
+      <h2>用户管理</h2>
+      <BaseButton variant="primary" @click="drawerOpen = true">新建用户</BaseButton>
+    </header>
+    <StateView v-if="state !== 'ready'" :state="state" :message="error">
+      <p v-if="state === 'empty'">尚无用户</p>
+    </StateView>
+    <table v-else class="users-table" data-testid="users-table">
+      <thead>
+        <tr>
+          <th scope="col">用户名</th>
+          <th scope="col">显示名</th>
+          <th scope="col">角色</th>
+          <th scope="col">状态</th>
+          <th scope="col">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="user in users" :key="user.id">
+          <td>{{ user.username }}</td>
+          <td>{{ user.displayName }}</td>
+          <td>{{ user.roles.join('、') || '—' }}</td>
+          <td>{{ user.status }}</td>
+          <td>
+            <BaseButton size="sm" @click="rolesDraft = { user, roles: [...user.roles] }">
+              角色
+            </BaseButton>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <BaseDrawer :open="drawerOpen" title="新建用户" @close="drawerOpen = false">
+      <form class="user-form" @submit.prevent="submitCreate">
+        <label>
+          用户名
+          <input v-model="form.username" name="username" autocomplete="off" required />
+        </label>
+        <label>
+          显示名
+          <input v-model="form.displayName" name="displayName" autocomplete="off" />
+        </label>
+        <label>
+          初始口令
+          <input
+            v-model="form.password"
+            name="password"
+            type="password"
+            autocomplete="new-password"
+            required
+          />
+        </label>
+        <fieldset>
+          <legend>角色</legend>
+          <label v-for="role in ROLE_OPTIONS" :key="role" class="role-option">
+            <input
+              type="checkbox"
+              :checked="formRoles.includes(role)"
+              @change="toggleFormRole(role)"
+            />
+            {{ role }}
+          </label>
+        </fieldset>
+        <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
+        <div class="drawer-actions">
+          <BaseButton type="submit" variant="primary" :disabled="creating">
+            {{ creating ? '创建中…' : '创建' }}
+          </BaseButton>
+          <BaseButton variant="ghost" @click="drawerOpen = false">取消</BaseButton>
+        </div>
+      </form>
+    </BaseDrawer>
+
+    <BaseDrawer
+      :open="rolesDraft !== null"
+      :title="`调整角色：${rolesDraft?.user.username ?? ''}`"
+      @close="rolesDraft = null"
+    >
+      <fieldset v-if="rolesDraft">
+        <legend>角色</legend>
+        <label v-for="role in ROLE_OPTIONS" :key="role" class="role-option">
+          <input
+            type="checkbox"
+            :checked="rolesDraft.roles.includes(role)"
+            @change="toggleDraftRole(role)"
+          />
+          {{ role }}
+        </label>
+      </fieldset>
+      <div class="drawer-actions">
+        <BaseButton variant="primary" @click="submitRoles">保存</BaseButton>
+        <BaseButton variant="ghost" @click="rolesDraft = null">取消</BaseButton>
+      </div>
+    </BaseDrawer>
+  </section>
+</template>
+
+<style scoped>
+.users-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--ff-surface);
+  border-radius: var(--ff-radius-md);
+}
+.users-table th,
+.users-table td {
+  padding: var(--ff-space-2) var(--ff-space-3);
+  border-bottom: 1px solid var(--ff-border-soft);
+  text-align: left;
+}
+.user-form label,
+.role-option {
+  display: block;
+  margin-bottom: var(--ff-space-3);
+}
+.user-form input {
+  display: block;
+  width: 100%;
+  margin-top: var(--ff-space-1);
+  padding: var(--ff-space-2);
+  box-sizing: border-box;
+}
+.role-option {
+  margin-bottom: var(--ff-space-2);
+}
+.drawer-actions {
+  display: flex;
+  gap: var(--ff-space-2);
+  margin-top: var(--ff-space-3);
+}
+</style>

@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router';
 import { login } from '@/api/auth';
 import { ApiError } from '@/api/client';
 import { saveSession } from '@/auth/token';
+import BaseButton from '@/components/ui/BaseButton.vue';
 
 const router = useRouter();
 const username = ref('');
@@ -49,9 +50,9 @@ async function submit(): Promise<void> {
         />
       </label>
       <p v-if="error" class="login-error" role="alert">{{ error }}</p>
-      <button type="submit" :disabled="submitting">
+      <BaseButton type="submit" variant="primary" :disabled="submitting">
         {{ submitting ? '登录中…' : '登录' }}
-      </button>
+      </BaseButton>
     </form>
   </main>
 </template>

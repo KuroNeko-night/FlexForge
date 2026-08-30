@@ -10,20 +10,21 @@
 </template>
 
 <style>
+/* P12.5：观感值全部改为 --ff-* 令牌消费（tokens.css 定义基线，主题插件覆盖即换肤） */
 :root {
   color-scheme: light;
-  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: var(--ff-font);
   line-height: 1.6;
 }
 
 body {
   margin: 0;
-  background: #f5f6f8;
-  color: #1f2430;
+  background: var(--ff-bg);
+  color: var(--ff-text);
 }
 
 a {
-  color: #2b5fd9;
+  color: var(--ff-primary);
   text-decoration: none;
 }
 a:hover {
@@ -31,10 +32,10 @@ a:hover {
 }
 
 button {
-  padding: 0.25rem 0.75rem;
-  border: 1px solid #c4cad6;
-  border-radius: 4px;
-  background: #fff;
+  padding: var(--ff-space-1) var(--ff-space-3);
+  border: 1px solid var(--ff-border);
+  border-radius: var(--ff-radius-sm);
+  background: var(--ff-surface);
   cursor: pointer;
 }
 button:disabled {
@@ -44,35 +45,36 @@ button:disabled {
 
 .state-view {
   padding: 1.5rem;
-  border-radius: 6px;
-  background: #eef1f6;
-  color: #4a5266;
+  border-radius: var(--ff-radius-md);
+  background: var(--ff-surface-muted);
+  color: var(--ff-text-muted);
 }
 .state-view[data-state='error'] {
-  background: #fbeaea;
-  color: #8a2f2f;
+  background: var(--ff-danger-bg);
+  color: var(--ff-danger);
 }
 .state-view[data-state='denied'] {
-  background: #fdf3e4;
-  color: #8a5a12;
+  background: var(--ff-warn-bg);
+  color: var(--ff-warn);
 }
 .state-detail {
-  font-size: 0.85rem;
+  font-size: var(--ff-text-sm);
   opacity: 0.8;
 }
 
 .hint {
   display: block;
   font-size: 0.78rem;
-  color: #6a7286;
+  color: var(--ff-text-muted);
 }
 
 .login-view {
   max-width: 22rem;
   margin: 8vh auto;
   padding: 2rem;
-  background: #fff;
-  border-radius: 8px;
+  background: var(--ff-surface);
+  border-radius: var(--ff-radius-md);
+  box-shadow: var(--ff-shadow-2);
 }
 .login-form label {
   display: block;
@@ -81,11 +83,11 @@ button:disabled {
 .login-form input {
   display: block;
   width: 100%;
-  margin-top: 0.25rem;
+  margin-top: var(--ff-space-1);
   padding: 0.4rem;
 }
 .login-error {
-  color: #8a2f2f;
+  color: var(--ff-danger);
 }
 
 .workbench {
@@ -99,8 +101,8 @@ button:disabled {
   background-position: center;
 }
 .workbench-side {
-  background: #1f2430;
-  color: #dfe3ec;
+  background: var(--ff-side-bg);
+  color: var(--ff-side-ink);
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -113,11 +115,12 @@ button:disabled {
 .workbench-side nav a {
   display: block;
   padding: 0.4rem 0.6rem;
-  color: #dfe3ec;
-  border-radius: 4px;
+  color: var(--ff-side-ink);
+  border-radius: var(--ff-radius-sm);
+  transition: background var(--ff-motion-fast) var(--ff-ease);
 }
 .workbench-side nav a.router-link-active {
-  background: #2b3350;
+  background: var(--ff-side-active);
 }
 .menu-static {
   display: block;
@@ -129,7 +132,7 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.85rem;
+  font-size: var(--ff-text-md);
 }
 .brand {
   font-weight: 700;
@@ -151,27 +154,34 @@ button:disabled {
 .entity-cards a {
   display: block;
   padding: 1rem;
-  background: #fff;
-  border-radius: 6px;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+  background: var(--ff-surface);
+  border-radius: var(--ff-radius-md);
+  box-shadow: var(--ff-shadow-1);
+  transition:
+    box-shadow var(--ff-motion-base) var(--ff-ease),
+    transform var(--ff-motion-base) var(--ff-ease);
+}
+.entity-cards a:hover {
+  box-shadow: var(--ff-shadow-2);
+  transform: translateY(-2px);
 }
 .entity-cards .entity-name {
   display: block;
-  color: #6a7286;
-  font-size: 0.8rem;
+  color: var(--ff-text-muted);
+  font-size: var(--ff-text-sm);
 }
 
 .dynamic-table {
   width: 100%;
   border-collapse: collapse;
-  background: #fff;
-  border-radius: 6px;
+  background: var(--ff-surface);
+  border-radius: var(--ff-radius-md);
   overflow: hidden;
 }
 .dynamic-table th,
 .dynamic-table td {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid #e6e9f0;
+  padding: var(--ff-space-2) var(--ff-space-3);
+  border-bottom: 1px solid var(--ff-border-soft);
   text-align: left;
 }
 .dynamic-table tbody tr {
@@ -179,7 +189,7 @@ button:disabled {
 }
 .dynamic-table .row-actions button {
   margin-right: 0.3rem;
-  font-size: 0.8rem;
+  font-size: var(--ff-text-sm);
 }
 
 .pager {
@@ -213,7 +223,7 @@ button:disabled {
   margin-left: 0.2rem;
 }
 .form-error {
-  color: #8a2f2f;
+  color: var(--ff-danger);
 }
 
 .detail-list dt {
@@ -230,7 +240,7 @@ button:disabled {
 }
 
 .stale-note {
-  color: #8a5a12;
-  font-size: 0.85rem;
+  color: var(--ff-warn);
+  font-size: var(--ff-text-md);
 }
 </style>
