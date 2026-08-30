@@ -116,6 +116,27 @@ describe('SettingsView AI 配置保存（FR-SETUP-01）', () => {
   });
 });
 
+describe('SettingsView 清除密钥防呆（PR #35 审查 P2）', () => {
+  it('清除开关与新密钥互斥：勾选清空输入且输入框禁用', async () => {
+    loginAdmin();
+    fetchMock.mockResolvedValue(view({ apiKeyConfigured: true, apiKeyHint: '…9876' }));
+    const wrapper = mount(SettingsView);
+    await flushPromises();
+    await wrapper.find('input[name="apiKey"]').setValue(TYPED_SECRET);
+    await wrapper.find('[data-testid="clear-key"]').setValue(true);
+    const keyInput = wrapper.find('input[name="apiKey"]').element as HTMLInputElement;
+    expect(keyInput.value).toBe('');
+    expect(keyInput.disabled).toBe(true);
+    updateMock.mockResolvedValue(view());
+    await wrapper.find('form').trigger('submit');
+    await flushPromises();
+    expect(updateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ apiKey: null, clearApiKey: true }),
+    );
+    clearSession();
+  });
+});
+
 describe('SettingsView 非 ADMIN', () => {
   it('不加载 AI 配置也不渲染表单（服务端边界 + 前端只控显隐）', async () => {
     saveSession('t', { id: 2, username: 'u', displayName: 'U', roles: ['USER'] });

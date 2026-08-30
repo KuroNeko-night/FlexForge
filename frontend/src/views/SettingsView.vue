@@ -56,6 +56,13 @@ function httpIncomplete(): boolean {
   return provider.value === 'http' && (baseUrl.value.trim() === '' || model.value.trim() === '');
 }
 
+/** 勾选清除时联动清空输入（PR #35 审查 P2：与新密钥互斥，防"以为换了实被清空"）。 */
+function onClearToggle(): void {
+  if (clearKey.value) {
+    apiKey.value = '';
+  }
+}
+
 async function submit(): Promise<void> {
   if (saving.value || httpIncomplete()) {
     return;
@@ -135,16 +142,24 @@ onMounted(load);
             type="password"
             autocomplete="new-password"
             maxlength="4096"
+            :disabled="clearKey"
             :placeholder="
-              config?.apiKeyConfigured
-                ? `已配置（${config.apiKeyHint ?? '掩码'}）——留空保持不变`
-                : '未配置'
+              clearKey
+                ? '将清除已保存的密钥'
+                : config?.apiKeyConfigured
+                  ? `已配置（${config.apiKeyHint ?? '掩码'}）——留空保持不变`
+                  : '未配置'
             "
           />
         </label>
         <label v-if="config?.apiKeyConfigured" class="inline-option">
-          <input v-model="clearKey" type="checkbox" />
-          清除已保存的 API Key
+          <input
+            v-model="clearKey"
+            type="checkbox"
+            data-testid="clear-key"
+            @change="onClearToggle"
+          />
+          清除已保存的 API Key（与录入新密钥互斥）
         </label>
         <p v-if="config?.apiKeyStale" class="form-error" role="alert">
           已保存的密钥无法解密（服务端密钥可能已轮换），请重新录入。
