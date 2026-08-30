@@ -61,3 +61,23 @@ describe('api client（错误规范化 + 令牌注入 + 401 处理）', () => {
     expect(handler).toHaveBeenCalledOnce();
   });
 });
+
+describe('api client 空体与 FormData（PR #34 审查 P1 回归）', () => {
+  it('200 空体（裸 void 端点）归一为 undefined 不假失败', async () => {
+    const impl = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', impl);
+    await expect(
+      apiFetch('/issues/i1/comments', { method: 'POST', body: '{}' }),
+    ).resolves.toBeUndefined();
+    expect(impl).toHaveBeenCalledOnce();
+  });
+
+  it('FormData 体不手工设 Content-Type（浏览器生成 multipart 边界）', async () => {
+    const impl = mockFetch(200, {});
+    const form = new FormData();
+    form.append('file', new File(['zip'], 'p.zip', { type: 'application/zip' }));
+    await apiFetch('/plugins/import', { method: 'POST', body: form });
+    const [, init] = impl.mock.calls[0] as [string, RequestInit];
+    expect((init.headers as Headers).get('Content-Type')).toBeNull();
+  });
+});

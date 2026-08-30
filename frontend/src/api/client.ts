@@ -38,7 +38,8 @@ function buildHeaders(init?: RequestInit): Headers {
   if (session.token) {
     headers.set('Authorization', `Bearer ${session.token}`);
   }
-  if (init?.body != null) {
+  // FormData 由浏览器生成 multipart 边界，手工设 Content-Type 反而破坏上传（P15 插件包）
+  if (init?.body != null && !(init.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
   return headers;
@@ -68,8 +69,11 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   if (!response.ok) {
     throw await toApiError(response);
   }
-  if (response.status === 204) {
+  // 204 与 200 空体（裸 void 端点：评论/卸载等）统一归一 undefined；
+  // 空 text 先读再判，避免对空体 response.json() 抛 SyntaxError 假失败（PR #34 审查 P1）
+  const text = await response.text();
+  if (text === '') {
     return undefined as T;
   }
-  return (await response.json()) as T;
+  return JSON.parse(text) as T;
 }

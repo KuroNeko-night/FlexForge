@@ -17,6 +17,13 @@ export function registerBuiltinContributions(): void {
   }
   registered = true;
   registerWidget('workbench.entities', EntityCards);
+  // Issue 工作台入口（P15）：登录即可用（创建/评论/作者 clarify；迁移与生成服务端限 DEVELOPER）
+  registerMenu({
+    key: 'platform.issues',
+    title: 'Issue 工作台',
+    route: '/issues',
+    order: 20,
+  });
   // 插件管理入口（P12）：本地注册菜单，仅 ADMIN 可见（服务端 /plugins/inventory 为边界）
   registerMenu({
     key: 'platform.plugins',

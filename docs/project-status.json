@@ -1,13 +1,13 @@
 {
   "project": "FlexForge",
   "updatedAt": "2026-08-30",
-  "currentStageId": "P13",
-  "currentStageName": "加分项与体验优化",
-  "status": "completed",
-  "progressPercent": 100,
+  "currentStageId": "P15",
+  "currentStageName": "平台体验补全与插件生态演示",
+  "status": "in_progress",
+  "progressPercent": 92,
   "owner": "project-maintainer",
-  "nextAction": "【全阶段完成 P00-P14，项目维持 release_candidate】P13 出口 live 验证 2026-08-30（注册 200/重名 400/保留名 400/停启用 200→登录 401→恢复 200/主题聚合停用清零-激活恢复 4 资产）。后续=答辩准备（录屏/镜像预导入/演练，docs/14）与 Issue #22 余项按触发条件排期",
-  "exitGate": "P13 出口证据（docs/09 P13 验收四项）：①不改 P12 核心契约与迁移——三端点均 additive（register/registration-status/status），无新表；错误码仅增 rate_limited（additive）②开关关闭主流程可用——flagOff 用例（400+状态端点 false+前端隐藏入口断言）③已知限制如实登记——docs/13 §3.1-5/6/7（BLOCKED 存量令牌 TTL 窗口/反代聚合桶/有界枚举面/部署顺序）④三体验项交付实证——注册（live 200+token+USER 角色；重名/保留名 400；IP 限流 429 用例；接管防线单测+API 双路径）、停启用（live 停用→登录 401→恢复→重登 200；自停 400/非管理员 403/操作者须 ACTIVE）、热切换（live 聚合停用清零/激活恢复 4 资产签名 URL；前端路由 watch+差量撤销+陈旧响应守卫）。一轮子代理审查 0 P0/P1+3 P2+12 P3：P2 全修（失败路径审计/接管防线测试/保留名+部署顺序），P3 顺手修 9+记 Issue #22 #14-15。CI 第三次同族偶发已防御性加固+记录。后端 138/前端 76 tests、门禁 21/1/0、PR #33 六项 CI 全绿合并（e9a6118）",
+  "nextAction": "P15 迭代 1（分支 feat/p15-platform-experience）：Issue/AI 工作台前端（clarify 对话入口/迁移/规格/生成）+ 插件管理页写操作（导入/激活/停用/卸载）；随后迭代 2 设置页+AI 运行时配置（密钥加密不回显）、迭代 3 i18n+英文化插件+示例插件+登录/工作台品牌化",
+  "exitGate": "待积累（P15 验收五项见 docs/09 P15）",
   "blockers": [],
   "stages": [
     {
@@ -84,6 +84,11 @@
       "id": "P14",
       "name": "质量收敛与答辩交付",
       "status": "completed"
+    },
+    {
+      "id": "P15",
+      "name": "平台体验补全与插件生态演示",
+      "status": "in_progress"
     }
   ]
 }

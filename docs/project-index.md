@@ -56,13 +56,13 @@ FlexForge/
 │   ├── eslint.config.js / eslint.config.targets.js   硬上限 error / 建议目标 warn（P06 补浏览器 globals）
 │   └── src/
 │       ├── main.ts / App.vue / router.ts   路由壳（登录守卫体验跳转，安全边界在服务端 S2）
-│       ├── api/                    client（错误规范化/令牌注入/401 回调）+ auth/meta/data/plugins/system/theme 客户端 + 契约类型
+│       ├── api/                    client（错误规范化/令牌注入/401 回调，FormData multipart 不覆盖边界）+ auth/meta/data/plugins（清单+导入/激活/停用/卸载，P15）/issues（clarify/迁移/规格/生成，P15）/system/theme 客户端 + 契约类型
 │       ├── auth/token.ts           会话令牌（sessionStorage）与当前用户
-│       ├── registry/               keyed.ts 通用基座 + renderer/menu/layout/theme/recordAction registry + builtinContributions（内置部件/动作/本地菜单）
+│       ├── registry/               keyed.ts 通用基座 + renderer/menu/layout/theme/recordAction registry + builtinContributions（内置部件/动作/本地菜单：Issue 工作台+插件管理入口，P15）
 │       ├── styles/tokens.css       设计令牌与基建原语样式（P12.5：--ff-* 变量+组件类+过渡动画；主题插件覆盖变量即换肤）
-│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards + ui/（BaseButton/BaseSwitch/ComponentCard/BaseDrawer，P12.5）
+│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards + ui/（BaseButton/BaseSwitch/ComponentCard/BaseDrawer，P12.5）+ IssueDetail/IssueDevPanel（AI 对话+开发者面板）+ PluginCard（激活/停用/卸载+诊断，P15）
 │       ├── composables/            useEntityMetadata（metaVersion 比对 → stale 刷新）
-│       └── views/                  Login/Workbench/Home/DynamicEntity（列表/详情/新建/编辑）/Plugins（清单只读，P12）/Users（用户管理，P12.5）/Placeholder
+│       └── views/                  Login/Workbench/Home/DynamicEntity（列表/详情/新建/编辑）/Issues（Issue 工作台+创建抽屉，P15）/Plugins（清单+写操作，P15）/Users（用户管理，P12.5）/Placeholder
 ├── database/
 │   ├── migrations/V001__init.sql   平台骨架表（sys_user/sys_role/sys_user_role）
 │   ├── migrations/V002-004         V002 审计表 / V003 角色种子 / V004 meta_entity+meta_field+meta_view（P04）
@@ -240,3 +240,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-29 | §1 树更新：scripts +demo-e2e.sh（五场景演示+计时；顺带回填 P09/P11 遗漏的 demo-example-inventory.sh 与 export-thesis-data.mjs 两行）；frontend api +plugins.ts、views +PluginsView、router +/plugins、builtinContributions +本地菜单；app 测试 +AgentIssueE2eTest/E2eDemoScript | P12：Agent Issue 端到端闭环（RB-E2E + 插件页，docs/12 §"端到端演示各环节耗时"数据源落地） |
 | 2026-08-29 | §1 树/文档地图 +docs/14-defense-delivery-guide.md（答辩运行手册：启动/账号/演示/三保险/排障/清理），docs/05 索引同步登记 | P14 迭代 2：答辩交付固化（docs/09 P14"故障排查手册/演示账号/三保险"落位） |
 | 2026-08-30 | §1 树更新：plugins +theme-default/theme-warm（P12.5 主题包）；frontend +styles/tokens.css、components/ui/ 四组件、views +Users、api +system/theme；backend plugins 聚合端点 theme-assets + kind=tokens；app 测试 +ThemeAssetApiTest | P12.5：前端基建与默认主题（用户裁决新增阶段，三缺陷修复+组件库+换肤通道闭环） |
+| 2026-08-30 | §1 树更新：frontend api +issues.ts、plugins.ts 扩写操作（multipart FormData）；views +Issues、components +IssueDetail/IssueDevPanel/PluginCard；router +/issues、builtinContributions +Issue 工作台菜单 | P15 迭代 1：Issue/AI 工作台前端（clarify 对话入口/迁移/规格/生成消费面）+ 插件管理页写操作（导入/激活/停用/卸载） |
