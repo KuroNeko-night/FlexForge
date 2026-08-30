@@ -34,3 +34,11 @@ export function assignRoles(userId: number, roles: string[]): Promise<SystemUser
     body: JSON.stringify({ roles }),
   });
 }
+
+/** 账号停启用（P13）：status ∈ ACTIVE/BLOCKED；后端拒绝操作自己。 */
+export function updateStatus(userId: number, status: 'ACTIVE' | 'BLOCKED'): Promise<SystemUser> {
+  return apiFetch<SystemUser>(`/system/users/${userId}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status }),
+  });
+}

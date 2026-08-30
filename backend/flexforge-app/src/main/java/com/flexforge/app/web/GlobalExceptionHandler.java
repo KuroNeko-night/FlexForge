@@ -115,6 +115,14 @@ public class GlobalExceptionHandler {
         return envelope(HttpStatus.UNAUTHORIZED, ErrorCodes.UNAUTHORIZED, exception.getMessage());
     }
 
+    /** 自助注册触发 IP 限流（P13，docs/13 §3.1）：窗口后自动恢复，无需人工干预。 */
+    @ExceptionHandler(com.flexforge.auth.RegisterRateLimitedException.class)
+    public ResponseEntity<ErrorResponse> handleRegisterRateLimited(
+            com.flexforge.auth.RegisterRateLimitedException exception) {
+        return envelope(HttpStatus.TOO_MANY_REQUESTS, ErrorCodes.RATE_LIMITED,
+                exception.getMessage());
+    }
+
     /** 服务端角色授权拒绝（S2：@RequireRole 拦截器统一抛出）。 */
     @ExceptionHandler(PermissionDeniedException.class)
     public ResponseEntity<ErrorResponse> handlePermissionDenied(PermissionDeniedException exception) {

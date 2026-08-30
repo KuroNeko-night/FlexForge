@@ -140,7 +140,11 @@ class PluginActivationApiTest {
     // ===== §5-4 同一版本重复安装返回同一结果；卸载后重导入回到 imported =====
     @Test
     void repeatedActivationIsIdempotent() throws Exception {
-        String first = importAndActivate(mockMvc, adminBearer, "life.two", "1.0.0");
+        // 同一字节数组贯穿全程（重导入命中同 contentHash 走幂等路径，不依赖 zip 重建的哈希稳定）
+        byte[] pkg = PluginPackageTestSupport.pluginZip("life.two", "1.0.0",
+                PluginPackageTestSupport.defaultBody("life_two_item", "life_two_item"));
+        String first = JsonPath.read(PluginPackageTestSupport.activate(mockMvc, adminBearer,
+                PluginPackageTestSupport.importVersion(mockMvc, adminBearer, pkg)), "$.id");
         String versionId = jdbc.queryForObject(
                 "SELECT id FROM plugin_version WHERE plugin_id = 'life.two' AND version = '1.0.0'",
                 String.class);
@@ -157,8 +161,7 @@ class PluginActivationApiTest {
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/plugins/life.two")
                         .header("Authorization", adminBearer))
                 .andExpect(status().isOk());
-        importVersion(mockMvc, adminBearer, "life.two", "1.0.0",
-                defaultBody("life_two_item", "life_two_item"));
+        PluginPackageTestSupport.importVersion(mockMvc, adminBearer, pkg);
         String reimported = jdbc.queryForObject(
                 "SELECT status FROM plugin_instance WHERE plugin_id = 'life.two'",
                 String.class);

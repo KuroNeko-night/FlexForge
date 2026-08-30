@@ -26,6 +26,10 @@ flexforge:
     # 引导管理员：仅 sys_user 为空且显式提供密码且提供时创建（S4：密码不落仓库）
     bootstrap-admin-username: ${FLEXFORGE_BOOTSTRAP_ADMIN_USERNAME:admin}
     bootstrap-admin-password: ${FLEXFORGE_BOOTSTRAP_ADMIN_PASSWORD:}
+    # P13 自助注册（docs/13 §3.1-5；开关=feature flag，限流为单 IP 内存口径）
+    self-registration-enabled: ${FLEXFORGE_AUTH_SELFREGISTRATIONENABLED:true}
+    register-rate-limit: ${FLEXFORGE_AUTH_REGISTERRATELIMIT:5}
+    register-rate-window: ${FLEXFORGE_AUTH_REGISTERRATEWINDOW:1h}
 
 management:
   endpoints:

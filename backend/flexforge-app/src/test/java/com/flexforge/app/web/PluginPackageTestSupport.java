@@ -83,6 +83,18 @@ final class PluginPackageTestSupport {
                 + " data JSONB NOT NULL DEFAULT '{}');";
     }
 
+    /** 导入指定字节包（幂等重导入路径用：同一数组贯穿全程，不重建 zip 引入哈希漂移）。 */
+    static String importVersion(MockMvc mockMvc, String bearer, byte[] zipBytes) throws Exception {
+        String importBody = mockMvc.perform(
+                        MockMvcRequestBuilders.multipart("/api/v1/plugins/import")
+                                .file(new MockMultipartFile("file", "pkg.zip", "application/zip",
+                                        zipBytes))
+                                .header("Authorization", bearer))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        return JsonPath.read(importBody, "$.versionId");
+    }
+
     /** 导入包并返回 versionId。 */
     static String importVersion(MockMvc mockMvc, String bearer, String pluginId, String version,
                                 PackageBody body) throws Exception {

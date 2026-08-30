@@ -37,6 +37,10 @@ public class SystemUserController {
     public record UpdateRolesRequest(List<String> roles) {
     }
 
+    /** 账号状态更新（P13 停启用）：status ∈ ACTIVE/BLOCKED，不可操作自己。 */
+    public record UpdateStatusRequest(String status) {
+    }
+
     public record UserView(long id, String username, String displayName, String status,
                            List<String> roles) {
     }
@@ -61,6 +65,15 @@ public class SystemUserController {
     public UserView assignRoles(@RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
                                 @PathVariable long id, @RequestBody UpdateRolesRequest request) {
         UserAdminRecord updated = userAdminService.assignRoles(principal.userId(), id, request.roles());
+        return toView(updated);
+    }
+
+    @PutMapping("/{id}/status")
+    @RequireRole(Roles.ADMIN)
+    public UserView updateStatus(@RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
+                                 @PathVariable long id, @RequestBody UpdateStatusRequest request) {
+        UserAdminRecord updated = userAdminService.updateStatus(principal.userId(), id,
+                request.status());
         return toView(updated);
     }
 

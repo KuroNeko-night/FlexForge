@@ -1,21 +1,26 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 import { ApiError } from '@/api/client';
-import { assignRoles, createUser, listUsers, type SystemUser } from '@/api/system';
+import { assignRoles, createUser, listUsers, updateStatus, type SystemUser } from '@/api/system';
+import { session } from '@/auth/token';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseDrawer from '@/components/ui/BaseDrawer.vue';
+import BaseSwitch from '@/components/ui/BaseSwitch.vue';
 import StateView from '@/components/StateView.vue';
 
 /**
- * 系统管理：用户管理页（docs/09 P12.5 缺陷③：演示账号外的账号获取路径）。
- * 消费 P03 后端 API（list/create/roles，ADMIN）；基建组件构成交互（抽屉表单）。
+ * 系统管理：用户管理页（docs/09 P12.5 缺陷③ + P13 停启用）。
+ * 消费 P03/P13 后端 API（list/create/roles/status，ADMIN）；基建组件构成交互。
  */
 const ROLE_OPTIONS = ['ADMIN', 'DEVELOPER', 'USER'] as const;
 
 const users = ref<SystemUser[]>([]);
 const state = ref<'loading' | 'ready' | 'error' | 'denied' | 'empty'>('loading');
 const error = ref<string | null>(null);
+const statusError = ref<string | null>(null);
+const statusPending = ref<number | null>(null);
+const selfId = computed(() => session.user?.id ?? null);
 
 const drawerOpen = ref(false);
 const creating = ref(false);
@@ -77,6 +82,24 @@ async function submitCreate(): Promise<void> {
   }
 }
 
+/** 停启用切换（P13）：受控更新（等服务端返回再改行）+失败保留原值+页面级错误提示；自己那行禁用（后端亦有守卫）。 */
+async function toggleStatus(user: SystemUser): Promise<void> {
+  if (statusPending.value !== null || user.id === selfId.value) {
+    return;
+  }
+  const target = user.status === 'ACTIVE' ? 'BLOCKED' : 'ACTIVE';
+  statusPending.value = user.id;
+  statusError.value = null;
+  try {
+    const updated = await updateStatus(user.id, target);
+    users.value = users.value.map((u) => (u.id === updated.id ? updated : u));
+  } catch (e) {
+    statusError.value = e instanceof ApiError ? e.message : '状态更新失败，请稍后重试';
+  } finally {
+    statusPending.value = null;
+  }
+}
+
 async function submitRoles(): Promise<void> {
   const draft = rolesDraft.value;
   // P2（PR #32 审查）：空角色后端必拒——保存按钮禁用 + 兜底提示，失败留在抽屉内
@@ -121,7 +144,14 @@ onMounted(load);
           <td>{{ user.username }}</td>
           <td>{{ user.displayName }}</td>
           <td>{{ user.roles.join('、') || '—' }}</td>
-          <td>{{ user.status }}</td>
+          <td>
+            <BaseSwitch
+              :model-value="user.status === 'ACTIVE'"
+              :disabled="user.id === selfId || statusPending === user.id"
+              :label="user.status === 'ACTIVE' ? '启用' : '停用'"
+              @update:model-value="toggleStatus(user)"
+            />
+          </td>
           <td>
             <BaseButton size="sm" @click="rolesDraft = { user, roles: [...user.roles] }">
               角色
@@ -130,6 +160,7 @@ onMounted(load);
         </tr>
       </tbody>
     </table>
+    <p v-if="statusError" class="form-error" role="alert">{{ statusError }}</p>
 
     <BaseDrawer :open="drawerOpen" title="新建用户" @close="drawerOpen = false">
       <form class="user-form" @submit.prevent="submitCreate">

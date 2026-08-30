@@ -1,12 +1,12 @@
 {
   "project": "FlexForge",
   "updatedAt": "2026-08-30",
-  "currentStageId": "P12.5",
-  "currentStageName": "前端基建与默认主题",
-  "status": "completed",
+  "currentStageId": "P13",
+  "currentStageName": "加分项与体验优化",
+  "status": "in_progress",
   "progressPercent": 65,
   "owner": "project-maintainer",
-  "nextAction": "【项目恢复 release_candidate】P12.5 出口复核通过（live 证据见 EXIT_GATE）。后续可选：P13 加分项（含自助注册/账号停启用/主题热切换等裁剪项，默认不做）、答辩录屏与镜像预导入（docs/14 §4）、Issue #22 余项按触发条件排期",
+  "nextAction": "P13 实施（分支 feat/p13-ux-polish，用户裁决范围=三体验项）：自助注册（开关+IP 限流+注册即登录）→ 账号停启用（status 端点+自停守卫+开关组件）→ 主题热切换（路由切换重拉+差量撤销）→ 审查 → PR → 出口",
   "exitGate": "P12.5 出口证据（docs/09 P12.5 验收四项）：①三缺陷关闭——菜单路由对齐（/workbench→home、/system/users→UsersView 用户管理页，ADMIN 可建号=演示账号外账号获取路径；自助注册按 docs/13 边界记 P13）、EntityCards 只渲染 enabled（特权全量列表不再产出 404 入口，负例测试）②组件库有渲染测试——ui.test.ts 6 例+WorkbenchView 桥接 2 例+UsersView 4 例+EntityCards 3 例③主题插件闭环——不装主题=骨架朴素（R-GOV-09 零硬编码）；安装后完整呈现（live：theme.default 激活→GET /plugins/theme-assets 下发 4 声明含签名 serveUrl→匿名 fetch tokens 200→壳层注入 --ff-*；ThemeAssetApiTest 3 例含篡改/无签名 401）；停用卸载恢复基线（聚合为空断言）④插件 B 覆盖 A——theme-warm 同名 tokens 后应用者胜（registry 测试）+键白名单防 --ff-theme-* 外链注入（负例）。审查：一轮子代理 1 P1+1 P2+7 P3 全修（P1=签名 URL 架构：HMAC 域分隔复用 JWT 密钥+TTL 对齐+filter 仅资产路径匿名放行+registrations 不放宽；掩蔽根因无 loadTheme 测试同修）。后端 130 tests、前端 70 tests、门禁 21/1/0、PR #32 CI 六项全绿合并（45db0af）、live 通道验证 2026-08-30（P14 的 release_candidate 状态随之恢复）",
   "blockers": [],
   "stages": [
@@ -78,7 +78,7 @@
     {
       "id": "P13",
       "name": "加分项与体验优化",
-      "status": "optional"
+      "status": "in_progress"
     },
     {
       "id": "P14",

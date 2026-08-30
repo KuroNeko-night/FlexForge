@@ -78,6 +78,24 @@ export function revokeThemeAssetsByActivation(activationId: string): number {
 }
 
 /**
+ * P13 主题热切换：以最新聚合为准差量撤销——不在 activeIds 中的激活，其资产注册
+ * 与 tokens 覆盖一并清除（停用/卸载主题插件后免整页刷新即恢复基线）。
+ */
+export function syncRemovedActivations(activeIds: string[]): void {
+  const alive = new Set(activeIds);
+  for (const { activationId } of registry.list()) {
+    if (activationId && !alive.has(activationId)) {
+      revokeThemeAssetsByActivation(activationId);
+    }
+  }
+  for (const activationId of Object.keys(tokenOverrides.value)) {
+    if (!alive.has(activationId)) {
+      revokeThemeAssetsByActivation(activationId);
+    }
+  }
+}
+
+/**
  * P12.5 tokens 通道：kind=tokens 的 JSON 键值表覆盖 --ff-* 设计令牌。
  * 键白名单 ^--ff-(?!theme-)[a-z0-9-]+$（仅平台设计令牌；--ff-theme-* 资产变量
  * 除外——防 tokens 值注入 url() 外链绕过资产通道的拒绝外链纵深，PR #32 审查 P3）；
