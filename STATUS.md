@@ -5,12 +5,12 @@
 <!-- FLEXFORGE_STATUS:BEGIN -->
 CURRENT_STAGE_ID: P13
 CURRENT_STAGE_NAME: 加分项与体验优化
-STAGE_STATUS: in_progress
-PROJECT_PROGRESS: 65%
+STAGE_STATUS: completed
+PROJECT_PROGRESS: 100%
 LAST_UPDATED: 2026-08-30
 OWNER: project-maintainer
-NEXT_ACTION: P13 实施（分支 feat/p13-ux-polish，用户裁决范围=三体验项）：自助注册（开关+IP 限流+注册即登录）→ 账号停启用（status 端点+自停守卫+开关组件）→ 主题热切换（路由切换重拉+差量撤销）→ 审查 → PR → 出口
-EXIT_GATE: P12.5 出口证据（docs/09 P12.5 验收四项）：①三缺陷关闭——菜单路由对齐（/workbench→home、/system/users→UsersView 用户管理页，ADMIN 可建号=演示账号外账号获取路径；自助注册按 docs/13 边界记 P13）、EntityCards 只渲染 enabled（特权全量列表不再产出 404 入口，负例测试）②组件库有渲染测试——ui.test.ts 6 例+WorkbenchView 桥接 2 例+UsersView 4 例+EntityCards 3 例③主题插件闭环——不装主题=骨架朴素（R-GOV-09 零硬编码）；安装后完整呈现（live：theme.default 激活→GET /plugins/theme-assets 下发 4 声明含签名 serveUrl→匿名 fetch tokens 200→壳层注入 --ff-*；ThemeAssetApiTest 3 例含篡改/无签名 401）；停用卸载恢复基线（聚合为空断言）④插件 B 覆盖 A——theme-warm 同名 tokens 后应用者胜（registry 测试）+键白名单防 --ff-theme-* 外链注入（负例）。审查：一轮子代理 1 P1+1 P2+7 P3 全修（P1=签名 URL 架构：HMAC 域分隔复用 JWT 密钥+TTL 对齐+filter 仅资产路径匿名放行+registrations 不放宽；掩蔽根因无 loadTheme 测试同修）。后端 130 tests、前端 70 tests、门禁 21/1/0、PR #32 CI 六项全绿合并（45db0af）、live 通道验证 2026-08-30（P14 的 release_candidate 状态随之恢复）
+NEXT_ACTION: 【全阶段完成 P00-P14，项目维持 release_candidate】P13 出口 live 验证 2026-08-30（注册 200/重名 400/保留名 400/停启用 200→登录 401→恢复 200/主题聚合停用清零-激活恢复 4 资产）。后续=答辩准备（录屏/镜像预导入/演练，docs/14）与 Issue #22 余项按触发条件排期
+EXIT_GATE: P13 出口证据（docs/09 P13 验收四项）：①不改 P12 核心契约与迁移——三端点均 additive（register/registration-status/status），无新表；错误码仅增 rate_limited（additive）②开关关闭主流程可用——flagOff 用例（400+状态端点 false+前端隐藏入口断言）③已知限制如实登记——docs/13 §3.1-5/6/7（BLOCKED 存量令牌 TTL 窗口/反代聚合桶/有界枚举面/部署顺序）④三体验项交付实证——注册（live 200+token+USER 角色；重名/保留名 400；IP 限流 429 用例；接管防线单测+API 双路径）、停启用（live 停用→登录 401→恢复→重登 200；自停 400/非管理员 403/操作者须 ACTIVE）、热切换（live 聚合停用清零/激活恢复 4 资产签名 URL；前端路由 watch+差量撤销+陈旧响应守卫）。一轮子代理审查 0 P0/P1+3 P2+12 P3：P2 全修（失败路径审计/接管防线测试/保留名+部署顺序），P3 顺手修 9+记 Issue #22 #14-15。CI 第三次同族偶发已防御性加固+记录。后端 138/前端 76 tests、门禁 21/1/0、PR #33 六项 CI 全绿合并（e9a6118）
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -32,7 +32,7 @@ BLOCKERS: none
 | P11 | AI 适配器与生成器 | completed | 在线/fixture/手工三条路径可用 |
 | P12 | Agent Issue 端到端闭环 | completed | 干净数据库连续三次完成主流程（RB-E2E 三轮全绿，见前 EXIT_GATE 记录） |
 | P12.5 | 前端基建与默认主题 | completed | 三缺陷关闭+组件/动画/排版基建+SVG 主题插件可安装可被其他插件覆盖（live 验证见 EXIT_GATE） |
-| P13 | 加分项与体验优化 | in_progress | 三体验项交付且开关关闭主线无影响（2026-08-30 用户裁决改写范围） |
+| P13 | 加分项与体验优化 | completed | 三体验项交付+开关关闭主线无影响（live 验证见 EXIT_GATE） |
 | P14 | 质量收敛与答辩交付 | completed | 全量验收通过，进入 release_candidate（见 NEXT_ACTION 验证时间） |
 
 ## 更新规则
@@ -146,3 +146,4 @@ BLOCKERS: none
 | 2026-08-30 | P13 | 实施（用户裁决范围=三体验项，docs/09 P13 已改写）：①**自助注册**——POST /auth/register（匿名；AuthProperties 开关默认开+单 IP 滑动窗口限流 5/h 内存口径不采信 XFF+同款用户名/口令校验；重名**双重防线**：服务层显式拒绝+插入后哈希复核，堵住幂等插入并发窗口的账号接管漏洞——测试先行发现）；注册成功即签发令牌+auth.register 审计；GET /auth/registration-status 供前端 feature flag 消费（关闭隐藏入口）；LoginView 登录/注册双模式②**账号停启用**——PUT /system/users/{id}/status（ADMIN/不可自停/两态白名单）；BLOCKED 拒新登录（既有 user.active()）；UsersView 状态列 BaseSwitch（自停禁用+行级错误不毁页）③**主题热切换**——themeRegistry syncRemovedActivations 差量撤销+WorkbenchView 路由切换重拉聚合（停用主题免刷新恢复基线）。测试：RegisterAndStatusApiTest 5（含 429 限流/接管回归/自停 400/非管理员 403）+前端 LoginView 3/UsersView 状态 2/热切换 1=75 全绿；docs/13 §3.1 补第 5/6 条；compose/.env.example 开关链 | `RegisterAndStatusApiTest`、docs/13 §3.1、docs/09 P13 |
 | 2026-08-30 | P13 | PR #33 独立子代理审查：0 P0/P1 + 3 P2 + 12 P3——P2-1 注册失败路径零审计（含接管阻断不可追溯）→限流触发与哈希复核失败均补 auth.register failure 审计（tryAcquire 改布尔判定，异常抛出与审计归 AuthService）；P2-2 接管防线零测试覆盖 → AuthServiceTakeoverGuardTest 2 例（Mockito stub 并发时序：插入被吞+他人哈希→拒绝且 never issue+failure 审计；正向对照不误伤）；P2-3 空库抢注毒化引导管理员→保留名拒绝（register 拒 bootstrapAdminUsername 同名+API 级用例）+docs/13 部署顺序约定+.env.example 注释。P3 顺手修 9 项：交叉引用第 7 条/LoginView pattern 仅注册模式/限流用例独立 IP（隔离单例泄漏）/审计 result 词表归 success/operator 须 ACTIVE（BLOCKED 管理员互停纵深）/UsersView 注释对齐受控更新/loadTheme 序号守卫丢陈旧响应+热切换桥接测试（掩蔽同型缺口）/themeRegistry 测试补资产撤销断言/javadoc 与不可达 catch 注明/yml 三行登记。P3 记 Issue #22：限流 Map 无回收+反代聚合桶已文档化（#14-15）。后端 138+前端 76 tests、门禁 21/1/0 | PR #33 评论、Issue #22 #14-15 |
 | 2026-08-30 | P13 | CI 第三次同族偶发：后端作业 repeatedActivationIsIdempotent 单例 400（本地三类运行含全量 verify 138 全绿不可复现；与 2026-08-29 两次 runner 偶发同族，Issue #22 #13 跟踪）。防御性加固：该用例重导入改同一字节数组贯穿（新增 3 参 importVersion 重载），彻底消除 zip 重建哈希漂移的可能性 | Issue #22 #13 |
+| 2026-08-30 | P13 | **P13 出口复核通过，置 completed；P00-P14 全阶段完成，进度 100%，项目维持 release_candidate**。live 验证链（新后端镜像）：注册 200（token+USER 角色）/重名 400/保留名 admin 400/限流 429（用例）；停用 200→登录 401→恢复 200→重登 200；主题聚合停用清零/重新激活恢复 4 资产（签名 URL）——前端路由切换自动重拉（热切换）。后端 138+前端 76 tests、门禁 21/1/0、PR #33 合并（e9a6118） | docs/09 P13 验收、PR #33、live 验证 2026-08-30 |

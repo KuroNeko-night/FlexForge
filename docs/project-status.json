@@ -3,11 +3,11 @@
   "updatedAt": "2026-08-30",
   "currentStageId": "P13",
   "currentStageName": "加分项与体验优化",
-  "status": "in_progress",
-  "progressPercent": 65,
+  "status": "completed",
+  "progressPercent": 100,
   "owner": "project-maintainer",
-  "nextAction": "P13 实施（分支 feat/p13-ux-polish，用户裁决范围=三体验项）：自助注册（开关+IP 限流+注册即登录）→ 账号停启用（status 端点+自停守卫+开关组件）→ 主题热切换（路由切换重拉+差量撤销）→ 审查 → PR → 出口",
-  "exitGate": "P12.5 出口证据（docs/09 P12.5 验收四项）：①三缺陷关闭——菜单路由对齐（/workbench→home、/system/users→UsersView 用户管理页，ADMIN 可建号=演示账号外账号获取路径；自助注册按 docs/13 边界记 P13）、EntityCards 只渲染 enabled（特权全量列表不再产出 404 入口，负例测试）②组件库有渲染测试——ui.test.ts 6 例+WorkbenchView 桥接 2 例+UsersView 4 例+EntityCards 3 例③主题插件闭环——不装主题=骨架朴素（R-GOV-09 零硬编码）；安装后完整呈现（live：theme.default 激活→GET /plugins/theme-assets 下发 4 声明含签名 serveUrl→匿名 fetch tokens 200→壳层注入 --ff-*；ThemeAssetApiTest 3 例含篡改/无签名 401）；停用卸载恢复基线（聚合为空断言）④插件 B 覆盖 A——theme-warm 同名 tokens 后应用者胜（registry 测试）+键白名单防 --ff-theme-* 外链注入（负例）。审查：一轮子代理 1 P1+1 P2+7 P3 全修（P1=签名 URL 架构：HMAC 域分隔复用 JWT 密钥+TTL 对齐+filter 仅资产路径匿名放行+registrations 不放宽；掩蔽根因无 loadTheme 测试同修）。后端 130 tests、前端 70 tests、门禁 21/1/0、PR #32 CI 六项全绿合并（45db0af）、live 通道验证 2026-08-30（P14 的 release_candidate 状态随之恢复）",
+  "nextAction": "【全阶段完成 P00-P14，项目维持 release_candidate】P13 出口 live 验证 2026-08-30（注册 200/重名 400/保留名 400/停启用 200→登录 401→恢复 200/主题聚合停用清零-激活恢复 4 资产）。后续=答辩准备（录屏/镜像预导入/演练，docs/14）与 Issue #22 余项按触发条件排期",
+  "exitGate": "P13 出口证据（docs/09 P13 验收四项）：①不改 P12 核心契约与迁移——三端点均 additive（register/registration-status/status），无新表；错误码仅增 rate_limited（additive）②开关关闭主流程可用——flagOff 用例（400+状态端点 false+前端隐藏入口断言）③已知限制如实登记——docs/13 §3.1-5/6/7（BLOCKED 存量令牌 TTL 窗口/反代聚合桶/有界枚举面/部署顺序）④三体验项交付实证——注册（live 200+token+USER 角色；重名/保留名 400；IP 限流 429 用例；接管防线单测+API 双路径）、停启用（live 停用→登录 401→恢复→重登 200；自停 400/非管理员 403/操作者须 ACTIVE）、热切换（live 聚合停用清零/激活恢复 4 资产签名 URL；前端路由 watch+差量撤销+陈旧响应守卫）。一轮子代理审查 0 P0/P1+3 P2+12 P3：P2 全修（失败路径审计/接管防线测试/保留名+部署顺序），P3 顺手修 9+记 Issue #22 #14-15。CI 第三次同族偶发已防御性加固+记录。后端 138/前端 76 tests、门禁 21/1/0、PR #33 六项 CI 全绿合并（e9a6118）",
   "blockers": [],
   "stages": [
     {
@@ -78,7 +78,7 @@
     {
       "id": "P13",
       "name": "加分项与体验优化",
-      "status": "in_progress"
+      "status": "completed"
     },
     {
       "id": "P14",
