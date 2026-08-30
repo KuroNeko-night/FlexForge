@@ -108,8 +108,10 @@ describe('theme registry：P13 热切换差量撤销', () => {
     registerThemeAsset({ key: 't.hot', kind: 'background', path: '/api/x' }, 'act-hot');
     applyTokenOverrides('act-hot', { '--ff-primary': '#111111' });
     expect(themeStyle().value['--ff-primary']).toBe('#111111');
-    // 聚合中不再有 act-hot → 全部撤销，恢复基线
+    expect(resolveThemeAsset('background').value?.path).toBe('/api/x');
+    // 聚合中不再有 act-hot → 资产与 tokens 全部撤销，恢复基线
     syncRemovedActivations(['act-other']);
     expect(themeStyle().value['--ff-primary']).toBeUndefined();
+    expect(resolveThemeAsset('background').value).toBeNull();
   });
 });

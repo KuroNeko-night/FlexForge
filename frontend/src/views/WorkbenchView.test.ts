@@ -1,12 +1,15 @@
 // @vitest-environment happy-dom
 import { flushPromises, mount } from '@vue/test-utils';
+import { reactive } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const pushMock = vi.fn();
+// 路由 mock 需可变：热切换 watch 依赖 route.path 变化（P13）
+const routeMock = reactive({ path: '/' });
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: pushMock }),
-  useRoute: () => ({ path: '/' }),
+  useRoute: () => routeMock,
 }));
 vi.mock('@/api/meta', () => ({ fetchMenus: vi.fn() }));
 vi.mock('@/api/auth', () => ({ fetchMe: vi.fn(), logout: vi.fn() }));
@@ -23,13 +26,19 @@ vi.mock('@/registry/themeRegistry', () => ({
 
 import { fetchMenus } from '@/api/meta';
 import { fetchActiveThemeAssets, type ActiveThemeAsset } from '@/api/theme';
-import { applyTokenOverrides, registerThemeAsset } from '@/registry/themeRegistry';
+import { session } from '@/auth/token';
+import {
+  applyTokenOverrides,
+  registerThemeAsset,
+  syncRemovedActivations,
+} from '@/registry/themeRegistry';
 import WorkbenchView from '@/views/WorkbenchView.vue';
 
 const menusMock = vi.mocked(fetchMenus);
 const themeMock = vi.mocked(fetchActiveThemeAssets);
 const registerMock = vi.mocked(registerThemeAsset);
 const tokensMock = vi.mocked(applyTokenOverrides);
+const syncMock = vi.mocked(syncRemovedActivations);
 
 const themeAsset = (key: string, kind: ActiveThemeAsset['kind'], file: string): ActiveThemeAsset =>
   ({
@@ -46,14 +55,18 @@ const themeAsset = (key: string, kind: ActiveThemeAsset['kind'], file: string): 
  * 壳层主题桥接（PR #32 审查 P1 的测试掩蔽修复）：聚合拉取→资产注册签名 URL、
  * tokens 取回 JSON 应用；聚合失败静默不破壳。
  */
+function resetMocks() {
+  menusMock.mockReset();
+  themeMock.mockReset();
+  registerMock.mockReset();
+  tokensMock.mockReset();
+  syncMock.mockReset();
+  routeMock.path = '/';
+  menusMock.mockResolvedValue([{ key: 'workbench', title: '工作台', route: '/workbench' }]);
+}
+
 describe('WorkbenchView 主题桥接（P12.5）', () => {
-  beforeEach(() => {
-    menusMock.mockReset();
-    themeMock.mockReset();
-    registerMock.mockReset();
-    tokensMock.mockReset();
-    menusMock.mockResolvedValue([{ key: 'workbench', title: '工作台', route: '/workbench' }]);
-  });
+  beforeEach(resetMocks);
 
   it('资产注册签名 serveUrl，tokens 取回 JSON 应用', async () => {
     themeMock.mockResolvedValue([
@@ -64,8 +77,9 @@ describe('WorkbenchView 主题桥接（P12.5）', () => {
       ok: true,
       json: async () => ({ '--ff-primary': '#123456' }),
     });
-    mount(WorkbenchView, { global: { stubs: { RouterView: true } } });
+    const wrapper = mount(WorkbenchView, { global: { stubs: { RouterView: true } } });
     await flushPromises();
+    wrapper.unmount();
     expect(registerMock).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'background', path: expect.stringContaining('sig=') }),
       'a1',
@@ -79,5 +93,28 @@ describe('WorkbenchView 主题桥接（P12.5）', () => {
     await flushPromises();
     expect(wrapper.text()).toContain('工作台');
     expect(registerMock).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+});
+
+describe('WorkbenchView 热切换（P13）', () => {
+  beforeEach(resetMocks);
+
+  it('路由变化重拉聚合并差量撤销（watch 桥接）', async () => {
+    session.token = 'tk-hot';
+    themeMock.mockResolvedValue([themeAsset('k1', 'background', 'bg.svg')]);
+    try {
+      const wrapper = mount(WorkbenchView, { global: { stubs: { RouterView: true } } });
+      await flushPromises();
+      expect(themeMock).toHaveBeenCalledTimes(1);
+      expect(syncMock).toHaveBeenCalledWith(['a1']);
+      routeMock.path = '/data/some_entity';
+      await flushPromises();
+      expect(themeMock).toHaveBeenCalledTimes(2);
+      expect(syncMock).toHaveBeenCalledTimes(2);
+      wrapper.unmount();
+    } finally {
+      session.token = null;
+    }
   });
 });

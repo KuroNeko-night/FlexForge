@@ -63,7 +63,7 @@ public class JdbcUserRepository {
         return count == null ? 0 : count;
     }
 
-    /** 引导管理员（仅空库且显式提供密码时调用，AdminBootstrap 控制）。 */
+    /** 幂等建号（ON CONFLICT DO NOTHING+角色补插）：AdminBootstrap 空库引导与 P13 自助注册共用。 */
     public void insertUserWithRoles(String username, String passwordHash, String displayName,
                                     List<String> roleCodes) {
         jdbc.update("INSERT INTO sys_user (username, password_hash, display_name) VALUES (?, ?, ?)"

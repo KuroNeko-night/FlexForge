@@ -60,7 +60,7 @@ function switchMode(target: 'login' | 'register'): void {
           v-model="username"
           name="username"
           autocomplete="username"
-          pattern="[a-z0-9_-]{3,32}"
+          :pattern="mode === 'register' ? '[a-z0-9_-]{3,32}' : undefined"
           title="3-32 位小写字母/数字/下划线/连字符"
           required
         />

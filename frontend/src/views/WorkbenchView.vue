@@ -32,10 +32,16 @@ const menus = ref<MenuItem[]>([]);
 const state = ref<'loading' | 'ready' | 'error' | 'denied'>('loading');
 const error = ref<string | null>(null);
 const shellTheme = themeStyle();
+// P13 热切换竞态守卫：快速连续导航时丢弃陈旧完成（旧响应后到不得复活已撤销主题）
+let themeSeq = 0;
 
 async function loadTheme(): Promise<void> {
+  const seq = ++themeSeq;
   try {
     const assets = await fetchActiveThemeAssets();
+    if (seq !== themeSeq) {
+      return;
+    }
     syncRemovedActivations(assets.map((asset) => asset.activationId));
     for (const asset of assets) {
       // 单个资产失败只跳过自身（PR #32 审查 P3）：坏包不阻断后续合法主题资产
@@ -45,6 +51,9 @@ async function loadTheme(): Promise<void> {
           const response = await fetch(asset.serveUrl, {
             headers: { Accept: 'application/json' },
           });
+          if (seq !== themeSeq) {
+            return;
+          }
           if (response.ok) {
             applyTokenOverrides(asset.activationId, await response.json());
           }

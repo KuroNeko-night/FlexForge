@@ -102,15 +102,26 @@ public class AuthService {
 
     /**
      * 自助注册（P13，docs/09 P13）：开关 + IP 限流 + 同款口令/用户名策略；
-     * 默认 USER 角色；成功即签发令牌（等价登录，避免二次明文提交）。审计 auth.register。
+     * 默认 USER 角色；成功即签发令牌（等价登录，避免二次明文提交）。审计 auth.register：
+     * success=建号成功；failure=限流触发或并发重名接管阻断（PR #33 审查 P2-1：
+     * 安全关键失败路径必须可追溯，对齐 login 全路径审计口径）。
      */
     public LoginResult register(String username, String password, String displayName,
                                 String clientIp) {
         if (!kernel.properties().isSelfRegistrationEnabled()) {
             throw new IllegalArgumentException("自助注册未开放");
         }
-        rateLimiter.check(clientIp);
+        if (!rateLimiter.tryAcquire(clientIp)) {
+            audit.record(AuditEvents.of("ip:" + clientIp, "auth.register", username,
+                    "failure", clock));
+            throw new com.flexforge.auth.RegisterRateLimitedException("注册过于频繁，请稍后再试");
+        }
         requireRegistrationInput(username, password, displayName);
+        if (username.equals(kernel.properties().getBootstrapAdminUsername())) {
+            // PR #33 审查 P2-3：保留名防线——防止空库窗口抢注引导管理员用户名
+            // 毒化 AdminBootstrap（countUsers>0 后永不建管理员且无 API 恢复路径）
+            throw new IllegalArgumentException("该用户名已保留");
+        }
         if (users.findWithRoles(username).isPresent()) {
             throw new IllegalArgumentException("用户名已存在: " + username);
         }
@@ -118,12 +129,14 @@ public class AuthService {
             users.insertUserWithRoles(username, kernel.hasher().hash(password), displayName,
                     List.of(Roles.USER));
         } catch (org.springframework.dao.DuplicateKeyException e) {
+            // 防御纵深：幂等插入理论上不触发，保留以防仓储语义回退
             throw new IllegalArgumentException("用户名已存在: " + username);
         }
         UserRecord created = users.findWithRoles(username).orElseThrow();
         if (!kernel.hasher().matches(password, created.passwordHash())) {
             // 并发重名兜底：insertUserWithRoles 幂等（ON CONFLICT DO NOTHING），若他人
             // 先建同名账号则本次插入被吞——哈希不匹配即非本次创建，绝不给既有账号发令牌
+            audit.record(AuditEvents.of(username, "auth.register", username, "failure", clock));
             throw new IllegalArgumentException("用户名已存在: " + username);
         }
         audit.record(AuditEvents.of(username, "auth.register", Long.toString(created.id()),

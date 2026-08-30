@@ -1,7 +1,6 @@
 package com.flexforge.auth.core;
 
 import com.flexforge.auth.AuthProperties;
-import com.flexforge.auth.RegisterRateLimitedException;
 import com.flexforge.common.PublicApi;
 import org.springframework.stereotype.Component;
 
@@ -29,8 +28,8 @@ public class RegistrationRateLimiter {
         this.clock = clock;
     }
 
-    /** 记录一次注册尝试；窗口内超限即拒绝。 */
-    public void check(String clientIp) {
+    /** 尝试获取一次注册配额：窗口内未超限则计数并返回 true，超限返回 false（由调用方审计+拒绝）。 */
+    public boolean tryAcquire(String clientIp) {
         Instant now = Instant.now(clock);
         Instant windowStart = now.minus(properties.getRegisterRateWindow());
         Deque<Instant> stamps = attempts.computeIfAbsent(clientIp, k -> new ArrayDeque<>());
@@ -39,9 +38,10 @@ public class RegistrationRateLimiter {
                 stamps.pollFirst();
             }
             if (stamps.size() >= properties.getRegisterRateLimit()) {
-                throw new RegisterRateLimitedException("注册过于频繁，请稍后再试");
+                return false;
             }
             stamps.addLast(now);
+            return true;
         }
     }
 }

@@ -53,8 +53,13 @@ class RegisterAndStatusApiTest {
                 AuthTestSupport.ADMIN_USERNAME, AuthTestSupport.adminPassword());
     }
 
-    private String registerBody(String username, String password) throws Exception {
+    /** 注册调用（每用例独立 remoteAddr——limiter 是单例，共享 127.0.0.1 会跨用例泄漏配额）。 */
+    private String registerBody(String username, String password, String clientIp) throws Exception {
         return mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
+                        .with(req -> {
+                            req.setRemoteAddr(clientIp);
+                            return req;
+                        })
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"username\":\"" + username + "\",\"password\":\"" + password
                                 + "\",\"displayName\":\"自助注册\"}"))
@@ -64,9 +69,21 @@ class RegisterAndStatusApiTest {
                 .andReturn().getResponse().getContentAsString();
     }
 
+    private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder register(
+            String username, String password, String clientIp) {
+        return MockMvcRequestBuilders.post("/api/v1/auth/register")
+                .with(req -> {
+                    req.setRemoteAddr(clientIp);
+                    return req;
+                })
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"username\":\"" + username + "\",\"password\":\"" + password
+                        + "\",\"displayName\":\"自助注册\"}");
+    }
+
     @Test
     void registerIssuesTokenAndMeWorks() throws Exception {
-        String body = registerBody("selfreg_user", "Selfreg-Pass-1");
+        String body = registerBody("selfreg_user", "Selfreg-Pass-1", "10.1.0.1");
         String token = JsonPath.read(body, "$.token");
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/auth/me")
                         .header("Authorization", "Bearer " + token))
@@ -82,16 +99,10 @@ class RegisterAndStatusApiTest {
 
     @Test
     void duplicateAndWeakCredentialsRejected() throws Exception {
-        registerBody("dup_user", "Dup-Pass-1234");
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"dup_user\",\"password\":\"Dup-Pass-5678\","
-                                + "\"displayName\":\"重复\"}"))
+        registerBody("dup_user", "Dup-Pass-1234", "10.1.0.2");
+        mockMvc.perform(register("dup_user", "Dup-Pass-5678", "10.1.0.2"))
                 .andExpect(status().isBadRequest());
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"username\":\"weak_user\",\"password\":\"short\","
-                                + "\"displayName\":\"弱口令\"}"))
+        mockMvc.perform(register("weak_user", "short", "10.1.0.2"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -102,10 +113,7 @@ class RegisterAndStatusApiTest {
             mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/auth/registration-status"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.selfRegistrationEnabled").value(false));
-            mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"username\":\"flagoff_user\",\"password\":\"Flag-Pass-12\","
-                                    + "\"displayName\":\"关闭\"}"))
+            mockMvc.perform(register("flagoff_user", "Flag-Pass-12", "10.1.0.3"))
                     .andExpect(status().isBadRequest());
         } finally {
             authProperties.setSelfRegistrationEnabled(true);
@@ -117,17 +125,21 @@ class RegisterAndStatusApiTest {
         authProperties.setRegisterRateLimit(1);
         authProperties.setRegisterRateWindow(Duration.ofSeconds(60));
         try {
-            registerBody("rate_user_a", "Rate-Pass-12");
-            mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/register")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"username\":\"rate_user_b\",\"password\":\"Rate-Pass-34\","
-                                    + "\"displayName\":\"限流\"}"))
+            registerBody("rate_user_a", "Rate-Pass-12", "10.1.0.4");
+            mockMvc.perform(register("rate_user_b", "Rate-Pass-34", "10.1.0.4"))
                     .andExpect(status().isTooManyRequests())
                     .andExpect(jsonPath("$.code").value("rate_limited"));
         } finally {
             authProperties.setRegisterRateLimit(5);
             authProperties.setRegisterRateWindow(Duration.ofHours(1));
         }
+    }
+
+    @Test
+    void bootstrapAdminUsernameIsReserved() throws Exception {
+        // PR #33 审查 P2-3：保留名防线（防空库窗口抢注毒化引导管理员）
+        mockMvc.perform(register("admin", "Evil-Pass-123", "10.1.0.5"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

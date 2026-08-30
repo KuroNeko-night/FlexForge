@@ -82,7 +82,7 @@ async function submitCreate(): Promise<void> {
   }
 }
 
-/** 停启用切换（P13）：乐观更新+失败回滚+行级错误；自己那行禁用（后端亦有守卫）。 */
+/** 停启用切换（P13）：受控更新（等服务端返回再改行）+失败保留原值+页面级错误提示；自己那行禁用（后端亦有守卫）。 */
 async function toggleStatus(user: SystemUser): Promise<void> {
   if (statusPending.value !== null || user.id === selfId.value) {
     return;

@@ -118,13 +118,22 @@ public class UserAdminService {
         if (userId == operatorId) {
             throw new IllegalArgumentException("不能变更自己的账号状态");
         }
+        // PR #33 审查 P3-15：操作者须为 ACTIVE——阻断 BLOCKED 管理员凭存量令牌互停
+        // （无状态 JWT 在 TTL 内仍通过过滤器，此为管理面纵深防御）
+        boolean operatorActive = users.findById(operatorId)
+                .map(record -> "ACTIVE".equals(record.status()))
+                .orElse(false);
+        if (!operatorActive) {
+            throw new IllegalArgumentException("操作者账号非启用状态");
+        }
         UserAdminRecord existing = users.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("user not found: " + userId));
         if (!existing.status().equals(normalized)) {
             users.updateStatus(userId, normalized);
         }
+        // result 词表对齐全库 success/failure 口径（PR #33 审查 P3-8）；状态值经列表/API 可见
         audit.record(AuditEvents.of(resolveActor(operatorId), "user.status.update",
-                Long.toString(userId), normalized, clock));
+                Long.toString(userId), "success", clock));
         return users.findById(userId).orElseThrow();
     }
 
