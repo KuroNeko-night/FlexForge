@@ -5,12 +5,12 @@
 <!-- FLEXFORGE_STATUS:BEGIN -->
 CURRENT_STAGE_ID: P15
 CURRENT_STAGE_NAME: 平台体验补全与插件生态演示
-STAGE_STATUS: in_progress
-PROJECT_PROGRESS: 92%
+STAGE_STATUS: completed
+PROJECT_PROGRESS: 100%
 LAST_UPDATED: 2026-08-30
 OWNER: project-maintainer
-NEXT_ACTION: P15 收口：迭代 3 PR（i18n+品牌化+示例插件）→子代理审查→合并→live 验证→出口复核翻牌 completed
-EXIT_GATE: 待积累（P15 验收五项见 docs/09 P15）。迭代 1 证据：PR #34 独立子代理审查 3 P1+3 P2+4 P3 全处置（P1=裸 void 端点 200 空体假失败×2+findings 契约；P2=切换 Issue 状态串台×2+IME 回车；顺带 FormData 测试缺口补齐）+CI 一次真实失败（Prettier 9 文件，本地补跑门禁后修复）+六项全绿合并（c43a54a）；live 验证 2026-08-30：admin 建 Issue→dev clarify 两轮出规格（3 追问→spec rev1）→APPROVED→generate（首次 REGISTER registration_failed=fixture 固定实体名 clarify_item 与遗留生成插件冲突，属脏库已知行为非缺陷；DEV_FAILED→手工改实体名 meeting_room 存 rev2→再批准→generate 0.1.2 ACTIVE→IN_TESTING）→USER 建记录 rec-94aa…（qty=12 非负规则面）；前端 99 tests
+NEXT_ACTION: 【P00-P15 全阶段完成，项目维持 release_candidate】P15 出口 live+视觉验证 2026-08-30（Issue 全链含失败恢复/插件三包导入激活/AI 配置掩码与路由回退/中英切换截图核验/六类字段 CRUD）。后续=答辩准备（docs/14；演示机需预导入 locale-en/example-library/example-facility 三新包）与 Issue #22 余项按触发条件排期
+EXIT_GATE: P15 出口证据（docs/09 P15 验收五项）：①Issue 全链 UI 可走通——PR #34 后 live：建 Issue→dev clarify 两轮（3 追问→spec）→APPROVED→generate（脏库实体冲突→DEV_FAILED→手工改实体名 rev2→再批准→0.1.2 ACTIVE）→USER 建记录；②插件安装/启停/卸载 UI 可操作——PluginsView 上传/激活/停用/卸载+失败诊断（stage+errorCode），live 导入激活 locale-en/example-library/example-facility 三包；③AI 配置经设置页生效——live：默认 fixture 视图/PUT http+key→掩码 …5678+DB 密文≠明文+审计/clearApiKey/clarify 回 fixture（AiConfigApiTest 端到端桩路由）；④英文插件激活后设置页可切 en 且界面即时切换、停用回退 zh-CN——live 视觉验证（in-app browser 截图核验：设置页/侧栏/Sign out 全英文；切回中文即时回退）；⑤新示例插件过标准包校验与既有示例同装——ExamplePluginsP15Test（decimal/boolean/date 泛化 CRUD+非负规则）+live 菜单共存。过程：PR #34（3P1+3P2+4P3 全处置）/#35（0P0P1+1P2+3P3）/#36（2P2+6P3，4 顺手修）/#37（live 排障修复：camelCase 键白名单，1P2 登记册同步）；CI 两次真实失败（Prettier）+一次 lint 超 50 行，均当日修复。后端 145+/前端 115 tests、门禁 21/1/0迭代 1 证据：PR #34 独立子代理审查 3 P1+3 P2+4 P3 全处置（P1=裸 void 端点 200 空体假失败×2+findings 契约；P2=切换 Issue 状态串台×2+IME 回车；顺带 FormData 测试缺口补齐）+CI 一次真实失败（Prettier 9 文件，本地补跑门禁后修复）+六项全绿合并（c43a54a）；live 验证 2026-08-30：admin 建 Issue→dev clarify 两轮出规格（3 追问→spec rev1）→APPROVED→generate（首次 REGISTER registration_failed=fixture 固定实体名 clarify_item 与遗留生成插件冲突，属脏库已知行为非缺陷；DEV_FAILED→手工改实体名 meeting_room 存 rev2→再批准→generate 0.1.2 ACTIVE→IN_TESTING）→USER 建记录 rec-94aa…（qty=12 非负规则面）；前端 99 tests
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -34,7 +34,7 @@ BLOCKERS: none
 | P12.5 | 前端基建与默认主题 | completed | 三缺陷关闭+组件/动画/排版基建+SVG 主题插件可安装可被其他插件覆盖（live 验证见 EXIT_GATE） |
 | P13 | 加分项与体验优化 | completed | 三体验项交付+开关关闭主线无影响（live 验证见 EXIT_GATE） |
 | P14 | 质量收敛与答辩交付 | completed | 全量验收通过，进入 release_candidate（见 NEXT_ACTION 验证时间） |
-| P15 | 平台体验补全与插件生态演示 | in_progress | Issue/AI 工作台+插件管理写操作+设置页（AI/语言）+i18n 插件+登录/工作台品牌化+示例插件（验收五项见 docs/09 P15） |
+| P15 | 平台体验补全与插件生态演示 | completed | 五项验收全过（Issue 全链 UI/插件写操作/AI 配置密钥加密/中英切换/示例插件同装；live+视觉验证见 EXIT_GATE） |
 
 ## 更新规则
 
@@ -154,3 +154,4 @@ BLOCKERS: none
 | 2026-08-30 | P15 | 迭代 2 实施（分支 feat/p15-settings，FR-SETUP-01）：①文档先行（红线）——docs/13 S4 修订（模型 Key 第二受控通道=设置页 AES-GCM 加密落库、读只回掩码）+§3.6-5 全语义（派生密钥/轮换降级/解析顺序/审计口径）、docs/02 +FR-SETUP-01/02、docs/03 §8 +/ai/config 两行、.env.example 注释更新②后端——V012 ai_provider_config 单行表；ai 模块 +config 包（AiEnv 环境缺省/AiConfigRepository/SecretCipher AES-256-GCM HMAC 派生/AiConfigService 合并+校验+掩码+审计/AiConfigController ADMIN）；RoutingModelPort 唯一 ModelPort Bean 每次调用按有效配置路由（fixture/http 即时切换，两实现不再注册 Bean，@Autowired 指定生产构造器）；HttpModelPort 改读运行时配置+base-url 非法兜底③前端——SettingsView（AI 卡：provider/base-url/model/API Key 留空保持+清除开关+stale 告警；非 ADMIN 不渲染不加载）+/settings 路由+菜单。测试：ai 34（+13：cipher 往返/随机 IV/篡改/轮换/服务合并优先级/校验负例/密钥语义/路由 fixture-http-header）+ app AiConfigApiTest 6（默认视图/校验 400/明文零回显+DB 密文断言+审计/非管理员 403/清除/端到端桩路由→回退 fixture）+ 前端 105（+6）；后端全量 verify 绿 | docs/13 §3.6-5、`backend/flexforge-ai/src/main/java/com/flexforge/ai/config/`、`AiConfigApiTest`、`frontend/src/views/SettingsView.vue` |
 | 2026-08-30 | P15 | 迭代 2 收口：PR #35 独立子代理审查 0 P0/P1+1 P2+3 P3——P2（清除开关与新密钥并存静默丢新 key）当场修（勾选即清空+禁用输入+互斥用例）；P3 记 Issue #22（查询频率/最后写胜已 javadoc 化/httpIncomplete 静默）；审查确认 S4 派生同源（yml 桥接 AUTH_JWT_SECRET）、GCM 用法、端到端桩真实性、docs 对照无偏差。CI 六项全绿合并（c9cf592）+main CI success。live 验证 2026-08-30（新后端镜像）：V012 应用/GET 默认 fixture/PUT http+key→掩码视图 …5678+DB 密文≠明文+审计 ai.config success admin/clearApiKey→configured false/clarify 回 fixture 3 追问（路由即时回退）。后端 145+前端 106 tests | PR #35 评论、Issue #22、live 验证 2026-08-30 |
 | 2026-08-30 | P15 | 迭代 3 实施（分支 feat/p15-i18n-branding）：①i18n 通道——theme-asset kind 扩 locale（common/plugin 两处 KINDS，登记册 §2.2 additive）+前端 localeRegistry（语言包注册/差量撤销/语言切换 localStorage/消息键白名单/t() 覆盖-回退）+WorkbenchView 桥接（签名 URL 取回 {lang,messages}，与 tokens 共用 JSON 文档通道，loadTheme 拆 applyThemeAsset 控复杂度）+SettingsView 界面语言卡（全员；未装语言插件=仅基线+安装提示）；壳层菜单标题/页头/登录页/设置页文案 t() 化②plugins/locale-en 英文语言包（31 键）③品牌化——AppLogo 平台 SVG 基线+LoginView 重写（极光背景/backdrop 卡片/入场动画）+tokens.css ff-rise/fade 动效（reduced-motion 归零）+工作台 logo/主区渐入④示例插件 example-library（decimal/boolean/date+价格非负+种子 3）与 example-facility（integer/boolean/date）。测试：前端 114（+8：registry 5/桥接 1/语言卡 2）+后端 ExamplePluginsP15Test 2（同装共存+六类字段泛化 CRUD+locale 聚合签名 URL 匿名取包+停用清空）；docs/00 §7 +第 10 项（登录页平台基线限制） | `frontend/src/registry/localeRegistry.ts`、`plugins/locale-en|example-library|example-facility/`、`ExamplePluginsP15Test` |
+| 2026-08-30 | P15 | 迭代 3 收口+阶段翻牌：PR #36 审查（2 P2+6 P3：菜单键对齐 MenuService 实际 key/极光动画 reduced-motion 覆盖/--ff-text-xl 补定义/跨基线去重/死样式清理；2 项记 Issue #22）CI 六项全绿合并（269601b）。live 视觉验证发现并修复真缺陷：locale 消息键白名单拒 camelCase 段→真实语言包被单资产 catch 静默吞掉（tokens 同通道正常故仅语言缺失）——PR #37 放宽正则+登记册同步+防回归用例（审查 0P0P1+1P2 修复）；locale-en 增补示例菜单键后版本 1.0.0→1.0.1 重导入激活。最终 live 视觉核验：设置页/侧栏/Sign out 全英文切换与中文回退即时生效（截图）；登录页品牌基线（logo/极光背景/入场动画）渲染正常。**P15 出口复核通过，置 completed；P00-P15 全阶段完成，项目维持 release_candidate** | PR #36/#37、live+视觉验证 2026-08-30、docs/00 §7-10 |
