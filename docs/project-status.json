@@ -6,7 +6,7 @@
   "status": "in_progress",
   "progressPercent": 92,
   "owner": "project-maintainer",
-  "nextAction": "P15 迭代 2 收口：PR（设置页+AI 运行时配置）→子代理审查→合并→live 验证；随后迭代 3 i18n+英文化插件+登录/工作台品牌化+示例插件",
+  "nextAction": "P15 迭代 3（新分支）：i18n 通道（theme-asset kind 扩 locale+localeRegistry+t()）+plugins/locale-en 英文化示例插件+设置页语言切换；登录页/工作台品牌化（平台基线 SVG+入场动画）；≥2 个示例业务插件；随后收口翻牌",
   "exitGate": "待积累（P15 验收五项见 docs/09 P15）。迭代 1 证据：PR #34 独立子代理审查 3 P1+3 P2+4 P3 全处置（P1=裸 void 端点 200 空体假失败×2+findings 契约；P2=切换 Issue 状态串台×2+IME 回车；顺带 FormData 测试缺口补齐）+CI 一次真实失败（Prettier 9 文件，本地补跑门禁后修复）+六项全绿合并（c43a54a）；live 验证 2026-08-30：admin 建 Issue→dev clarify 两轮出规格（3 追问→spec rev1）→APPROVED→generate（首次 REGISTER registration_failed=fixture 固定实体名 clarify_item 与遗留生成插件冲突，属脏库已知行为非缺陷；DEV_FAILED→手工改实体名 meeting_room 存 rev2→再批准→generate 0.1.2 ACTIVE→IN_TESTING）→USER 建记录 rec-94aa…（qty=12 非负规则面）；前端 99 tests",
   "blockers": [],
   "stages": [
