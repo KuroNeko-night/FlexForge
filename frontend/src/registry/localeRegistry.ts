@@ -54,8 +54,9 @@ export function syncRemovedLocalePacks(activeIds: string[]): void {
   }
 }
 
-/** 消息键白名单：界面文案 key（点分隔命名空间），拒绝 CSS/URL 形态注入面。 */
-const MESSAGE_KEY_PATTERN = /^[a-z][a-z0-9]*(\.[a-z0-9_-]+)+$/;
+/** 消息键白名单：界面文案 key（点分隔命名空间，段内允许驼峰/连字符/下划线），
+ *  拒绝 CSS 变量（-- 前缀）、URL/scheme（冒号）等非文案形态注入面。 */
+const MESSAGE_KEY_PATTERN = /^[a-z][a-zA-Z0-9]*(\.[a-zA-Z0-9_-]+)+$/;
 
 function requireSafeMessages(messages: Record<string, string>): void {
   for (const [key, value] of Object.entries(messages)) {
