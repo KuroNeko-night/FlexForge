@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "theme.default",
+  "name": "FlexForge 默认主题",
+  "version": "1.0.0",
+  "capabilityLevel": 1,
+  "minPlatformVersion": "0.1.0",
+  "dependencies": [],
+  "contributions": {
+    "navigation": [],
+    "renderers": [],
+    "themeAssets": [
+      {"key": "theme.default.background", "kind": "background", "path": "assets/bg.svg"},
+      {"key": "theme.default.logo", "kind": "icon", "path": "assets/logo.svg"},
+      {"key": "theme.default.pulse", "kind": "animation", "path": "assets/pulse.svg"},
+      {"key": "theme.default.tokens", "kind": "tokens", "path": "assets/theme.json"}
+    ]
+  },
+  "resources": {
+    "entities": [],
+    "views": [],
+    "migrations": []
+  }
+}

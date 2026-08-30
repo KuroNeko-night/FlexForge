@@ -7,12 +7,13 @@ import java.util.Set;
 
 /**
  * theme-asset 贡献声明（plugin.json contributions.themeAssets[] 项，登记册 §2.2）：
- * kind ∈ background/icon/animation；path 指向包内 assets/ 白名单资源；scope 缺省全局。
+ * kind ∈ background/icon/animation/tokens（P12.5）；path 指向包内 assets/ 白名单
+ * 资源（tokens 为 JSON 键值表）；scope 缺省全局。
  */
 @PublicApi
 public record ThemeAssetSpec(String key, String kind, String path, String scope) {
 
-    public static final Set<String> KINDS = Set.of("background", "icon", "animation");
+    public static final Set<String> KINDS = Set.of("background", "icon", "animation", "tokens");
 
     public ThemeAssetSpec {
         Objects.requireNonNull(key, "key");

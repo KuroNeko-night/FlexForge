@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- 暖色主题图标（P12.5）：日出标——证明其他插件可覆盖/自定义前端样式 -->
+  <circle cx="32" cy="36" r="12" fill="#e8912d"/>
+  <g stroke="#c2571c" stroke-width="3" stroke-linecap="round">
+    <path d="M32 14v-6M50 36h6M8 36h6M45 23l4-4M15 23l-4-4M45 49l4 4M15 49l-4 4"/>
+  </g>
+  <path d="M14 52h36" stroke="#c2571c" stroke-width="4" stroke-linecap="round"/>
+</svg>

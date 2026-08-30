@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "theme.warm",
+  "name": "暖色主题（覆盖示例）",
+  "version": "1.0.0",
+  "capabilityLevel": 1,
+  "minPlatformVersion": "0.1.0",
+  "dependencies": [],
+  "contributions": {
+    "navigation": [],
+    "renderers": [],
+    "themeAssets": [
+      {"key": "theme.warm.icon", "kind": "icon", "path": "assets/sun.svg"},
+      {"key": "theme.warm.tokens", "kind": "tokens", "path": "assets/theme.json"}
+    ]
+  },
+  "resources": {
+    "entities": [],
+    "views": [],
+    "migrations": []
+  }
+}

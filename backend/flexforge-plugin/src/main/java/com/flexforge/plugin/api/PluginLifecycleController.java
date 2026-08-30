@@ -8,6 +8,7 @@ import com.flexforge.auth.core.AuthService;
 import com.flexforge.common.ApiConstants;
 import com.flexforge.common.PublicApi;
 import com.flexforge.plugin.application.PluginAssetService;
+import com.flexforge.plugin.application.PluginInventoryService;
 import com.flexforge.plugin.application.PluginLifecycleService;
 import com.flexforge.plugin.domain.ActivationRecord;
 import com.flexforge.plugin.domain.LifecycleRepository;
@@ -31,12 +32,20 @@ public class PluginLifecycleController {
     private final PluginLifecycleService lifecycle;
     private final PluginAssetService assets;
     private final AuthService authService;
+    private final PluginInventoryService inventory;
 
     public PluginLifecycleController(PluginLifecycleService lifecycle, PluginAssetService assets,
-                                     AuthService authService) {
+                                     AuthService authService, PluginInventoryService inventory) {
         this.lifecycle = lifecycle;
         this.assets = assets;
         this.authService = authService;
+        this.inventory = inventory;
+    }
+
+    /** 当前生效主题资产（P12.5，docs/09）：登录即可读——前端壳层换肤消费面。 */
+    @GetMapping("/theme-assets")
+    public List<PluginInventoryService.ActiveThemeAsset> themeAssets() {
+        return inventory.activeThemeAssets();
     }
 
     /** 激活注册清单（FR-PLUGIN-07：stale activation 校验消费方，旧 ID 返回 409）。 */

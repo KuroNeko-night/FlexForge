@@ -73,7 +73,38 @@ export function revokeThemeAssetsByActivation(activationId: string): number {
   if (removed > 0) {
     bump();
   }
+  clearTokenOverrides(activationId);
   return removed;
+}
+
+/**
+ * P12.5 tokens 通道：kind=tokens 的 JSON 键值表覆盖 --ff-* 设计令牌。
+ * 键白名单 ^--ff-[a-z0-9-]+$（只允许平台令牌名，杜绝任意 CSS 属性/外链注入面）；
+ * 值作为 CSS 变量值使用（自定义属性值无脚本执行语义，S5）。同 activation 后写胜，
+ * 撤销即恢复平台基线。多个 tokens 插件并存时按注册顺序后应用者覆盖同名键。
+ */
+const TOKEN_KEY_PATTERN = /^--ff-[a-z0-9-]+$/;
+const tokenOverrides = ref<Record<string, Record<string, string>>>({});
+
+export function applyTokenOverrides(activationId: string, tokens: Record<string, unknown>) {
+  const safe: Record<string, string> = {};
+  for (const [key, value] of Object.entries(tokens)) {
+    if (!TOKEN_KEY_PATTERN.test(key) || typeof value !== 'string' || value === '') {
+      throw new Error(`theme tokens 键/值非法（仅允许 --ff-* 设计令牌）: ${key}`);
+    }
+    safe[key] = value;
+  }
+  tokenOverrides.value = { ...tokenOverrides.value, [activationId]: safe };
+  bump();
+}
+
+function clearTokenOverrides(activationId: string) {
+  if (tokenOverrides.value[activationId]) {
+    const next = { ...tokenOverrides.value };
+    delete next[activationId];
+    tokenOverrides.value = next;
+    bump();
+  }
 }
 
 /**
@@ -105,6 +136,7 @@ export function themeStyle(scope?: string | null) {
   const icon = resolveThemeAsset('icon', scope);
   const animation = resolveThemeAsset('animation', scope);
   return computed<Record<string, string>>(() => {
+    void version.value;
     const style: Record<string, string> = {};
     for (const [asset, kind] of [
       [background.value, 'background'],
@@ -119,6 +151,10 @@ export function themeStyle(scope?: string | null) {
             ? `url("${asset.path.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}")`
             : asset.path;
       }
+    }
+    // P12.5 tokens 覆盖最后合并（后应用者胜）：直接展开为 --ff-* 变量
+    for (const overrides of Object.values(tokenOverrides.value)) {
+      Object.assign(style, overrides);
     }
     return style;
   });

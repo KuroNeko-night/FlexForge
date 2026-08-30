@@ -1,0 +1,10 @@
+{
+  "--ff-primary": "#c2571c",
+  "--ff-bg": "#faf5ef",
+  "--ff-surface": "#fffdf9",
+  "--ff-side-bg": "#4a2f1c",
+  "--ff-side-ink": "#f3e6d7",
+  "--ff-side-active": "#6b452a",
+  "--ff-radius-md": "14px",
+  "--ff-radius-lg": "18px"
+}

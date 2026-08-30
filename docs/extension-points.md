@@ -36,7 +36,7 @@
 | `extension.field-renderer` | `{fieldType, rendererId}`；`rendererId` 必须是平台内置 ID——P04 起由 `FieldTypeRegistry`（flexforge-meta）落定并校验，内置集 = 六类默认 ID：`text.default` / `integer.default` / `decimal.default` / `date.default` / `enum.default` / `boolean.default` | flexforge-meta（类型契约）+ 前端 renderer registry | 前端动态列表/表单/详情（P04 配置 API 已按此校验） | P04 准备，P06 落地 | active |
 | `extension.record-action` | `{actionType, handlerId, label, permissionKey}`；`handlerId` 必须是平台内置 ID。前端映射（P06）：`actionType`→动作 key（动作栏按钮），`handlerId`→平台内置 handler 查找键（前端 record-action registry） | flexforge-plugin | 前端动态表格动作栏 | P05 准备，P09 示例落地 | active |
 | `extension.layout` | `{key, target, slots: [{name, items: [{key, order}]}]}`；target 为平台登记的页面/容器 key，items 引用部件贡献 key（2026-08-24 需求澄清 FR-PLUGIN-10） | flexforge-plugin（注册表）+ 前端 layout registry（P06 消费面落地） | 动态页面/工作台容器 | P06 消费面落地，P07/P08 插件注册 | active |
-| `extension.theme-asset` | `{key, kind: background\|icon\|animation, path, scope?}`；path 指向插件包内经 S6 校验的静态资源，scope 缺省全局（FR-PLUGIN-11） | flexforge-plugin（注册表）+ 前端 theme registry（P06 消费面落地） | 动态页面外观、菜单图标 | P06 消费面落地，P07/P08 插件注册 | active |
+| `extension.theme-asset` | `{key, kind: background\|icon\|animation\|tokens, path, scope?}`；path 指向插件包内经 S6 校验的静态资源，scope 缺省全局（FR-PLUGIN-11）。P12.5 起 kind=tokens：path 为 assets/ 内 JSON 键值表，键须匹配 `^--ff-[a-z0-9-]+$`（前端白名单，仅平台设计令牌可覆盖；多 tokens 并存后应用者胜，撤销恢复基线） | flexforge-plugin（注册表+聚合端点 GET /plugins/theme-assets）+ 前端 theme registry（壳层 CSS 变量注入） | 动态页面外观、菜单图标、主题换肤（plugins/theme-default、theme-warm） | P06 消费面落地，P07/P08 插件注册，P12.5 tokens 闭环 | active |
 
 ### 2.3 DomainEvent
 
@@ -80,3 +80,4 @@ MVP 消费方: <至少一个真实消费方>
 | 2026-08-24 | `service.data-access` P05 落地：flexforge-data 为责任模块（data_record 单 JSONB 记录表，docs/03 §4 存储定案） | additive |
 | 2026-08-25 | `extension.layout` 与 `extension.theme-asset` 由 proposed 转 active：前端消费面（layout/theme registry：槽位编排渲染、CSS 变量注入、缺省兜底与撤销恢复）随 P06 迭代 2 落地；插件侧注册 P07/P08 接入；常量同步 flexforge-common ExtensionPoints（R-GOV-03 对齐） | additive |
 | 2026-08-29 | P08 插件侧注册落地：plugin.json `contributions.themeAssets`（对象数组）→ 导入校验+逐文件声明收紧（assets/ 双向核对，Issue #20 第 3 项）→ 激活注册（plugin_registration + 内存 ThemeAssetContribution）→ serve 端点（CSP/attachment/nosniff，Issue #20 第 4 项）；载荷契约不变 | additive |
+| 2026-08-30 | P12.5 tokens 通道（additive）：`extension.theme-asset` kind 枚举扩 `tokens`（JSON 键值表→--ff-* 设计令牌，前端键白名单）；新增聚合端点 GET /plugins/theme-assets（登录可读，前端壳层消费面）；消费方 plugins/theme-default、theme-warm | additive |

@@ -142,7 +142,7 @@ public class ManifestValidator {
         String kind = fieldText(item, "kind");
         if (!ThemeAssetSpec.KINDS.contains(kind)) {
             throw PluginValidationException.invalidManifest(
-                    "themeAsset kind 非法（允许 background/icon/animation）: " + kind);
+                    "themeAsset kind 非法（允许 background/icon/animation/tokens）: " + kind);
         }
         return new ThemeAssetSpec(key, kind, path, scopeOf(item));
     }
