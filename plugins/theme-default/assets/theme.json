@@ -1,0 +1,12 @@
+{
+  "--ff-primary": "#3f6ee8",
+  "--ff-primary-ink": "#ffffff",
+  "--ff-bg": "#f2f5fb",
+  "--ff-side-bg": "#1c2b4a",
+  "--ff-side-ink": "#dfe6f5",
+  "--ff-side-active": "#2d4370",
+  "--ff-radius-md": "10px",
+  "--ff-radius-lg": "14px",
+  "--ff-shadow-2": "0 8px 24px rgb(28 43 74 / 18%)",
+  "--ff-motion-base": "260ms"
+}

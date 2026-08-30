@@ -6,6 +6,7 @@ import { clearSession } from './auth/token';
 import { registerBuiltinContributions } from './registry/builtinContributions';
 import { registerBuiltins } from './registry/rendererRegistry';
 import { router } from './router';
+import './styles/tokens.css';
 
 const app = createApp(App);
 

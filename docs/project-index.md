@@ -56,12 +56,13 @@ FlexForge/
 │   ├── eslint.config.js / eslint.config.targets.js   硬上限 error / 建议目标 warn（P06 补浏览器 globals）
 │   └── src/
 │       ├── main.ts / App.vue / router.ts   路由壳（登录守卫体验跳转，安全边界在服务端 S2）
-│       ├── api/                    client（错误规范化/令牌注入/401 回调）+ auth/meta/data/plugins 客户端 + 契约类型
+│       ├── api/                    client（错误规范化/令牌注入/401 回调）+ auth/meta/data/plugins/system/theme 客户端 + 契约类型
 │       ├── auth/token.ts           会话令牌（sessionStorage）与当前用户
 │       ├── registry/               keyed.ts 通用基座 + renderer/menu/layout/theme/recordAction registry + builtinContributions（内置部件/动作/本地菜单）
-│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards
+│       ├── styles/tokens.css       设计令牌与基建原语样式（P12.5：--ff-* 变量+组件类+过渡动画；主题插件覆盖变量即换肤）
+│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards + ui/（BaseButton/BaseSwitch/ComponentCard/BaseDrawer，P12.5）
 │       ├── composables/            useEntityMetadata（metaVersion 比对 → stale 刷新）
-│       └── views/                  Login/Workbench/Home/DynamicEntity（列表/详情/新建/编辑）/Plugins（清单只读，P12）/Placeholder
+│       └── views/                  Login/Workbench/Home/DynamicEntity（列表/详情/新建/编辑）/Plugins（清单只读，P12）/Users（用户管理，P12.5）/Placeholder
 ├── database/
 │   ├── migrations/V001__init.sql   平台骨架表（sys_user/sys_role/sys_user_role）
 │   ├── migrations/V002-004         V002 审计表 / V003 角色种子 / V004 meta_entity+meta_field+meta_view（P04）
@@ -75,7 +76,9 @@ FlexForge/
 │   └── init/                       Compose 首次初始化：应用专用账号
 ├── plugins/
 │   ├── example-inventory/          库存示例 Level 1 包（P09：plugin.json+实体+两视图+两迁移；纯包目录无 README）
-│   └── example-inventory-README.md 安装说明（包外，P07 区域白名单不允许包内文档）
+│   ├── example-inventory-README.md 安装说明（包外，P07 区域白名单不允许包内文档）
+│   ├── theme-default/              默认主题 Level 1 包（P12.5：SVG 背景/标/动效 + tokens 键值表）
+│   └── theme-warm/                 暖色覆盖主题包（P12.5：同名 tokens 覆盖证明插件可自定义样式）
 ├── tests/
 │   └── fixtures/
 │       ├── fixtures.json           条目清单 + SHA-256（R-GOV-06 哈希校验）
@@ -236,3 +239,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-29 | §1 树更新：V011 ai_task_log；ai +ModelPort/HttpModelPort/FixtureModelPort/ClarifyEngine/PromptTemplates/PluginPackageGenerator +prompts/v1 资源；issue +AiTaskLogPort/IssueAiService/IssueAiConfig +clarify/generate 端点；ErrorCodes +model_unavailable/model_output_invalid；scripts +export-thesis-data.mjs；app 测试 +IssueAiApiTest | P11：AI 适配器与生成器（RB-AI） |
 | 2026-08-29 | §1 树更新：scripts +demo-e2e.sh（五场景演示+计时；顺带回填 P09/P11 遗漏的 demo-example-inventory.sh 与 export-thesis-data.mjs 两行）；frontend api +plugins.ts、views +PluginsView、router +/plugins、builtinContributions +本地菜单；app 测试 +AgentIssueE2eTest/E2eDemoScript | P12：Agent Issue 端到端闭环（RB-E2E + 插件页，docs/12 §"端到端演示各环节耗时"数据源落地） |
 | 2026-08-29 | §1 树/文档地图 +docs/14-defense-delivery-guide.md（答辩运行手册：启动/账号/演示/三保险/排障/清理），docs/05 索引同步登记 | P14 迭代 2：答辩交付固化（docs/09 P14"故障排查手册/演示账号/三保险"落位） |
+| 2026-08-30 | §1 树更新：plugins +theme-default/theme-warm（P12.5 主题包）；frontend +styles/tokens.css、components/ui/ 四组件、views +Users、api +system/theme；backend plugins 聚合端点 theme-assets + kind=tokens；app 测试 +ThemeAssetApiTest | P12.5：前端基建与默认主题（用户裁决新增阶段，三缺陷修复+组件库+换肤通道闭环） |

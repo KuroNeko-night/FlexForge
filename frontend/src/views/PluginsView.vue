@@ -8,6 +8,8 @@ import {
   type PluginInventoryEntry,
 } from '@/api/plugins';
 import StateView from '@/components/StateView.vue';
+import BaseButton from '@/components/ui/BaseButton.vue';
+import ComponentCard from '@/components/ui/ComponentCard.vue';
 
 /**
  * 插件管理页（docs/09 P12）：inventory 只读视图——生成/导入版本、激活尝试
@@ -50,52 +52,126 @@ onMounted(load);
   <section class="plugins-view" data-testid="plugins-view">
     <header class="plugins-header">
       <h2>插件管理</h2>
-      <button type="button" @click="load">刷新</button>
+      <BaseButton @click="load">刷新</BaseButton>
     </header>
     <StateView v-if="state !== 'ready'" :state="state" :message="error">
       <p v-if="state === 'empty'">尚无插件导入，可经插件包接口导入后查看</p>
     </StateView>
     <ul v-else class="plugin-list">
-      <li v-for="plugin in plugins" :key="plugin.pluginId" class="plugin-card">
-        <div class="plugin-head">
-          <strong>{{ plugin.name }}</strong>
-          <span class="plugin-id">{{ plugin.pluginId }}</span>
-          <span class="status-badge" :data-status="plugin.instanceStatus">
-            {{ plugin.instanceStatus }}
-          </span>
-        </div>
-        <p class="plugin-versions" data-testid="plugin-versions">
-          版本：{{ plugin.versions.map((v) => v.version).join('、') || '—' }}
-        </p>
-        <table class="activation-table" data-testid="activation-table">
-          <caption class="sr-only">
-            激活尝试
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">状态</th>
-              <th scope="col">阶段 / 诊断</th>
-              <th scope="col">操作者</th>
-              <th scope="col">开始时间</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="activation in plugin.activations"
-              :key="activation.id"
-              :data-status="activation.status"
-            >
-              <td>{{ activation.status }}</td>
-              <td data-testid="activation-diagnosis">{{ diagnosisOf(activation) }}</td>
-              <td>{{ activation.requestedBy ?? '—' }}</td>
-              <td>{{ activation.startedAt ?? '—' }}</td>
-            </tr>
-            <tr v-if="plugin.activations.length === 0">
-              <td colspan="4">无激活尝试</td>
-            </tr>
-          </tbody>
-        </table>
+      <li v-for="plugin in plugins" :key="plugin.pluginId">
+        <ComponentCard :title="plugin.name" :subtitle="plugin.pluginId" hoverable>
+          <template #title>
+            <div class="plugin-head">
+              <strong>{{ plugin.name }}</strong>
+              <span class="plugin-id">{{ plugin.pluginId }}</span>
+              <span class="status-badge" :data-status="plugin.instanceStatus">
+                {{ plugin.instanceStatus }}
+              </span>
+            </div>
+          </template>
+          <p class="plugin-versions" data-testid="plugin-versions">
+            版本：{{ plugin.versions.map((v) => v.version).join('、') || '—' }}
+          </p>
+          <table class="activation-table" data-testid="activation-table">
+            <caption class="sr-only">
+              激活尝试
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">状态</th>
+                <th scope="col">阶段 / 诊断</th>
+                <th scope="col">操作者</th>
+                <th scope="col">开始时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="activation in plugin.activations"
+                :key="activation.id"
+                :data-status="activation.status"
+              >
+                <td>{{ activation.status }}</td>
+                <td data-testid="activation-diagnosis">{{ diagnosisOf(activation) }}</td>
+                <td>{{ activation.requestedBy ?? '—' }}</td>
+                <td>{{ activation.startedAt ?? '—' }}</td>
+              </tr>
+              <tr v-if="plugin.activations.length === 0">
+                <td colspan="4">无激活尝试</td>
+              </tr>
+            </tbody>
+          </table>
+        </ComponentCard>
       </li>
     </ul>
   </section>
 </template>
+
+<style scoped>
+.plugins-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.plugin-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr));
+  gap: var(--ff-space-4);
+}
+.plugin-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ff-space-2);
+  flex-wrap: wrap;
+}
+.plugin-id {
+  color: var(--ff-text-muted);
+  font-family: var(--ff-font-mono);
+  font-size: var(--ff-text-sm);
+}
+.status-badge {
+  margin-left: auto;
+  padding: var(--ff-space-1) var(--ff-space-2);
+  border-radius: 999px;
+  font-size: var(--ff-text-sm);
+  background: var(--ff-surface-muted);
+  color: var(--ff-text-muted);
+}
+.status-badge[data-status='active'],
+.status-badge[data-status='ACTIVE'] {
+  background: color-mix(in srgb, var(--ff-primary) 14%, transparent);
+  color: var(--ff-primary);
+}
+.status-badge[data-status='failed'],
+.status-badge[data-status='FAILED'] {
+  background: var(--ff-danger-bg);
+  color: var(--ff-danger);
+}
+.plugin-versions {
+  margin: var(--ff-space-2) 0;
+  color: var(--ff-text-muted);
+  font-size: var(--ff-text-md);
+}
+.activation-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ff-text-sm);
+}
+.activation-table th,
+.activation-table td {
+  padding: var(--ff-space-1) var(--ff-space-2);
+  border-bottom: 1px solid var(--ff-border-soft);
+  text-align: left;
+}
+.activation-table tr[data-status='FAILED'] td {
+  color: var(--ff-danger);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+</style>

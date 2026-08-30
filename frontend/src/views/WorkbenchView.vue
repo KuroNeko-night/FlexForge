@@ -5,23 +5,54 @@ import { useRouter } from 'vue-router';
 import { logout, fetchMe } from '@/api/auth';
 import { ApiError } from '@/api/client';
 import { fetchMenus } from '@/api/meta';
+import { fetchActiveThemeAssets } from '@/api/theme';
 import type { MenuItem } from '@/api/types';
 import { clearSession, session } from '@/auth/token';
 import StateView from '@/components/StateView.vue';
 import { mergedMenus } from '@/registry/menuRegistry';
-import { themeStyle } from '@/registry/themeRegistry';
+import { applyTokenOverrides, registerThemeAsset, themeStyle } from '@/registry/themeRegistry';
 
 /**
  * 工作台壳（菜单 + 路由出口）：菜单 = 后端 /menus（角色已过滤）+ 前端注册项合并。
  * 美术资产（extension.theme-asset 消费面）以 CSS 变量注入本壳层，注册/撤销即时
- * 生效、缺省不设变量即平台默认外观（FR-PLUGIN-11）。元数据只作文本插值与
- * 路由跳转（S5）。
+ * 生效、缺省不设变量即平台默认外观（FR-PLUGIN-11）。P12.5：登录后拉取当前生效
+ * themeAssets——资产类注册（serve URL 作 path），tokens 类取回 JSON 键值表覆盖
+ * --ff-* 设计令牌；主题失败静默降级为基线外观（增强不破壳）。元数据只作文本
+ * 插值与路由跳转（S5）。
  */
 const router = useRouter();
 const menus = ref<MenuItem[]>([]);
 const state = ref<'loading' | 'ready' | 'error' | 'denied'>('loading');
 const error = ref<string | null>(null);
 const shellTheme = themeStyle();
+
+async function loadTheme(): Promise<void> {
+  try {
+    for (const asset of await fetchActiveThemeAssets()) {
+      // 单个资产失败只跳过自身（PR #32 审查 P3）：坏包不阻断后续合法主题资产
+      try {
+        if (asset.kind === 'tokens') {
+          // serveUrl 为后端签名 URL：裸 fetch/CSS url() 免 Bearer（PR #32 审查 P1）
+          const response = await fetch(asset.serveUrl, {
+            headers: { Accept: 'application/json' },
+          });
+          if (response.ok) {
+            applyTokenOverrides(asset.activationId, await response.json());
+          }
+        } else {
+          registerThemeAsset(
+            { key: asset.key, kind: asset.kind, path: asset.serveUrl, scope: asset.scope },
+            asset.activationId,
+          );
+        }
+      } catch {
+        /* 单资产失败静默跳过 */
+      }
+    }
+  } catch {
+    /* 主题是增强能力：聚合拉取失败静默回退平台基线外观 */
+  }
+}
 
 async function loadMenus(): Promise<void> {
   state.value = 'loading';
@@ -60,6 +91,7 @@ onMounted(async () => {
     }
   }
   await loadMenus();
+  void loadTheme();
 });
 </script>
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  applyTokenOverrides,
   registerThemeAsset,
   resolveThemeAsset,
   revokeThemeAsset,
@@ -73,5 +74,30 @@ describe('theme registry：path 防御与分支', () => {
     expect(resolveThemeAsset('icon', 'page.demo').value?.path).toBe('c.png');
     revokeThemeAsset('t.scoped');
     expect(resolveThemeAsset('icon', 'page.demo').value).toBeNull();
+  });
+});
+
+describe('theme registry：P12.5 tokens 通道（--ff-* 键白名单）', () => {
+  it('tokens 覆盖注入 themeStyle，撤销按 activationId 恢复基线', () => {
+    applyTokenOverrides('act-t1', { '--ff-primary': '#c2571c', '--ff-radius-md': '14px' });
+    expect(themeStyle().value['--ff-primary']).toBe('#c2571c');
+    expect(themeStyle().value['--ff-radius-md']).toBe('14px');
+    // 后应用者覆盖同名键（多插件并存：后注册胜）
+    applyTokenOverrides('act-t2', { '--ff-primary': '#0a7a4d' });
+    expect(themeStyle().value['--ff-primary']).toBe('#0a7a4d');
+    revokeThemeAssetsByActivation('act-t2');
+    expect(themeStyle().value['--ff-primary']).toBe('#c2571c');
+    revokeThemeAssetsByActivation('act-t1');
+    expect(themeStyle().value['--ff-primary']).toBeUndefined();
+  });
+
+  it('键白名单：拒绝非 --ff- 前缀键与非字符串值（S5 纵深）', () => {
+    expect(() => applyTokenOverrides('act-bad', { color: 'red' })).toThrow(/--ff-/);
+    expect(() => applyTokenOverrides('act-bad', { '--ff-primary': 42 })).toThrow(/--ff-/);
+    expect(() => applyTokenOverrides('act-bad', { '--FF-INJECT': 'x' })).toThrow(/--ff-/);
+    // --ff-theme-* 资产变量不可经 tokens 覆盖（防 url() 外链绕过资产通道纵深）
+    expect(() =>
+      applyTokenOverrides('act-bad', { '--ff-theme-background': 'url(https://evil/x)' }),
+    ).toThrow(/--ff-/);
   });
 });

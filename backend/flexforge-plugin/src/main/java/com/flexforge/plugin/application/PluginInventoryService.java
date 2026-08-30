@@ -2,15 +2,19 @@ package com.flexforge.plugin.application;
 
 import com.flexforge.common.PublicApi;
 import com.flexforge.plugin.domain.ActivationRecord;
+import com.flexforge.plugin.domain.ActivationStatus;
 import com.flexforge.plugin.domain.LifecycleRepository;
 import com.flexforge.plugin.domain.PluginPackageRepository;
+import com.flexforge.plugin.domain.PluginVersionRecord;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * 插件清单聚合（docs/03 §8 GET /plugins/inventory）：实例+版本+激活/失败诊断
- * 只读视图，供插件管理与答辩演示排障使用。
+ * 只读视图，供插件管理与答辩演示排障使用；P12.5 增当前生效主题资产视图
+ * （GET /plugins/theme-assets，前端壳层换肤消费面）。
  */
 @PublicApi
 @Service
@@ -26,13 +30,27 @@ public class PluginInventoryService {
             List<ActivationRecord> activations) {
     }
 
+    /** 当前生效主题资产声明（P12.5）：serveUrl 为短期 HMAC 签名 URL（CSS url() 免 Bearer）。 */
+    @PublicApi
+    public record ActiveThemeAsset(
+            String activationId,
+            String pluginId,
+            String key,
+            String kind,
+            String path,
+            String scope,
+            String serveUrl) {
+    }
+
     private final PluginPackageRepository packages;
     private final LifecycleRepository lifecycle;
+    private final ThemeAssetSigner signer;
 
     public PluginInventoryService(PluginPackageRepository packages,
-                                  LifecycleRepository lifecycle) {
+                                  LifecycleRepository lifecycle, ThemeAssetSigner signer) {
         this.packages = packages;
         this.lifecycle = lifecycle;
+        this.signer = signer;
     }
 
     public List<PluginInventoryEntry> inventory() {
@@ -41,5 +59,33 @@ public class PluginInventoryService {
                         instance.status(), packages.versionSummariesOf(instance.pluginId()),
                         lifecycle.activationsOf(instance.pluginId())))
                 .toList();
+    }
+
+    /** 遍历 ACTIVE 激活的版本载荷，展开 themeAssets 声明（含 tokens，P12.5 换肤通道）。 */
+    public List<ActiveThemeAsset> activeThemeAssets() {
+        List<ActiveThemeAsset> result = new ArrayList<>();
+        for (PluginPackageRepository.InstanceEntry instance : packages.listInstances()) {
+            for (ActivationRecord activation : lifecycle.activationsOf(instance.pluginId())) {
+                if (activation.status() != ActivationStatus.ACTIVE) {
+                    continue;
+                }
+                packages.findByVersionId(activation.pluginVersionId())
+                        .map(PluginContributionFactory::themeAssetsOf)
+                        .ifPresent(specs -> specs.forEach(spec -> result.add(
+                                new ActiveThemeAsset(activation.id(), instance.pluginId(),
+                                        spec.key(), spec.kind(), spec.path(), spec.scope(),
+                                        signedServeUrl(activation.id(), spec.path())))));
+            }
+        }
+        return List.copyOf(result);
+    }
+
+    /** URL 的 {*path} 段为前导斜杠形态；签名与校验使用同一形态（PR #32 审查 P1）。 */
+    private String signedServeUrl(String activationId, String path) {
+        String controllerPath = "/" + path;
+        long exp = signer.expiryFromNow();
+        return "/api/v1/plugins/activations/" + activationId + "/assets"
+                + controllerPath + "?exp=" + exp + "&sig=" + signer.sign(activationId,
+                controllerPath, exp);
     }
 }

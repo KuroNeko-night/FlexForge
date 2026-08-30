@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480">
+  <!-- FlexForge 默认主题背景（P12.5）：几何网格与模块拼块，呼应"模块化"主题 -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#dfe7f6" stroke-width="1"/>
+    </pattern>
+    <linearGradient id="wash" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6f9ff"/>
+      <stop offset="1" stop-color="#e9f0fc"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="480" fill="url(#wash)"/>
+  <rect width="480" height="480" fill="url(#grid)"/>
+  <g fill="none" stroke="#2b5fd9" stroke-opacity="0.16" stroke-width="2">
+    <rect x="56" y="72" width="88" height="88" rx="12"/>
+    <rect x="336" y="120" width="64" height="64" rx="10"/>
+    <rect x="152" y="312" width="112" height="64" rx="12"/>
+    <rect x="360" y="336" width="56" height="56" rx="10"/>
+  </g>
+  <g fill="#2b5fd9" fill-opacity="0.10">
+    <circle cx="392" cy="72" r="20"/>
+    <circle cx="88" cy="392" r="14"/>
+  </g>
+</svg>
