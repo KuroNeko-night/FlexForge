@@ -5,6 +5,7 @@ import DynamicEntityView from '@/views/DynamicEntityView.vue';
 import HomeView from '@/views/HomeView.vue';
 import IssuesView from '@/views/IssuesView.vue';
 import LoginView from '@/views/LoginView.vue';
+import SettingsView from '@/views/SettingsView.vue';
 import PlaceholderView from '@/views/PlaceholderView.vue';
 import PluginsView from '@/views/PluginsView.vue';
 import UsersView from '@/views/UsersView.vue';
@@ -50,6 +51,11 @@ export const router = createRouter({
           path: 'system/users',
           name: 'system-users',
           component: UsersView,
+        },
+        {
+          path: 'settings',
+          name: 'settings',
+          component: SettingsView,
         },
       ],
     },

@@ -32,6 +32,13 @@ export function registerBuiltinContributions(): void {
     order: 40,
     permissionKey: 'ADMIN',
   });
+  // 设置入口（P15）：全员可见（语言等用户级设置迭代 3 加入；AI 配置区仅 ADMIN 渲染）
+  registerMenu({
+    key: 'platform.settings',
+    title: '设置',
+    route: '/settings',
+    order: 50,
+  });
   registerRecordAction({
     key: 'record.detail',
     label: '详情',

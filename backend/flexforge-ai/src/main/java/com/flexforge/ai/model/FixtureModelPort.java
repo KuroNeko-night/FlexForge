@@ -1,8 +1,6 @@
 package com.flexforge.ai.model;
 
 import com.flexforge.common.PublicApi;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,12 +10,9 @@ import java.nio.charset.StandardCharsets;
  * 固定 fixture 模型（docs/09 P11：模型接口未最终确认前，开发与回归只依赖
  * fixture；fixture 优先）。脚本化两轮澄清：首轮追问字段/规则/验收标准，
  * 收到回答后产出与 prompts/v1 一一对应的确定性规格草稿（资源文件化，
- * 回归可重复）。默认装配（未显式选择 http 时）。
+ * 回归可重复）。P15 起不注册为 Bean——由 RoutingModelPort 按有效配置路由持有。
  */
 @PublicApi
-@Component
-@ConditionalOnProperty(value = "flexforge.ai.provider",
-        havingValue = "fixture", matchIfMissing = true)
 public class FixtureModelPort implements ModelPort {
 
     private static final String ROUND_1 = "{\"questions\":["
