@@ -9,8 +9,8 @@ STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 92%
 LAST_UPDATED: 2026-08-30
 OWNER: project-maintainer
-NEXT_ACTION: P15 迭代 1（分支 feat/p15-platform-experience）：Issue/AI 工作台前端（clarify 对话入口/迁移/规格/生成）+ 插件管理页写操作（导入/激活/停用/卸载）；随后迭代 2 设置页+AI 运行时配置（密钥加密不回显）、迭代 3 i18n+英文化插件+示例插件+登录/工作台品牌化
-EXIT_GATE: 待积累（P15 验收五项见 docs/09 P15）
+NEXT_ACTION: P15 迭代 2（新分支）：设置页 + AI 模型运行时配置（V012 单行配置表 + RoutingModelPort 运行时路由 + API Key AES-GCM 加密存储、读接口只回掩码；先登记 docs/13 S4/§3.6 修订与 docs/02 FR-SETUP）→ 迭代 3 i18n+英文化插件+登录/工作台品牌化+示例插件
+EXIT_GATE: 待积累（P15 验收五项见 docs/09 P15）。迭代 1 证据：PR #34 独立子代理审查 3 P1+3 P2+4 P3 全处置（P1=裸 void 端点 200 空体假失败×2+findings 契约；P2=切换 Issue 状态串台×2+IME 回车；顺带 FormData 测试缺口补齐）+CI 一次真实失败（Prettier 9 文件，本地补跑门禁后修复）+六项全绿合并（c43a54a）；live 验证 2026-08-30：admin 建 Issue→dev clarify 两轮出规格（3 追问→spec rev1）→APPROVED→generate（首次 REGISTER registration_failed=fixture 固定实体名 clarify_item 与遗留生成插件冲突，属脏库已知行为非缺陷；DEV_FAILED→手工改实体名 meeting_room 存 rev2→再批准→generate 0.1.2 ACTIVE→IN_TESTING）→USER 建记录 rec-94aa…（qty=12 非负规则面）；前端 99 tests
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -150,3 +150,4 @@ BLOCKERS: none
 | 2026-08-30 | P13 | **P13 出口复核通过，置 completed；P00-P14 全阶段完成，进度 100%，项目维持 release_candidate**。live 验证链（新后端镜像）：注册 200（token+USER 角色）/重名 400/保留名 admin 400/限流 429（用例）；停用 200→登录 401→恢复 200→重登 200；主题聚合停用清零/重新激活恢复 4 资产（签名 URL）——前端路由切换自动重拉（热切换）。后端 138+前端 76 tests、门禁 21/1/0、PR #33 合并（e9a6118） | docs/09 P13 验收、PR #33、live 验证 2026-08-30 |
 | 2026-08-30 | P15 | 用户验收（P13 后）提出五项缺口并裁决新增 P15（docs/09 P15 已登记）：①前端无 Issue/AI 对话入口②插件管理缺安装/启停/卸载快捷操作③登录页/工作台视觉粗糙（背景/品牌/动画）④示例插件不足+缺界面自定义演示⑤缺设置页（AI api/baseurl、语言切换等）。范围红线：延续 P12.5 结构与皮分离（文案 key/设置框架=平台基建，语言包/美术=Level 1 插件）；AI Key 存储扩展先登记 docs/13 §3.6。三分迭代：Issue 工作台+插件写操作 → 设置页+AI 运行时配置 → i18n+示例插件+品牌化 | docs/09 P15、本条目 |
 | 2026-08-30 | P15 | 迭代 1 完成（分支 feat/p15-platform-experience）：①Issue/AI 工作台前端——IssuesView（列表/状态筛选/创建抽屉）+IssueDetail（AI 对话面板：clarify 多轮问答→规格草稿；评论）+IssueDevPanel（状态迁移按状态机镜像给选项+旁路强制原因/规格手工编辑保存（FR-ISSUE-06 兜底）/资源预览/生成并激活），角色显隐仅体验、边界在服务端 @RequireRole；api/issues.ts 契约镜像+状态机表②插件管理写操作——PluginsView zip 上传（校验→导入）/PluginCard 版本激活/停用/卸载（确认）+单飞守卫+页面级错误；client.ts FormData multipart 修复③路由 /issues+菜单入口（登录可用）。前端 96 tests（+20）、lint/type-check 绿 | `frontend/src/api/issues.ts`、`views/IssuesView.vue`、`components/IssueDetail|IssueDevPanel|PluginCard.vue`、`views/PluginsView.vue` |
+| 2026-08-30 | P15 | 迭代 1 收口：PR #34 独立子代理审查（3 P1+3 P2+4 P3 全处置：apiFetch 空体容错统一修裸 void 端点假失败/findings 契约 string[]/切换 Issue 复位对话与草稿防串台/IME 回车 isComposing/versionRange/死链 reload 清理/pendingKey 覆盖导入校验；新增 client 空体+FormData 回归用例）；CI 一次真实失败（Prettier 9 文件——本地漏跑全量门禁的流程偏差，补跑 21/1/0 后修复）六项全绿合并 c43a54a；live 验证全链：建 Issue→clarify 两轮→批准→generate（脏库 clarify_item 冲突→手工改实体名 rev2→DEV_FAILED 回路→0.1.2 ACTIVE）→USER 建记录成功 | PR #34 评论（逐条回应）、live 验证 2026-08-30、`frontend/src/api/client.ts` |
