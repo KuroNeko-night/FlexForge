@@ -69,8 +69,11 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   if (!response.ok) {
     throw await toApiError(response);
   }
-  if (response.status === 204) {
+  // 204 与 200 空体（裸 void 端点：评论/卸载等）统一归一 undefined；
+  // 空 text 先读再判，避免对空体 response.json() 抛 SyntaxError 假失败（PR #34 审查 P1）
+  const text = await response.text();
+  if (text === '') {
     return undefined as T;
   }
-  return (await response.json()) as T;
+  return JSON.parse(text) as T;
 }

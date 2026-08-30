@@ -26,7 +26,6 @@ import ComponentCard from '@/components/ui/ComponentCard.vue';
 const props = defineProps<{ issue: IssueRecord; spec: SpecRevision | null }>();
 const emit = defineEmits<{
   updated: [issue: IssueRecord];
-  reload: [];
   specSaved: [spec: SpecRevision];
 }>();
 
@@ -63,7 +62,12 @@ watch(
     specError.value = null;
     generateError.value = null;
     generated.value = null;
+    // PR #34 审查 P2：specDraft 不依赖 props.spec 引用变化（null→null 不触发），
+    // 切换 Issue 必须显式复位，否则 A 的草稿可被保存到 B
+    specDraft.value = props.spec?.specJson ?? '';
+    preview.value = null;
   },
+  { immediate: true },
 );
 
 async function submitTransition(): Promise<void> {
@@ -108,10 +112,17 @@ async function loadPreview(): Promise<void> {
   if (previewing.value) {
     return;
   }
+  const issueId = props.issue.id;
   previewing.value = true;
   try {
-    preview.value = await fetchPreview(props.issue.id);
+    const result = await fetchPreview(issueId);
+    if (props.issue.id === issueId) {
+      preview.value = result;
+    }
   } catch (e) {
+    if (props.issue.id !== issueId) {
+      return;
+    }
     preview.value = {
       valid: false,
       resources: {},

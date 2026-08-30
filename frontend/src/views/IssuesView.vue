@@ -65,14 +65,6 @@ function syncIssue(next: IssueRecord): void {
   }
 }
 
-async function refreshSelected(): Promise<void> {
-  if (!selected.value) {
-    return;
-  }
-  await load();
-  selected.value = issues.value.find((issue) => issue.id === selected.value?.id) ?? null;
-}
-
 async function submitCreate(): Promise<void> {
   if (creating.value || !form.value.title || !form.value.description) {
     return;
@@ -143,12 +135,7 @@ onMounted(load);
           </button>
         </li>
       </ul>
-      <IssueDetail
-        v-if="selected"
-        :issue="selected"
-        @updated="syncIssue"
-        @reload="refreshSelected"
-      />
+      <IssueDetail v-if="selected" :issue="selected" @updated="syncIssue" />
       <p v-else class="issue-empty-hint">选择左侧 Issue 查看详情与 AI 对话</p>
     </div>
 

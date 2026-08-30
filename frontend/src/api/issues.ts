@@ -148,16 +148,9 @@ export function transitionIssue(
   });
 }
 
-/** 后端 latestSpec 无规格时返回 200 空体（生成门以 null 判定），此处归一为 null。 */
+/** 后端 latestSpec 无规格时返回 200 空体（apiFetch 已归一 undefined），此处收敛为 null。 */
 export async function fetchSpec(issueId: string): Promise<SpecRevision | null> {
-  try {
-    return await apiFetch<SpecRevision>(`/issues/${issueId}/spec`);
-  } catch (e) {
-    if (e instanceof SyntaxError) {
-      return null;
-    }
-    throw e;
-  }
+  return (await apiFetch<SpecRevision>(`/issues/${issueId}/spec`)) ?? null;
 }
 
 /** 手工保存规格（FR-ISSUE-06 模型不可用兜底）：请求体即规格 JSON 本身。 */

@@ -66,17 +66,19 @@ async function submitValidate(): Promise<void> {
     return;
   }
   validating.value = true;
+  pendingKey.value = 'validate';
   opError.value = null;
   opNotice.value = null;
   try {
     const report = await validatePackage(pendingFile.value);
     opNotice.value = report.valid
       ? '校验通过，可以导入'
-      : `校验未通过：${report.findings.map((f) => f.message).join('；')}`;
+      : `校验未通过：${report.findings.join('；')}`;
   } catch (e) {
     opError.value = describe(e, '校验失败，请稍后重试');
   } finally {
     validating.value = false;
+    pendingKey.value = null;
   }
 }
 
@@ -85,6 +87,7 @@ async function submitImport(): Promise<void> {
     return;
   }
   importing.value = true;
+  pendingKey.value = 'import';
   opError.value = null;
   opNotice.value = null;
   try {
@@ -101,6 +104,7 @@ async function submitImport(): Promise<void> {
     opError.value = describe(e, '导入失败，请稍后重试');
   } finally {
     importing.value = false;
+    pendingKey.value = null;
   }
 }
 

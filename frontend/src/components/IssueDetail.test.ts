@@ -138,6 +138,30 @@ describe('IssueDetail AI 对话（clarify，FR-ISSUE-03）', () => {
   });
 });
 
+describe('IssueDetail 切换复位（PR #34 审查 P2）', () => {
+  beforeEach(() => {
+    resetMocks();
+    commentsMock.mockResolvedValue([]);
+    specMock.mockResolvedValue(null);
+  });
+
+  it('切换 Issue 复位对话与草稿（组件复用防串台）', async () => {
+    clarifyMock.mockResolvedValue({ specProduced: false, questions: ['A 的追问'], spec: null });
+    const wrapper = mountDetail('SUBMITTED');
+    await flushPromises();
+    await clickButton(wrapper, '开始 AI 澄清');
+    expect(wrapper.text()).toContain('A 的追问');
+    await wrapper.find('.spec-editor').setValue('{"schemaVersion":1,"from":"a"}');
+
+    commentsMock.mockResolvedValue([]);
+    specMock.mockResolvedValue(null);
+    await wrapper.setProps({ issue: { ...baseIssue, id: 'i2', title: 'B' } });
+    await flushPromises();
+    expect(wrapper.text()).not.toContain('A 的追问');
+    expect((wrapper.find('.spec-editor').element as HTMLTextAreaElement).value).toBe('');
+  });
+});
+
 describe('IssueDetail 状态迁移（FR-ISSUE-02）', () => {
   beforeEach(() => {
     resetMocks();

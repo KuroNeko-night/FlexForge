@@ -33,10 +33,11 @@ export function fetchPluginInventory(): Promise<PluginInventoryEntry[]> {
   return apiFetch<PluginInventoryEntry[]>('/plugins/inventory');
 }
 
-/** 导入校验报告（ADMIN；docs/03 §8 POST /plugins/validate）。 */
+/** 导入校验报告（ADMIN；docs/03 §8 POST /plugins/validate）。findings 为字符串清单。 */
 export interface ValidationReport {
   valid: boolean;
-  findings: { level: string; message: string }[];
+  preview: InstallPreview | null;
+  findings: string[];
 }
 
 export interface InstallPreview {
@@ -45,7 +46,7 @@ export interface InstallPreview {
   versionId: string;
   contentHash: string;
   isNew: boolean;
-  dependencies: { pluginId: string; range: string }[];
+  dependencies: { pluginId: string; versionRange: string }[];
 }
 
 /** 上传插件包校验（不落库）。 */

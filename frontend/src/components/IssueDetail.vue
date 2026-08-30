@@ -8,6 +8,7 @@ import {
   fetchComments,
   fetchSpec,
   ISSUE_STATUS_LABELS,
+  type ClarifyOutcome,
   type IssueComment,
   type IssueRecord,
   type SpecRevision,
@@ -25,7 +26,6 @@ import ComponentCard from '@/components/ui/ComponentCard.vue';
 const props = defineProps<{ issue: IssueRecord }>();
 const emit = defineEmits<{
   updated: [issue: IssueRecord];
-  reload: [];
   specSaved: [spec: SpecRevision];
 }>();
 
@@ -64,37 +64,58 @@ async function loadDetail(): Promise<void> {
   }
 }
 
-watch(() => props.issue.id, loadDetail, { immediate: true });
+/** 切换 Issue 即整体复位对话/输入态并重载子区（PR #34 审查 P2：组件复用防串台）。 */
+watch(
+  () => props.issue.id,
+  () => {
+    chat.value = [];
+    answer.value = '';
+    commentBody.value = '';
+    chatError.value = null;
+    commentError.value = null;
+    void loadDetail();
+  },
+  { immediate: true },
+);
+
+/** clarify 结果落对话流：用户回答 → AI 追问/规格草稿提示（无追问给兜底文案）。 */
+function applyClarifyOutcome(text: string | null, outcome: ClarifyOutcome): void {
+  if (text !== null) {
+    chat.value = [...chat.value, { role: 'user', text }];
+  }
+  if (outcome.specProduced) {
+    spec.value = outcome.spec;
+    chat.value = [
+      ...chat.value,
+      { role: 'ai', text: '已按当前回答生成规格草稿，可在"规格"区查看与继续迭代。' },
+    ];
+    return;
+  }
+  const replies =
+    outcome.questions.length > 0
+      ? outcome.questions
+      : ['模型未返回追问，可重试或让开发者手工编写规格。'];
+  for (const reply of replies) {
+    chat.value = [...chat.value, { role: 'ai', text: reply }];
+  }
+}
 
 async function sendClarify(text: string | null): Promise<void> {
+  const issueId = props.issue.id;
   clarifying.value = true;
   chatError.value = null;
   try {
-    const outcome = await clarifyIssue(props.issue.id, text ?? undefined);
-    if (text !== null) {
-      chat.value = [...chat.value, { role: 'user', text }];
-    }
-    if (outcome.specProduced) {
-      spec.value = outcome.spec;
-      chat.value = [
-        ...chat.value,
-        { role: 'ai', text: '已按当前回答生成规格草稿，可在"规格"区查看与继续迭代。' },
-      ];
-    } else if (outcome.questions.length > 0) {
-      for (const question of outcome.questions) {
-        chat.value = [...chat.value, { role: 'ai', text: question }];
-      }
-    } else {
-      chat.value = [
-        ...chat.value,
-        { role: 'ai', text: '模型未返回追问，可重试或让开发者手工编写规格。' },
-      ];
+    const outcome = await clarifyIssue(issueId, text ?? undefined);
+    if (props.issue.id === issueId) {
+      applyClarifyOutcome(text, outcome);
     }
   } catch (e) {
-    chatError.value =
-      e instanceof ApiError
-        ? `${e.message}${e.requestId ? `（${e.requestId}）` : ''}`
-        : 'AI 调用失败，请稍后重试';
+    if (props.issue.id === issueId) {
+      chatError.value =
+        e instanceof ApiError
+          ? `${e.message}${e.requestId ? `（${e.requestId}）` : ''}`
+          : 'AI 调用失败，请稍后重试';
+    }
   } finally {
     clarifying.value = false;
   }
@@ -107,6 +128,13 @@ function submitAnswer(): void {
   }
   answer.value = '';
   void sendClarify(text);
+}
+
+/** IME 组态中的回车是选词不是提交（PR #34 审查 P2：中文输入误发答案）。 */
+function onAnswerEnter(event: KeyboardEvent): void {
+  if (!event.isComposing) {
+    submitAnswer();
+  }
 }
 
 async function submitComment(): Promise<void> {
@@ -162,7 +190,7 @@ function onSpecSaved(next: SpecRevision): void {
             rows="2"
             placeholder="回答 AI 的追问…"
             :disabled="clarifying"
-            @keydown.enter.prevent="submitAnswer"
+            @keydown.enter.prevent="onAnswerEnter"
           />
           <BaseButton
             v-if="chat.length === 0"
@@ -192,7 +220,6 @@ function onSpecSaved(next: SpecRevision): void {
       :issue="issue"
       :spec="spec"
       @updated="emit('updated', $event)"
-      @reload="emit('reload')"
       @spec-saved="onSpecSaved"
     />
     <p v-else-if="spec" class="spec-summary">
