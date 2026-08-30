@@ -70,7 +70,9 @@ export interface SpecPreview {
 }
 
 export function listIssues(status?: string, page = 1, pageSize = 50): Promise<IssueRecord[]> {
-  const query = status ? `?status=${status}&page=${page}&pageSize=${pageSize}` : `?page=${page}&pageSize=${pageSize}`;
+  const query = status
+    ? `?status=${status}&page=${page}&pageSize=${pageSize}`
+    : `?page=${page}&pageSize=${pageSize}`;
   return apiFetch<IssueRecord[]>(`/issues${query}`);
 }
 

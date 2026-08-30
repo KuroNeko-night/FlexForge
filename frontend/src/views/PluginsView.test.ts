@@ -174,11 +174,17 @@ describe('PluginsView 卡片操作（P15）', () => {
     await flushPromises();
     expect(activateMock).toHaveBeenCalledWith('v1');
 
-    await wrapper.findAll('button').filter((b) => b.text() === '停用')[0].trigger('click');
+    await wrapper
+      .findAll('button')
+      .filter((b) => b.text() === '停用')[0]
+      .trigger('click');
     await flushPromises();
     expect(stopMock).toHaveBeenCalledWith('a2');
 
-    await wrapper.findAll('button').filter((b) => b.text() === '卸载')[0].trigger('click');
+    await wrapper
+      .findAll('button')
+      .filter((b) => b.text() === '卸载')[0]
+      .trigger('click');
     await flushPromises();
     expect(uninstallMock).toHaveBeenCalledWith('gen.iabc123');
   });
@@ -195,7 +201,10 @@ describe('PluginsView 操作防护（P15）', () => {
     fetchMock.mockResolvedValue(inventory());
     const wrapper = mount(PluginsView);
     await flushPromises();
-    await wrapper.findAll('button').filter((b) => b.text() === '卸载')[0].trigger('click');
+    await wrapper
+      .findAll('button')
+      .filter((b) => b.text() === '卸载')[0]
+      .trigger('click');
     await flushPromises();
     expect(uninstallMock).not.toHaveBeenCalled();
   });
@@ -204,9 +213,7 @@ describe('PluginsView 操作防护（P15）', () => {
     fetchMock.mockResolvedValue(inventory());
     const wrapper = mount(PluginsView);
     await flushPromises();
-    activateMock.mockRejectedValue(
-      new ApiError('dependency_missing', '依赖缺失', 400, 'req-2'),
-    );
+    activateMock.mockRejectedValue(new ApiError('dependency_missing', '依赖缺失', 400, 'req-2'));
     const activateButtons = wrapper.findAll('button').filter((b) => b.text() === '激活');
     await activateButtons[0].trigger('click');
     await flushPromises();

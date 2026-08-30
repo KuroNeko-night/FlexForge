@@ -66,8 +66,9 @@ describe('api client 空体与 FormData（PR #34 审查 P1 回归）', () => {
   it('200 空体（裸 void 端点）归一为 undefined 不假失败', async () => {
     const impl = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
     vi.stubGlobal('fetch', impl);
-    await expect(apiFetch('/issues/i1/comments', { method: 'POST', body: '{}' })).resolves
-      .toBeUndefined();
+    await expect(
+      apiFetch('/issues/i1/comments', { method: 'POST', body: '{}' }),
+    ).resolves.toBeUndefined();
     expect(impl).toHaveBeenCalledOnce();
   });
 

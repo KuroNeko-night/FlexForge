@@ -52,7 +52,10 @@ const canClarify = computed(
 async function loadDetail(): Promise<void> {
   const issueId = props.issue.id;
   try {
-    const [nextComments, nextSpec] = await Promise.all([fetchComments(issueId), fetchSpec(issueId)]);
+    const [nextComments, nextSpec] = await Promise.all([
+      fetchComments(issueId),
+      fetchSpec(issueId),
+    ]);
     // 陈旧响应守卫：切换 Issue 期间的返回不落当前面板
     if (props.issue.id !== issueId) {
       return;
@@ -235,12 +238,7 @@ function onSpecSaved(next: SpecRevision): void {
         <li v-if="comments.length === 0" class="chat-hint">尚无评论</li>
       </ul>
       <div class="chat-input">
-        <textarea
-          v-model="commentBody"
-          rows="2"
-          placeholder="发表评论…"
-          :disabled="commenting"
-        />
+        <textarea v-model="commentBody" rows="2" placeholder="发表评论…" :disabled="commenting" />
         <BaseButton :disabled="commenting || commentBody.trim() === ''" @click="submitComment">
           {{ commenting ? '发表中…' : '发表' }}
         </BaseButton>

@@ -186,7 +186,8 @@ async function submitGenerate(): Promise<void> {
       <h4>
         规格
         <span v-if="spec" class="hint">
-          修订 {{ spec.revision }} · {{ spec.valid ? '校验通过' : `校验未通过：${spec.validationErrors}` }}
+          修订 {{ spec.revision }} ·
+          {{ spec.valid ? '校验通过' : `校验未通过：${spec.validationErrors}` }}
         </span>
       </h4>
       <textarea
@@ -209,7 +210,8 @@ async function submitGenerate(): Promise<void> {
         <p v-if="preview.valid">将生成 {{ Object.keys(preview.resources).length }} 个资源文件：</p>
         <ul>
           <li v-for="(content, path) in preview.resources" :key="path">
-            <code>{{ path }}</code>（{{ content.length }} 字符）
+            <code>{{ path }}</code
+            >（{{ content.length }} 字符）
           </li>
         </ul>
         <p v-if="!preview.valid" class="form-error">规格不合法：{{ preview.errors.join('；') }}</p>

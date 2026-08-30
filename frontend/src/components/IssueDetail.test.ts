@@ -109,7 +109,11 @@ describe('IssueDetail AI 对话（clarify，FR-ISSUE-03）', () => {
   });
 
   it('提交回答后生成规格草稿：spec 更新并提示', async () => {
-    clarifyMock.mockResolvedValueOnce({ specProduced: false, questions: ['实体叫什么？'], spec: null });
+    clarifyMock.mockResolvedValueOnce({
+      specProduced: false,
+      questions: ['实体叫什么？'],
+      spec: null,
+    });
     const wrapper = mountDetail();
     await flushPromises();
     await clickButton(wrapper, '开始 AI 澄清');

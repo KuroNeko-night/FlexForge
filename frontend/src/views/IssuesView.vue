@@ -114,10 +114,7 @@ onMounted(load);
     </StateView>
     <div v-else class="issues-layout">
       <ul class="issue-list" data-testid="issue-list">
-        <li
-          v-for="issue in issues"
-          :key="issue.id"
-        >
+        <li v-for="issue in issues" :key="issue.id">
           <button
             type="button"
             class="issue-item"

@@ -49,7 +49,9 @@ function diagnosisOf(activation: PluginActivationEntry): string {
       <li v-if="plugin.versions.length === 0">无版本</li>
     </ul>
     <div class="plugin-ops">
-      <BaseButton size="sm" :disabled="pending || !hasActive" @click="emit('stop')">停用</BaseButton>
+      <BaseButton size="sm" :disabled="pending || !hasActive" @click="emit('stop')"
+        >停用</BaseButton
+      >
       <BaseButton size="sm" variant="danger" :disabled="pending" @click="emit('uninstall')">
         卸载
       </BaseButton>
@@ -67,7 +69,11 @@ function diagnosisOf(activation: PluginActivationEntry): string {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="activation in plugin.activations" :key="activation.id" :data-status="activation.status">
+        <tr
+          v-for="activation in plugin.activations"
+          :key="activation.id"
+          :data-status="activation.status"
+        >
           <td>{{ activation.status }}</td>
           <td data-testid="activation-diagnosis">{{ diagnosisOf(activation) }}</td>
           <td>{{ activation.requestedBy ?? '—' }}</td>

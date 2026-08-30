@@ -128,7 +128,11 @@ async function run(key: string, action: () => Promise<unknown>, notice: string):
 }
 
 function activate(plugin: PluginInventoryEntry, versionId: string, version: string): void {
-  void run(`activate:${versionId}`, () => activateVersion(versionId), `已激活 ${plugin.name}@${version}`);
+  void run(
+    `activate:${versionId}`,
+    () => activateVersion(versionId),
+    `已激活 ${plugin.name}@${version}`,
+  );
 }
 
 function stop(plugin: PluginInventoryEntry): void {
@@ -140,10 +144,16 @@ function stop(plugin: PluginInventoryEntry): void {
 }
 
 function uninstall(plugin: PluginInventoryEntry): void {
-  if (!window.confirm(`确认卸载 ${plugin.name}（${plugin.pluginId}）？注册与实体将撤销，审计保留。`)) {
+  if (
+    !window.confirm(`确认卸载 ${plugin.name}（${plugin.pluginId}）？注册与实体将撤销，审计保留。`)
+  ) {
     return;
   }
-  void run(`uninstall:${plugin.pluginId}`, () => uninstallPlugin(plugin.pluginId), `已卸载 ${plugin.name}`);
+  void run(
+    `uninstall:${plugin.pluginId}`,
+    () => uninstallPlugin(plugin.pluginId),
+    `已卸载 ${plugin.name}`,
+  );
 }
 
 onMounted(load);
