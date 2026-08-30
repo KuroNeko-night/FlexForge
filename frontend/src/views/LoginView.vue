@@ -207,4 +207,11 @@ function switchMode(target: 'login' | 'register'): void {
     transform: translate3d(2%, 2%, 0) scale(1.06);
   }
 }
+/* 背景循环动画为 24s 长周期，不走 --ff-motion-* 令牌（令牌面向交互反馈），
+   因此 reduced-motion 须在此显式关闭（PR #36 审查 P2） */
+@media (prefers-reduced-motion: reduce) {
+  .login-aurora {
+    animation: none;
+  }
+}
 </style>

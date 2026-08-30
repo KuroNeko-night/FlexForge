@@ -28,6 +28,7 @@
   --ff-font-mono: 'Cascadia Code', Consolas, monospace;
   --ff-text-sm: 0.8rem;
   --ff-text-md: 0.9rem;
+  --ff-text-xl: 1.5rem;
 
   /* 间距 / 圆角 / 阴影 */
   --ff-space-1: 0.25rem;
@@ -77,15 +78,7 @@
 .ff-animate-rise {
   animation: ff-rise-in var(--ff-motion-slow) var(--ff-ease) both;
 }
-.ff-animate-fade {
-  animation: ff-fade-in var(--ff-motion-slow) var(--ff-ease) both;
-}
-.ff-animate-rise-1 {
-  animation-delay: calc(var(--ff-motion-fast) * 1);
-}
-.ff-animate-rise-2 {
-  animation-delay: calc(var(--ff-motion-fast) * 2);
-}
+
 
 /* ===== 基建组件（ui/）原语样式：只消费令牌，不写字面量 ===== */
 .ff-btn {

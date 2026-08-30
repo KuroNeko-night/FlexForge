@@ -65,10 +65,11 @@ function requireSafeMessages(messages: Record<string, string>): void {
   }
 }
 
-/** 可选语言：平台基线 + 已激活语言包（按注册顺序，后注册在前展示新插件）。 */
+/** 可选语言：平台基线 + 已激活语言包（按注册顺序追加；跨基线去重——
+ * 声明 zh-CN 的包不产生第二个基线选项，其消息也永不生效=基线即权威）。 */
 export function availableLanguages(): string[] {
   const langs = Object.values(packs.value).map((pack) => pack.lang);
-  return [BASELINE_LANG, ...Array.from(new Set(langs))];
+  return Array.from(new Set([BASELINE_LANG, ...langs]));
 }
 
 export function currentLanguage(): string {

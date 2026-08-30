@@ -3,10 +3,11 @@
   "messages": {
     "shell.logout": "Sign out",
     "menu.workbench": "Workbench",
+    "menu.data-model": "Data Model",
+    "menu.system-management": "System Management",
     "menu.platform.issues": "Issue Workspace",
     "menu.platform.plugins": "Plugins",
     "menu.platform.settings": "Settings",
-    "menu.system.users": "Users",
     "home.title": "Workbench",
     "common.all": "All",
     "common.refresh": "Refresh",
