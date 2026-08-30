@@ -97,8 +97,17 @@ describe('UsersView 创建与角色调整（P12.5 缺陷③）', () => {
     const dialogs = wrapper.findAll('[role="dialog"]');
     expect(dialogs.at(-1)?.text()).toContain('demo-user');
   });
+});
 
-  it('P13 停启用：开关切换调用 status API 并更新行；失败行级提示不毁页', async () => {
+describe('UsersView 停启用（P13）', () => {
+  beforeEach(() => {
+    listMock.mockReset();
+    createMock.mockReset();
+    rolesMock.mockReset();
+    statusMock.mockReset();
+  });
+
+  it('开关切换调用 status API 并更新行；失败行级提示不毁页', async () => {
     listMock.mockResolvedValue(page(baseRows()));
     statusMock.mockResolvedValue({ ...baseRows()[1], status: 'BLOCKED' });
     const wrapper = mount(UsersView, { global: { stubs } });
