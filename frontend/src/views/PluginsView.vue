@@ -14,6 +14,7 @@ import {
 import PluginCard from '@/components/PluginCard.vue';
 import StateView from '@/components/StateView.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 插件管理页（docs/09 P12 清单 + P15 写操作）：inventory 视图 + zip 上传
@@ -162,8 +163,8 @@ onMounted(load);
 <template>
   <section class="plugins-view" data-testid="plugins-view">
     <header class="plugins-header">
-      <h2>插件管理</h2>
-      <BaseButton @click="load">刷新</BaseButton>
+      <h2>{{ t('plugins.title', '插件管理') }}</h2>
+      <BaseButton @click="load">{{ t('common.refresh', '刷新') }}</BaseButton>
     </header>
 
     <div class="install-bar" data-testid="install-bar">

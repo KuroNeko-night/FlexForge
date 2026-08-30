@@ -13,6 +13,7 @@ import IssueDetail from '@/components/IssueDetail.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseDrawer from '@/components/ui/BaseDrawer.vue';
 import StateView from '@/components/StateView.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * Issue 工作台（P15，FR-ISSUE-01..06 前端消费面）：列表 + 筛选 + 创建，
@@ -94,19 +95,21 @@ onMounted(load);
 <template>
   <section class="issues-view" data-testid="issues-view">
     <header class="issues-header">
-      <h2>Issue 工作台</h2>
+      <h2>{{ t('issues.title', 'Issue 工作台') }}</h2>
       <div class="issues-actions">
         <label class="filter-label">
           状态
           <select v-model="statusFilter" data-testid="status-filter" @change="load">
-            <option value="">全部</option>
+            <option value="">{{ t('common.all', '全部') }}</option>
             <option v-for="status in STATUS_OPTIONS" :key="status" :value="status">
               {{ ISSUE_STATUS_LABELS[status] }}
             </option>
           </select>
         </label>
-        <BaseButton @click="load">刷新</BaseButton>
-        <BaseButton variant="primary" @click="drawerOpen = true">新建 Issue</BaseButton>
+        <BaseButton @click="load">{{ t('common.refresh', '刷新') }}</BaseButton>
+        <BaseButton variant="primary" @click="drawerOpen = true">
+          {{ t('issues.create', '新建 Issue') }}
+        </BaseButton>
       </div>
     </header>
     <StateView v-if="state !== 'ready'" :state="state" :message="error">

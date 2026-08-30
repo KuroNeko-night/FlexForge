@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "example.library",
+  "name": "图书借阅示例",
+  "version": "0.1.0",
+  "capabilityLevel": 1,
+  "minPlatformVersion": "0.1.0",
+  "dependencies": [],
+  "permissions": ["library.read", "library.write"],
+  "contributions": {
+    "navigation": ["example.library.books"],
+    "renderers": ["text.default", "decimal.default", "boolean.default", "date.default", "enum.default"]
+  },
+  "resources": {
+    "entities": ["metadata/entities/library-book.json"],
+    "views": [
+      "metadata/views/library-book.list.json",
+      "metadata/views/library-book.form.json"
+    ],
+    "migrations": [
+      "migrations/V001__library_book.sql",
+      "migrations/V002__library_seed.sql"
+    ]
+  }
+}

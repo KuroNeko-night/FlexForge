@@ -23,10 +23,21 @@ vi.mock('@/registry/themeRegistry', () => ({
   applyTokenOverrides: vi.fn(),
   syncRemovedActivations: vi.fn(),
 }));
+vi.mock('@/registry/localeRegistry', async () => {
+  const actual = await vi.importActual<typeof import('@/registry/localeRegistry')>(
+    '@/registry/localeRegistry',
+  );
+  return {
+    ...actual,
+    registerLocalePack: vi.fn(),
+    syncRemovedLocalePacks: vi.fn(),
+  };
+});
 
 import { fetchMenus } from '@/api/meta';
 import { fetchActiveThemeAssets, type ActiveThemeAsset } from '@/api/theme';
 import { session } from '@/auth/token';
+import { registerLocalePack, syncRemovedLocalePacks } from '@/registry/localeRegistry';
 import {
   applyTokenOverrides,
   registerThemeAsset,
@@ -39,6 +50,8 @@ const themeMock = vi.mocked(fetchActiveThemeAssets);
 const registerMock = vi.mocked(registerThemeAsset);
 const tokensMock = vi.mocked(applyTokenOverrides);
 const syncMock = vi.mocked(syncRemovedActivations);
+const localeMock = vi.mocked(registerLocalePack);
+const localeSyncMock = vi.mocked(syncRemovedLocalePacks);
 
 const themeAsset = (key: string, kind: ActiveThemeAsset['kind'], file: string): ActiveThemeAsset =>
   ({
@@ -61,6 +74,8 @@ function resetMocks() {
   registerMock.mockReset();
   tokensMock.mockReset();
   syncMock.mockReset();
+  localeMock.mockReset();
+  localeSyncMock.mockReset();
   routeMock.path = '/';
   menusMock.mockResolvedValue([{ key: 'workbench', title: '工作台', route: '/workbench' }]);
 }
@@ -94,6 +109,24 @@ describe('WorkbenchView 主题桥接（P12.5）', () => {
     expect(wrapper.text()).toContain('工作台');
     expect(registerMock).not.toHaveBeenCalled();
     wrapper.unmount();
+  });
+
+  it('locale 资产取回 {lang,messages} 注册语言包并差量同步（P15）', async () => {
+    themeMock.mockResolvedValue([themeAsset('k3', 'locale', 'en.json')]);
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ lang: 'en', messages: { 'menu.workbench': 'Workbench' } }),
+    });
+    const wrapper = mount(WorkbenchView, { global: { stubs: { RouterView: true } } });
+    await flushPromises();
+    wrapper.unmount();
+    expect(localeMock).toHaveBeenCalledWith('a1', {
+      lang: 'en',
+      messages: { 'menu.workbench': 'Workbench' },
+    });
+    expect(localeSyncMock).toHaveBeenCalledWith(['a1']);
+    // locale 是 JSON 文档通道，不得走资产注册
+    expect(registerMock).not.toHaveBeenCalled();
   });
 });
 

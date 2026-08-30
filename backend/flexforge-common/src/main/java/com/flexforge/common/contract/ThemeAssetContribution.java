@@ -6,7 +6,7 @@ import java.util.Set;
 
 /**
  * extension.theme-asset 贡献载荷（docs/extension-points.md §2.2，FR-PLUGIN-11）：
- * 插件携带的美术资产声明。kind ∈ background/icon/animation/tokens（P12.5：tokens
+ * 插件携带的美术资产声明。kind ∈ background/icon/animation/tokens/locale（P12.5：tokens
  * 指向 assets/ 内 JSON 键值表，覆盖 --ff-* 设计令牌实现插件换肤）；path 指向包内
  * 经 S6 校验的 assets/ 静态资源（serve 端点按 activationId 取回）；scope 缺省全局。
  */
@@ -17,7 +17,7 @@ public record ThemeAssetContribution(
         String path,
         String scope) {
 
-    public static final Set<String> KINDS = Set.of("background", "icon", "animation", "tokens");
+    public static final Set<String> KINDS = Set.of("background", "icon", "animation", "tokens", "locale");
 
     public ThemeAssetContribution {
         if (key == null || key.isBlank()) {

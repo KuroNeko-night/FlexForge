@@ -68,28 +68,6 @@ button:disabled {
   color: var(--ff-text-muted);
 }
 
-.login-view {
-  max-width: 22rem;
-  margin: 8vh auto;
-  padding: 2rem;
-  background: var(--ff-surface);
-  border-radius: var(--ff-radius-md);
-  box-shadow: var(--ff-shadow-2);
-}
-.login-form label {
-  display: block;
-  margin-bottom: 0.8rem;
-}
-.login-form input {
-  display: block;
-  width: 100%;
-  margin-top: var(--ff-space-1);
-  padding: 0.4rem;
-}
-.login-error {
-  color: var(--ff-danger);
-}
-
 .workbench {
   display: grid;
   grid-template-columns: 14rem 1fr;
@@ -135,13 +113,21 @@ button:disabled {
   font-size: var(--ff-text-md);
 }
 .brand {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  margin: 0 0 var(--ff-space-3);
   font-weight: 700;
   letter-spacing: 0.05em;
+}
+.brand-mark {
+  flex: none;
 }
 
 .workbench-main {
   padding: 1.5rem 2rem;
   overflow-x: auto;
+  animation: ff-fade-in var(--ff-motion-slow) var(--ff-ease) both;
 }
 
 .entity-cards {

@@ -1,0 +1,12 @@
+{
+  "entity": "library_book",
+  "viewType": "list",
+  "name": "图书列表",
+  "columns": [
+    { "field": "title" },
+    { "field": "author" },
+    { "field": "category" },
+    { "field": "price" },
+    { "field": "available" }
+  ]
+}
