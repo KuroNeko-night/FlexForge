@@ -46,7 +46,14 @@ describe('localeRegistry', () => {
     expect(t('plugins.title', '插件管理')).toBe('插件管理');
   });
 
-  it('消息键白名单：非界面文案 key（CSS/URL 形态）拒绝', () => {
+  it('消息键白名单：驼峰段合法；非界面文案 key（CSS/URL 形态）拒绝', () => {
+    // live 排障回归：en.json 的 camelCase 键（pleaseWait/displayName）曾被全小写
+    // 正则拒绝且被单资产 catch 静默吞掉，语言包注册失败表现为"仅基线"
+    registerLocalePack('a3', {
+      lang: 'xx',
+      messages: { 'login.pleaseWait': 'Wait', 'settings.currentLanguage': 'Lang' },
+    });
+    expect(availableLanguages()).toContain('xx');
     expect(() =>
       registerLocalePack('a2', { lang: 'fr', messages: { '--ff-primary': 'red' } }),
     ).toThrow('locale 消息键/值非法');
