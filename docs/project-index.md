@@ -58,9 +58,9 @@ FlexForge/
 │       ├── main.ts / App.vue / router.ts   路由壳（登录守卫体验跳转，安全边界在服务端 S2）
 │       ├── api/                    client（错误规范化/令牌注入/401 回调，FormData multipart 不覆盖边界）+ auth/meta/data/plugins（清单+导入/激活/停用/卸载，P15）/issues（clarify/迁移/规格/生成，P15）/system/theme 客户端 + 契约类型
 │       ├── auth/token.ts           会话令牌（sessionStorage）与当前用户
-│       ├── registry/               keyed.ts 通用基座 + renderer/menu/layout/theme/recordAction registry + builtinContributions（内置部件/动作/本地菜单：Issue 工作台+插件管理入口，P15）
+│       ├── registry/               keyed.ts 通用基座 + renderer/menu/layout/theme/recordAction/locale registry（P15：语言包+t()/语言切换）+ builtinContributions（内置部件/动作/本地菜单：Issue 工作台+插件管理+设置入口）
 │       ├── styles/tokens.css       设计令牌与基建原语样式（P12.5：--ff-* 变量+组件类+过渡动画；主题插件覆盖变量即换肤）
-│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards + ui/（BaseButton/BaseSwitch/ComponentCard/BaseDrawer，P12.5）+ IssueDetail/IssueDevPanel（AI 对话+开发者面板）+ PluginCard（激活/停用/卸载+诊断，P15）
+│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards + ui/（BaseButton/BaseSwitch/ComponentCard/BaseDrawer，P12.5）+ IssueDetail/IssueDevPanel（AI 对话+开发者面板）+ PluginCard（激活/停用/卸载+诊断，P15）+ AppLogo（平台品牌 SVG，P15）
 │       ├── composables/            useEntityMetadata（metaVersion 比对 → stale 刷新）
 │       └── views/                  Login/Workbench/Home/DynamicEntity（列表/详情/新建/编辑）/Issues（Issue 工作台+创建抽屉，P15）/Plugins（清单+写操作，P15）/Users（用户管理，P12.5）/Placeholder
 ├── database/
@@ -77,6 +77,9 @@ FlexForge/
 ├── plugins/
 │   ├── example-inventory/          库存示例 Level 1 包（P09：plugin.json+实体+两视图+两迁移；纯包目录无 README）
 │   ├── example-inventory-README.md 安装说明（包外，P07 区域白名单不允许包内文档）
+│   ├── example-library/            图书借阅示例包（P15：decimal/boolean/date 字段形态+种子）
+│   ├── example-facility/           设备巡检示例包（P15：integer/boolean/date 字段形态）
+│   ├── locale-en/                  英文语言包（P15：kind=locale JSON 文案表，FR-SETUP-02）
 │   ├── theme-default/              默认主题 Level 1 包（P12.5：SVG 背景/标/动效 + tokens 键值表）
 │   └── theme-warm/                 暖色覆盖主题包（P12.5：同名 tokens 覆盖证明插件可自定义样式）
 ├── tests/
@@ -242,3 +245,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-30 | §1 树更新：plugins +theme-default/theme-warm（P12.5 主题包）；frontend +styles/tokens.css、components/ui/ 四组件、views +Users、api +system/theme；backend plugins 聚合端点 theme-assets + kind=tokens；app 测试 +ThemeAssetApiTest | P12.5：前端基建与默认主题（用户裁决新增阶段，三缺陷修复+组件库+换肤通道闭环） |
 | 2026-08-30 | §1 树更新：frontend api +issues.ts、plugins.ts 扩写操作（multipart FormData）；views +Issues、components +IssueDetail/IssueDevPanel/PluginCard；router +/issues、builtinContributions +Issue 工作台菜单 | P15 迭代 1：Issue/AI 工作台前端（clarify 对话入口/迁移/规格/生成消费面）+ 插件管理页写操作（导入/激活/停用/卸载） |
 | 2026-08-30 | §1 树更新：V012 ai_provider_config；flexforge-ai +config 包与 RoutingModelPort（两 ModelPort 实现退出 Bean 装配）；frontend +api/settings、views +Settings、router +/settings、菜单 +设置入口 | P15 迭代 2：设置页 + AI 运行时配置（FR-SETUP-01；docs/13 S4/§3.6-5 第二密钥通道修订、docs/02 +FR-SETUP、docs/03 §8 +/ai/config） |
+| 2026-08-30 | §1 树更新：plugins +example-library/example-facility/locale-en；frontend +registry/localeRegistry、components +AppLogo、views/SettingsView 增语言卡、LoginView 品牌化重写、tokens.css +入场动效；backend 两处 KINDS 扩 locale；app 测试 +ExamplePluginsP15Test | P15 迭代 3：i18n 通道+英文化插件+语言切换+登录/工作台品牌化+两个示例业务插件（登记册 §2.2 变更同步） |

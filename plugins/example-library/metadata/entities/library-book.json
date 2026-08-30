@@ -1,0 +1,52 @@
+{
+  "name": "library_book",
+  "displayName": "图书",
+  "fields": [
+    {
+      "name": "title",
+      "displayName": "书名",
+      "fieldType": "text",
+      "required": true,
+      "validation": { "maxLength": 120 },
+      "position": 0
+    },
+    {
+      "name": "author",
+      "displayName": "作者",
+      "fieldType": "text",
+      "required": true,
+      "validation": { "maxLength": 60 },
+      "position": 1
+    },
+    {
+      "name": "category",
+      "displayName": "分类",
+      "fieldType": "enum",
+      "required": true,
+      "validation": { "options": ["技术", "文学", "管理"] },
+      "position": 2
+    },
+    {
+      "name": "price",
+      "displayName": "定价",
+      "fieldType": "decimal",
+      "required": false,
+      "validation": { "min": 0 },
+      "position": 3
+    },
+    {
+      "name": "available",
+      "displayName": "可借",
+      "fieldType": "boolean",
+      "required": true,
+      "position": 4
+    },
+    {
+      "name": "acquired_on",
+      "displayName": "入藏日期",
+      "fieldType": "date",
+      "required": false,
+      "position": 5
+    }
+  ]
+}

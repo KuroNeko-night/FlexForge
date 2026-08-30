@@ -1,0 +1,44 @@
+{
+  "name": "facility_check",
+  "displayName": "巡检记录",
+  "fields": [
+    {
+      "name": "device",
+      "displayName": "设备",
+      "fieldType": "text",
+      "required": true,
+      "validation": { "maxLength": 80 },
+      "position": 0
+    },
+    {
+      "name": "level",
+      "displayName": "重要度",
+      "fieldType": "enum",
+      "required": true,
+      "validation": { "options": ["关键", "重要", "一般"] },
+      "position": 1
+    },
+    {
+      "name": "downtime_minutes",
+      "displayName": "停机分钟",
+      "fieldType": "integer",
+      "required": false,
+      "validation": { "min": 0 },
+      "position": 2
+    },
+    {
+      "name": "passed",
+      "displayName": "是否通过",
+      "fieldType": "boolean",
+      "required": true,
+      "position": 3
+    },
+    {
+      "name": "checked_on",
+      "displayName": "巡检日期",
+      "fieldType": "date",
+      "required": true,
+      "position": 4
+    }
+  ]
+}

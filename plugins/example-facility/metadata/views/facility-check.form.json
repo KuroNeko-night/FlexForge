@@ -1,0 +1,12 @@
+{
+  "entity": "facility_check",
+  "viewType": "form",
+  "name": "巡检表单",
+  "columns": [
+    { "field": "device" },
+    { "field": "level" },
+    { "field": "downtime_minutes" },
+    { "field": "passed" },
+    { "field": "checked_on" }
+  ]
+}

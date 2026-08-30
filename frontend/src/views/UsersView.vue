@@ -8,6 +8,7 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseDrawer from '@/components/ui/BaseDrawer.vue';
 import BaseSwitch from '@/components/ui/BaseSwitch.vue';
 import StateView from '@/components/StateView.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 系统管理：用户管理页（docs/09 P12.5 缺陷③ + P13 停启用）。
@@ -123,7 +124,7 @@ onMounted(load);
 <template>
   <section class="users-view" data-testid="users-view">
     <header class="users-header">
-      <h2>用户管理</h2>
+      <h2>{{ t('users.title', '用户管理') }}</h2>
       <BaseButton variant="primary" @click="drawerOpen = true">新建用户</BaseButton>
     </header>
     <StateView v-if="state !== 'ready'" :state="state" :message="error">

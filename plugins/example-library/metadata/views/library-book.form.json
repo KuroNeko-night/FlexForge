@@ -1,0 +1,13 @@
+{
+  "entity": "library_book",
+  "viewType": "form",
+  "name": "图书表单",
+  "columns": [
+    { "field": "title" },
+    { "field": "author" },
+    { "field": "category" },
+    { "field": "price" },
+    { "field": "available" },
+    { "field": "acquired_on" }
+  ]
+}

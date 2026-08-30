@@ -7,13 +7,24 @@ import { session } from '@/auth/token';
 import StateView from '@/components/StateView.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ComponentCard from '@/components/ui/ComponentCard.vue';
+import {
+  availableLanguages,
+  currentLanguage,
+  LANGUAGE_LABELS,
+  setLanguage,
+  t,
+} from '@/registry/localeRegistry';
 
 /**
- * 设置页（P15，FR-SETUP-01）：AI 模型运行时配置（ADMIN）——provider/base-url/
- * model/API Key（留空=保持不变，明文零回显只显掩码；清除开关）。语言切换等
- * 用户级设置随 P15 迭代 3 的 locale 通道加入。
+ * 设置页（P15，FR-SETUP-01/02）：AI 模型运行时配置（ADMIN）+ 界面语言切换
+ * （全员；语言内容来自 locale 插件——未激活语言包时仅平台中文基线，FR-SETUP-02）。
+ * 文案经 t() 可被语言包覆盖。
  */
 const isAdmin = computed(() => session.user?.roles.includes('ADMIN') ?? false);
+const language = computed(() => currentLanguage());
+const languageOptions = computed(() =>
+  availableLanguages().map((lang) => ({ value: lang, label: LANGUAGE_LABELS[lang] ?? lang })),
+);
 
 const config = ref<AiConfigView | null>(null);
 const state = ref<'loading' | 'ready' | 'error' | 'denied' | 'empty'>('loading');
@@ -97,13 +108,54 @@ onMounted(load);
 
 <template>
   <section class="settings-view" data-testid="settings-view">
-    <header class="settings-header"><h2>设置</h2></header>
+    <header class="settings-header">
+      <h2>{{ t('settings.title', '设置') }}</h2>
+    </header>
 
-    <p v-if="!isAdmin" class="hint">界面语言等用户级设置即将上线；AI 模型配置请联系管理员。</p>
+    <ComponentCard
+      :title="t('settings.language', '界面语言')"
+      :subtitle="t('settings.languageHint', '语言内容由 locale 插件分发，停用即回退中文基线')"
+    >
+      <label class="inline-option language-row">
+        {{ t('settings.currentLanguage', '当前语言') }}
+        <select :value="language" data-testid="language-select" disabled>
+          <option v-for="option in languageOptions" :key="option.value" :value="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </label>
+      <div class="language-options" data-testid="language-options">
+        <BaseButton
+          v-for="option in languageOptions"
+          :key="option.value"
+          :variant="option.value === language ? 'primary' : undefined"
+          size="sm"
+          :data-lang="option.value"
+          @click="setLanguage(option.value)"
+        >
+          {{ option.label }}
+        </BaseButton>
+      </div>
+      <p class="hint">
+        {{
+          languageOptions.length > 1
+            ? t('settings.languageAvailable', '可选语言来自已激活的语言插件')
+            : t('settings.languagePluginMissing', '仅平台中文基线——安装语言插件后此处出现更多选项')
+        }}
+      </p>
+    </ComponentCard>
+
+    <p v-if="!isAdmin" class="hint">
+      {{ t('settings.aiContactAdmin', 'AI 模型配置请联系管理员。') }}
+    </p>
     <StateView v-else-if="state !== 'ready'" :state="state" :message="error">
-      <p v-if="state === 'empty'">暂无可配置项</p>
+      <p v-if="state === 'empty'">{{ t('settings.empty', '暂无可配置项') }}</p>
     </StateView>
-    <ComponentCard v-else title="AI 模型" subtitle="Issue 澄清与规格生成的模型通道">
+    <ComponentCard
+      v-else
+      :title="t('settings.ai', 'AI 模型')"
+      :subtitle="t('settings.aiHint', 'Issue 澄清与规格生成的模型通道')"
+    >
       <form class="ai-form" data-testid="ai-config-form" @submit.prevent="submit">
         <label>
           提供方
@@ -177,13 +229,31 @@ onMounted(load);
 </template>
 
 <style scoped>
+.settings-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ff-space-4);
+}
 .settings-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 .hint {
+  margin: var(--ff-space-2) 0 0;
   color: var(--ff-text-muted);
+  font-size: var(--ff-text-sm);
+}
+.language-row {
+  margin-bottom: var(--ff-space-2);
+}
+.language-row select {
+  padding: var(--ff-space-2);
+}
+.language-options {
+  display: flex;
+  gap: var(--ff-space-2);
+  flex-wrap: wrap;
 }
 .ai-form label {
   display: block;

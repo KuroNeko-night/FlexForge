@@ -55,6 +55,38 @@
   }
 }
 
+/* ===== 入场动效（P15 品牌化）：时长走令牌，reduced-motion 时长归零即静止 ===== */
+@keyframes ff-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes ff-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.ff-animate-rise {
+  animation: ff-rise-in var(--ff-motion-slow) var(--ff-ease) both;
+}
+.ff-animate-fade {
+  animation: ff-fade-in var(--ff-motion-slow) var(--ff-ease) both;
+}
+.ff-animate-rise-1 {
+  animation-delay: calc(var(--ff-motion-fast) * 1);
+}
+.ff-animate-rise-2 {
+  animation-delay: calc(var(--ff-motion-fast) * 2);
+}
+
 /* ===== 基建组件（ui/）原语样式：只消费令牌，不写字面量 ===== */
 .ff-btn {
   display: inline-flex;

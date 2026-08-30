@@ -5,10 +5,12 @@ import { useRoute, useRouter } from 'vue-router';
 import { logout, fetchMe } from '@/api/auth';
 import { ApiError } from '@/api/client';
 import { fetchMenus } from '@/api/meta';
-import { fetchActiveThemeAssets } from '@/api/theme';
+import { fetchActiveThemeAssets, type ActiveThemeAsset } from '@/api/theme';
 import type { MenuItem } from '@/api/types';
 import { clearSession, session } from '@/auth/token';
+import AppLogo from '@/components/AppLogo.vue';
 import StateView from '@/components/StateView.vue';
+import { registerLocalePack, syncRemovedLocalePacks, t } from '@/registry/localeRegistry';
 import { mergedMenus } from '@/registry/menuRegistry';
 import {
   applyTokenOverrides,
@@ -22,9 +24,10 @@ import {
  * 美术资产（extension.theme-asset 消费面）以 CSS 变量注入本壳层，注册/撤销即时
  * 生效、缺省不设变量即平台默认外观（FR-PLUGIN-11）。P12.5：登录后拉取当前生效
  * themeAssets——资产类注册（serve URL 作 path），tokens 类取回 JSON 键值表覆盖
- * --ff-* 设计令牌；主题失败静默降级为基线外观（增强不破壳）。P13 热切换：路由
- * 切换时重拉聚合并差量撤销消失激活（停用/卸载主题免整页刷新）。元数据只作文本
- * 插值与路由跳转（S5）。
+ * --ff-* 设计令牌；P15：locale 类取回 {lang,messages} 注册语言包（FR-SETUP-02，
+ * 菜单标题经 t() 可被语言包覆盖）；主题失败静默降级为基线外观（增强不破壳）。
+ * P13 热切换：路由切换时重拉聚合并差量撤销消失激活（停用/卸载主题免整页刷新）。
+ * 元数据只作文本插值与路由跳转（S5）。
  */
 const router = useRouter();
 const route = useRoute();
@@ -35,6 +38,44 @@ const shellTheme = themeStyle();
 // P13 热切换竞态守卫：快速连续导航时丢弃陈旧完成（旧响应后到不得复活已撤销主题）
 let themeSeq = 0;
 
+/** 签名 URL 取回 JSON 文档（tokens/locale 共用通道）。 */
+async function fetchJsonDocument(serveUrl: string): Promise<unknown | null> {
+  const response = await fetch(serveUrl, { headers: { Accept: 'application/json' } });
+  return response.ok ? response.json() : null;
+}
+
+/** 应用单个主题资产（tokens/locale 为 JSON 文档通道，其余为资产注册）。 */
+async function applyThemeAsset(asset: ActiveThemeAsset, seq: number): Promise<void> {
+  if (asset.kind !== 'tokens' && asset.kind !== 'locale') {
+    registerThemeAsset(
+      { key: asset.key, kind: asset.kind, path: asset.serveUrl, scope: asset.scope },
+      asset.activationId,
+    );
+    return;
+  }
+  const doc = (await fetchJsonDocument(asset.serveUrl)) as Record<string, unknown> | null;
+  if (seq !== themeSeq) {
+    return;
+  }
+  if (asset.kind === 'tokens' && doc) {
+    applyTokenOverrides(asset.activationId, doc);
+  } else if (asset.kind === 'locale' && doc && isValidLocaleDoc(doc)) {
+    registerLocalePack(asset.activationId, {
+      lang: doc.lang as string,
+      messages: doc.messages as Record<string, string>,
+    });
+  }
+}
+
+function isValidLocaleDoc(doc: Record<string, unknown> | null): boolean {
+  return (
+    doc !== null &&
+    typeof doc.lang === 'string' &&
+    typeof doc.messages === 'object' &&
+    doc.messages !== null
+  );
+}
+
 async function loadTheme(): Promise<void> {
   const seq = ++themeSeq;
   try {
@@ -42,27 +83,13 @@ async function loadTheme(): Promise<void> {
     if (seq !== themeSeq) {
       return;
     }
-    syncRemovedActivations(assets.map((asset) => asset.activationId));
+    const activeIds = assets.map((asset) => asset.activationId);
+    syncRemovedActivations(activeIds);
+    syncRemovedLocalePacks(activeIds);
     for (const asset of assets) {
       // 单个资产失败只跳过自身（PR #32 审查 P3）：坏包不阻断后续合法主题资产
       try {
-        if (asset.kind === 'tokens') {
-          // serveUrl 为后端签名 URL：裸 fetch/CSS url() 免 Bearer（PR #32 审查 P1）
-          const response = await fetch(asset.serveUrl, {
-            headers: { Accept: 'application/json' },
-          });
-          if (seq !== themeSeq) {
-            return;
-          }
-          if (response.ok) {
-            applyTokenOverrides(asset.activationId, await response.json());
-          }
-        } else {
-          registerThemeAsset(
-            { key: asset.key, kind: asset.kind, path: asset.serveUrl, scope: asset.scope },
-            asset.activationId,
-          );
-        }
+        await applyThemeAsset(asset, seq);
       } catch {
         /* 单资产失败静默跳过 */
       }
@@ -126,19 +153,24 @@ watch(
 <template>
   <div class="workbench" data-testid="workbench" :style="shellTheme">
     <aside class="workbench-side">
-      <p class="brand">FlexForge</p>
+      <p class="brand">
+        <AppLogo class="brand-mark" />
+        <span>FlexForge</span>
+      </p>
       <StateView v-if="state !== 'ready'" :state="state" :message="error" />
       <nav v-else aria-label="主导航">
         <ul>
           <li v-for="menu in menus" :key="menu.key">
-            <router-link v-if="menu.route" :to="menu.route">{{ menu.title }}</router-link>
-            <span v-else class="menu-static">{{ menu.title }}</span>
+            <router-link v-if="menu.route" :to="menu.route">
+              {{ t(`menu.${menu.key}`, menu.title) }}
+            </router-link>
+            <span v-else class="menu-static">{{ t(`menu.${menu.key}`, menu.title) }}</span>
           </li>
         </ul>
       </nav>
       <div class="side-footer">
         <span class="who">{{ session.user?.displayName ?? session.user?.username }}</span>
-        <button type="button" @click="signOut">登出</button>
+        <button type="button" @click="signOut">{{ t('shell.logout', '登出') }}</button>
       </div>
     </aside>
     <section class="workbench-main">

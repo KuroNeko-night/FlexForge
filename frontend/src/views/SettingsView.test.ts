@@ -1,10 +1,17 @@
 // @vitest-environment happy-dom
 import { flushPromises, mount } from '@vue/test-utils';
+import { nextTick } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiError } from '@/api/client';
 import type { AiConfigView } from '@/api/settings';
 import { clearSession, saveSession } from '@/auth/token';
+import {
+  currentLanguage,
+  registerLocalePack,
+  setLanguage,
+  syncRemovedLocalePacks,
+} from '@/registry/localeRegistry';
 import SettingsView from '@/views/SettingsView.vue';
 
 vi.mock('@/api/settings', () => ({
@@ -153,6 +160,50 @@ describe('SettingsView 非 ADMIN', () => {
     const wrapper = mount(SettingsView);
     await flushPromises();
     expect(wrapper.find('[data-state="denied"]').exists()).toBe(true);
+    clearSession();
+  });
+});
+
+describe('SettingsView 界面语言（FR-SETUP-02，P15）', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', {
+      getItem: () => null,
+      setItem: () => undefined,
+    });
+    syncRemovedLocalePacks([]);
+    setLanguage('zh-CN');
+  });
+
+  it('无语言插件时仅平台基线并提示安装语言插件', async () => {
+    saveSession('t', { id: 2, username: 'u', displayName: 'U', roles: ['USER'] });
+    const wrapper = mount(SettingsView);
+    await flushPromises();
+    expect(wrapper.find('[data-testid="language-options"]').text()).toContain('简体中文');
+    expect(wrapper.text()).toContain('仅平台中文基线');
+    clearSession();
+  });
+
+  it('语言包注册后出现英文选项，切换即时生效于页面文案', async () => {
+    registerLocalePack('a1', {
+      lang: 'en',
+      messages: { 'settings.title': 'Settings', 'settings.ai': 'AI Model' },
+    });
+    loginAdmin();
+    fetchMock.mockResolvedValue(view());
+    const wrapper = mount(SettingsView);
+    await flushPromises();
+    expect(wrapper.find('[data-testid="language-options"]').text()).toContain('English');
+
+    await wrapper.find('[data-lang="en"]').trigger('click');
+    expect(currentLanguage()).toBe('en');
+    expect(wrapper.find('h2').text()).toBe('Settings');
+    expect(wrapper.text()).toContain('AI Model');
+
+    // 撤销语言包（停用插件）：语言回退基线、文案回中文
+    syncRemovedLocalePacks([]);
+    await nextTick();
+    expect(currentLanguage()).toBe('zh-CN');
+    expect(wrapper.find('h2').text()).toBe('设置');
     clearSession();
   });
 });
