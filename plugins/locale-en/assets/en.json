@@ -35,6 +35,15 @@
     "login.register": "Register & sign in",
     "login.pleaseWait": "Please wait…",
     "login.toRegister": "No account? Self-register",
-    "login.toLogin": "Already registered? Back to sign in"
+    "login.toLogin": "Already registered? Back to sign in",
+    "settings.providerFixture": "Offline demo",
+    "settings.providerHttp": "OpenAI-compatible API",
+    "settings.keyConfigured": "Configured",
+    "settings.keyKeep": "leave blank to keep it",
+    "settings.keyMissing": "Not configured",
+    "settings.keyWillClear": "The saved key will be removed",
+    "settings.clearKey": "Remove the saved API key",
+    "settings.keyStale": "The saved key cannot be decrypted. Please enter it again.",
+    "settings.savedNotice": "Saved. The next model call uses the new configuration."
   }
 }
