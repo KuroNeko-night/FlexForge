@@ -142,6 +142,8 @@ function confirmAction(
   message: string,
   options?: { title?: string; confirmLabel?: string; danger?: boolean },
 ): Promise<boolean> {
+  // 重入时先结算上一个等待者（false），防 Promise 悬挂（审查 P3-11）
+  confirmResolver?.(false);
   confirmState.value = {
     open: true,
     title: options?.title ?? '确认操作',

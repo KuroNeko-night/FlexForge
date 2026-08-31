@@ -75,6 +75,9 @@ watch(
   () => props.issue.id,
   () => {
     reason.value = '';
+    // 打开中的确认对话框跨 Issue 复用会串台（审查 P2-3）：一并复位
+    pendingTarget.value = null;
+    confirmingGenerate.value = false;
     transitionError.value = null;
     specError.value = null;
     generateError.value = null;
@@ -107,6 +110,8 @@ async function runTransition(target: IssueStatusName, why: string): Promise<void
     emit('updated', await transitionIssue(props.issue.id, target, why));
     pendingTarget.value = null;
   } catch (e) {
+    // 失败关闭对话框：错误显示在页面迁移区（遮罩之下看不到，审查 P2-5）
+    pendingTarget.value = null;
     transitionError.value = apiErrorMessage(e, '迁移失败，请稍后重试');
   } finally {
     transitioning.value = false;
@@ -166,6 +171,8 @@ async function submitGenerate(): Promise<void> {
     confirmingGenerate.value = false;
     emit('updated', generated.value.issue);
   } catch (e) {
+    // 失败关闭对话框：错误显示在页面生成区（审查 P2-5）
+    confirmingGenerate.value = false;
     generateError.value = apiErrorMessage(e, '生成失败，请稍后重试');
   } finally {
     generating.value = false;

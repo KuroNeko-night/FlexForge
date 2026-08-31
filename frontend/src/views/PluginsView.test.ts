@@ -180,6 +180,18 @@ describe('PluginsView 导入（P15 → P16 自动校验链）', () => {
     expect((importMock.mock.calls[0][0] as File).name).toBe('plugin.zip');
     expect(wrapper.text()).toContain('已导入 p1 1.0.0');
   });
+
+  it('自动校验请求异常归一为失败态与兜底文案（审查 P3-14）', async () => {
+    fetchMock.mockResolvedValue(inventory());
+    const wrapper = mount(PluginsView);
+    await flushPromises();
+    validateMock.mockRejectedValue(new Error('network down'));
+    await pickFile(wrapper, 'broken.zip', 'bytes');
+    expect(wrapper.text()).toContain('校验未通过');
+    expect(wrapper.text()).toContain('校验失败');
+    const button = wrapper.find('[data-testid="import-button"]').element as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+  });
 });
 
 describe('PluginsView 卡片操作（P15）', () => {

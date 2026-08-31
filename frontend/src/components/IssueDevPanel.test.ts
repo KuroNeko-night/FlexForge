@@ -70,6 +70,15 @@ describe('IssueDevPanel 状态迁移（FR-ISSUE-02，P16 按钮组）', () => {
     expect(wrapper.emitted('updated')?.[0]?.[0]).toMatchObject({ status: 'APPROVED' });
   });
 
+  it('终态无迁移按钮', async () => {
+    const wrapper = mountPanel('DONE');
+    await flushPromises();
+    expect(wrapper.text()).toContain('当前为终态。');
+    expect(wrapper.find('button[data-testid^="transition-"]').exists()).toBe(false);
+  });
+});
+
+describe('IssueDevPanel 旁路迁移与复位（审查 P2-3/P2-5）', () => {
   it('旁路迁移在确认框内填原因：空原因禁用、填后调用', async () => {
     transitionMock.mockResolvedValue({ ...baseIssue, status: 'RETURNED' });
     const wrapper = mountPanel('SUBMITTED');
@@ -87,11 +96,29 @@ describe('IssueDevPanel 状态迁移（FR-ISSUE-02，P16 按钮组）', () => {
     expect(wrapper.find('[data-testid="ff-confirm-overlay"]').exists()).toBe(false);
   });
 
-  it('终态无迁移按钮', async () => {
-    const wrapper = mountPanel('DONE');
+  it('旁路迁移失败：关闭对话框且错误显示在迁移区', async () => {
+    transitionMock.mockRejectedValue(new Error('boom'));
+    const wrapper = mountPanel('SUBMITTED');
     await flushPromises();
-    expect(wrapper.text()).toContain('当前为终态。');
-    expect(wrapper.find('button[data-testid^="transition-"]').exists()).toBe(false);
+    await wrapper.find('[data-testid="transition-RETURNED"]').trigger('click');
+    await flushPromises();
+    await wrapper.find('[data-testid="confirm-reason"]').setValue('需求不完整');
+    await wrapper.find('[data-testid="confirm-submit"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('[data-testid="ff-confirm-overlay"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="transition-section"]').text()).toContain('迁移失败');
+  });
+
+  it('切换 Issue 复位打开中的确认对话框（审查 P2-3）', async () => {
+    const wrapper = mountPanel('SUBMITTED');
+    await flushPromises();
+    await wrapper.find('[data-testid="transition-RETURNED"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('[data-testid="ff-confirm-overlay"]').exists()).toBe(true);
+    await wrapper.setProps({ issue: { ...baseIssue, id: 'i2', title: 'B' } });
+    await flushPromises();
+    expect(wrapper.find('[data-testid="ff-confirm-overlay"]').exists()).toBe(false);
+    expect(transitionIssue).not.toHaveBeenCalled();
   });
 });
 

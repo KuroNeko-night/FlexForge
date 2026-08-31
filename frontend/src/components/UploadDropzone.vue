@@ -23,9 +23,16 @@ const emit = defineEmits<{
 const fileInput = ref<HTMLInputElement | null>(null);
 const dragOver = ref(false);
 
+/** 打开系统选择器前重置 value：重选同名文件也能触发 change（审查 P1-1）。 */
+function openPicker(): void {
+  if (fileInput.value) {
+    fileInput.value.value = '';
+  }
+  fileInput.value?.click();
+}
+
 function onFileChange(event: Event): void {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
+  const file = (event.target as HTMLInputElement).files?.[0];
   if (file) {
     emit('pick', file);
   }
@@ -41,14 +48,25 @@ function onDrop(event: DragEvent): void {
     }
   }
 }
+function onKeyActivate(event: KeyboardEvent): void {
+  // 键盘可达（审查 P2-7）：容器承担 button 语义，Enter/Space 触发选包
+  if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+    event.preventDefault();
+    openPicker();
+  }
+}
 </script>
 
 <template>
   <div
     class="dropzone"
     :class="{ 'dropzone--over': dragOver, 'dropzone--passed': check === 'passed' }"
+    role="button"
+    tabindex="0"
+    aria-label="选择插件包"
     data-testid="install-bar"
-    @click="fileInput?.click()"
+    @click="openPicker"
+    @keydown="onKeyActivate"
     @dragover.prevent="dragOver = true"
     @dragleave="dragOver = false"
     @drop.prevent="onDrop"

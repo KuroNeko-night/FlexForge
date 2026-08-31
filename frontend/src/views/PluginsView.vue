@@ -31,6 +31,8 @@ const error = ref<string | null>(null);
 const pendingFile = ref<File | null>(null);
 const check = ref<'idle' | 'checking' | 'passed' | 'failed'>('idle');
 const findings = ref<string[]>([]);
+// 选包序号：陈旧守卫用（File 引用会被响应式代理包装，引用比较不可靠）
+let pickSeq = 0;
 const importing = ref(false);
 const opError = ref<string | null>(null);
 const opNotice = ref<string | null>(null);
@@ -56,27 +58,36 @@ async function load(): Promise<void> {
 }
 
 function onPick(file: File): void {
+  const seq = ++pickSeq;
   pendingFile.value = file;
   check.value = 'checking';
   findings.value = [];
   opError.value = null;
   opNotice.value = null;
-  void autoValidate(file);
+  void autoValidate(file, seq);
 }
 
 function onClear(): void {
+  pickSeq += 1;
   pendingFile.value = null;
   check.value = 'idle';
   findings.value = [];
 }
 
 /** 选包即校验：通过后导入按钮才可用，操作者无需理解校验/导入的先后契约。 */
-async function autoValidate(file: File): Promise<void> {
+async function autoValidate(file: File, seq: number): Promise<void> {
   try {
     const report = await validatePackage(file);
+    // 陈旧守卫（审查 P2-6）：快速连选/清除时，慢响应不得覆盖新状态
+    if (seq !== pickSeq) {
+      return;
+    }
     check.value = report.valid ? 'passed' : 'failed';
     findings.value = report.findings;
   } catch (e) {
+    if (seq !== pickSeq) {
+      return;
+    }
     check.value = 'failed';
     findings.value = [apiErrorMessage(e, '校验失败，请稍后重试') ?? '校验失败'];
   }
@@ -199,7 +210,7 @@ onMounted(load);
     <ConfirmDialog
       :open="uninstallTarget !== null"
       title="卸载插件"
-      :message="`将卸载 ${uninstallTarget?.name ?? ''}，其注册与实体将一并撤销，审计记录保留。`"
+      :message="`将卸载 ${uninstallTarget?.name ?? ''} · ${uninstallTarget?.pluginId ?? ''}，注册与实体将一并撤销，审计记录保留。`"
       confirm-label="卸载"
       danger
       :busy="uninstalling"

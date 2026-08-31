@@ -127,7 +127,7 @@ onMounted(load);
       :subtitle="t('settings.languageHint', '语言内容由 locale 插件分发，停用即回退中文基线')"
     >
       <p class="language-row">
-        {{ t('settings.currentLanguage', '当前语言') }}：{{ currentLabel }}
+        {{ t('settings.currentLanguage', '当前语言') }} · {{ currentLabel }}
       </p>
       <div class="language-options" data-testid="language-options">
         <BaseButton

@@ -38,6 +38,43 @@ const emit = defineEmits<{
 
 const reason = ref('');
 const reasonInput = ref<HTMLInputElement | null>(null);
+const panel = ref<HTMLDivElement | null>(null);
+let restoreFocus: HTMLElement | null = null;
+
+/** 焦点陷阱（审查 P2-8）：Tab/Shift+Tab 在面板可聚焦元素间循环。 */
+function trapTab(event: KeyboardEvent): void {
+  if (event.key !== 'Tab' || !panel.value) {
+    return;
+  }
+  const focusable = panel.value.querySelectorAll<HTMLElement>(
+    'button, input, [tabindex]:not([tabindex="-1"])',
+  );
+  if (focusable.length === 0) {
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function onKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Escape') {
+    emit('cancel');
+  } else {
+    trapTab(event);
+  }
+}
+
+function releaseFocus(): void {
+  restoreFocus?.focus();
+  restoreFocus = null;
+}
 
 watch(
   () => props.open,
@@ -46,16 +83,24 @@ watch(
     if (open) {
       document.addEventListener('keydown', onKeydown);
       reason.value = '';
-      // 需要原因时焦点直接落在输入框，确认场景少一次点击
+      restoreFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      await nextTick();
+      // 需要原因时焦点落输入框；否则落取消按钮——Enter 不会误触发破坏性确认
       if (props.requireReason) {
-        await nextTick();
         reasonInput.value?.focus();
+      } else {
+        panel.value?.querySelectorAll<HTMLButtonElement>('button')[0]?.focus();
       }
+    } else {
+      releaseFocus();
     }
   },
   { immediate: true },
 );
-onUnmounted(() => document.removeEventListener('keydown', onKeydown));
+onUnmounted(() => {
+  document.removeEventListener('keydown', onKeydown);
+  releaseFocus();
+});
 
 function submit(): void {
   if (props.busy || (props.requireReason && reason.value.trim() === '')) {
@@ -64,13 +109,12 @@ function submit(): void {
   emit('confirm', reason.value.trim());
 }
 
-function onKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Escape') {
-    emit('cancel');
+/** IME 组态中的回车是选词不是提交（PR #34 审查 P2 同口径，本次审查 P1-2）。 */
+function onReasonEnter(event: KeyboardEvent): void {
+  if (!event.isComposing) {
+    submit();
   }
 }
-
-onUnmounted(() => document.removeEventListener('keydown', onKeydown));
 </script>
 
 <template>
@@ -82,7 +126,13 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
         data-testid="ff-confirm-overlay"
         @click.self="emit('cancel')"
       >
-        <div class="ff-modal__panel" role="dialog" aria-modal="true" :aria-label="title">
+        <div
+          ref="panel"
+          class="ff-modal__panel"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="title"
+        >
           <h3 class="ff-modal__title">{{ title }}</h3>
           <p class="ff-modal__message">{{ message }}</p>
           <label v-if="requireReason" class="ff-modal__reason">
@@ -90,11 +140,10 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
             <input
               ref="reasonInput"
               v-model="reason"
-              rows="1"
               maxlength="500"
               :placeholder="reasonPlaceholder"
               data-testid="confirm-reason"
-              @keydown.enter.prevent="submit"
+              @keydown.enter.prevent="onReasonEnter"
             />
           </label>
           <div class="ff-modal__actions">

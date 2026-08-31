@@ -215,7 +215,13 @@ function onSpecSaved(next: SpecRevision): void {
       规格草稿：修订 {{ spec.revision }}，{{ spec.valid ? '校验通过' : '校验未通过' }}
     </p>
 
-    <IssueComments :issue-id="issue.id" :comments="comments" @reloaded="comments = $event" />
+    <!-- :key 防 Issue 复用时 A 的评论草稿落到 B（审查 P2-4，specDraft 同型） -->
+    <IssueComments
+      :key="issue.id"
+      :issue-id="issue.id"
+      :comments="comments"
+      @reloaded="comments = $event"
+    />
   </article>
 </template>
 
