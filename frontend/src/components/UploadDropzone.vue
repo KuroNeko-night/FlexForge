@@ -57,6 +57,8 @@ function onDrop(event: DragEvent): void {
       ref="fileInput"
       type="file"
       class="file-hidden"
+      aria-hidden="true"
+      tabindex="-1"
       accept=".zip,application/zip"
       data-testid="plugin-file"
       @change="onFileChange"
