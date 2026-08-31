@@ -11,12 +11,8 @@ import { registerWidget } from '@/registry/layoutRegistry';
  */
 let registered = false;
 
-export function registerBuiltinContributions(): void {
-  if (registered) {
-    return;
-  }
-  registered = true;
-  registerWidget('workbench.entities', EntityCards);
+/** 本地菜单注册（视图路由入口；permissionKey 仅显隐，服务端为边界）。 */
+function registerLocalMenus(): void {
   // Issue 工作台入口（P15）：登录即可用（创建/评论/作者 clarify；迁移与生成服务端限 DEVELOPER）
   registerMenu({
     key: 'platform.issues',
@@ -39,6 +35,10 @@ export function registerBuiltinContributions(): void {
     route: '/settings',
     order: 50,
   });
+}
+
+/** 内置记录动作（P16：删除经 ActionContext.confirm 统一确认，无原生 confirm）。 */
+function registerBuiltinRecordActions(): void {
   registerRecordAction({
     key: 'record.detail',
     label: '详情',
@@ -53,11 +53,26 @@ export function registerBuiltinContributions(): void {
     key: 'record.delete',
     label: '删除',
     handler: async (record, context: ActionContext) => {
-      if (!window.confirm('确认删除该记录？')) {
+      const ok = await context.confirm('删除后不可恢复，确认删除该记录？', {
+        title: '删除记录',
+        confirmLabel: '删除',
+        danger: true,
+      });
+      if (!ok) {
         return;
       }
       await deleteRecord(context.entity, record.id);
       await context.refresh();
     },
   });
+}
+
+export function registerBuiltinContributions(): void {
+  if (registered) {
+    return;
+  }
+  registered = true;
+  registerWidget('workbench.entities', EntityCards);
+  registerLocalMenus();
+  registerBuiltinRecordActions();
 }

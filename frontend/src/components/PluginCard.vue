@@ -18,10 +18,10 @@ const emit = defineEmits<{
   uninstall: [];
 }>();
 
-/** 失败诊断文案：失败尝试展示"阶段（错误码）"，其余展示当前阶段。 */
+/** 失败诊断文案：失败尝试展示"阶段 · 错误码"，其余展示当前阶段。 */
 function diagnosisOf(activation: PluginActivationEntry): string {
   if (activation.status === 'FAILED') {
-    const code = activation.errorCode ? `（${activation.errorCode}）` : '';
+    const code = activation.errorCode ? ` · ${activation.errorCode}` : '';
     return `失败于 ${activation.stage ?? '?'}${code}`;
   }
   return activation.stage ?? '—';

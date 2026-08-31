@@ -30,7 +30,7 @@ const options = computed<string[]>(() => {
     :aria-label="field.displayName"
     @change="emit('update:modelValue', ($event.target as HTMLSelectElement).value || null)"
   >
-    <option value="">（未选择）</option>
+    <option value="">请选择</option>
     <option v-for="option in options" :key="option" :value="option">{{ option }}</option>
   </select>
 </template>

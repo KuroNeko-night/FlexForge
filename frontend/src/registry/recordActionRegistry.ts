@@ -15,6 +15,14 @@ export interface ActionContext {
   openDetail(id: string): Promise<void>;
   edit(id: string): Promise<void>;
   refresh(): Promise<void>;
+  /**
+   * 统一确认（P16）：破坏性动作经消费视图的确认对话框异步确认，
+   * registry/动作保持声明式、不直接依赖 DOM（原生 confirm 不再出现）。
+   */
+  confirm(
+    message: string,
+    options?: { title?: string; confirmLabel?: string; danger?: boolean },
+  ): Promise<boolean>;
 }
 
 export interface RecordAction {

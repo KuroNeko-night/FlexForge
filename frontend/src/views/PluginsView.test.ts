@@ -21,10 +21,12 @@ import {
   importPackage,
   stopActivation,
   uninstallPlugin,
+  validatePackage,
 } from '@/api/plugins';
 
 const fetchMock = vi.mocked(fetchPluginInventory);
 const importMock = vi.mocked(importPackage);
+const validateMock = vi.mocked(validatePackage);
 const activateMock = vi.mocked(activateVersion);
 const stopMock = vi.mocked(stopActivation);
 const uninstallMock = vi.mocked(uninstallPlugin);
@@ -72,6 +74,7 @@ function inventory(): PluginInventoryEntry[] {
 function resetMocks(): void {
   fetchMock.mockReset();
   importMock.mockReset();
+  validateMock.mockReset();
   activateMock.mockReset();
   stopMock.mockReset();
   uninstallMock.mockReset();
@@ -88,7 +91,7 @@ describe('PluginsView 插件清单', () => {
     expect(text).toContain('gen.iabc123');
     expect(text).toContain('0.1.2');
     expect(text).toContain('0.1.1');
-    expect(text).toContain('失败于 DEPENDENCY_CHECK（dependency_missing）');
+    expect(text).toContain('失败于 DEPENDENCY_CHECK · dependency_missing');
     expect(text).toContain('test-developer');
     expect(wrapper.find('[data-testid="plugins-view"]').exists()).toBe(true);
   });
@@ -116,29 +119,54 @@ describe('PluginsView 插件清单', () => {
   });
 });
 
-describe('PluginsView 导入（P15）', () => {
-  beforeEach(() => {
-    resetMocks();
-    window.confirm = () => true;
-  });
+/** 选包公共流：注入 File 并触发 change（P16 上传区自动校验链）。 */
+async function pickFile(wrapper: ReturnType<typeof mount>, name: string, bytes: string) {
+  const input = wrapper.find('[data-testid="plugin-file"]');
+  const file = new File([bytes], name, { type: 'application/zip' });
+  Object.defineProperty(input.element, 'files', { value: [file] });
+  await input.trigger('change');
+  await flushPromises();
+  return file;
+}
 
-  it('未选文件时导入/校验禁用', async () => {
+describe('PluginsView 上传区（P16）', () => {
+  beforeEach(resetMocks);
+
+  it('未选文件时不渲染导入按钮（选择并校验通过后出现）', async () => {
     fetchMock.mockResolvedValue(inventory());
     const wrapper = mount(PluginsView);
     await flushPromises();
-    const importButton = wrapper.find('[data-testid="import-button"]').element as HTMLButtonElement;
-    expect(importButton.disabled).toBe(true);
+    expect(wrapper.text()).toContain('拖拽插件包到此处');
+    expect(wrapper.find('[data-testid="import-button"]').exists()).toBe(false);
   });
 
-  it('选择文件后导入成功并刷新清单', async () => {
+  it('自动校验未通过时给出发现项且导入按钮不可用', async () => {
     fetchMock.mockResolvedValue(inventory());
     const wrapper = mount(PluginsView);
     await flushPromises();
 
-    const input = wrapper.find('[data-testid="plugin-file"]');
-    const file = new File(['zip-bytes'], 'plugin.zip', { type: 'application/zip' });
-    Object.defineProperty(input.element, 'files', { value: [file] });
-    await input.trigger('change');
+    validateMock.mockResolvedValue({ valid: false, preview: null, findings: ['清单缺失'] });
+    await pickFile(wrapper, 'bad.zip', 'bad');
+    expect(wrapper.text()).toContain('校验未通过');
+    expect(wrapper.text()).toContain('清单缺失');
+    const button = wrapper.find('[data-testid="import-button"]').element as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+  });
+});
+
+describe('PluginsView 导入（P15 → P16 自动校验链）', () => {
+  beforeEach(resetMocks);
+
+  it('选择文件后自动校验，通过后导入成功并刷新清单', async () => {
+    fetchMock.mockResolvedValue(inventory());
+    const wrapper = mount(PluginsView);
+    await flushPromises();
+
+    validateMock.mockResolvedValue({ valid: true, preview: null, findings: [] });
+    await pickFile(wrapper, 'plugin.zip', 'zip-bytes');
+    expect(validateMock).toHaveBeenCalledTimes(1);
+    expect(wrapper.text()).toContain('校验通过，可导入');
+
     importMock.mockResolvedValue({
       pluginId: 'p1',
       version: '1.0.0',
@@ -149,21 +177,17 @@ describe('PluginsView 导入（P15）', () => {
     });
     await wrapper.find('[data-testid="import-button"]').trigger('click');
     await flushPromises();
-    expect(importMock).toHaveBeenCalledTimes(1);
     expect((importMock.mock.calls[0][0] as File).name).toBe('plugin.zip');
-    expect(wrapper.text()).toContain('已导入 p1@1.0.0');
+    expect(wrapper.text()).toContain('已导入 p1 1.0.0');
   });
 });
 
 describe('PluginsView 卡片操作（P15）', () => {
-  beforeEach(() => {
-    resetMocks();
-    window.confirm = () => true;
-  });
+  beforeEach(resetMocks);
 
   it('卡片事件接线：激活/停用/卸载调用对应 API 并刷新', async () => {
     fetchMock.mockResolvedValue(inventory());
-    const wrapper = mount(PluginsView);
+    const wrapper = mount(PluginsView, { global: { stubs: { teleport: true } } });
     await flushPromises();
     activateMock.mockResolvedValue(inventory()[0].activations[0]);
     stopMock.mockResolvedValue(inventory()[0].activations[0]);
@@ -186,24 +210,30 @@ describe('PluginsView 卡片操作（P15）', () => {
       .filter((b) => b.text() === '卸载')[0]
       .trigger('click');
     await flushPromises();
+    // P16：卸载经统一确认对话框，确认后才调用
+    await wrapper.find('[data-testid="confirm-submit"]').trigger('click');
+    await flushPromises();
     expect(uninstallMock).toHaveBeenCalledWith('gen.iabc123');
   });
 });
 
-describe('PluginsView 操作防护（P15）', () => {
-  beforeEach(() => {
-    resetMocks();
-    window.confirm = () => true;
-  });
+describe('PluginsView 操作防护（P15，P16 统一确认）', () => {
+  beforeEach(resetMocks);
 
-  it('卸载须确认：confirm 取消则不调用 API', async () => {
-    window.confirm = () => false;
+  it('卸载须确认：对话框取消则不调用 API', async () => {
     fetchMock.mockResolvedValue(inventory());
-    const wrapper = mount(PluginsView);
+    const wrapper = mount(PluginsView, { global: { stubs: { teleport: true } } });
     await flushPromises();
     await wrapper
       .findAll('button')
       .filter((b) => b.text() === '卸载')[0]
+      .trigger('click');
+    await flushPromises();
+    expect(wrapper.find('[data-testid="ff-confirm-overlay"]').exists()).toBe(true);
+    await wrapper
+      .findAll('button')
+      .filter((b) => b.text() === '取消')
+      .at(-1)!
       .trigger('click');
     await flushPromises();
     expect(uninstallMock).not.toHaveBeenCalled();

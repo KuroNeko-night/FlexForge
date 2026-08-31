@@ -61,7 +61,7 @@ describe('SettingsView AI 配置读取（ADMIN，FR-SETUP-01）', () => {
     const wrapper = mount(SettingsView);
     await flushPromises();
     const keyInput = wrapper.find('input[name="apiKey"]').element as HTMLInputElement;
-    expect(keyInput.placeholder).toContain('已配置（…9876）');
+    expect(keyInput.placeholder).toContain('已配置 · …9876');
     expect(keyInput.placeholder).toContain('留空保持不变');
     expect(keyInput.value).toBe('');
     expect((wrapper.find('input[name="baseUrl"]').element as HTMLInputElement).value).toBe(
@@ -104,7 +104,7 @@ describe('SettingsView AI 配置保存（FR-SETUP-01）', () => {
       clearApiKey: undefined,
     });
     expect((wrapper.find('input[name="apiKey"]').element as HTMLInputElement).value).toBe('');
-    expect(wrapper.text()).toContain('已保存，配置即时生效');
+    expect(wrapper.text()).toContain('已保存，下次模型调用即生效');
   });
 
   it('失败呈现可诊断错误含 requestId（服务端校验 400）', async () => {

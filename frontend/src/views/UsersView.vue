@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 
-import { ApiError } from '@/api/client';
+import { ApiError, apiErrorMessage } from '@/api/client';
 import { assignRoles, createUser, listUsers, updateStatus, type SystemUser } from '@/api/system';
 import { session } from '@/auth/token';
 import BaseButton from '@/components/ui/BaseButton.vue';
@@ -43,8 +43,7 @@ async function load(): Promise<void> {
       return;
     }
     state.value = 'error';
-    error.value =
-      e instanceof ApiError ? `${e.message}${e.requestId ? `（${e.requestId}）` : ''}` : null;
+    error.value = apiErrorMessage(e, null);
   }
 }
 

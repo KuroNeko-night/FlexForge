@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 
-import { ApiError } from '@/api/client';
+import { apiErrorMessage } from '@/api/client';
 import {
-  addComment,
   clarifyIssue,
   fetchComments,
   fetchSpec,
@@ -14,6 +13,7 @@ import {
   type SpecRevision,
 } from '@/api/issues';
 import { session } from '@/auth/token';
+import IssueComments from '@/components/IssueComments.vue';
 import IssueDevPanel from '@/components/IssueDevPanel.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ComponentCard from '@/components/ui/ComponentCard.vue';
@@ -40,9 +40,18 @@ const chat = ref<ChatMessage[]>([]);
 const answer = ref('');
 const clarifying = ref(false);
 const chatError = ref<string | null>(null);
-const commentBody = ref('');
-const commenting = ref(false);
-const commentError = ref<string | null>(null);
+const chatLog = ref<HTMLUListElement | null>(null);
+
+// 新消息落到底部视野（多轮追问超出容器高度时免手动滚屏）
+watch(
+  () => chat.value.length,
+  async () => {
+    await nextTick();
+    if (chatLog.value) {
+      chatLog.value.scrollTop = chatLog.value.scrollHeight;
+    }
+  },
+);
 
 const isDeveloper = computed(() => session.user?.roles.includes('DEVELOPER') ?? false);
 const canClarify = computed(
@@ -73,9 +82,7 @@ watch(
   () => {
     chat.value = [];
     answer.value = '';
-    commentBody.value = '';
     chatError.value = null;
-    commentError.value = null;
     void loadDetail();
   },
   { immediate: true },
@@ -90,7 +97,7 @@ function applyClarifyOutcome(text: string | null, outcome: ClarifyOutcome): void
     spec.value = outcome.spec;
     chat.value = [
       ...chat.value,
-      { role: 'ai', text: '已按当前回答生成规格草稿，可在"规格"区查看与继续迭代。' },
+      { role: 'ai', text: '已按当前回答生成规格草稿，可在下方规格区查看与继续迭代。' },
     ];
     return;
   }
@@ -114,10 +121,7 @@ async function sendClarify(text: string | null): Promise<void> {
     }
   } catch (e) {
     if (props.issue.id === issueId) {
-      chatError.value =
-        e instanceof ApiError
-          ? `${e.message}${e.requestId ? `（${e.requestId}）` : ''}`
-          : 'AI 调用失败，请稍后重试';
+      chatError.value = apiErrorMessage(e, 'AI 调用失败，请稍后重试');
     }
   } finally {
     clarifying.value = false;
@@ -137,24 +141,6 @@ function submitAnswer(): void {
 function onAnswerEnter(event: KeyboardEvent): void {
   if (!event.isComposing) {
     submitAnswer();
-  }
-}
-
-async function submitComment(): Promise<void> {
-  const body = commentBody.value.trim();
-  if (commenting.value || body === '') {
-    return;
-  }
-  commenting.value = true;
-  commentError.value = null;
-  try {
-    await addComment(props.issue.id, body);
-    commentBody.value = '';
-    comments.value = await fetchComments(props.issue.id);
-  } catch (e) {
-    commentError.value = e instanceof ApiError ? e.message : '评论失败，请稍后重试';
-  } finally {
-    commenting.value = false;
   }
 }
 
@@ -179,9 +165,9 @@ function onSpecSaved(next: SpecRevision): void {
     </p>
     <p class="detail-desc">{{ issue.description }}</p>
 
-    <ComponentCard title="AI 对话（需求澄清）" subtitle="回答追问，生成/迭代规格草稿">
+    <ComponentCard title="需求澄清对话" subtitle="回答 AI 追问，逐步生成规格草稿">
       <div v-if="canClarify" class="chat" data-testid="clarify-chat">
-        <ul v-if="chat.length > 0" class="chat-log">
+        <ul v-if="chat.length > 0" ref="chatLog" class="chat-log">
           <li v-for="(message, index) in chat" :key="index" :data-role="message.role">
             {{ message.text }}
           </li>
@@ -229,22 +215,7 @@ function onSpecSaved(next: SpecRevision): void {
       规格草稿：修订 {{ spec.revision }}，{{ spec.valid ? '校验通过' : '校验未通过' }}
     </p>
 
-    <ComponentCard title="评论" :subtitle="`${comments.length} 条`">
-      <ul class="comment-list">
-        <li v-for="comment in comments" :key="comment.id">
-          <span class="comment-author">{{ comment.author }}</span>
-          <span class="comment-body">{{ comment.body }}</span>
-        </li>
-        <li v-if="comments.length === 0" class="chat-hint">尚无评论</li>
-      </ul>
-      <div class="chat-input">
-        <textarea v-model="commentBody" rows="2" placeholder="发表评论…" :disabled="commenting" />
-        <BaseButton :disabled="commenting || commentBody.trim() === ''" @click="submitComment">
-          {{ commenting ? '发表中…' : '发表' }}
-        </BaseButton>
-      </div>
-      <p v-if="commentError" class="form-error" role="alert">{{ commentError }}</p>
-    </ComponentCard>
+    <IssueComments :issue-id="issue.id" :comments="comments" @reloaded="comments = $event" />
   </article>
 </template>
 
@@ -265,11 +236,12 @@ function onSpecSaved(next: SpecRevision): void {
 .detail-meta,
 .detail-desc {
   margin: 0;
+}
+.detail-meta {
   color: var(--ff-text-muted);
 }
 .detail-desc {
   white-space: pre-wrap;
-  color: var(--ff-text);
 }
 .status-badge {
   padding: var(--ff-space-1) var(--ff-space-2);
@@ -302,6 +274,8 @@ function onSpecSaved(next: SpecRevision): void {
   display: flex;
   flex-direction: column;
   gap: var(--ff-space-2);
+  max-height: 16rem;
+  overflow-y: auto;
 }
 .chat-log li {
   max-width: 85%;
@@ -316,8 +290,12 @@ function onSpecSaved(next: SpecRevision): void {
   margin-left: auto;
 }
 .chat-hint,
-.spec-summary {
+.spec-summary,
+.comment-list {
   margin: 0;
+}
+.chat-hint,
+.spec-summary {
   color: var(--ff-text-muted);
   font-size: var(--ff-text-sm);
 }
@@ -330,17 +308,5 @@ function onSpecSaved(next: SpecRevision): void {
   flex: 1;
   padding: var(--ff-space-2);
   resize: vertical;
-}
-.comment-list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 var(--ff-space-2);
-  display: flex;
-  flex-direction: column;
-  gap: var(--ff-space-2);
-}
-.comment-author {
-  font-weight: 600;
-  margin-right: var(--ff-space-2);
 }
 </style>

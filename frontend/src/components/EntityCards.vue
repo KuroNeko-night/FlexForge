@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue';
 
 import { listEnabledEntities } from '@/api/meta';
-import { ApiError } from '@/api/client';
+import { ApiError, apiErrorMessage } from '@/api/client';
 import type { EntitySummary } from '@/api/types';
 import StateView from '@/components/StateView.vue';
 
@@ -24,8 +24,7 @@ onMounted(async () => {
       return;
     }
     state.value = 'error';
-    error.value =
-      e instanceof ApiError ? `${e.message}${e.requestId ? `（${e.requestId}）` : ''}` : null;
+    error.value = apiErrorMessage(e, null);
   }
 });
 </script>

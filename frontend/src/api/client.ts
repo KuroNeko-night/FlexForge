@@ -49,7 +49,7 @@ async function toApiError(response: Response): Promise<ApiError> {
   const payload = (await response.json().catch(() => ({}))) as ErrorPayload;
   return new ApiError(
     payload.code ?? 'internal_error',
-    payload.message ?? `请求失败（HTTP ${response.status}）`,
+    payload.message ?? `请求失败 · HTTP ${response.status}`,
     response.status,
     payload.requestId ?? null,
   );
@@ -76,4 +76,18 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     return undefined as T;
   }
   return JSON.parse(text) as T;
+}
+
+/**
+ * 错误呈现统一口径（P16 文案规范）：ApiError 附追踪码用中点分隔，
+ * 不用括号解释性后缀；非 ApiError 给兜底文案（null=交由消费方默认态）。
+ */
+export function apiErrorMessage(
+  e: unknown,
+  fallback: string | null = '操作失败，请稍后重试',
+): string | null {
+  if (e instanceof ApiError) {
+    return e.requestId ? `${e.message} · 追踪码 ${e.requestId}` : e.message;
+  }
+  return fallback;
 }

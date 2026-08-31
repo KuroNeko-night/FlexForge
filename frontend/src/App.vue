@@ -184,9 +184,16 @@ button:disabled {
   align-items: center;
   margin: 0.8rem 0;
 }
-.create-link {
-  display: inline-block;
-  margin-top: 0.5rem;
+/* P16：列表头部创建入口与标题同行（原页脚入口远离视线） */
+.entity-view > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ff-space-3);
+  flex-wrap: wrap;
+}
+.entity-view > header h2 {
+  margin: 0;
 }
 
 .dynamic-form .form-field {
