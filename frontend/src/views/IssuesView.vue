@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 
-import { ApiError } from '@/api/client';
+import { ApiError, apiErrorMessage } from '@/api/client';
 import {
   createIssue,
   ISSUE_STATUS_LABELS,
@@ -53,8 +53,7 @@ async function load(): Promise<void> {
       return;
     }
     state.value = 'error';
-    error.value =
-      e instanceof ApiError ? `${e.message}${e.requestId ? `（${e.requestId}）` : ''}` : null;
+    error.value = apiErrorMessage(e, null);
   }
 }
 
@@ -83,7 +82,7 @@ async function submitCreate(): Promise<void> {
     await load();
     selected.value = created;
   } catch (e) {
-    formError.value = e instanceof ApiError ? e.message : '创建失败，请稍后重试';
+    formError.value = apiErrorMessage(e, '创建失败，请稍后重试');
   } finally {
     creating.value = false;
   }
@@ -156,8 +155,13 @@ onMounted(load);
           />
         </label>
         <label>
-          标签（逗号或空格分隔，可空）
-          <input v-model="form.labels" name="labels" maxlength="200" />
+          标签
+          <input
+            v-model="form.labels"
+            name="labels"
+            maxlength="200"
+            placeholder="用逗号或空格分隔，可不填"
+          />
         </label>
         <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
         <div class="drawer-actions">

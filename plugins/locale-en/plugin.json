@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "locale.en",
   "name": "English Language Pack",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "capabilityLevel": 1,
   "minPlatformVersion": "0.1.0",
   "dependencies": [],
@@ -10,7 +10,11 @@
     "navigation": [],
     "renderers": [],
     "themeAssets": [
-      {"key": "locale.en.pack", "kind": "locale", "path": "assets/en.json"}
+      {
+        "key": "locale.en.pack",
+        "kind": "locale",
+        "path": "assets/en.json"
+      }
     ]
   },
   "resources": {

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { ApiError, apiFetch, onUnauthorized } from '@/api/client';
+import { ApiError, apiErrorMessage, apiFetch, onUnauthorized } from '@/api/client';
 import { clearSession, saveSession } from '@/auth/token';
 
 function mockFetch(status: number, body: unknown): ReturnType<typeof vi.fn> {
@@ -79,5 +79,18 @@ describe('api client 空体与 FormData（PR #34 审查 P1 回归）', () => {
     await apiFetch('/plugins/import', { method: 'POST', body: form });
     const [, init] = impl.mock.calls[0] as [string, RequestInit];
     expect((init.headers as Headers).get('Content-Type')).toBeNull();
+  });
+});
+
+describe('apiErrorMessage（P16 文案统一口径）', () => {
+  it('ApiError 附追踪码用中点分隔，无括号', () => {
+    const e = new ApiError('validation_error', '必填字段缺失', 400, 'req-9');
+    expect(apiErrorMessage(e)).toBe('必填字段缺失 · 追踪码 req-9');
+  });
+
+  it('无 requestId 只给消息；非 ApiError 给兜底或 null', () => {
+    expect(apiErrorMessage(new ApiError('x', '网络异常', 0, null))).toBe('网络异常');
+    expect(apiErrorMessage(new Error('boom'), '加载失败')).toBe('加载失败');
+    expect(apiErrorMessage(new Error('boom'), null)).toBeNull();
   });
 });

@@ -139,6 +139,22 @@ export function transitionRequiresReason(target: IssueStatusName): boolean {
   return ['RETURNED', 'DEV_FAILED', 'FEEDBACK', 'CLOSED'].includes(target);
 }
 
+/**
+ * 迁移动作动词（P16 交互规范）：迁移入口按目标状态给按钮，标签用动作而非
+ * 状态名——"批准"优于"已批准"；仅驱动 UI，后端仍按状态机校验。
+ */
+export const TRANSITION_LABELS: Record<IssueStatusName, string> = {
+  SUBMITTED: '重新提交',
+  APPROVED: '批准',
+  RETURNED: '退回修改',
+  IN_TESTING: '进入测试',
+  DEV_FAILED: '标记开发失败',
+  TESTED: '标记测试通过',
+  FEEDBACK: '反馈修复',
+  DONE: '标记完成',
+  CLOSED: '关闭',
+};
+
 export function transitionIssue(
   issueId: string,
   to: IssueStatusName,

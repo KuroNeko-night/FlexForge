@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 
-import { ApiError } from '@/api/client';
+import { ApiError, apiErrorMessage } from '@/api/client';
 import { fetchAiConfig, updateAiConfig, type AiConfigView } from '@/api/settings';
 import { session } from '@/auth/token';
 import StateView from '@/components/StateView.vue';
@@ -25,6 +25,20 @@ const language = computed(() => currentLanguage());
 const languageOptions = computed(() =>
   availableLanguages().map((lang) => ({ value: lang, label: LANGUAGE_LABELS[lang] ?? lang })),
 );
+
+const currentLabel = computed(() => LANGUAGE_LABELS[language.value] ?? language.value);
+const keyPlaceholder = computed(() => {
+  if (clearKey.value) {
+    return t('settings.keyWillClear', '将清除已保存的密钥');
+  }
+  if (config.value?.apiKeyConfigured) {
+    const hint = config.value.apiKeyHint ?? '';
+    const lead = t('settings.keyConfigured', '已配置');
+    const keep = t('settings.keyKeep', '留空保持不变');
+    return hint ? `${lead} · ${hint} · ${keep}` : `${lead} · ${keep}`;
+  }
+  return t('settings.keyMissing', '未配置');
+});
 
 const config = ref<AiConfigView | null>(null);
 const state = ref<'loading' | 'ready' | 'error' | 'denied' | 'empty'>('loading');
@@ -57,8 +71,7 @@ async function load(): Promise<void> {
       return;
     }
     state.value = 'error';
-    error.value =
-      e instanceof ApiError ? `${e.message}${e.requestId ? `（${e.requestId}）` : ''}` : null;
+    error.value = apiErrorMessage(e, null);
   }
 }
 
@@ -92,12 +105,9 @@ async function submit(): Promise<void> {
     config.value = next;
     apiKey.value = '';
     clearKey.value = false;
-    notice.value = '已保存，配置即时生效（下一次模型调用按新配置路由）';
+    notice.value = t('settings.savedNotice', '已保存，下次模型调用即生效');
   } catch (e) {
-    formError.value =
-      e instanceof ApiError
-        ? `${e.message}${e.requestId ? `（${e.requestId}）` : ''}`
-        : '保存失败，请稍后重试';
+    formError.value = apiErrorMessage(e, '保存失败，请稍后重试');
   } finally {
     saving.value = false;
   }
@@ -116,14 +126,9 @@ onMounted(load);
       :title="t('settings.language', '界面语言')"
       :subtitle="t('settings.languageHint', '语言内容由 locale 插件分发，停用即回退中文基线')"
     >
-      <label class="inline-option language-row">
-        {{ t('settings.currentLanguage', '当前语言') }}
-        <select :value="language" data-testid="language-select" disabled>
-          <option v-for="option in languageOptions" :key="option.value" :value="option.value">
-            {{ option.label }}
-          </option>
-        </select>
-      </label>
+      <p class="language-row">
+        {{ t('settings.currentLanguage', '当前语言') }} · {{ currentLabel }}
+      </p>
       <div class="language-options" data-testid="language-options">
         <BaseButton
           v-for="option in languageOptions"
@@ -160,8 +165,8 @@ onMounted(load);
         <label>
           提供方
           <select v-model="provider" data-testid="provider-select">
-            <option value="fixture">fixture（离线脚本，答辩默认）</option>
-            <option value="http">http（OpenAI 兼容接口）</option>
+            <option value="fixture">{{ t('settings.providerFixture', '离线演示') }}</option>
+            <option value="http">{{ t('settings.providerHttp', 'OpenAI 兼容接口') }}</option>
           </select>
         </label>
         <template v-if="provider === 'http'">
@@ -195,13 +200,7 @@ onMounted(load);
             autocomplete="new-password"
             maxlength="4096"
             :disabled="clearKey"
-            :placeholder="
-              clearKey
-                ? '将清除已保存的密钥'
-                : config?.apiKeyConfigured
-                  ? `已配置（${config.apiKeyHint ?? '掩码'}）——留空保持不变`
-                  : '未配置'
-            "
+            :placeholder="keyPlaceholder"
           />
         </label>
         <label v-if="config?.apiKeyConfigured" class="inline-option">
@@ -211,10 +210,10 @@ onMounted(load);
             data-testid="clear-key"
             @change="onClearToggle"
           />
-          清除已保存的 API Key（与录入新密钥互斥）
+          {{ t('settings.clearKey', '清除已保存的密钥') }}
         </label>
         <p v-if="config?.apiKeyStale" class="form-error" role="alert">
-          已保存的密钥无法解密（服务端密钥可能已轮换），请重新录入。
+          {{ t('settings.keyStale', '已保存的密钥无法解密，请重新录入。') }}
         </p>
         <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
         <p v-if="notice" class="op-notice" role="status">{{ notice }}</p>
@@ -245,10 +244,9 @@ onMounted(load);
   font-size: var(--ff-text-sm);
 }
 .language-row {
-  margin-bottom: var(--ff-space-2);
-}
-.language-row select {
-  padding: var(--ff-space-2);
+  margin: 0 0 var(--ff-space-2);
+  color: var(--ff-text-muted);
+  font-size: var(--ff-text-sm);
 }
 .language-options {
   display: flex;

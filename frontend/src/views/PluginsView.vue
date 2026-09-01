@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
-import { ApiError } from '@/api/client';
+import { ApiError, apiErrorMessage } from '@/api/client';
 import {
   activateVersion,
   fetchPluginInventory,
@@ -14,24 +14,33 @@ import {
 import PluginCard from '@/components/PluginCard.vue';
 import StateView from '@/components/StateView.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
+import UploadDropzone from '@/components/UploadDropzone.vue';
 import { t } from '@/registry/localeRegistry';
 
 /**
- * 插件管理页（docs/09 P12 清单 + P15 写操作）：inventory 视图 + zip 上传
- * （validate→import）/版本激活/停用/卸载（FR-PLUGIN-01/02 消费面，ADMIN；
- * 服务端 @RequireRole 为边界）。卡片渲染与诊断在 PluginCard。
+ * 插件管理页（docs/09 P12 清单 + P15 写操作，P16 交互重构）：inventory 视图
+ * + 上传区（选包自动校验，通过才可导入）/版本激活/停用/卸载（FR-PLUGIN-01/02
+ * 消费面，ADMIN；服务端 @RequireRole 为边界）。卡片渲染与诊断在 PluginCard，
+ * 上传区交互在 UploadDropzone。
  */
 const plugins = ref<PluginInventoryEntry[]>([]);
 const state = ref<'loading' | 'ready' | 'error' | 'denied' | 'empty'>('loading');
 const error = ref<string | null>(null);
 
-const fileInput = ref<HTMLInputElement | null>(null);
 const pendingFile = ref<File | null>(null);
+const check = ref<'idle' | 'checking' | 'passed' | 'failed'>('idle');
+const findings = ref<string[]>([]);
+// 选包序号：陈旧守卫用（File 引用会被响应式代理包装，引用比较不可靠）
+let pickSeq = 0;
 const importing = ref(false);
-const validating = ref(false);
 const opError = ref<string | null>(null);
 const opNotice = ref<string | null>(null);
 const pendingKey = ref<string | null>(null);
+const uninstallTarget = ref<PluginInventoryEntry | null>(null);
+const uninstalling = ref(false);
+
+const canImport = computed(() => pendingFile.value !== null && check.value === 'passed');
 
 async function load(): Promise<void> {
   state.value = 'loading';
@@ -44,47 +53,48 @@ async function load(): Promise<void> {
       return;
     }
     state.value = 'error';
-    error.value =
-      e instanceof ApiError ? `${e.message}${e.requestId ? `（${e.requestId}）` : ''}` : null;
+    error.value = apiErrorMessage(e, null);
   }
 }
 
-function pickFile(event: Event): void {
-  const input = event.target as HTMLInputElement;
-  pendingFile.value = input.files?.[0] ?? null;
+function onPick(file: File): void {
+  const seq = ++pickSeq;
+  pendingFile.value = file;
+  check.value = 'checking';
+  findings.value = [];
   opError.value = null;
   opNotice.value = null;
+  void autoValidate(file, seq);
 }
 
-function describe(e: unknown, fallback: string): string {
-  return e instanceof ApiError
-    ? `${e.message}${e.requestId ? `（${e.requestId}）` : ''}`
-    : fallback;
+function onClear(): void {
+  pickSeq += 1;
+  pendingFile.value = null;
+  check.value = 'idle';
+  findings.value = [];
 }
 
-async function submitValidate(): Promise<void> {
-  if (validating.value || !pendingFile.value) {
-    return;
-  }
-  validating.value = true;
-  pendingKey.value = 'validate';
-  opError.value = null;
-  opNotice.value = null;
+/** 选包即校验：通过后导入按钮才可用，操作者无需理解校验/导入的先后契约。 */
+async function autoValidate(file: File, seq: number): Promise<void> {
   try {
-    const report = await validatePackage(pendingFile.value);
-    opNotice.value = report.valid
-      ? '校验通过，可以导入'
-      : `校验未通过：${report.findings.join('；')}`;
+    const report = await validatePackage(file);
+    // 陈旧守卫（审查 P2-6）：快速连选/清除时，慢响应不得覆盖新状态
+    if (seq !== pickSeq) {
+      return;
+    }
+    check.value = report.valid ? 'passed' : 'failed';
+    findings.value = report.findings;
   } catch (e) {
-    opError.value = describe(e, '校验失败，请稍后重试');
-  } finally {
-    validating.value = false;
-    pendingKey.value = null;
+    if (seq !== pickSeq) {
+      return;
+    }
+    check.value = 'failed';
+    findings.value = [apiErrorMessage(e, '校验失败，请稍后重试') ?? '校验失败'];
   }
 }
 
 async function submitImport(): Promise<void> {
-  if (importing.value || !pendingFile.value) {
+  if (!canImport.value || !pendingFile.value || importing.value) {
     return;
   }
   importing.value = true;
@@ -93,16 +103,13 @@ async function submitImport(): Promise<void> {
   opNotice.value = null;
   try {
     const preview = await importPackage(pendingFile.value);
-    opNotice.value = `已导入 ${preview.pluginId}@${preview.version}${
-      preview.isNew ? '' : '（幂等命中既有版本）'
-    }`;
-    pendingFile.value = null;
-    if (fileInput.value) {
-      fileInput.value.value = '';
-    }
+    opNotice.value = preview.isNew
+      ? `已导入 ${preview.pluginId} ${preview.version}`
+      : `该版本此前已导入，已直接引用 ${preview.pluginId} ${preview.version}`;
+    onClear();
     await load();
   } catch (e) {
-    opError.value = describe(e, '导入失败，请稍后重试');
+    opError.value = apiErrorMessage(e, '导入失败，请稍后重试');
   } finally {
     importing.value = false;
     pendingKey.value = null;
@@ -122,7 +129,7 @@ async function run(key: string, action: () => Promise<unknown>, notice: string):
     opNotice.value = notice;
     await load();
   } catch (e) {
-    opError.value = describe(e, '操作失败，请稍后重试');
+    opError.value = apiErrorMessage(e, '操作失败，请稍后重试');
   } finally {
     pendingKey.value = null;
   }
@@ -132,7 +139,7 @@ function activate(plugin: PluginInventoryEntry, versionId: string, version: stri
   void run(
     `activate:${versionId}`,
     () => activateVersion(versionId),
-    `已激活 ${plugin.name}@${version}`,
+    `已激活 ${plugin.name} ${version}`,
   );
 }
 
@@ -144,17 +151,22 @@ function stop(plugin: PluginInventoryEntry): void {
   void run(`stop:${activation.id}`, () => stopActivation(activation.id), `已停用 ${plugin.name}`);
 }
 
-function uninstall(plugin: PluginInventoryEntry): void {
-  if (
-    !window.confirm(`确认卸载 ${plugin.name}（${plugin.pluginId}）？注册与实体将撤销，审计保留。`)
-  ) {
+async function submitUninstall(): Promise<void> {
+  const plugin = uninstallTarget.value;
+  if (uninstalling.value || !plugin) {
     return;
   }
-  void run(
-    `uninstall:${plugin.pluginId}`,
-    () => uninstallPlugin(plugin.pluginId),
-    `已卸载 ${plugin.name}`,
-  );
+  uninstalling.value = true;
+  try {
+    await run(
+      `uninstall:${plugin.pluginId}`,
+      () => uninstallPlugin(plugin.pluginId),
+      `已卸载 ${plugin.name}`,
+    );
+    uninstallTarget.value = null;
+  } finally {
+    uninstalling.value = false;
+  }
 }
 
 onMounted(load);
@@ -167,34 +179,20 @@ onMounted(load);
       <BaseButton @click="load">{{ t('common.refresh', '刷新') }}</BaseButton>
     </header>
 
-    <div class="install-bar" data-testid="install-bar">
-      <label class="file-label">
-        插件包（zip）
-        <input
-          ref="fileInput"
-          type="file"
-          accept=".zip,application/zip"
-          data-testid="plugin-file"
-          @change="pickFile"
-        />
-      </label>
-      <BaseButton :disabled="validating || !pendingFile" @click="submitValidate">
-        {{ validating ? '校验中…' : '校验' }}
-      </BaseButton>
-      <BaseButton
-        variant="primary"
-        :disabled="importing || !pendingFile"
-        data-testid="import-button"
-        @click="submitImport"
-      >
-        {{ importing ? '导入中…' : '导入' }}
-      </BaseButton>
-    </div>
+    <UploadDropzone
+      :file="pendingFile"
+      :check="check"
+      :findings="findings"
+      :importing="importing"
+      @pick="onPick"
+      @clear="onClear"
+      @import="submitImport"
+    />
     <p v-if="opNotice" class="op-notice" role="status">{{ opNotice }}</p>
     <p v-if="opError" class="form-error" role="alert">{{ opError }}</p>
 
     <StateView v-if="state !== 'ready'" :state="state" :message="error">
-      <p v-if="state === 'empty'">尚无插件导入，可上方上传 zip 导入</p>
+      <p v-if="state === 'empty'">尚无插件，请在上方导入插件包</p>
     </StateView>
     <ul v-else class="plugin-list">
       <li v-for="plugin in plugins" :key="plugin.pluginId">
@@ -204,10 +202,21 @@ onMounted(load);
           :has-active="plugin.activations.some((item) => item.status === 'ACTIVE')"
           @activate="(versionId, version) => activate(plugin, versionId, version)"
           @stop="stop(plugin)"
-          @uninstall="uninstall(plugin)"
+          @uninstall="uninstallTarget = plugin"
         />
       </li>
     </ul>
+
+    <ConfirmDialog
+      :open="uninstallTarget !== null"
+      title="卸载插件"
+      :message="`将卸载 ${uninstallTarget?.name ?? ''} · ${uninstallTarget?.pluginId ?? ''}，注册与实体将一并撤销，审计记录保留。`"
+      confirm-label="卸载"
+      danger
+      :busy="uninstalling"
+      @confirm="submitUninstall"
+      @cancel="uninstallTarget = null"
+    />
   </section>
 </template>
 
@@ -216,23 +225,6 @@ onMounted(load);
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-.install-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--ff-space-2);
-  padding: var(--ff-space-3);
-  background: var(--ff-surface);
-  border: 1px solid var(--ff-border-soft);
-  border-radius: var(--ff-radius-md);
-  flex-wrap: wrap;
-}
-.file-label {
-  display: flex;
-  align-items: center;
-  gap: var(--ff-space-2);
-  font-size: var(--ff-text-sm);
-  color: var(--ff-text-muted);
 }
 .op-notice {
   margin: var(--ff-space-2) 0 0;

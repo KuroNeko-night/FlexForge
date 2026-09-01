@@ -65,7 +65,9 @@ function page(items: RecordView[]): PageResult<RecordView> {
 }
 
 function mountView() {
-  return mount(DynamicEntityView, { global: { stubs: { 'router-link': true } } });
+  return mount(DynamicEntityView, {
+    global: { stubs: { 'router-link': true, teleport: true } },
+  });
 }
 
 beforeEach(() => {
@@ -118,8 +120,7 @@ describe('DynamicEntityView：写路径', () => {
     });
   });
 
-  it('列表删除确认后重载，元数据版本递增出现 stale 提示', async () => {
-    window.confirm = () => true;
+  it('列表删除经统一确认后调用并重载，元数据版本递增出现 stale 提示', async () => {
     vi.mocked(fetchEntity).mockResolvedValueOnce(definition(1)).mockResolvedValue(definition(2));
     vi.mocked(queryRecords).mockResolvedValue(page([record('rec-1', 'SKU-1')]));
     vi.mocked(deleteRecord).mockResolvedValue(undefined);
@@ -128,6 +129,11 @@ describe('DynamicEntityView：写路径', () => {
     const deleteButton = wrapper.findAll('tbody button').find((button) => button.text() === '删除');
     expect(deleteButton).toBeTruthy();
     await deleteButton!.trigger('click');
+    await flushPromises();
+    // P16：删除先弹统一确认对话框，确认后才调用
+    expect(wrapper.find('[data-testid="ff-confirm-overlay"]').exists()).toBe(true);
+    expect(deleteRecord).not.toHaveBeenCalled();
+    await wrapper.find('[data-testid="confirm-submit"]').trigger('click');
     await flushPromises();
     expect(deleteRecord).toHaveBeenCalledWith('inventory_item', 'rec-1');
     expect(wrapper.find('.stale-note').exists()).toBe(true);

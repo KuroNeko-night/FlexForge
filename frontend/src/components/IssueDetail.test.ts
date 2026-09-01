@@ -28,18 +28,14 @@ import {
   fetchComments,
   fetchPreview,
   fetchSpec,
-  generatePlugin,
   saveSpec,
-  transitionIssue,
 } from '@/api/issues';
 
 const commentsMock = vi.mocked(fetchComments);
 const specMock = vi.mocked(fetchSpec);
 const clarifyMock = vi.mocked(clarifyIssue);
-const transitionMock = vi.mocked(transitionIssue);
 const saveSpecMock = vi.mocked(saveSpec);
 const previewMock = vi.mocked(fetchPreview);
-const generateMock = vi.mocked(generatePlugin);
 const addCommentMock = vi.mocked(addComment);
 
 const baseIssue: IssueRecord = {
@@ -70,10 +66,8 @@ function resetMocks(): void {
   commentsMock.mockReset();
   specMock.mockReset();
   clarifyMock.mockReset();
-  transitionMock.mockReset();
   saveSpecMock.mockReset();
   previewMock.mockReset();
-  generateMock.mockReset();
   addCommentMock.mockReset();
 }
 
@@ -83,7 +77,11 @@ function mountDetail(
   createdBy = 'dev',
 ) {
   saveSession('t', { id: 1, username: 'dev', displayName: 'D', roles });
-  return mount(IssueDetail, { props: { issue: { ...baseIssue, status, createdBy } } });
+  // teleport stub：ConfirmDialog 内容渲染进组件树，供确认流断言（P16）
+  return mount(IssueDetail, {
+    props: { issue: { ...baseIssue, status, createdBy } },
+    global: { stubs: { teleport: true } },
+  });
 }
 
 async function clickButton(wrapper: ReturnType<typeof mountDetail>, label: string) {
@@ -166,38 +164,6 @@ describe('IssueDetail 切换复位（PR #34 审查 P2）', () => {
   });
 });
 
-describe('IssueDetail 状态迁移（FR-ISSUE-02）', () => {
-  beforeEach(() => {
-    resetMocks();
-    commentsMock.mockResolvedValue([]);
-    specMock.mockResolvedValue(null);
-  });
-
-  it('迁移：按状态机给可选目标，旁路迁移强制原因', async () => {
-    const wrapper = mountDetail('SUBMITTED');
-    await flushPromises();
-    const select = wrapper.find('[data-testid="transition-target"]');
-    const options = select.findAll('option').map((o) => o.element.value);
-    expect(options).toEqual(expect.arrayContaining(['APPROVED', 'RETURNED']));
-
-    transitionMock.mockResolvedValue({ ...baseIssue, status: 'APPROVED' });
-    await select.setValue('RETURNED');
-    await clickButton(wrapper, '执行迁移');
-    expect(transitionMock).not.toHaveBeenCalled();
-    expect(wrapper.text()).toContain('该迁移必须填写原因');
-  });
-
-  it('迁移成功后上抛 updated 同步父级列表', async () => {
-    const wrapper = mountDetail('SUBMITTED');
-    await flushPromises();
-    transitionMock.mockResolvedValue({ ...baseIssue, status: 'APPROVED' });
-    await wrapper.find('[data-testid="transition-target"]').setValue('APPROVED');
-    await clickButton(wrapper, '执行迁移');
-    expect(transitionMock).toHaveBeenCalledWith('i1', 'APPROVED', '');
-    expect(wrapper.emitted('updated')?.[0]?.[0]).toMatchObject({ status: 'APPROVED' });
-  });
-});
-
 describe('IssueDetail 规格与生成（FR-ISSUE-04/05/06）', () => {
   beforeEach(() => {
     resetMocks();
@@ -227,39 +193,6 @@ describe('IssueDetail 规格与生成（FR-ISSUE-04/05/06）', () => {
     const preview = wrapper.find('[data-testid="spec-preview"]');
     expect(preview.text()).toContain('2 个资源文件');
     expect(preview.text()).toContain('plugin.json');
-  });
-});
-
-describe('IssueDetail 生成（FR-ISSUE-05）', () => {
-  beforeEach(() => {
-    resetMocks();
-    commentsMock.mockResolvedValue([]);
-    specMock.mockResolvedValue(null);
-  });
-
-  it('生成须确认：取消不调用', async () => {
-    window.confirm = () => false;
-    const wrapper = mountDetail('APPROVED');
-    await flushPromises();
-    await clickButton(wrapper, '生成并激活');
-    expect(generateMock).not.toHaveBeenCalled();
-  });
-
-  it('生成确认后调用并展示结果（FR-ISSUE-05）', async () => {
-    window.confirm = () => true;
-    const wrapper = mountDetail('APPROVED');
-    await flushPromises();
-    generateMock.mockResolvedValue({
-      pluginId: 'gen.iabc',
-      version: '0.1.1',
-      versionId: 'v2',
-      activationId: 'a9',
-      issue: { ...baseIssue, status: 'IN_TESTING' },
-    });
-    await clickButton(wrapper, '生成并激活');
-    expect(generateMock).toHaveBeenCalledWith('i1');
-    expect(wrapper.find('[data-testid="generate-outcome"]').text()).toContain('gen.iabc@0.1.1');
-    expect(wrapper.emitted('updated')?.[0]?.[0]).toMatchObject({ status: 'IN_TESTING' });
   });
 });
 

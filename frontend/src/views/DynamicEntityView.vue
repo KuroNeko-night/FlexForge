@@ -3,11 +3,13 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { createRecord, deleteRecord, fetchRecord, queryRecords, updateRecord } from '@/api/data';
-import { ApiError } from '@/api/client';
+import { ApiError, apiErrorMessage } from '@/api/client';
 import type { RecordView, ViewDefinition } from '@/api/types';
 import DynamicForm from '@/components/DynamicForm.vue';
 import DynamicTable from '@/components/DynamicTable.vue';
 import StateView from '@/components/StateView.vue';
+import BaseButton from '@/components/ui/BaseButton.vue';
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import { useEntityMetadata } from '@/composables/useEntityMetadata';
 import { visibleRecordActions, type ActionContext } from '@/registry/recordActionRegistry';
 
@@ -53,8 +55,7 @@ function fail(e: unknown): void {
     return;
   }
   state.value = 'error';
-  errorDetail.value =
-    e instanceof ApiError ? `${e.message}${e.requestId ? `（${e.requestId}）` : ''}` : String(e);
+  errorDetail.value = apiErrorMessage(e, String(e));
 }
 
 async function loadRecords(): Promise<void> {
@@ -127,9 +128,48 @@ async function onSubmit(values: Record<string, unknown>): Promise<void> {
   }
 }
 
-/** 详情/编辑页删除（列表走 record-action registry 内置动作）：确认后返回列表。 */
+/** 详情/编辑页删除与列表动作共用统一确认对话框（P16）：registry 动作经 context.confirm。 */
+const confirmState = ref<{
+  open: boolean;
+  title: string;
+  message: string;
+  confirmLabel: string;
+  danger: boolean;
+} | null>(null);
+let confirmResolver: ((ok: boolean) => void) | null = null;
+
+function confirmAction(
+  message: string,
+  options?: { title?: string; confirmLabel?: string; danger?: boolean },
+): Promise<boolean> {
+  // 重入时先结算上一个等待者（false），防 Promise 悬挂（审查 P3-11）
+  confirmResolver?.(false);
+  confirmState.value = {
+    open: true,
+    title: options?.title ?? '确认操作',
+    message,
+    confirmLabel: options?.confirmLabel ?? '确认',
+    danger: options?.danger ?? false,
+  };
+  return new Promise((resolve) => {
+    confirmResolver = resolve;
+  });
+}
+
+function settleConfirm(ok: boolean): void {
+  confirmResolver?.(ok);
+  confirmResolver = null;
+  confirmState.value = null;
+}
+
 async function removeFromDetail(record: RecordView): Promise<void> {
-  if (!window.confirm(`确认删除该记录？`)) {
+  if (
+    !(await confirmAction('删除后不可恢复，确认删除该记录？', {
+      title: '删除记录',
+      confirmLabel: '删除',
+      danger: true,
+    }))
+  ) {
     return;
   }
   try {
@@ -155,6 +195,7 @@ const actionContext = computed<ActionContext>(() => ({
   openDetail,
   edit: editRecord,
   refresh,
+  confirm: confirmAction,
 }));
 
 async function runAction(actionKey: string, record: RecordView): Promise<void> {
@@ -192,6 +233,14 @@ onMounted(refresh);
   <article class="entity-view" :data-entity="entityName" :data-mode="mode">
     <header>
       <h2>{{ definition?.displayName ?? entityName }}</h2>
+      <BaseButton
+        v-if="state === 'ready' && mode === 'list'"
+        variant="primary"
+        class="header-create"
+        @click="router.push(`/data/${entityName}/new`)"
+      >
+        新增记录
+      </BaseButton>
       <p v-if="state === 'ready' && versionChanged" class="stale-note">
         元数据已更新，数据已按新版本重新加载
       </p>
@@ -204,7 +253,9 @@ onMounted(refresh);
 
     <template v-else-if="mode === 'list'">
       <StateView v-if="records.length === 0" :state="'empty'">
-        <button type="button" @click="refresh">刷新</button>
+        <BaseButton variant="primary" @click="router.push(`/data/${entityName}/new`)">
+          新增记录
+        </BaseButton>
       </StateView>
       <DynamicTable
         v-else
@@ -237,10 +288,8 @@ onMounted(refresh);
           上一页
         </button>
         <span
-          >第 {{ page }} 页 / 共 {{ Math.max(1, Math.ceil(total / pageSize)) }} 页（{{
-            total
-          }}
-          条）</span
+          >第 {{ page }} / {{ Math.max(1, Math.ceil(total / pageSize)) }} 页 · 共
+          {{ total }} 条</span
         >
         <button
           type="button"
@@ -253,7 +302,6 @@ onMounted(refresh);
           下一页
         </button>
       </footer>
-      <router-link class="create-link" :to="`/data/${entityName}/new`">新增记录</router-link>
     </template>
 
     <StateView v-else-if="mode === 'detail' && !currentRecord" :state="'loading'" />
@@ -283,5 +331,15 @@ onMounted(refresh);
       @submit="onSubmit"
     />
     <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
+
+    <ConfirmDialog
+      :open="confirmState?.open ?? false"
+      :title="confirmState?.title ?? ''"
+      :message="confirmState?.message ?? ''"
+      :confirm-label="confirmState?.confirmLabel ?? '确认'"
+      :danger="confirmState?.danger ?? false"
+      @confirm="settleConfirm(true)"
+      @cancel="settleConfirm(false)"
+    />
   </article>
 </template>

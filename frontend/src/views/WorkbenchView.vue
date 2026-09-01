@@ -3,7 +3,7 @@ import { onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { logout, fetchMe } from '@/api/auth';
-import { ApiError } from '@/api/client';
+import { ApiError, apiErrorMessage } from '@/api/client';
 import { fetchMenus } from '@/api/meta';
 import { fetchActiveThemeAssets, type ActiveThemeAsset } from '@/api/theme';
 import type { MenuItem } from '@/api/types';
@@ -110,8 +110,7 @@ async function loadMenus(): Promise<void> {
       return;
     }
     state.value = 'error';
-    error.value =
-      e instanceof ApiError ? `${e.message}${e.requestId ? `（${e.requestId}）` : ''}` : null;
+    error.value = apiErrorMessage(e, null);
   }
 }
 
