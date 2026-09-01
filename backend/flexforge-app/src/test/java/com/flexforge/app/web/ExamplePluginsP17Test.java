@@ -112,25 +112,47 @@ class ExamplePluginsP17Test {
 
     @Test
     void kanbanGroupByMustBeDeclaredEnumField() throws Exception {
+        // 审查 P1-1：与本类另一用例共享库，若原包已 ACTIVE 会先命中占用拦截——
+        // 先停用占用（若在），保证走到 groupBy 校验路径
+        stopActiveActivationOf("example.kanban");
         // groupBy 指向 text 字段：激活失败于 REGISTER（声明式边界，P17 红线）；
         // 坏包各用独立版本号（同版本异内容会被字节不可变契约先行拒绝）
         byte[] textGroupZip = zipPackage(kanbanDir, "\"groupBy\": \"stage\"",
                 "\"groupBy\": \"title\"", "0.1.1");
-        importAndExpectActivationFailed(textGroupZip);
+        importAndExpectActivationFailed(textGroupZip, "enum 类型");
         // groupBy 缺失：同样拒绝
         byte[] missingGroupZip = zipPackage(kanbanDir, ",\n  \"groupBy\": \"stage\"", "",
                 "0.1.2");
-        importAndExpectActivationFailed(missingGroupZip);
+        importAndExpectActivationFailed(missingGroupZip, "groupBy");
     }
 
-    /** 非法 groupBy 声明在激活端点即被拒（400，声明式边界不产生激活记录）。 */
-    private void importAndExpectActivationFailed(byte[] zip) throws Exception {
+    /** 非法 groupBy 声明在激活端点即被拒（400）；断言错误消息含 groupBy 语义，
+     * 与"插件已有激活占用"等其它 400 路径区分（审查 P1-1：防测试空转）。 */
+    private void stopActiveActivationOf(String pluginId) throws Exception {
+        String inventory = mockMvc.perform(
+                        MockMvcRequestBuilders.get("/api/v1/plugins/inventory")
+                                .header("Authorization", adminBearer))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        List<String> ids = JsonPath.read(inventory,
+                "$[?(@.pluginId == '" + pluginId + "')].activations[?(@.status == 'ACTIVE')].id");
+        for (String id : ids) {
+            mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/plugins/" + id + "/stop")
+                            .header("Authorization", adminBearer))
+                    .andExpect(status().isOk());
+        }
+    }
+
+    private void importAndExpectActivationFailed(byte[] zip, String expectedFragment)
+            throws Exception {
         String versionId = importVersion(zip);
         mockMvc.perform(
                         MockMvcRequestBuilders.post("/api/v1/plugins/" + versionId + "/activate")
                                 .header("Authorization", adminBearer))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("validation_error"));
+                .andExpect(jsonPath("$.code").value("validation_error"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString(
+                        expectedFragment)));
     }
 
     private String importVersion(byte[] zip) throws Exception {

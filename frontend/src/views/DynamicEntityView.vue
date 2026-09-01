@@ -16,11 +16,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import { useEntityMetadata } from '@/composables/useEntityMetadata';
 import { visibleRecordActions, type ActionContext } from '@/registry/recordActionRegistry';
 
-/**
- * 动态实体页（docs/09 P06 验收 1）：列表/详情/新建/编辑四模式由路由参数驱动，
- * 无任何业务页面代码。五状态：loading/empty/error/denied/stale——stale 在元数据
- * 版本递增时出现并自动重载数据；403 → denied；错误附 requestId。
- */
+/** 动态实体页（docs/09 P06 验收 1）：四模式由路由参数驱动，无业务页面代码；P17 增看板呈现。 */
 const route = useRoute();
 const router = useRouter();
 const { definition, versionChanged, load } = useEntityMetadata();
@@ -66,7 +62,7 @@ function fail(e: unknown): void {
   errorDetail.value = apiErrorMessage(e, String(e));
 }
 
-async function loadRecords(): Promise<void> {
+async function loadRecords(seq: number): Promise<void> {
   const result = await queryRecords(entityName.value, {
     page: String(page.value),
     pageSize: String(pageSize.value),
@@ -75,11 +71,14 @@ async function loadRecords(): Promise<void> {
   const lastPage = Math.max(1, Math.ceil(result.total / pageSize.value));
   if (result.items.length === 0 && result.total > 0 && page.value !== lastPage && page.value > 1) {
     page.value = lastPage;
-    await loadRecords();
+    await loadRecords(seq);
     return;
   }
-  records.value = result.items;
-  total.value = result.total;
+  if (seq === refreshSeq) {
+    // 迟到旧响应不覆盖新页（审查 P3-3）
+    records.value = result.items;
+    total.value = result.total;
+  }
 }
 
 async function loadRecord(id: string): Promise<void> {
@@ -99,7 +98,7 @@ async function refresh(): Promise<void> {
       state.value = 'stale';
     }
     if (mode.value === 'list') {
-      await loadRecords();
+      await loadRecords(seq);
     } else if (mode.value === 'new') {
       currentRecord.value = null;
     } else if (route.params.id) {
@@ -259,6 +258,7 @@ onMounted(refresh);
         :definition="definition!"
         :view="kanbanView"
         :records="records"
+        :total="total"
         @card-click="(record) => openDetail(record.id)"
       />
     </template>

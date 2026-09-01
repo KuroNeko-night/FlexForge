@@ -248,11 +248,16 @@ final class PluginContributionFactory {
         }
         String viewName = view.path("name").asString(viewType);
         String groupBy = view.path("groupBy").asString(null);
-        ViewRules.validate(ViewType.fromName(viewType), viewName,
-                view.get("columns"), view.get("filters"), fieldNames);
-        if ("kanban".equals(viewType)) {
-            ViewRules.validateKanban(groupBy, fieldNames,
-                    enumFields.getOrDefault(entityName, java.util.Set.of()));
+        try {
+            ViewRules.validate(ViewType.fromName(viewType), viewName,
+                    view.get("columns"), view.get("filters"), fieldNames);
+            if ("kanban".equals(viewType)) {
+                ViewRules.validateKanban(groupBy, fieldNames,
+                        enumFields.getOrDefault(entityName, java.util.Set.of()));
+            }
+        } catch (IllegalArgumentException e) {
+            // 统一失败口径 VALIDATION_ERROR：激活失败阶段=REGISTER，诊断不误导（审查 P3-1）
+            throw new PluginValidationException(ErrorCodes.VALIDATION_ERROR, e.getMessage());
         }
         return new LifecycleRepository.ViewUpsert(viewType, viewName,
                 view.has("columns") ? view.get("columns").toString() : null,

@@ -179,7 +179,8 @@ public class EntityAdminService {
                     enumFieldNamesOf(definition));
         }
         ViewDefinition merged = new ViewDefinition(current.id(), current.entityId(),
-                current.viewType(), name, orEmptyArray(columns), orEmptyArray(filters), groupBy);
+                current.viewType(), name, orEmptyArray(columns), orEmptyArray(filters),
+                normalizeGroupBy(type, groupBy));
         if (repository.updateView(merged) != 1) {
             throw new NoSuchElementException("视图不存在: " + viewId);
         }
@@ -269,7 +270,13 @@ public class EntityAdminService {
                     enumFieldNamesOf(definition));
         }
         return new ViewDefinition(id, entityId, type.wireName(), cmd.name(),
-                orEmptyArray(cmd.columns()), orEmptyArray(cmd.filters()), cmd.groupBy());
+                orEmptyArray(cmd.columns()), orEmptyArray(cmd.filters()),
+                normalizeGroupBy(type, cmd.groupBy()));
+    }
+
+    /** groupBy 仅 kanban 视图持久化（其余归 null，与插件注册路径同口径，审查 P2-1）。 */
+    private static String normalizeGroupBy(ViewType type, String groupBy) {
+        return type == ViewType.KANBAN ? groupBy : null;
     }
 
     private static Set<String> fieldNamesOf(EntityDefinition definition) {

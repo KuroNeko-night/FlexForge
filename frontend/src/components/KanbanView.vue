@@ -14,6 +14,8 @@ const props = defineProps<{
   definition: EntityDetail;
   view: ViewDefinition;
   records: RecordView[];
+  /** 查询总条数：超出已加载量时提示（看板单页加载 100 条的可见边界）。 */
+  total?: number;
 }>();
 const emit = defineEmits<{ 'card-click': [record: RecordView] }>();
 
@@ -96,6 +98,9 @@ const cardFields = computed<FieldDefinition[]>(() => {
     </section>
     <p v-if="columns.length === 0" class="kanban-empty">分列字段缺少枚举选项</p>
   </div>
+  <p v-if="total !== undefined && records.length < total" class="kanban-note">
+    已加载 {{ records.length }} / {{ total }} 条 · 列计数基于已加载记录，切回表格可查看全部
+  </p>
 </template>
 
 <style scoped>
@@ -167,5 +172,10 @@ const cardFields = computed<FieldDefinition[]>(() => {
   color: var(--ff-text-muted);
   font-size: var(--ff-text-sm);
   padding: var(--ff-space-2);
+}
+.kanban-note {
+  margin: var(--ff-space-2) 0 0;
+  color: var(--ff-text-muted);
+  font-size: var(--ff-text-sm);
 }
 </style>

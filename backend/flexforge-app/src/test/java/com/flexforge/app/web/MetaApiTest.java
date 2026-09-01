@@ -15,6 +15,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -169,6 +171,37 @@ class MetaApiTest {
         addViewExpect(entityId, "{\"viewType\":\"bogus\",\"name\":\"列\",\"columns\":[]}", 400);
         addViewExpect(entityId, "{\"viewType\":\"list\",\"name\":\"列\",\"columns\":[{\"field\":\"sku\"}]}", 200);
         addViewExpect(entityId, "{\"viewType\":\"list\",\"name\":\"列二\",\"columns\":[]}", 400);
+    }
+
+    @Test
+    void kanbanViewSameDisciplineAsListAndForm() throws Exception {
+        String entityId = MetaTestSupport.createEntity(mockMvc, developerBearer, "meta_api_kanban");
+        MetaTestSupport.addField(mockMvc, developerBearer, entityId,
+                "{\"name\":\"stage\",\"displayName\":\"阶段\",\"fieldType\":\"enum\","
+                        + "\"validation\":{\"options\":[\"待办\",\"已完成\"]}}", 200);
+        MetaTestSupport.addField(mockMvc, developerBearer, entityId,
+                "{\"name\":\"title\",\"displayName\":\"标题\",\"fieldType\":\"text\"}", 200);
+
+        // groupBy 缺失 / 指向非 enum 字段：与插件路径同口径拒绝（P17 验收）
+        addViewExpect(entityId, "{\"viewType\":\"kanban\",\"name\":\"看板\",\"columns\":[]}", 400);
+        addViewExpect(entityId, "{\"viewType\":\"kanban\",\"name\":\"看板\",\"groupBy\":\"title\","
+                + "\"columns\":[]}", 400);
+        // 合法创建：groupBy 下发；list 误传 groupBy 归 null（对齐插件路径，审查 P2-1）
+        addViewExpect(entityId, "{\"viewType\":\"kanban\",\"name\":\"看板\",\"groupBy\":\"stage\","
+                + "\"columns\":[{\"field\":\"title\"}]}", 200);
+        addViewExpect(entityId, "{\"viewType\":\"list\",\"name\":\"列\","
+                + "\"columns\":[{\"field\":\"title\"}],\"groupBy\":\"stage\"}", 200);
+        String detail = mockMvc.perform(
+                        MockMvcRequestBuilders.get("/api/v1/meta/entities/" + entityId)
+                                .header("Authorization", developerBearer))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        List<String> kanbanGroup = JsonPath.read(detail,
+                "$.views[?(@.viewType == 'kanban')].groupBy");
+        assertThat(kanbanGroup).containsExactly("stage");
+        List<String> listGroup = JsonPath.read(detail,
+                "$.views[?(@.viewType == 'list')].groupBy");
+        assertThat(listGroup).hasSize(1).first().isNull();
     }
 
     @Test
