@@ -390,3 +390,22 @@
 - 破坏性操作全部走统一确认对话框（无原生 confirm）；Issue 迁移、插件导入、实体创建的点击步数较改前减少且无需在"执行前"预理解规则。
 - 默认主题（停用全部主题插件）视觉走查：导航分组与图标、控件焦点态、表格/卡片层次达到统一精致；主题插件覆盖机制回归不受影响。
 - locale-en 切换后新文案正确呈现英文；门禁 0 fail、前后端回归全绿。
+
+## P17：看板视图与插件声明式扩展（2026-09-01 用户裁决新增）
+
+> 背景：P16 完成后用户提出希望有"处理表格的插件"与"看板类型的插件"；经方案澄清用户裁决本轮交付**看板视图+示例插件**（CSV 导出/页脚聚合/批量操作为候选后续）。机制前提：插件纯声明（S5 不带代码），新视图类型=平台内置渲染器（结构），插件 manifest 声明即得（皮）。
+> **红线**：ViewType 白名单经 V013 迁移扩展（CHECK + group_by 列）；视图契约（extension-points §视图类型）先登记再实现；看板第一版**只读**（卡片点击进详情编辑分组字段，不做拖拽换列）；声明式边界不变——groupBy/卡片列全部来自元数据，无脚本。
+
+### 实施内容
+
+- **视图类型 kanban（平台基建）**：ViewType 枚举 + meta_view 迁移（V013：view_type CHECK 扩 kanban + group_by 列）；ViewRules 校验——kanban 视图 groupBy 必填且必须是同实体 enum 字段，columns 语义=卡片显示字段；元数据写模型 ViewCommand/view 定义/查询链路全链路透传 groupBy。
+- **插件视图注册扩展**：PluginLifecycleService 视图白名单扩 kanban，spec {entity,viewType,name,groupBy,columns,filters?} 经同一 ViewRules 校验后 upsert。
+- **前端看板渲染**：ViewDefinition 契约 +kanban/groupBy；实体有 kanban 视图时列表页头部"列表/看板"切换；KanbanView 组件——groupBy 枚举选项为列（含"未设置"列），列头计数，卡片按 columns 渲染字段值（复用 display renderer），点击进详情；看板模式单页加载 100 条。
+- **示例插件 example-kanban**：pipeline_task 实体（标题/阶段 enum 待办·进行中·已完成/负责人/优先级 enum/截止日期）+ list/form/kanban 三视图 + 种子数据，证明"插件声明即得看板"。
+
+### 验收标准
+
+- example-kanban 导入激活后，其实体页可在列表/看板间切换：看板按阶段分列、列头计数正确、卡片点击进详情；编辑阶段字段后返回看板列变化。
+- 非法声明被拒：kanban 视图缺 groupBy、groupBy 指向非 enum 字段或不存在字段，包校验/激活注册失败路径有测试。
+- 元数据管理 API 对 kanban 视图与 list/form 同口径（创建/编辑/viewType 不可改）；既有 list/form 视图与既有示例插件回归不受影响。
+- 门禁 0 fail、前后端回归全绿；登记册（extension-points 视图类型契约）与本节同步。

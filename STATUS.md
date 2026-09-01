@@ -3,13 +3,13 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P16
-CURRENT_STAGE_NAME: 前端体验打磨与默认主题精修
-STAGE_STATUS: completed
-PROJECT_PROGRESS: 100%
-LAST_UPDATED: 2026-08-31
+CURRENT_STAGE_ID: P17
+CURRENT_STAGE_NAME: 看板视图与插件声明式扩展
+STAGE_STATUS: in_progress
+PROJECT_PROGRESS: 97%
+LAST_UPDATED: 2026-09-01
 OWNER: project-maintainer
-NEXT_ACTION: 【P00-P16 全阶段完成，项目维持 release_candidate】P16 出口 live+视觉终验 2026-08-31（重建镜像容器版：#/workbench 激活态+分组图标/统一确认/上传区/中英切换）。后续=答辩准备（docs/14；演示机预导 locale-en 1.0.3/example-library/example-facility 三包，frontend/backend 镜像需现场重建或导出）与 Issue #22 余项按触发条件排期
+NEXT_ACTION: P17（用户裁决：看板视图+示例插件；CSV 导出/页脚聚合/批量操作为候选后续）：①V013 迁移（meta_view CHECK 扩 kanban + group_by 列）+ViewType/ViewRules/写模型链路 ②插件视图注册白名单扩 kanban ③前端 KanbanView+列表/看板切换 ④example-kanban 示例插件（pipeline_task 三视图+种子）→ 测试/门禁/PR/审查/live
 EXIT_GATE: P16 出口证据（docs/09 P16 验收四项）：①UI 文案无中文括号——全量复扫仅剩开发者向注释与 throw 消息（审查确认允许），apiErrorMessage 统一"消息 · 追踪码"，en.json 1.0.3 同步；②破坏性操作全走统一确认——4 处原生 confirm 清零（ConfirmDialog+ActionContext.confirm），Issue 迁移=动词按钮组一键直达（旁路才填原因）、插件选包即自动校验、实体创建入口上移列表头部；③默认主题视觉走查——停 theme.default 基线核验：导航平台/业务应用分组+icon 契约图标+激活左条（连带修复 home 路由回落 '/' 致激活态自 P13 从未生效的根因）、控件 focus 环、表格表头/行 hover、Inter latin 自托管字体；主题插件覆盖机制回归通过（token 键全存活+color-mix 派生级联）；④门禁 21/1/0、前端 128+/后端 145+ tests、PR #38（2P1+6P2+7P3）与 #39（2P1+1P2+9P3）独立子代理审查全处置、CI 六项绿、live 容器版（frontend 镜像已重建）终验截图通过。过程教训：compose 镜像不自动重建（迭代验证一律本地 dev server+收口重建镜像）；Vue 响应式代理会包装 File 引用（陈旧守卫用序号不用引用比较）
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -36,6 +36,7 @@ BLOCKERS: none
 | P14 | 质量收敛与答辩交付 | completed | 全量验收通过，进入 release_candidate（见 NEXT_ACTION 验证时间） |
 | P15 | 平台体验补全与插件生态演示 | completed | 五项验收全过（Issue 全链 UI/插件写操作/AI 配置密钥加密/中英切换/示例插件同装；live+视觉验证见 EXIT_GATE） |
 | P16 | 前端体验打磨与默认主题精修 | completed | 四项验收全过（文案无括号/统一确认+操作步数减省/默认主题视觉与主题机制回归/中英切换+门禁全绿；两轮独立审查全处置，live 容器版终验见 EXIT_GATE） |
+| P17 | 看板视图与插件声明式扩展 | in_progress | 用户裁决新增（2026-09-01）：viewType=kanban 平台通道+example-kanban 示例；验收标准见 docs/09 P17 |
 
 ## 更新规则
 
@@ -160,3 +161,4 @@ BLOCKERS: none
 | 2026-08-31 | P16 | 迭代 1 完成（PR #38，交互重构+文案净化）：①统一确认——ui/ConfirmDialog（requireReason 原因必填/Esc+遮罩取消/焦点陷阱与归还/IME 过滤），替换 4 处原生 confirm；ActionContext.confirm 注入 registry 动作（registry 保持无 DOM）②Issue 迁移按钮组——TRANSITION_LABELS 动词标签，主链一键直达、旁路对话框填原因（复用 ISSUE_TRANSITIONS 单源）③插件上传区——UploadDropzone 拖拽/点击+选包自动校验（pickSeq 陈旧守卫；File 引用会被响应式代理包装，引用比较不可靠，实测改序号）④实体页——头部新增记录+空态创建引导+分页去括号⑤文案净化——apiErrorMessage 统一"消息 · 追踪码"，设置页 provider/密钥提示 t() 化+en.json 1.0.2（9 键）。审查（独立子代理）2P1+6P2+7P3 全处置：P1=同名文件重选（改 openPicker 前置重置）/IME 回车（isComposing）；P2=切换复位 pendingTarget/评论 :key/失败关框/校验竞态 seq/上传区键盘可达/焦点管理；P3 顺手修 6 项+2 项记 Issue #22。前端 127 tests（+12）、门禁 21/1/0、CI 六项绿合并 d3754de；live 验证：迁移按钮组（旁路原因框真实迁移）/删除与卸载统一确认/上传区截图核验/实体页头部创建/locale-en 1.0.2 导入激活切英文新文案生效 | PR #38、Issue #22、live 验证 2026-08-31 |
 | 2026-08-31 | P16 | 迭代 2 完成（PR #39，默认主题精修）：①令牌——蓝灰色阶+主色阶（primary-hover/soft 接入消费）、focus-ring 与侧栏 bg-2/ink-strong/muted/accent 全部 color-mix 派生（主题插件覆盖基础键即级联）②侧栏——平台/业务应用分组（/data/ 路由归组保序）+icon 契约字段优先的内联图标集 AppIcon（纯静态分支，R-GOV-01 拦 v-html 后重构）+激活左条③全局基线——App.vue 拆 styles/base.css（input/select/textarea 排除 checkbox 的统一+focus 环、表格表头+行 hover+separate 圆角、实体卡 hover 箭头）④字体——@fontsource/inter latin 子集自托管（新增依赖，无运行时外链）⑤根因修复——home 路由回落 '/' 致 router-link-active 自 P13 从未生效，改 home 落 /workbench 实路径。审查（独立子代理）2P1+1P2+9P3 全处置：P1=激活左条定位视口外（calc 修正）/project-index 未同步（§1 树+变更记录补）；P2=派生令牌；P3 修 7 记 2。前端 128 tests、门禁 21/1/0、CI 六项绿合并 002f7f2；live：locale-en 1.0.3 导入激活+theme.default 恢复激活+frontend 镜像重建，容器版终验 #/workbench 激活态/分组图标/整体协调（截图核验） | PR #39、docs/project-index.md、live 终验 2026-08-31 |
 | 2026-08-31 | P16 | **P16 出口复核通过，置 completed；P00-P16 全阶段完成，进度 100%，项目维持 release_candidate**。两迭代交付：交互重构+文案净化（PR #38）→默认主题精修（PR #39）；共 4 P1+7 P2+16 P3 审查发现全处置（P3 中 4 项记 Issue #22）。答辩机提醒：frontend/backend 镜像已含最新代码但需现场重建或 docker save 导出；插件预导 locale-en 1.0.3/example-library/example-facility | docs/09 P16 验收、EXIT_GATE、Issue #22 |
+| 2026-09-01 | P17 | 用户提出"处理表格的插件+看板类型的插件"；方案澄清（声明式机制：新视图类型=平台内置渲染器+插件声明即得）后用户裁决本轮交付**看板视图+示例插件**（CSV 导出/页脚聚合/批量操作列为候选后续）。docs/09 P17 已登记；红线：V013 迁移扩 view_type CHECK+group_by 列；ViewRules 校验 groupBy 必填且为 enum 字段；第一版只读看板（不做拖拽）；登记册视图类型契约先登记 | docs/09 P17、本条目 |
