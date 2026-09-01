@@ -3,11 +3,11 @@
   "updatedAt": "2026-09-01",
   "currentStageId": "P17",
   "currentStageName": "看板视图与插件声明式扩展",
-  "status": "in_progress",
-  "progressPercent": 97,
+  "status": "completed",
+  "progressPercent": 100,
   "owner": "project-maintainer",
-  "nextAction": "P17（用户裁决：看板视图+示例插件；CSV 导出/页脚聚合/批量操作为候选后续）：①V013 迁移（meta_view CHECK 扩 kanban + group_by 列）+ViewType/ViewRules/写模型链路 ②插件视图注册白名单扩 kanban ③前端 KanbanView+列表/看板切换 ④example-kanban 示例插件（pipeline_task 三视图+种子）→ 测试/门禁/PR/审查/live",
-  "exitGate": "P16 出口证据（docs/09 P16 验收四项）：①UI 文案无中文括号——全量复扫仅剩开发者向注释与 throw 消息（审查确认允许），apiErrorMessage 统一\"消息 · 追踪码\"，en.json 1.0.3 同步；②破坏性操作全走统一确认——4 处原生 confirm 清零（ConfirmDialog+ActionContext.confirm），Issue 迁移=动词按钮组一键直达（旁路才填原因）、插件选包即自动校验、实体创建入口上移列表头部；③默认主题视觉走查——停 theme.default 基线核验：导航平台/业务应用分组+icon 契约图标+激活左条（连带修复 home 路由回落 '/' 致激活态自 P13 从未生效的根因）、控件 focus 环、表格表头/行 hover、Inter latin 自托管字体；主题插件覆盖机制回归通过（token 键全存活+color-mix 派生级联）；④门禁 21/1/0、前端 128+/后端 145+ tests、PR #38（2P1+6P2+7P3）与 #39（2P1+1P2+9P3）独立子代理审查全处置、CI 六项绿、live 容器版（frontend 镜像已重建）终验截图通过。过程教训：compose 镜像不自动重建（迭代验证一律本地 dev server+收口重建镜像）；Vue 响应式代理会包装 File 引用（陈旧守卫用序号不用引用比较）",
+  "nextAction": "【P00-P17 全阶段完成，项目维持 release_candidate】P17 出口 live 终验 2026-09-01（dev server+新后端镜像：example-kanban 导入激活→表格/看板切换→分列计数→卡片进详情→编辑阶段移列全闭环；连带修复存量渲染器回退缺陷 PR #41）。后续=答辩准备（docs/14；演示机预导 example-kanban/locale-en 1.0.3/example-library/example-facility，镜像重建或 docker save）与 Issue #22 余项排期；候选后续能力（CSV 导出/页脚聚合/批量操作/看板拖拽）待用户裁决",
+  "exitGate": "P17 出口证据（docs/09 P17 验收四项）：①example-kanban 导入激活后实体页表格/看板切换——live：三任务按阶段分列（待办/进行中/已完成+计数徽章+未设置兜底列组件测试覆盖），卡片点击进详情；②编辑阶段字段后返回看板列变化——live：「补看板测试用例」待办→进行中，看板实时变待办 0+空态/进行中 2；③非法声明被拒——ViewRulesKanbanTest 4 例+ExamplePluginsP17Test 坏包（groupBy 指 text/缺失）激活 400 含消息级断言+坏包自愈停用 ACTIVE（审查 P1-1 预言命中并修复）；④元数据 API 同口径——MetaApiTest kanbanViewSameDisciplineAsListAndForm（缺失/非 enum 400/合法下发 groupBy/list 误传归 null）。连带修复（PR #41）：插件实体字段 rendererId 悬空致 enum/boolean/date 表单渲染为文本框的存量缺陷（P08 起）——resolveRenderer 按 fieldType 回退 <type>.default，live 编辑表单恢复下拉。过程：PR #40（1P1+3P2+5P3 全处置）+PR #41；裁剪：示例种子数据（与 example-facility 同口径，live 手建演示数据）；门禁 21/1/0、前端 135/后端 148+ tests、登记册 §2.3 同步",
   "blockers": [],
   "stages": [
     {
@@ -98,7 +98,7 @@
     {
       "id": "P17",
       "name": "看板视图与插件声明式扩展",
-      "status": "in_progress"
+      "status": "completed"
     }
   ]
 }
