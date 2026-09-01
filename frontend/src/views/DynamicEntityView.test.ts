@@ -56,6 +56,38 @@ function definition(metaVersion: number): EntityDetail {
   };
 }
 
+/** P17：definition 附带 kanban 视图（groupBy enum 字段）的变体。 */
+function definitionWithKanban(): EntityDetail {
+  const base = definition(1);
+  return {
+    ...base,
+    fields: [
+      ...base.fields,
+      {
+        id: 'f1',
+        name: 'stage',
+        displayName: '阶段',
+        fieldType: 'enum',
+        required: false,
+        defaultValue: null,
+        validation: { options: ['待办', '已完成'] },
+        rendererId: 'enum.default',
+        position: 1,
+      },
+    ],
+    views: [
+      {
+        id: 'v-k',
+        viewType: 'kanban',
+        name: '看板',
+        columns: [{ field: 'sku' }],
+        filters: null,
+        groupBy: 'stage',
+      },
+    ],
+  };
+}
+
 function record(id: string, sku: string): RecordView {
   return { id, entity: 'inventory_item', data: { sku }, createdAt: '', updatedAt: '' };
 }
@@ -137,5 +169,41 @@ describe('DynamicEntityView：写路径', () => {
     await flushPromises();
     expect(deleteRecord).toHaveBeenCalledWith('inventory_item', 'rec-1');
     expect(wrapper.find('.stale-note').exists()).toBe(true);
+  });
+});
+
+describe('DynamicEntityView：看板呈现切换（P17）', () => {
+  it('实体声明 kanban 视图时显示切换；默认表格', async () => {
+    vi.mocked(fetchEntity).mockResolvedValue(definitionWithKanban());
+    vi.mocked(queryRecords).mockResolvedValue(page([record('rec-1', 'SKU-1')]));
+    const wrapper = mountView();
+    await flushPromises();
+    expect(wrapper.find('[data-testid="view-toggle"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="kanban-view"]').exists()).toBe(false);
+  });
+
+  it('无 kanban 视图不显示切换', async () => {
+    vi.mocked(fetchEntity).mockResolvedValue(definition(1));
+    vi.mocked(queryRecords).mockResolvedValue(page([record('rec-1', 'SKU-1')]));
+    const wrapper = mountView();
+    await flushPromises();
+    expect(wrapper.find('[data-testid="view-toggle"]').exists()).toBe(false);
+  });
+
+  it('切看板按 100 条页拉取并渲染分列', async () => {
+    vi.mocked(fetchEntity).mockResolvedValue(definitionWithKanban());
+    vi.mocked(queryRecords).mockResolvedValue(
+      page([record('rec-1', 'SKU-1'), record('rec-2', 'SKU-2')]),
+    );
+    const wrapper = mountView();
+    await flushPromises();
+    await wrapper.find('[data-testid="kanban-toggle"]').trigger('click');
+    await flushPromises();
+    const calls = vi.mocked(queryRecords).mock.calls;
+    expect(calls[calls.length - 1][1]).toMatchObject({ pageSize: '100' });
+    const board = wrapper.find('[data-testid="kanban-view"]');
+    expect(board.exists()).toBe(true);
+    expect(board.text()).toContain('SKU-1');
+    expect(wrapper.find('table.dynamic-table').exists()).toBe(false);
   });
 });

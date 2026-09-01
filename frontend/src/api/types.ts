@@ -28,10 +28,12 @@ export interface ViewFilter {
 
 export interface ViewDefinition {
   id: string;
-  viewType: 'list' | 'form';
+  /** P17 扩 kanban：groupBy 必填（分列 enum 字段，后端 ViewRules 校验）。 */
+  viewType: 'list' | 'form' | 'kanban';
   name: string;
   columns: ViewColumn[] | null;
   filters: ViewFilter[] | null;
+  groupBy: string | null;
 }
 
 export interface EntitySummary {

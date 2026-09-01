@@ -1,0 +1,12 @@
+{
+  "entity": "pipeline_task",
+  "viewType": "kanban",
+  "name": "任务看板",
+  "groupBy": "stage",
+  "columns": [
+    { "field": "title" },
+    { "field": "priority" },
+    { "field": "owner" },
+    { "field": "due_on" }
+  ]
+}

@@ -2,22 +2,21 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-import { createRecord, deleteRecord, fetchRecord, queryRecords, updateRecord } from '@/api/data';
+import { createRecord, fetchRecord, queryRecords, updateRecord } from '@/api/data';
 import { ApiError, apiErrorMessage } from '@/api/client';
 import type { RecordView, ViewDefinition } from '@/api/types';
 import DynamicForm from '@/components/DynamicForm.vue';
 import DynamicTable from '@/components/DynamicTable.vue';
+import EntityDetailSection from '@/components/EntityDetailSection.vue';
+import KanbanView from '@/components/KanbanView.vue';
+import ViewToggle from '@/components/ViewToggle.vue';
 import StateView from '@/components/StateView.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import { useEntityMetadata } from '@/composables/useEntityMetadata';
 import { visibleRecordActions, type ActionContext } from '@/registry/recordActionRegistry';
 
-/**
- * 动态实体页（docs/09 P06 验收 1）：列表/详情/新建/编辑四模式由路由参数驱动，
- * 无任何业务页面代码。五状态：loading/empty/error/denied/stale——stale 在元数据
- * 版本递增时出现并自动重载数据；403 → denied；错误附 requestId。
- */
+/** 动态实体页（docs/09 P06 验收 1）：四模式由路由参数驱动，无业务页面代码；P17 增看板呈现。 */
 const route = useRoute();
 const router = useRouter();
 const { definition, versionChanged, load } = useEntityMetadata();
@@ -27,7 +26,6 @@ const errorDetail = ref<string | null>(null);
 const records = ref<RecordView[]>([]);
 const total = ref(0);
 const page = ref(1);
-const pageSize = 20;
 const currentRecord = ref<RecordView | null>(null);
 const submitting = ref(false);
 const formError = ref<string | null>(null);
@@ -48,6 +46,12 @@ const listView = computed<ViewDefinition | null>(
 const formView = computed<ViewDefinition | null>(
   () => definition.value?.views.find((view) => view.viewType === 'form') ?? null,
 );
+const kanbanView = computed<ViewDefinition | null>(
+  () => definition.value?.views.find((view) => view.viewType === 'kanban') ?? null,
+);
+/** 列表页呈现切换（P17）：实体声明了 kanban 视图即可在看板/表格间切换。 */
+const presentation = ref<'table' | 'kanban'>('table');
+const pageSize = computed(() => (presentation.value === 'kanban' ? 100 : 20));
 
 function fail(e: unknown): void {
   if (e instanceof ApiError && e.status === 403) {
@@ -58,20 +62,23 @@ function fail(e: unknown): void {
   errorDetail.value = apiErrorMessage(e, String(e));
 }
 
-async function loadRecords(): Promise<void> {
+async function loadRecords(seq: number): Promise<void> {
   const result = await queryRecords(entityName.value, {
     page: String(page.value),
-    pageSize: String(pageSize),
+    pageSize: String(pageSize.value),
   });
   // 末页删光后回退到新的最后一页（仅校正一次：已在末页仍空则接受快照偏差，防递归）
-  const lastPage = Math.max(1, Math.ceil(result.total / pageSize));
+  const lastPage = Math.max(1, Math.ceil(result.total / pageSize.value));
   if (result.items.length === 0 && result.total > 0 && page.value !== lastPage && page.value > 1) {
     page.value = lastPage;
-    await loadRecords();
+    await loadRecords(seq);
     return;
   }
-  records.value = result.items;
-  total.value = result.total;
+  if (seq === refreshSeq) {
+    // 迟到旧响应不覆盖新页（审查 P3-3）
+    records.value = result.items;
+    total.value = result.total;
+  }
 }
 
 async function loadRecord(id: string): Promise<void> {
@@ -91,7 +98,7 @@ async function refresh(): Promise<void> {
       state.value = 'stale';
     }
     if (mode.value === 'list') {
-      await loadRecords();
+      await loadRecords(seq);
     } else if (mode.value === 'new') {
       currentRecord.value = null;
     } else if (route.params.id) {
@@ -128,7 +135,7 @@ async function onSubmit(values: Record<string, unknown>): Promise<void> {
   }
 }
 
-/** 详情/编辑页删除与列表动作共用统一确认对话框（P16）：registry 动作经 context.confirm。 */
+/** 列表动作统一确认（P16，registry 动作经 context.confirm；详情删除已拆 EntityDetailSection）。 */
 const confirmState = ref<{
   open: boolean;
   title: string;
@@ -162,26 +169,18 @@ function settleConfirm(ok: boolean): void {
   confirmState.value = null;
 }
 
-async function removeFromDetail(record: RecordView): Promise<void> {
-  if (
-    !(await confirmAction('删除后不可恢复，确认删除该记录？', {
-      title: '删除记录',
-      confirmLabel: '删除',
-      danger: true,
-    }))
-  ) {
-    return;
-  }
-  try {
-    await deleteRecord(entityName.value, record.id);
-    await router.push({ name: 'entity-list', params: { entity: entityName.value } });
-  } catch (e) {
-    fail(e);
-  }
-}
-
 async function openDetail(id: string): Promise<void> {
   await router.push({ name: 'entity-detail', params: { entity: entityName.value, id } });
+}
+
+/** 呈现切换（P17）：换页大小后整页重拉。 */
+async function switchPresentation(next: 'table' | 'kanban'): Promise<void> {
+  if (presentation.value === next) {
+    return;
+  }
+  presentation.value = next;
+  page.value = 1;
+  await refresh();
 }
 
 async function editRecord(id: string): Promise<void> {
@@ -217,10 +216,11 @@ watch(
     if (!route.params.entity) {
       return;
     }
-    // 仅切换实体时重置分页；同实体内详情/编辑/翻页保留位置
+    // 仅切换实体时重置分页与呈现；同实体内详情/编辑/翻页保留位置
     if (route.params.entity !== watchedEntity) {
       watchedEntity = String(route.params.entity);
       page.value = 1;
+      presentation.value = 'table';
     }
     formError.value = null;
     void refresh();
@@ -233,14 +233,16 @@ onMounted(refresh);
   <article class="entity-view" :data-entity="entityName" :data-mode="mode">
     <header>
       <h2>{{ definition?.displayName ?? entityName }}</h2>
-      <BaseButton
-        v-if="state === 'ready' && mode === 'list'"
-        variant="primary"
-        class="header-create"
-        @click="router.push(`/data/${entityName}/new`)"
-      >
-        新增记录
-      </BaseButton>
+      <div v-if="state === 'ready' && mode === 'list'" class="header-actions">
+        <ViewToggle v-if="kanbanView" :presentation="presentation" @change="switchPresentation" />
+        <BaseButton
+          variant="primary"
+          class="header-create"
+          @click="router.push(`/data/${entityName}/new`)"
+        >
+          新增记录
+        </BaseButton>
+      </div>
       <p v-if="state === 'ready' && versionChanged" class="stale-note">
         元数据已更新，数据已按新版本重新加载
       </p>
@@ -250,6 +252,16 @@ onMounted(refresh);
     <StateView v-else-if="state === 'error'" :state="'error'" :detail="errorDetail">
       <button type="button" @click="refresh">重试</button>
     </StateView>
+
+    <template v-else-if="mode === 'list' && presentation === 'kanban' && kanbanView">
+      <KanbanView
+        :definition="definition!"
+        :view="kanbanView"
+        :records="records"
+        :total="total"
+        @card-click="(record) => openDetail(record.id)"
+      />
+    </template>
 
     <template v-else-if="mode === 'list'">
       <StateView v-if="records.length === 0" :state="'empty'">
@@ -305,19 +317,12 @@ onMounted(refresh);
     </template>
 
     <StateView v-else-if="mode === 'detail' && !currentRecord" :state="'loading'" />
-    <dl v-else-if="mode === 'detail'" class="detail-list">
-      <template v-for="field in definition?.fields ?? []" :key="field.id">
-        <dt>{{ field.displayName }}</dt>
-        <dd :data-field="field.name">{{ currentRecord?.data[field.name] ?? '—' }}</dd>
-      </template>
-      <div class="detail-actions">
-        <router-link :to="`/data/${entityName}/${currentRecord?.id}/edit`">编辑</router-link>
-        <button type="button" @click="currentRecord && removeFromDetail(currentRecord)">
-          删除
-        </button>
-        <router-link :to="`/data/${entityName}`">返回列表</router-link>
-      </div>
-    </dl>
+    <EntityDetailSection
+      v-else-if="mode === 'detail'"
+      :definition="definition!"
+      :record="currentRecord"
+      @error="fail"
+    />
 
     <!-- :key 绑定实体+记录 ID：DynamicForm 的 values 是 setup 快照，防跨记录复用残留 -->
     <DynamicForm

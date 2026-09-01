@@ -68,9 +68,10 @@ public class EntityAdminService {
                                Integer position) {
     }
 
-    /** 视图写入命令（新增全量必填；更新 null = 不变）。 */
+    /** 视图写入命令（新增全量必填；更新 null = 不变）；groupBy 仅 kanban（P17）。 */
     @PublicApi
-    public record ViewCommand(String viewType, String name, JsonNode columns, JsonNode filters) {
+    public record ViewCommand(String viewType, String name, JsonNode columns, JsonNode filters,
+                              String groupBy) {
     }
 
     /** 创建实体（初始 draft）。 */
@@ -170,10 +171,16 @@ public class EntityAdminService {
         String name = cmd.name() == null ? current.name() : cmd.name();
         JsonNode columns = cmd.columns() == null ? current.columns() : cmd.columns();
         JsonNode filters = cmd.filters() == null ? current.filters() : cmd.filters();
-        ViewRules.validate(ViewType.fromName(current.viewType()), name, columns, filters,
-                fieldNamesOf(definition));
+        String groupBy = cmd.groupBy() == null ? current.groupBy() : cmd.groupBy();
+        ViewType type = ViewType.fromName(current.viewType());
+        ViewRules.validate(type, name, columns, filters, fieldNamesOf(definition));
+        if (type == ViewType.KANBAN) {
+            ViewRules.validateKanban(groupBy, fieldNamesOf(definition),
+                    enumFieldNamesOf(definition));
+        }
         ViewDefinition merged = new ViewDefinition(current.id(), current.entityId(),
-                current.viewType(), name, orEmptyArray(columns), orEmptyArray(filters));
+                current.viewType(), name, orEmptyArray(columns), orEmptyArray(filters),
+                normalizeGroupBy(type, groupBy));
         if (repository.updateView(merged) != 1) {
             throw new NoSuchElementException("视图不存在: " + viewId);
         }
@@ -258,12 +265,31 @@ public class EntityAdminService {
         ViewType type = ViewType.fromName(cmd.viewType());
         Identifiers.validateDisplayName(cmd.name(), "视图名");
         ViewRules.validate(type, cmd.name(), cmd.columns(), cmd.filters(), fieldNamesOf(definition));
+        if (type == ViewType.KANBAN) {
+            ViewRules.validateKanban(cmd.groupBy(), fieldNamesOf(definition),
+                    enumFieldNamesOf(definition));
+        }
         return new ViewDefinition(id, entityId, type.wireName(), cmd.name(),
-                orEmptyArray(cmd.columns()), orEmptyArray(cmd.filters()));
+                orEmptyArray(cmd.columns()), orEmptyArray(cmd.filters()),
+                normalizeGroupBy(type, cmd.groupBy()));
+    }
+
+    /** groupBy 仅 kanban 视图持久化（其余归 null，与插件注册路径同口径，审查 P2-1）。 */
+    private static String normalizeGroupBy(ViewType type, String groupBy) {
+        return type == ViewType.KANBAN ? groupBy : null;
     }
 
     private static Set<String> fieldNamesOf(EntityDefinition definition) {
         return definition.fields().stream().map(FieldDefinition::name).collect(Collectors.toSet());
+    }
+
+    /** enum 字段名集合（kanban groupBy 校验用，P17；类型判断经 registry 单点）。 */
+    private static Set<String> enumFieldNamesOf(EntityDefinition definition) {
+        return definition.fields().stream()
+                .filter(field -> FieldTypeRegistry.require(field.fieldType())
+                        == FieldTypeRegistry.FieldType.ENUM)
+                .map(FieldDefinition::name)
+                .collect(Collectors.toSet());
     }
 
     private static void requireDraft(EntityRecord entity, String operation) {

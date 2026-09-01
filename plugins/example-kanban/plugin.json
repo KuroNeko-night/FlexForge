@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "example.kanban",
+  "name": "任务管线看板示例",
+  "version": "0.1.0",
+  "capabilityLevel": 1,
+  "minPlatformVersion": "0.1.0",
+  "dependencies": [],
+  "permissions": ["pipeline.read", "pipeline.write"],
+  "contributions": {
+    "navigation": ["example.kanban.tasks"],
+    "renderers": ["text.default", "enum.default", "date.default"]
+  },
+  "resources": {
+    "entities": ["metadata/entities/pipeline-task.json"],
+    "views": [
+      "metadata/views/pipeline-task.list.json",
+      "metadata/views/pipeline-task.form.json",
+      "metadata/views/pipeline-task.kanban.json"
+    ],
+    "migrations": ["migrations/V001__pipeline_task.sql"]
+  }
+}

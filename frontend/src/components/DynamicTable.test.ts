@@ -85,6 +85,7 @@ describe('DynamicTable（六类字段经 registry 用正确内置 renderer，RB-
             { field: 'enum_field', visible: true },
           ],
           filters: null,
+          groupBy: null,
         },
         records: [record],
       },

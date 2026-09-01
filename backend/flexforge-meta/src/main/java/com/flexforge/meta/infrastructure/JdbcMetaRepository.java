@@ -44,7 +44,8 @@ public class JdbcMetaRepository implements MetaRepository {
     private static final String FIELD_COLUMNS = "id, entity_id, name, display_name, field_type,"
             + " required, default_value, validation, renderer_id, position";
 
-    private static final String VIEW_COLUMNS = "id, entity_id, view_type, name, columns, filters";
+    private static final String VIEW_COLUMNS = "id, entity_id, view_type, name, columns, filters,"
+            + " group_by";
 
     private final RowMapper<EntityRecord> entityRow = this::mapEntity;
     private final RowMapper<FieldDefinition> fieldRow = this::mapField;
@@ -164,9 +165,10 @@ public class JdbcMetaRepository implements MetaRepository {
     @Override
     public ViewDefinition insertView(ViewDefinition view) {
         try {
-            jdbc.update("INSERT INTO meta_view (" + VIEW_COLUMNS + ") VALUES (?, ?, ?, ?, ?::jsonb, ?::jsonb)",
+            jdbc.update("INSERT INTO meta_view (" + VIEW_COLUMNS + ")"
+                            + " VALUES (?, ?, ?, ?, ?::jsonb, ?::jsonb, ?)",
                     view.id(), view.entityId(), view.viewType(), view.name(),
-                    jsonOf(view.columns()), jsonOf(view.filters()));
+                    jsonOf(view.columns()), jsonOf(view.filters()), view.groupBy());
         } catch (DuplicateKeyException e) {
             throw new DuplicateKeyException("该实体已存在同类型视图: " + view.viewType());
         }
@@ -182,8 +184,9 @@ public class JdbcMetaRepository implements MetaRepository {
     @Override
     public int updateView(ViewDefinition view) {
         return jdbc.update("UPDATE meta_view SET name = ?, columns = ?::jsonb, filters = ?::jsonb,"
-                        + " updated_at = now() WHERE id = ?",
-                view.name(), jsonOf(view.columns()), jsonOf(view.filters()), view.id());
+                        + " group_by = ?, updated_at = now() WHERE id = ?",
+                view.name(), jsonOf(view.columns()), jsonOf(view.filters()), view.groupBy(),
+                view.id());
     }
 
     private EntityRecord mapEntity(ResultSet rs, int rowNum) throws SQLException {
@@ -203,7 +206,8 @@ public class JdbcMetaRepository implements MetaRepository {
     private ViewDefinition mapView(ResultSet rs, int rowNum) throws SQLException {
         return new ViewDefinition(rs.getString("id"), rs.getString("entity_id"),
                 rs.getString("view_type"), rs.getString("name"),
-                parse(rs.getString("columns")), parse(rs.getString("filters")));
+                parse(rs.getString("columns")), parse(rs.getString("filters")),
+                rs.getString("group_by"));
     }
 
     private static JsonNode parse(String raw) {

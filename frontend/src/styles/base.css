@@ -353,3 +353,39 @@ textarea:disabled {
   color: var(--ff-warn);
   font-size: var(--ff-text-md);
 }
+
+/* P17 列表页呈现切换（表格/看板）与看板加载提示 */
+.entity-view .header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-3);
+  flex-wrap: wrap;
+}
+.view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--ff-border);
+  border-radius: var(--ff-radius-sm);
+  overflow: hidden;
+}
+.view-toggle button {
+  border: none;
+  border-radius: 0;
+  padding: var(--ff-space-1) var(--ff-space-3);
+  background: var(--ff-surface);
+  color: var(--ff-text-muted);
+  font-size: var(--ff-text-md);
+}
+.view-toggle button.active {
+  background: var(--ff-primary);
+  color: var(--ff-primary-ink);
+  font-weight: 600;
+}
+.view-toggle button:hover:not(:disabled):not(.active) {
+  border: none;
+  color: var(--ff-text);
+}
+.kanban-note {
+  margin: var(--ff-space-2) 0 0;
+  color: var(--ff-text-muted);
+  font-size: var(--ff-text-sm);
+}

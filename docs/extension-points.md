@@ -69,6 +69,14 @@ MVP 消费方: <至少一个真实消费方>
 
 提交方式：与实现同一 PR；评审通过后由维护者将状态改为 `active`。
 
+### 2.3 视图类型契约（metadata/views 资源，随 `service.meta`）
+
+| viewType | 必填配置 | 语义 | 引入 |
+| --- | --- | --- | --- |
+| `list` | — | 表格列与查询字段（columns/filters，ViewRules 白名单） | P04 |
+| `form` | — | 表单字段顺序 | P04 |
+| `kanban` | `groupBy`（必须是同实体 enum 字段，ViewRules.validateKanban） | 看板列=groupBy 枚举选项（含前端"未设置"兜底列），columns=卡片显示字段；第一版只读，移动记录=详情内编辑分组字段（P17，插件声明即得，无脚本语义） | P17 |
+
 ## 4. 变更记录
 
 | 日期 | 变更 | 类型 |
@@ -82,3 +90,4 @@ MVP 消费方: <至少一个真实消费方>
 | 2026-08-29 | P08 插件侧注册落地：plugin.json `contributions.themeAssets`（对象数组）→ 导入校验+逐文件声明收紧（assets/ 双向核对，Issue #20 第 3 项）→ 激活注册（plugin_registration + 内存 ThemeAssetContribution）→ serve 端点（CSP/attachment/nosniff，Issue #20 第 4 项）；载荷契约不变 | additive |
 | 2026-08-30 | P12.5 tokens 通道（additive）：`extension.theme-asset` kind 枚举扩 `tokens`（JSON 键值表→--ff-* 设计令牌，前端键白名单）；新增聚合端点 GET /plugins/theme-assets（登录可读，前端壳层消费面）；消费方 plugins/theme-default、theme-warm | additive |
 | 2026-08-30 | P15 locale 通道（additive）：`extension.theme-asset` kind 枚举扩 `locale`（JSON 语言包 `{lang,messages}`→前端 localeRegistry+t()/设置页语言切换；差量撤销回退中文基线）；消费方 plugins/locale-en | additive |（同日修正：键白名单段内放宽驼峰——live 排障发现全小写正则静默拒绝真实语言包，PR #37）
+| 2026-09-01 | P17 看板视图（additive）：视图类型契约（§2.3）扩 `kanban`——`groupBy` 必填且为同实体 enum 字段；V013 迁移扩 meta_view.view_type CHECK+group_by 列；插件 spec/元数据 API/前端 KanbanView 全链同一 ViewRules 校验；消费方 plugins/example-kanban | additive |

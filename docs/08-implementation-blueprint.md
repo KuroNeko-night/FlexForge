@@ -163,7 +163,7 @@ example-inventory/
 `plugins/example-inventory` 与任何第三方包同权：预置但不自动安装；演示脚本只能调用标准导入/安装/启停/卸载 API；禁止在前后端骨架中为其写死菜单、路由、页面或权限。
 
 插件资源 JSON 契约（P09 起，激活期消费）：实体 `{"name","displayName","fields":[{name,displayName,fieldType,required?,validation?,position}]}`；
-视图 `{"entity","viewType":"list|form","name","columns":[{field}],"filters"?}`（entity 必须为同包注册实体）。
+视图 `{"entity","viewType":"list|form|kanban","name","groupBy"?,"columns":[{field}],"filters"?}`（entity 必须为同包注册实体；kanban 视图 groupBy 必填且为同实体 enum 字段——列=枚举选项，P17，登记册 §2.3）。
 迁移 runner 按 `resources.migrations` **声明顺序**执行（多脚本顺序由 manifest 决定）。
 包目录只允许 manifest/metadata/migrations/assets 区域——安装说明等文档放包外（如 `plugins/<name>-README.md`）。
 
