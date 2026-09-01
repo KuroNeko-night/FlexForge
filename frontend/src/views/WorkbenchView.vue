@@ -115,8 +115,19 @@ async function loadMenus(): Promise<void> {
   }
 }
 
-/** 菜单图标（P16）：按菜单 key 前缀/路由映射到平台内联图标集。 */
+/** 后端 icon 契约值（docs/03 §5 /menus）→ 平台图标名。 */
+const MENU_ICON_NAMES: Record<string, string> = {
+  dashboard: 'grid',
+  database: 'database',
+  settings: 'sliders',
+};
+
+/** 菜单图标（P16）：优先消费后端 icon 契约字段，未下发时按 key/路由兜底。 */
 function iconFor(menu: MenuItem): string {
+  const declared = menu.icon ? MENU_ICON_NAMES[menu.icon] : undefined;
+  if (declared) {
+    return declared;
+  }
   if (menu.route?.startsWith('/data/')) {
     return 'layers';
   }

@@ -49,7 +49,7 @@ FlexForge/
 │   │   └── src/main/resources/prompts/v1/   提示词与 fixture 资源（clarify.md + fixture-spec.json，版本一一对应）
 │   └── flexforge-app/              启动、配置、健康检查；web/ 统一错误装配 + requestId 过滤器 + logback 脱敏基线（P02 迭代 2）；Testcontainers 冒烟 + ArchUnit（5 规则）+ R-GOV-06 fixture 测试 + AgentIssueE2eTest/E2eDemoScript（RB-E2E 五场景×3 干净库，P12）
 ├── frontend/                       Vue 3 + TS + Vite（P01 骨架 + P06 动态渲染）
-│   ├── package.json / package-lock.json   +vue-router；dev 依赖 +@vue/test-utils/happy-dom/globals（P06）
+│   ├── package.json / package-lock.json   +vue-router；dev 依赖 +@vue/test-utils/happy-dom/globals（P06）；运行依赖 +@fontsource/inter（自托管字体，P16）
 │   ├── Dockerfile                  Vite dev 镜像（非 root；生产静态服务 P06 引入）
 │   ├── vite.config.ts              dev 同源代理（CORS 基线）+ preview CSP/安全响应头骨架
 │   ├── vitest.config.ts            测试配置（@ alias；组件测试用文件级 happy-dom 标注）
@@ -59,8 +59,8 @@ FlexForge/
 │       ├── api/                    client（错误规范化/令牌注入/401 回调，FormData multipart 不覆盖边界）+ auth/meta/data/plugins（清单+导入/激活/停用/卸载，P15）/issues（clarify/迁移/规格/生成，P15）/system/theme 客户端 + 契约类型
 │       ├── auth/token.ts           会话令牌（sessionStorage）与当前用户
 │       ├── registry/               keyed.ts 通用基座 + renderer/menu/layout/theme/recordAction/locale registry（P15：语言包+t()/语言切换）+ builtinContributions（内置部件/动作/本地菜单：Issue 工作台+插件管理+设置入口）
-│       ├── styles/tokens.css       设计令牌与基建原语样式（P12.5：--ff-* 变量+组件类+过渡动画；主题插件覆盖变量即换肤）
-│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards + ui/（BaseButton/BaseSwitch/ComponentCard/BaseDrawer，P12.5）+ IssueDetail/IssueDevPanel（AI 对话+开发者面板）+ PluginCard（激活/停用/卸载+诊断，P15）+ AppLogo（平台品牌 SVG，P15）
+│       ├── styles/                 tokens.css（设计令牌+基建原语，P16 精修：主色阶/focus 环/侧栏派生令牌）+ base.css（全局控件/表格/侧栏分组基线，P16 拆分）
+│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards + ui/（BaseButton/BaseSwitch/ComponentCard/BaseDrawer/ConfirmDialog 统一确认，P16）+ IssueDetail/IssueDevPanel/IssueComments + PluginCard + UploadDropzone（拖拽+自动校验，P16）+ AppIcon（内联图标集，P16）+ AppLogo
 │       ├── composables/            useEntityMetadata（metaVersion 比对 → stale 刷新）
 │       └── views/                  Login/Workbench/Home/DynamicEntity（列表/详情/新建/编辑）/Issues（Issue 工作台+创建抽屉，P15）/Plugins（清单+写操作，P15）/Users（用户管理，P12.5）/Placeholder
 ├── database/
@@ -246,3 +246,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-30 | §1 树更新：frontend api +issues.ts、plugins.ts 扩写操作（multipart FormData）；views +Issues、components +IssueDetail/IssueDevPanel/PluginCard；router +/issues、builtinContributions +Issue 工作台菜单 | P15 迭代 1：Issue/AI 工作台前端（clarify 对话入口/迁移/规格/生成消费面）+ 插件管理页写操作（导入/激活/停用/卸载） |
 | 2026-08-30 | §1 树更新：V012 ai_provider_config；flexforge-ai +config 包与 RoutingModelPort（两 ModelPort 实现退出 Bean 装配）；frontend +api/settings、views +Settings、router +/settings、菜单 +设置入口 | P15 迭代 2：设置页 + AI 运行时配置（FR-SETUP-01；docs/13 S4/§3.6-5 第二密钥通道修订、docs/02 +FR-SETUP、docs/03 §8 +/ai/config） |
 | 2026-08-30 | §1 树更新：plugins +example-library/example-facility/locale-en；frontend +registry/localeRegistry、components +AppLogo、views/SettingsView 增语言卡、LoginView 品牌化重写、tokens.css +入场动效；backend 两处 KINDS 扩 locale；app 测试 +ExamplePluginsP15Test | P15 迭代 3：i18n 通道+英文化插件+语言切换+登录/工作台品牌化+两个示例业务插件（登记册 §2.2 变更同步） |
+| 2026-08-31 | §1 树更新：frontend +styles/base.css、components +AppIcon/ConfirmDialog/IssueComments/UploadDropzone、依赖 +@fontsource/inter；api +apiErrorMessage、issues +TRANSITION_LABELS；registry recordAction +confirm；plugins/locale-en 1.0.3（+分组键） | P16 迭代 1/2：交互重构+文案净化（统一确认/迁移按钮组/上传区/列表头部创建）与默认主题精修（导航分组图标/控件 focus 环/自托管字体）——用户裁决新增阶段 |

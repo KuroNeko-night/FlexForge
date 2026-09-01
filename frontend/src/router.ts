@@ -25,8 +25,10 @@ export const router = createRouter({
       path: '/',
       component: WorkbenchView,
       children: [
-        { path: '', name: 'home', component: HomeView },
-        { path: 'workbench', redirect: { name: 'home' } },
+        /* home 落在 /workbench 实路径（P16）：菜单链接与路由可匹配，导航激活态
+           才生效——原 ''→redirect 结构使 URL 回落 '/'，router-link-active 永不命中 */
+        { path: '', redirect: { name: 'home' } },
+        { path: 'workbench', name: 'home', component: HomeView },
         { path: 'issues', name: 'issues', component: IssuesView },
         { path: 'data/:entity', name: 'entity-list', component: DynamicEntityView },
         { path: 'data/:entity/new', name: 'entity-new', component: DynamicEntityView },

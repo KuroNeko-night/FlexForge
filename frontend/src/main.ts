@@ -6,9 +6,9 @@ import { clearSession } from './auth/token';
 import { registerBuiltinContributions } from './registry/builtinContributions';
 import { registerBuiltins } from './registry/rendererRegistry';
 import { router } from './router';
-import '@fontsource/inter/400.css';
-import '@fontsource/inter/600.css';
-import '@fontsource/inter/700.css';
+import '@fontsource/inter/latin-400.css';
+import '@fontsource/inter/latin-600.css';
+import '@fontsource/inter/latin-700.css';
 import './styles/tokens.css';
 import './styles/base.css';
 

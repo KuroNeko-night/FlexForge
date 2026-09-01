@@ -17,18 +17,21 @@
   --ff-primary-hover: #2445b4;
   --ff-primary-soft: #e8edfd;
   --ff-primary-ink: #ffffff;
-  --ff-focus-ring: 0 0 0 3px rgb(48 86 211 / 18%);
+  --ff-focus-ring: 0 0 0 3px color-mix(in srgb, var(--ff-primary) 18%, transparent);
   --ff-danger: #b3373a;
   --ff-danger-bg: #fcecec;
   --ff-warn: #93611b;
   --ff-warn-bg: #fdf3e4;
-  /* 侧栏导航：垂直渐变 + 分组标题/激活态（P16） */
+  /* 侧栏导航：垂直渐变 + 分组标题/激活态（P16；派生键随基础键级联，
+     主题插件只需覆盖 --ff-side-bg/-ink/-active 即整体换色系） */
   --ff-side-bg: #191e2e;
-  --ff-side-bg-2: #12151f;
+  --ff-side-bg-2: color-mix(in srgb, var(--ff-side-bg) 78%, #000);
   --ff-side-ink: #c6cde0;
-  --ff-side-muted: #8b93ab;
+  --ff-side-ink-strong: color-mix(in srgb, var(--ff-side-ink) 55%, #fff);
+  --ff-side-muted: color-mix(in srgb, var(--ff-side-ink) 62%, transparent);
+  --ff-side-hover: rgb(255 255 255 / 6%);
   --ff-side-active: #262f4a;
-  --ff-side-accent: #6d8dff;
+  --ff-side-accent: color-mix(in srgb, var(--ff-primary) 55%, #fff);
 
   /* 排版（拉丁/数字自托管 Inter，中文系统栈；无运行时外链，CSP 兼容） */
   --ff-font: 'Inter', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -122,7 +125,8 @@
   color: var(--ff-primary-ink);
 }
 .ff-btn--primary:hover:not(:disabled) {
-  filter: brightness(1.08);
+  background: var(--ff-primary-hover);
+  border-color: var(--ff-primary-hover);
 }
 .ff-btn--danger {
   color: var(--ff-danger);
