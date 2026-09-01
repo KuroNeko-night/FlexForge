@@ -37,9 +37,11 @@ export function registerRenderer(id: string, component: Component): void {
 }
 
 export function resolveRenderer(field: FieldDefinition): Component {
-  // 未知 rendererId（插件已停用、元数据引用漂移）回退 text.default：
-  // 动态列表/表单保持纯文本可渲染，不因悬空引用整页失败
-  return registry.resolve(field.rendererId) ?? TextField;
+  // 声明 ID 命中即用；悬空/缺失（插件实体字段注册不带 rendererId，P08 起存量）
+  // 按 fieldType 回退 <type>.default（FieldTypeRegistry 六类默认契约）；
+  // 未知类型最终回退 text——动态列表/表单保持可渲染，不因悬空引用整页失败
+  const declared = field.rendererId ? registry.resolve(field.rendererId) : undefined;
+  return declared ?? registry.resolve(`${field.fieldType}.default`) ?? TextField;
 }
 
 export function rendererIds(): string[] {

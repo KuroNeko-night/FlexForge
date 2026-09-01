@@ -12,7 +12,8 @@ export interface FieldDefinition {
   required: boolean;
   defaultValue: unknown;
   validation: Record<string, unknown> | null;
-  rendererId: string;
+  /** 插件实体字段注册不带 rendererId（null）——前端按 fieldType 回退默认渲染器。 */
+  rendererId: string | null;
   position: number;
 }
 
