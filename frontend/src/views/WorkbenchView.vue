@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { logout, fetchMe } from '@/api/auth';
@@ -8,6 +8,7 @@ import { fetchMenus } from '@/api/meta';
 import { fetchActiveThemeAssets, type ActiveThemeAsset } from '@/api/theme';
 import type { MenuItem } from '@/api/types';
 import { clearSession, session } from '@/auth/token';
+import AppIcon from '@/components/AppIcon.vue';
 import AppLogo from '@/components/AppLogo.vue';
 import StateView from '@/components/StateView.vue';
 import { registerLocalePack, syncRemovedLocalePacks, t } from '@/registry/localeRegistry';
@@ -114,6 +115,39 @@ async function loadMenus(): Promise<void> {
   }
 }
 
+/** 菜单图标（P16）：按菜单 key 前缀/路由映射到平台内联图标集。 */
+function iconFor(menu: MenuItem): string {
+  if (menu.route?.startsWith('/data/')) {
+    return 'layers';
+  }
+  if (menu.key.includes('issues')) {
+    return 'chat';
+  }
+  if (menu.key.includes('plugins')) {
+    return 'package';
+  }
+  if (menu.key.includes('settings')) {
+    return 'sliders';
+  }
+  if (menu.key.includes('system')) {
+    return 'users';
+  }
+  if (menu.key.includes('data')) {
+    return 'database';
+  }
+  return 'grid';
+}
+
+/** 导航分组（P16）：业务实体入口与平台管理分区呈现，组内保持 order 序。 */
+const groupedMenus = computed(() => {
+  const apps = menus.value.filter((menu) => menu.route?.startsWith('/data/'));
+  const platform = menus.value.filter((menu) => !menu.route?.startsWith('/data/'));
+  return [
+    { key: 'platform', title: t('menu.groupPlatform', '平台'), items: platform },
+    { key: 'applications', title: t('menu.groupApplications', '业务应用'), items: apps },
+  ].filter((group) => group.items.length > 0);
+});
+
 async function signOut(): Promise<void> {
   try {
     await logout();
@@ -158,14 +192,21 @@ watch(
       </p>
       <StateView v-if="state !== 'ready'" :state="state" :message="error" />
       <nav v-else aria-label="主导航">
-        <ul>
-          <li v-for="menu in menus" :key="menu.key">
-            <router-link v-if="menu.route" :to="menu.route">
-              {{ t(`menu.${menu.key}`, menu.title) }}
-            </router-link>
-            <span v-else class="menu-static">{{ t(`menu.${menu.key}`, menu.title) }}</span>
-          </li>
-        </ul>
+        <section v-for="group in groupedMenus" :key="group.key">
+          <p class="side-group-title">{{ group.title }}</p>
+          <ul>
+            <li v-for="menu in group.items" :key="menu.key">
+              <router-link v-if="menu.route" :to="menu.route">
+                <AppIcon :name="iconFor(menu)" />
+                <span>{{ t(`menu.${menu.key}`, menu.title) }}</span>
+              </router-link>
+              <span v-else class="menu-static">
+                <AppIcon :name="iconFor(menu)" />
+                <span>{{ t(`menu.${menu.key}`, menu.title) }}</span>
+              </span>
+            </li>
+          </ul>
+        </section>
       </nav>
       <div class="side-footer">
         <span class="who">{{ session.user?.displayName ?? session.user?.username }}</span>

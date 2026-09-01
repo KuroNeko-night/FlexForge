@@ -44,6 +44,8 @@
     "settings.keyWillClear": "The saved key will be removed",
     "settings.clearKey": "Remove the saved API key",
     "settings.keyStale": "The saved key cannot be decrypted. Please enter it again.",
-    "settings.savedNotice": "Saved. The next model call uses the new configuration."
+    "settings.savedNotice": "Saved. The next model call uses the new configuration.",
+    "menu.groupPlatform": "Platform",
+    "menu.groupApplications": "Applications"
   }
 }

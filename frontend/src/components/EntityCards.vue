@@ -4,6 +4,7 @@ import { onMounted, ref } from 'vue';
 import { listEnabledEntities } from '@/api/meta';
 import { ApiError, apiErrorMessage } from '@/api/client';
 import type { EntitySummary } from '@/api/types';
+import AppIcon from '@/components/AppIcon.vue';
 import StateView from '@/components/StateView.vue';
 
 /** 内置部件 workbench.entities：已启用实体入口卡片（元数据驱动）。 */
@@ -38,7 +39,10 @@ onMounted(async () => {
     <ul v-else class="entity-cards">
       <li v-for="entity in entities" :key="entity.id">
         <router-link :to="`/data/${entity.name}`">
-          <strong>{{ entity.displayName }}</strong>
+          <span class="entity-head">
+            <strong>{{ entity.displayName }}</strong>
+            <AppIcon name="arrow-right" :size="16" class="entity-go" />
+          </span>
           <span class="entity-name">{{ entity.name }}</span>
         </router-link>
       </li>
