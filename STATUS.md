@@ -5,12 +5,12 @@
 <!-- FLEXFORGE_STATUS:BEGIN -->
 CURRENT_STAGE_ID: P16
 CURRENT_STAGE_NAME: 前端体验打磨与默认主题精修
-STAGE_STATUS: in_progress
-PROJECT_PROGRESS: 97%
+STAGE_STATUS: completed
+PROJECT_PROGRESS: 100%
 LAST_UPDATED: 2026-08-31
 OWNER: project-maintainer
-NEXT_ACTION: P16 迭代 1（交互重构+文案净化）：统一确认对话框替代原生 confirm/Issue 迁移按钮组/插件上传区自动校验/实体列表头部创建入口/全量文案去括号（含 en.json 与测试断言同步）；完成后独立子代理审查+live 视觉验证，再进迭代 2（默认主题精修：导航分组图标/控件 focus 态/字体本地化）。环境注意：compose 前端镜像未自动重建（2026-08-31 用户提醒为上周版本），迭代验证用本地 dev server（VITE_PROXY_TARGET=8088），收口前重建 frontend 镜像
-EXIT_GATE: P15 出口证据（docs/09 P15 验收五项）：①Issue 全链 UI 可走通——PR #34 后 live：建 Issue→dev clarify 两轮（3 追问→spec）→APPROVED→generate（脏库实体冲突→DEV_FAILED→手工改实体名 rev2→再批准→0.1.2 ACTIVE）→USER 建记录；②插件安装/启停/卸载 UI 可操作——PluginsView 上传/激活/停用/卸载+失败诊断（stage+errorCode），live 导入激活 locale-en/example-library/example-facility 三包；③AI 配置经设置页生效——live：默认 fixture 视图/PUT http+key→掩码 …5678+DB 密文≠明文+审计/clearApiKey/clarify 回 fixture（AiConfigApiTest 端到端桩路由）；④英文插件激活后设置页可切 en 且界面即时切换、停用回退 zh-CN——live 视觉验证（in-app browser 截图核验：设置页/侧栏/Sign out 全英文；切回中文即时回退）；⑤新示例插件过标准包校验与既有示例同装——ExamplePluginsP15Test（decimal/boolean/date 泛化 CRUD+非负规则）+live 菜单共存。过程：PR #34（3P1+3P2+4P3 全处置）/#35（0P0P1+1P2+3P3）/#36（2P2+6P3，4 顺手修）/#37（live 排障修复：camelCase 键白名单，1P2 登记册同步）；CI 两次真实失败（Prettier）+一次 lint 超 50 行，均当日修复。后端 145+/前端 115 tests、门禁 21/1/0迭代 1 证据：PR #34 独立子代理审查 3 P1+3 P2+4 P3 全处置（P1=裸 void 端点 200 空体假失败×2+findings 契约；P2=切换 Issue 状态串台×2+IME 回车；顺带 FormData 测试缺口补齐）+CI 一次真实失败（Prettier 9 文件，本地补跑门禁后修复）+六项全绿合并（c43a54a）；live 验证 2026-08-30：admin 建 Issue→dev clarify 两轮出规格（3 追问→spec rev1）→APPROVED→generate（首次 REGISTER registration_failed=fixture 固定实体名 clarify_item 与遗留生成插件冲突，属脏库已知行为非缺陷；DEV_FAILED→手工改实体名 meeting_room 存 rev2→再批准→generate 0.1.2 ACTIVE→IN_TESTING）→USER 建记录 rec-94aa…（qty=12 非负规则面）；前端 99 tests
+NEXT_ACTION: 【P00-P16 全阶段完成，项目维持 release_candidate】P16 出口 live+视觉终验 2026-08-31（重建镜像容器版：#/workbench 激活态+分组图标/统一确认/上传区/中英切换）。后续=答辩准备（docs/14；演示机预导 locale-en 1.0.3/example-library/example-facility 三包，frontend/backend 镜像需现场重建或导出）与 Issue #22 余项按触发条件排期
+EXIT_GATE: P16 出口证据（docs/09 P16 验收四项）：①UI 文案无中文括号——全量复扫仅剩开发者向注释与 throw 消息（审查确认允许），apiErrorMessage 统一"消息 · 追踪码"，en.json 1.0.3 同步；②破坏性操作全走统一确认——4 处原生 confirm 清零（ConfirmDialog+ActionContext.confirm），Issue 迁移=动词按钮组一键直达（旁路才填原因）、插件选包即自动校验、实体创建入口上移列表头部；③默认主题视觉走查——停 theme.default 基线核验：导航平台/业务应用分组+icon 契约图标+激活左条（连带修复 home 路由回落 '/' 致激活态自 P13 从未生效的根因）、控件 focus 环、表格表头/行 hover、Inter latin 自托管字体；主题插件覆盖机制回归通过（token 键全存活+color-mix 派生级联）；④门禁 21/1/0、前端 128+/后端 145+ tests、PR #38（2P1+6P2+7P3）与 #39（2P1+1P2+9P3）独立子代理审查全处置、CI 六项绿、live 容器版（frontend 镜像已重建）终验截图通过。过程教训：compose 镜像不自动重建（迭代验证一律本地 dev server+收口重建镜像）；Vue 响应式代理会包装 File 引用（陈旧守卫用序号不用引用比较）
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -35,7 +35,7 @@ BLOCKERS: none
 | P13 | 加分项与体验优化 | completed | 三体验项交付+开关关闭主线无影响（live 验证见 EXIT_GATE） |
 | P14 | 质量收敛与答辩交付 | completed | 全量验收通过，进入 release_candidate（见 NEXT_ACTION 验证时间） |
 | P15 | 平台体验补全与插件生态演示 | completed | 五项验收全过（Issue 全链 UI/插件写操作/AI 配置密钥加密/中英切换/示例插件同装；live+视觉验证见 EXIT_GATE） |
-| P16 | 前端体验打磨与默认主题精修 | in_progress | 用户验收裁决新增（2026-08-31）：交互重构/文案禁括号/默认主题精致统一；验收标准见 docs/09 P16 |
+| P16 | 前端体验打磨与默认主题精修 | completed | 四项验收全过（文案无括号/统一确认+操作步数减省/默认主题视觉与主题机制回归/中英切换+门禁全绿；两轮独立审查全处置，live 容器版终验见 EXIT_GATE） |
 
 ## 更新规则
 
@@ -158,3 +158,5 @@ BLOCKERS: none
 | 2026-08-30 | P15 | 迭代 3 收口+阶段翻牌：PR #36 审查（2 P2+6 P3：菜单键对齐 MenuService 实际 key/极光动画 reduced-motion 覆盖/--ff-text-xl 补定义/跨基线去重/死样式清理；2 项记 Issue #22）CI 六项全绿合并（269601b）。live 视觉验证发现并修复真缺陷：locale 消息键白名单拒 camelCase 段→真实语言包被单资产 catch 静默吞掉（tokens 同通道正常故仅语言缺失）——PR #37 放宽正则+登记册同步+防回归用例（审查 0P0P1+1P2 修复）；locale-en 增补示例菜单键后版本 1.0.0→1.0.1 重导入激活。最终 live 视觉核验：设置页/侧栏/Sign out 全英文切换与中文回退即时生效（截图）；登录页品牌基线（logo/极光背景/入场动画）渲染正常。**P15 出口复核通过，置 completed；P00-P15 全阶段完成，项目维持 release_candidate** | PR #36/#37、live+视觉验证 2026-08-30、docs/00 §7-10 |
 | 2026-08-31 | P16 | 用户验收（P15 后）提出三点并裁决新增 P16（docs/09 P16 已登记）：①前端操作逻辑仍有繁琐、不符合人类使用直觉的交互②UI 文案不得出现含括号的解释性内容③默认主题需精致统一（允许网络美术资源，须本地化内置）。走查基线（本地 dev server 最新代码+重建后端镜像，用户提醒 compose 前端镜像为上周版本）：原生 file input/原生 confirm 直出、Issue 迁移为下拉+填原因+执行三步流、设置页控件无 focus 态、多处括号文案、导航无分组无图标无激活指示。红线：结构与皮分离不变；无新后端端点；资源本地化禁运行时外链（CSP default-src 'self'）。两分迭代：交互重构+文案净化 → 默认主题精修 | docs/09 P16、本条目 |
 | 2026-08-31 | P16 | 迭代 1 完成（PR #38，交互重构+文案净化）：①统一确认——ui/ConfirmDialog（requireReason 原因必填/Esc+遮罩取消/焦点陷阱与归还/IME 过滤），替换 4 处原生 confirm；ActionContext.confirm 注入 registry 动作（registry 保持无 DOM）②Issue 迁移按钮组——TRANSITION_LABELS 动词标签，主链一键直达、旁路对话框填原因（复用 ISSUE_TRANSITIONS 单源）③插件上传区——UploadDropzone 拖拽/点击+选包自动校验（pickSeq 陈旧守卫；File 引用会被响应式代理包装，引用比较不可靠，实测改序号）④实体页——头部新增记录+空态创建引导+分页去括号⑤文案净化——apiErrorMessage 统一"消息 · 追踪码"，设置页 provider/密钥提示 t() 化+en.json 1.0.2（9 键）。审查（独立子代理）2P1+6P2+7P3 全处置：P1=同名文件重选（改 openPicker 前置重置）/IME 回车（isComposing）；P2=切换复位 pendingTarget/评论 :key/失败关框/校验竞态 seq/上传区键盘可达/焦点管理；P3 顺手修 6 项+2 项记 Issue #22。前端 127 tests（+12）、门禁 21/1/0、CI 六项绿合并 d3754de；live 验证：迁移按钮组（旁路原因框真实迁移）/删除与卸载统一确认/上传区截图核验/实体页头部创建/locale-en 1.0.2 导入激活切英文新文案生效 | PR #38、Issue #22、live 验证 2026-08-31 |
+| 2026-08-31 | P16 | 迭代 2 完成（PR #39，默认主题精修）：①令牌——蓝灰色阶+主色阶（primary-hover/soft 接入消费）、focus-ring 与侧栏 bg-2/ink-strong/muted/accent 全部 color-mix 派生（主题插件覆盖基础键即级联）②侧栏——平台/业务应用分组（/data/ 路由归组保序）+icon 契约字段优先的内联图标集 AppIcon（纯静态分支，R-GOV-01 拦 v-html 后重构）+激活左条③全局基线——App.vue 拆 styles/base.css（input/select/textarea 排除 checkbox 的统一+focus 环、表格表头+行 hover+separate 圆角、实体卡 hover 箭头）④字体——@fontsource/inter latin 子集自托管（新增依赖，无运行时外链）⑤根因修复——home 路由回落 '/' 致 router-link-active 自 P13 从未生效，改 home 落 /workbench 实路径。审查（独立子代理）2P1+1P2+9P3 全处置：P1=激活左条定位视口外（calc 修正）/project-index 未同步（§1 树+变更记录补）；P2=派生令牌；P3 修 7 记 2。前端 128 tests、门禁 21/1/0、CI 六项绿合并 002f7f2；live：locale-en 1.0.3 导入激活+theme.default 恢复激活+frontend 镜像重建，容器版终验 #/workbench 激活态/分组图标/整体协调（截图核验） | PR #39、docs/project-index.md、live 终验 2026-08-31 |
+| 2026-08-31 | P16 | **P16 出口复核通过，置 completed；P00-P16 全阶段完成，进度 100%，项目维持 release_candidate**。两迭代交付：交互重构+文案净化（PR #38）→默认主题精修（PR #39）；共 4 P1+7 P2+16 P3 审查发现全处置（P3 中 4 项记 Issue #22）。答辩机提醒：frontend/backend 镜像已含最新代码但需现场重建或 docker save 导出；插件预导 locale-en 1.0.3/example-library/example-facility | docs/09 P16 验收、EXIT_GATE、Issue #22 |

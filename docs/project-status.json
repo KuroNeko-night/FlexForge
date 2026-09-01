@@ -3,11 +3,11 @@
   "updatedAt": "2026-08-31",
   "currentStageId": "P16",
   "currentStageName": "前端体验打磨与默认主题精修",
-  "status": "in_progress",
-  "progressPercent": 97,
+  "status": "completed",
+  "progressPercent": 100,
   "owner": "project-maintainer",
-  "nextAction": "P16 迭代 1（交互重构+文案净化）：统一确认对话框替代原生 confirm/Issue 迁移按钮组/插件上传区自动校验/实体列表头部创建入口/全量文案去括号（含 en.json 与测试断言同步）；完成后独立子代理审查+live 视觉验证，再进迭代 2（默认主题精修：导航分组图标/控件 focus 态/字体本地化）。环境注意：compose 前端镜像未自动重建（2026-08-31 用户提醒为上周版本），迭代验证用本地 dev server（VITE_PROXY_TARGET=8088），收口前重建 frontend 镜像",
-  "exitGate": "P15 出口证据（docs/09 P15 验收五项）：①Issue 全链 UI 可走通——PR #34 后 live：建 Issue→dev clarify 两轮（3 追问→spec）→APPROVED→generate（脏库实体冲突→DEV_FAILED→手工改实体名 rev2→再批准→0.1.2 ACTIVE）→USER 建记录；②插件安装/启停/卸载 UI 可操作——PluginsView 上传/激活/停用/卸载+失败诊断（stage+errorCode），live 导入激活 locale-en/example-library/example-facility 三包；③AI 配置经设置页生效——live：默认 fixture 视图/PUT http+key→掩码 …5678+DB 密文≠明文+审计/clearApiKey/clarify 回 fixture（AiConfigApiTest 端到端桩路由）；④英文插件激活后设置页可切 en 且界面即时切换、停用回退 zh-CN——live 视觉验证（in-app browser 截图核验：设置页/侧栏/Sign out 全英文；切回中文即时回退）；⑤新示例插件过标准包校验与既有示例同装——ExamplePluginsP15Test（decimal/boolean/date 泛化 CRUD+非负规则）+live 菜单共存。过程：PR #34（3P1+3P2+4P3 全处置）/#35（0P0P1+1P2+3P3）/#36（2P2+6P3，4 顺手修）/#37（live 排障修复：camelCase 键白名单，1P2 登记册同步）；CI 两次真实失败（Prettier）+一次 lint 超 50 行，均当日修复。后端 145+/前端 115 tests、门禁 21/1/0迭代 1 证据：PR #34 独立子代理审查 3 P1+3 P2+4 P3 全处置（P1=裸 void 端点 200 空体假失败×2+findings 契约；P2=切换 Issue 状态串台×2+IME 回车；顺带 FormData 测试缺口补齐）+CI 一次真实失败（Prettier 9 文件，本地补跑门禁后修复）+六项全绿合并（c43a54a）；live 验证 2026-08-30：admin 建 Issue→dev clarify 两轮出规格（3 追问→spec rev1）→APPROVED→generate（首次 REGISTER registration_failed=fixture 固定实体名 clarify_item 与遗留生成插件冲突，属脏库已知行为非缺陷；DEV_FAILED→手工改实体名 meeting_room 存 rev2→再批准→generate 0.1.2 ACTIVE→IN_TESTING）→USER 建记录 rec-94aa…（qty=12 非负规则面）；前端 99 tests",
+  "nextAction": "【P00-P16 全阶段完成，项目维持 release_candidate】P16 出口 live+视觉终验 2026-08-31（重建镜像容器版：#/workbench 激活态+分组图标/统一确认/上传区/中英切换）。后续=答辩准备（docs/14；演示机预导 locale-en 1.0.3/example-library/example-facility 三包，frontend/backend 镜像需现场重建或导出）与 Issue #22 余项按触发条件排期",
+  "exitGate": "P16 出口证据（docs/09 P16 验收四项）：①UI 文案无中文括号——全量复扫仅剩开发者向注释与 throw 消息（审查确认允许），apiErrorMessage 统一\"消息 · 追踪码\"，en.json 1.0.3 同步；②破坏性操作全走统一确认——4 处原生 confirm 清零（ConfirmDialog+ActionContext.confirm），Issue 迁移=动词按钮组一键直达（旁路才填原因）、插件选包即自动校验、实体创建入口上移列表头部；③默认主题视觉走查——停 theme.default 基线核验：导航平台/业务应用分组+icon 契约图标+激活左条（连带修复 home 路由回落 '/' 致激活态自 P13 从未生效的根因）、控件 focus 环、表格表头/行 hover、Inter latin 自托管字体；主题插件覆盖机制回归通过（token 键全存活+color-mix 派生级联）；④门禁 21/1/0、前端 128+/后端 145+ tests、PR #38（2P1+6P2+7P3）与 #39（2P1+1P2+9P3）独立子代理审查全处置、CI 六项绿、live 容器版（frontend 镜像已重建）终验截图通过。过程教训：compose 镜像不自动重建（迭代验证一律本地 dev server+收口重建镜像）；Vue 响应式代理会包装 File 引用（陈旧守卫用序号不用引用比较）",
   "blockers": [],
   "stages": [
     {
@@ -93,7 +93,7 @@
     {
       "id": "P16",
       "name": "前端体验打磨与默认主题精修",
-      "status": "in_progress"
+      "status": "completed"
     }
   ]
 }
