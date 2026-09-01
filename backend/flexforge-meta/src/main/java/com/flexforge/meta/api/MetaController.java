@@ -57,7 +57,8 @@ public class MetaController {
                                Integer position) {
     }
 
-    public record ViewRequest(String viewType, String name, JsonNode columns, JsonNode filters) {
+    public record ViewRequest(String viewType, String name, JsonNode columns, JsonNode filters,
+                              String groupBy) {
     }
 
     public record EntityView(String id, String name, String displayName, String status,
@@ -184,7 +185,7 @@ public class MetaController {
 
     private static EntityAdminService.ViewCommand toCommand(ViewRequest request) {
         return new EntityAdminService.ViewCommand(request.viewType(), request.name(),
-                normalize(request.columns()), normalize(request.filters()));
+                normalize(request.columns()), normalize(request.filters()), request.groupBy());
     }
 
     /** 显式 JSON null（绑定为 NullNode）归一化为"未提供"，与缺省键同语义（PATCH null=不变）。 */

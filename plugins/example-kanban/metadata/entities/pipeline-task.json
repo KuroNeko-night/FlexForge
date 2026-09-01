@@ -1,0 +1,45 @@
+{
+  "name": "pipeline_task",
+  "displayName": "管线任务",
+  "fields": [
+    {
+      "name": "title",
+      "displayName": "任务",
+      "fieldType": "text",
+      "required": true,
+      "validation": { "maxLength": 120 },
+      "position": 0
+    },
+    {
+      "name": "stage",
+      "displayName": "阶段",
+      "fieldType": "enum",
+      "required": true,
+      "validation": { "options": ["待办", "进行中", "已完成"] },
+      "position": 1
+    },
+    {
+      "name": "priority",
+      "displayName": "优先级",
+      "fieldType": "enum",
+      "required": false,
+      "validation": { "options": ["高", "中", "低"] },
+      "position": 2
+    },
+    {
+      "name": "owner",
+      "displayName": "负责人",
+      "fieldType": "text",
+      "required": false,
+      "validation": { "maxLength": 60 },
+      "position": 3
+    },
+    {
+      "name": "due_on",
+      "displayName": "截止日期",
+      "fieldType": "date",
+      "required": false,
+      "position": 4
+    }
+  ]
+}

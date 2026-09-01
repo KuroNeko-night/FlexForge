@@ -1,8 +1,13 @@
 package com.flexforge.plugin.application;
 
+import com.flexforge.common.api.ErrorCodes;
 import com.flexforge.common.contract.NavigationContribution;
 import com.flexforge.common.contract.ThemeAssetContribution;
 import com.flexforge.plugin.domain.LifecycleRepository;
+import com.flexforge.meta.domain.FieldTypeRegistry;
+import com.flexforge.meta.domain.ViewRules;
+import com.flexforge.meta.domain.ViewType;
+import com.flexforge.plugin.domain.PluginValidationException;
 import com.flexforge.plugin.domain.PluginVersionRecord;
 import com.flexforge.plugin.domain.ThemeAssetSpec;
 import tools.jackson.databind.JsonNode;
@@ -74,6 +79,26 @@ final class PluginContributionFactory {
             java.util.Set<String> fields = new java.util.HashSet<>();
             for (JsonNode field : spec.path("fields")) {
                 fields.add(field.path("name").asString());
+            }
+            result.put(spec.path("name").asString(), fields);
+        }
+        return result;
+    }
+
+    /** 包内实体名 → enum 字段名集合（kanban groupBy 校验用，P17）。 */
+    static Map<String, java.util.Set<String>> entityEnumFieldNamesOf(JsonNode payloads) {
+        Map<String, java.util.Set<String>> result = new HashMap<>();
+        for (String path : payloads.propertyNames()) {
+            if (!isEntityPath(path)) {
+                continue;
+            }
+            JsonNode spec = entitySpec(payloads, path);
+            java.util.Set<String> fields = new java.util.HashSet<>();
+            for (JsonNode field : spec.path("fields")) {
+                if (FieldTypeRegistry.require(field.path("fieldType").asString())
+                        == FieldTypeRegistry.FieldType.ENUM) {
+                    fields.add(field.path("name").asString());
+                }
             }
             result.put(spec.path("name").asString(), fields);
         }
@@ -201,5 +226,37 @@ final class PluginContributionFactory {
         JsonNode manifest = JSON.readTree(version.manifestJson());
         JsonNode name = manifest.get("name");
         return name == null ? version.pluginId() : name.asText();
+    }
+
+    /**
+     * 单视图规格校验并转 upsert 载荷（P17 扩 kanban：groupBy 必填且为 enum 字段）。
+     * 非法声明抛 PluginValidationException——激活失败于 REGISTER 并留痕。
+     */
+    static LifecycleRepository.ViewUpsert viewUpsertOf(JsonNode view,
+                                                       Map<String, java.util.Set<String>> entityFields,
+                                                       Map<String, java.util.Set<String>> enumFields) {
+        String viewType = view.path("viewType").asString();
+        String entityName = view.path("entity").asString();
+        if (!List.of("list", "form", "kanban").contains(viewType)) {
+            throw new PluginValidationException(ErrorCodes.VALIDATION_ERROR,
+                    "视图 viewType 非法（允许 list/form/kanban）: " + viewType);
+        }
+        java.util.Set<String> fieldNames = entityFields.get(entityName);
+        if (fieldNames == null) {
+            throw new PluginValidationException(ErrorCodes.VALIDATION_ERROR,
+                    "视图引用了包外实体: " + entityName);
+        }
+        String viewName = view.path("name").asString(viewType);
+        String groupBy = view.path("groupBy").asString(null);
+        ViewRules.validate(ViewType.fromName(viewType), viewName,
+                view.get("columns"), view.get("filters"), fieldNames);
+        if ("kanban".equals(viewType)) {
+            ViewRules.validateKanban(groupBy, fieldNames,
+                    enumFields.getOrDefault(entityName, java.util.Set.of()));
+        }
+        return new LifecycleRepository.ViewUpsert(viewType, viewName,
+                view.has("columns") ? view.get("columns").toString() : null,
+                view.has("filters") ? view.get("filters").toString() : null,
+                "kanban".equals(viewType) ? groupBy : null);
     }
 }

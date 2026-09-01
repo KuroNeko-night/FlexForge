@@ -61,9 +61,12 @@ public interface LifecycleRepository {
     /** 实体名当前归属插件（空=未注册）；跨插件同名在服务层拒绝（防静默覆盖）。 */
     Optional<String> entityOwnerOf(String entityName);
 
-    /** 视图注册：按实体名归属 upsert meta_view（list/form 各一，重激活覆盖）。 */
-    void upsertViewForEntity(String entityName, String viewType, String viewName,
-                             String columnsJson, String filtersJson);
+    /** 视图 upsert 载荷（每类型至多一，重激活覆盖）；groupBy 仅 kanban（P17，可空）。 */
+    record ViewUpsert(String viewType, String viewName, String columnsJson, String filtersJson,
+                      String groupBy) {
+    }
+
+    void upsertViewForEntity(String entityName, ViewUpsert view);
 
     int deactivateEntity(String pluginId);
 

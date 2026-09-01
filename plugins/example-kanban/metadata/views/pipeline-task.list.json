@@ -1,0 +1,12 @@
+{
+  "entity": "pipeline_task",
+  "viewType": "list",
+  "name": "任务列表",
+  "columns": [
+    { "field": "title" },
+    { "field": "stage" },
+    { "field": "priority" },
+    { "field": "owner" },
+    { "field": "due_on" }
+  ]
+}

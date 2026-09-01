@@ -209,16 +209,17 @@ public class JdbcLifecycleRepository implements LifecycleRepository {
     }
 
     @Override
-    public void upsertViewForEntity(String entityName, String viewType, String viewName,
-                                    String columnsJson, String filtersJson) {
-        jdbc.update("INSERT INTO meta_view (id, entity_id, view_type, name, columns, filters)"
-                + " SELECT ?, e.id, ?, ?, ?::jsonb, ?::jsonb FROM meta_entity e"
+    public void upsertViewForEntity(String entityName, LifecycleRepository.ViewUpsert view) {
+        jdbc.update("INSERT INTO meta_view (id, entity_id, view_type, name, columns, filters,"
+                + " group_by)"
+                + " SELECT ?, e.id, ?, ?, ?::jsonb, ?::jsonb, ? FROM meta_entity e"
                 + " WHERE e.name = ?"
                 + " ON CONFLICT (entity_id, view_type) DO UPDATE SET name = EXCLUDED.name,"
                 + " columns = EXCLUDED.columns, filters = EXCLUDED.filters,"
-                + " updated_at = now()",
-                "mv-" + UUID.randomUUID(), viewType, viewName,
-                orEmptyArray(columnsJson), orEmptyArray(filtersJson), entityName);
+                + " group_by = EXCLUDED.group_by, updated_at = now()",
+                "mv-" + UUID.randomUUID(), view.viewType(), view.viewName(),
+                orEmptyArray(view.columnsJson()), orEmptyArray(view.filtersJson()),
+                view.groupBy(), entityName);
     }
 
     @Override

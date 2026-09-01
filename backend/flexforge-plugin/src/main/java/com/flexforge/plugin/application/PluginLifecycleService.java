@@ -286,28 +286,16 @@ public class PluginLifecycleService {
         }
     }
 
-    /** 视图注册（metadata/views/*）：复用平台 ViewRules（列/过滤/字段白名单契约）。 */
+    /** 视图注册（metadata/views/*）：复用平台 ViewRules（列/过滤/字段白名单契约；
+     * P17 扩 kanban——groupBy 分列字段同规则校验）。 */
     private void registerViews(JsonNode payloads) {
         Map<String, Set<String>> entityFields = PluginContributionFactory.entityFieldNamesOf(
                 payloads);
+        Map<String, Set<String>> enumFields = PluginContributionFactory.entityEnumFieldNamesOf(
+                payloads);
         for (JsonNode view : PluginContributionFactory.viewSpecsOf(payloads)) {
-            String viewType = view.path("viewType").asString();
-            String entityName = view.path("entity").asString();
-            if (!List.of("list", "form").contains(viewType)) {
-                throw new PluginValidationException(ErrorCodes.VALIDATION_ERROR,
-                        "视图 viewType 非法（允许 list/form）: " + viewType);
-            }
-            Set<String> fieldNames = entityFields.get(entityName);
-            if (fieldNames == null) {
-                throw new PluginValidationException(ErrorCodes.VALIDATION_ERROR,
-                        "视图引用了包外实体: " + entityName);
-            }
-            String viewName = view.path("name").asString(viewType);
-            ViewRules.validate(ViewType.fromName(viewType), viewName, view.get("columns"),
-                    view.get("filters"), fieldNames);
-            kernel.lifecycle().upsertViewForEntity(entityName, viewType, viewName,
-                    view.has("columns") ? view.get("columns").toString() : null,
-                    view.has("filters") ? view.get("filters").toString() : null);
+            kernel.lifecycle().upsertViewForEntity(view.path("entity").asString(),
+                    PluginContributionFactory.viewUpsertOf(view, entityFields, enumFields));
         }
     }
 

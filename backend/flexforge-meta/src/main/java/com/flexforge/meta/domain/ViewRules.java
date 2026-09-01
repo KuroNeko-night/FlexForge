@@ -27,6 +27,23 @@ public final class ViewRules {
         validateFilters(type, filters, fieldNames);
     }
 
+    /**
+     * kanban 视图分列字段校验（P17）：groupBy 必填、必须是同实体字段且为 enum
+     * 类型（枚举选项即看板列，由声明给出、无脚本语义，S5 边界）。
+     */
+    public static void validateKanban(String groupBy, Set<String> fieldNames,
+                                      Set<String> enumFieldNames) {
+        if (groupBy == null || groupBy.isBlank()) {
+            throw new IllegalArgumentException("kanban 视图必须声明 groupBy 分列字段");
+        }
+        if (!fieldNames.contains(groupBy)) {
+            throw new IllegalArgumentException("groupBy 引用了不存在的字段: " + groupBy);
+        }
+        if (!enumFieldNames.contains(groupBy)) {
+            throw new IllegalArgumentException("groupBy 必须是 enum 类型字段: " + groupBy);
+        }
+    }
+
     private static void validateColumns(JsonNode columns, Set<String> fieldNames) {
         if (columns == null || columns.isNull()) {
             return;
