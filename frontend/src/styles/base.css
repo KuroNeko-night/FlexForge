@@ -1,0 +1,355 @@
+/*
+ * 全局观感基线（P16 拆出 App.vue）：表单控件统一/focus 环/侧栏导航分组/
+ * 表格与卡片层次。全部消费 --ff-* 令牌（tokens.css 定义，主题插件可覆盖）。
+ */
+/* P12.5：观感值全部改为 --ff-* 令牌消费（tokens.css 定义基线，主题插件覆盖即换肤） */
+:root {
+  color-scheme: light;
+  font-family: var(--ff-font);
+  line-height: 1.6;
+}
+
+body {
+  margin: 0;
+  background: var(--ff-bg);
+  color: var(--ff-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--ff-primary);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* P16 全局控件基线：原生 button/input/select/textarea 统一观感与 focus 环 */
+button {
+  padding: var(--ff-space-1) var(--ff-space-3);
+  border: 1px solid var(--ff-border);
+  border-radius: var(--ff-radius-sm);
+  background: var(--ff-surface);
+  color: var(--ff-text);
+  cursor: pointer;
+  font: inherit;
+  transition:
+    border-color var(--ff-motion-fast) var(--ff-ease),
+    box-shadow var(--ff-motion-fast) var(--ff-ease);
+}
+button:hover:not(:disabled) {
+  border-color: var(--ff-primary);
+}
+button:focus-visible {
+  outline: none;
+  box-shadow: var(--ff-focus-ring);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+  font: inherit;
+  color: var(--ff-text);
+  background: var(--ff-surface);
+  border: 1px solid var(--ff-border);
+  border-radius: var(--ff-radius-sm);
+  transition:
+    border-color var(--ff-motion-fast) var(--ff-ease),
+    box-shadow var(--ff-motion-fast) var(--ff-ease);
+}
+input:not([type='checkbox']):not([type='radio']):focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  border-color: var(--ff-primary);
+  box-shadow: var(--ff-focus-ring);
+}
+input:not([type='checkbox']):not([type='radio']):disabled,
+select:disabled,
+textarea:disabled {
+  background: var(--ff-surface-muted);
+  opacity: 0.7;
+}
+
+.state-view {
+  padding: 1.5rem;
+  border-radius: var(--ff-radius-md);
+  background: var(--ff-surface-muted);
+  color: var(--ff-text-muted);
+}
+.state-view[data-state='error'] {
+  background: var(--ff-danger-bg);
+  color: var(--ff-danger);
+}
+.state-view[data-state='denied'] {
+  background: var(--ff-warn-bg);
+  color: var(--ff-warn);
+}
+.state-detail {
+  font-size: var(--ff-text-sm);
+  opacity: 0.8;
+}
+
+.hint {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--ff-text-muted);
+}
+
+.workbench {
+  display: grid;
+  grid-template-columns: 15rem 1fr;
+  min-height: 100vh;
+  /* extension.theme-asset 消费面（FR-PLUGIN-11）：贡献以 CSS 变量注入，
+     缺省不设变量即平台默认外观；animation/icon 变量为 P09 示例预留 */
+  background-image: var(--ff-theme-background, none);
+  background-size: cover;
+  background-position: center;
+}
+
+/* P16 侧栏：垂直渐变 + 分组标题 + 图标行 + 激活左条 */
+.workbench-side {
+  background: linear-gradient(180deg, var(--ff-side-bg) 0%, var(--ff-side-bg-2) 100%);
+  color: var(--ff-side-ink);
+  padding: var(--ff-space-4) var(--ff-space-3);
+  display: flex;
+  flex-direction: column;
+}
+.side-group-title {
+  margin: var(--ff-space-3) var(--ff-space-2) var(--ff-space-1);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ff-side-muted);
+}
+.workbench-side nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.workbench-side nav a,
+.menu-static {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  position: relative;
+  padding: 0.45rem 0.6rem;
+  color: var(--ff-side-ink);
+  border-radius: var(--ff-radius-sm);
+  font-size: var(--ff-text-md);
+  transition:
+    background var(--ff-motion-fast) var(--ff-ease),
+    color var(--ff-motion-fast) var(--ff-ease);
+}
+.workbench-side nav a:hover {
+  background: var(--ff-side-hover);
+  color: var(--ff-side-ink-strong);
+  text-decoration: none;
+}
+.workbench-side nav a.router-link-active {
+  background: var(--ff-side-active);
+  color: var(--ff-side-ink-strong);
+  font-weight: 600;
+}
+.workbench-side nav a.router-link-active::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--ff-space-3) * -1);
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--ff-side-accent);
+}
+.menu-static {
+  opacity: 0.6;
+}
+.side-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--ff-text-md);
+  gap: var(--ff-space-2);
+}
+.side-footer button {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ff-side-ink);
+}
+.side-footer button:hover:not(:disabled) {
+  color: var(--ff-side-ink-strong);
+  border-color: var(--ff-side-hover);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  margin: 0 0 var(--ff-space-2);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--ff-side-ink-strong);
+}
+.brand-mark {
+  flex: none;
+}
+
+.workbench-main {
+  padding: 1.5rem 2rem;
+  overflow-x: auto;
+  animation: ff-fade-in var(--ff-motion-slow) var(--ff-ease) both;
+}
+
+.entity-cards {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+.entity-cards a {
+  display: block;
+  padding: 1rem;
+  background: var(--ff-surface);
+  border: 1px solid var(--ff-border-soft);
+  border-radius: var(--ff-radius-md);
+  box-shadow: var(--ff-shadow-1);
+  transition:
+    box-shadow var(--ff-motion-base) var(--ff-ease),
+    transform var(--ff-motion-base) var(--ff-ease),
+    border-color var(--ff-motion-base) var(--ff-ease);
+}
+.entity-cards a:hover {
+  box-shadow: var(--ff-shadow-2);
+  transform: translateY(-2px);
+  border-color: var(--ff-primary);
+  text-decoration: none;
+}
+.entity-cards .entity-name {
+  display: block;
+  color: var(--ff-text-muted);
+  font-size: var(--ff-text-sm);
+}
+.entity-cards .entity-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ff-space-2);
+  color: var(--ff-text);
+}
+.entity-cards .entity-go {
+  color: var(--ff-text-muted);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition:
+    opacity var(--ff-motion-fast) var(--ff-ease),
+    transform var(--ff-motion-fast) var(--ff-ease);
+}
+.entity-cards a:hover .entity-go {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--ff-primary);
+}
+
+/* P16 表格基线：表头层次 + 行 hover */
+.dynamic-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--ff-surface);
+  border: 1px solid var(--ff-border-soft);
+  border-radius: var(--ff-radius-md);
+  overflow: hidden;
+  box-shadow: var(--ff-shadow-1);
+}
+.dynamic-table th,
+.dynamic-table td {
+  padding: var(--ff-space-2) var(--ff-space-3);
+  border-bottom: 1px solid var(--ff-border-soft);
+  text-align: left;
+}
+.dynamic-table thead th {
+  background: var(--ff-surface-muted);
+  font-size: var(--ff-text-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ff-text-muted);
+}
+.dynamic-table tbody tr {
+  cursor: pointer;
+  transition: background var(--ff-motion-fast) var(--ff-ease);
+}
+.dynamic-table tbody tr:hover {
+  background: color-mix(in srgb, var(--ff-primary) 4%, transparent);
+}
+.dynamic-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.dynamic-table .row-actions button {
+  margin-right: 0.3rem;
+  font-size: var(--ff-text-sm);
+}
+
+.pager {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  margin: 0.8rem 0;
+}
+/* P16：列表头部创建入口与标题同行（原页脚入口远离视线） */
+.entity-view > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ff-space-3);
+  flex-wrap: wrap;
+}
+.entity-view > header h2 {
+  margin: 0;
+}
+
+.dynamic-form .form-field {
+  margin-bottom: 0.9rem;
+  max-width: 26rem;
+}
+.dynamic-form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+.dynamic-form input,
+.dynamic-form select {
+  padding: 0.45rem 0.6rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+.required-mark {
+  color: var(--ff-danger);
+  margin-left: 0.2rem;
+}
+.form-error {
+  color: var(--ff-danger);
+}
+
+.detail-list dt {
+  font-weight: 600;
+  margin-top: 0.8rem;
+}
+.detail-list dd {
+  margin: 0.1rem 0 0;
+}
+.detail-actions {
+  margin-top: 1.2rem;
+  display: flex;
+  gap: 0.8rem;
+}
+
+.stale-note {
+  color: var(--ff-warn);
+  font-size: var(--ff-text-md);
+}

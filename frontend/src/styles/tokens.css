@@ -5,26 +5,36 @@
  * 动效统一走 --ff-motion-* 时长；prefers-reduced-motion 时全部收敛为瞬时。
  */
 :root {
-  /* 色板（基线） */
-  --ff-bg: #f5f6f8;
+  /* 色板（P16 精修基线：蓝灰中性阶 + 主色阶） */
+  --ff-bg: #f4f6fa;
   --ff-surface: #ffffff;
-  --ff-surface-muted: #eef1f6;
-  --ff-text: #1f2430;
-  --ff-text-muted: #6a7286;
-  --ff-border: #c4cad6;
-  --ff-border-soft: #e6e9f0;
-  --ff-primary: #2b5fd9;
+  --ff-surface-muted: #eef1f7;
+  --ff-text: #1b2130;
+  --ff-text-muted: #66708a;
+  --ff-border: #c3cadb;
+  --ff-border-soft: #e5e9f2;
+  --ff-primary: #3056d3;
+  --ff-primary-hover: #2445b4;
+  --ff-primary-soft: #e8edfd;
   --ff-primary-ink: #ffffff;
-  --ff-danger: #8a2f2f;
-  --ff-danger-bg: #fbeaea;
-  --ff-warn: #8a5a12;
+  --ff-focus-ring: 0 0 0 3px color-mix(in srgb, var(--ff-primary) 18%, transparent);
+  --ff-danger: #b3373a;
+  --ff-danger-bg: #fcecec;
+  --ff-warn: #93611b;
   --ff-warn-bg: #fdf3e4;
-  --ff-side-bg: #1f2430;
-  --ff-side-ink: #dfe3ec;
-  --ff-side-active: #2b3350;
+  /* 侧栏导航：垂直渐变 + 分组标题/激活态（P16；派生键随基础键级联，
+     主题插件只需覆盖 --ff-side-bg/-ink/-active 即整体换色系） */
+  --ff-side-bg: #191e2e;
+  --ff-side-bg-2: color-mix(in srgb, var(--ff-side-bg) 78%, #000);
+  --ff-side-ink: #c6cde0;
+  --ff-side-ink-strong: color-mix(in srgb, var(--ff-side-ink) 55%, #fff);
+  --ff-side-muted: color-mix(in srgb, var(--ff-side-ink) 62%, transparent);
+  --ff-side-hover: rgb(255 255 255 / 6%);
+  --ff-side-active: #262f4a;
+  --ff-side-accent: color-mix(in srgb, var(--ff-primary) 55%, #fff);
 
-  /* 排版 */
-  --ff-font: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  /* 排版（拉丁/数字自托管 Inter，中文系统栈；无运行时外链，CSP 兼容） */
+  --ff-font: 'Inter', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --ff-font-mono: 'Cascadia Code', Consolas, monospace;
   --ff-text-sm: 0.8rem;
   --ff-text-md: 0.9rem;
@@ -115,7 +125,8 @@
   color: var(--ff-primary-ink);
 }
 .ff-btn--primary:hover:not(:disabled) {
-  filter: brightness(1.08);
+  background: var(--ff-primary-hover);
+  border-color: var(--ff-primary-hover);
 }
 .ff-btn--danger {
   color: var(--ff-danger);

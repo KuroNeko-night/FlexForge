@@ -151,3 +151,35 @@ describe('WorkbenchView 热切换（P13）', () => {
     }
   });
 });
+
+describe('WorkbenchView 导航分组（P16）', () => {
+  beforeEach(() => {
+    resetMocks();
+    session.token = 't';
+    session.user = { id: 1, username: 'u', displayName: 'U', roles: ['ADMIN'] };
+  });
+
+  it('平台与业务应用分组渲染，/data/ 菜单归业务应用组', async () => {
+    menusMock.mockResolvedValue([
+      { key: 'workbench', title: '工作台', route: '/workbench' },
+      { key: 'example.library.books', title: '图书', route: '/data/library_book' },
+      { key: 'platform.issues', title: 'Issue 工作台', route: '/issues' },
+    ]);
+    const wrapper = mount(WorkbenchView, { global: { stubs: { RouterView: true } } });
+    await flushPromises();
+    try {
+      const titles = wrapper.findAll('.side-group-title').map((node) => node.text());
+      expect(titles).toEqual(['平台', '业务应用']);
+      const groups = wrapper.findAll('nav section');
+      expect(groups[0].text()).toContain('工作台');
+      expect(groups[0].text()).toContain('Issue 工作台');
+      expect(groups[0].text()).not.toContain('图书');
+      expect(groups[1].text()).toContain('图书');
+      // 图标：菜单行渲染内联 SVG
+      expect(groups[0].find('svg').exists()).toBe(true);
+    } finally {
+      session.token = null;
+      session.user = null;
+    }
+  });
+});

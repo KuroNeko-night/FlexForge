@@ -136,7 +136,7 @@ function onKeyActivate(event: KeyboardEvent): void {
 .dropzone:hover,
 .dropzone--over {
   border-color: var(--ff-primary);
-  background: color-mix(in srgb, var(--ff-primary) 5%, var(--ff-surface));
+  background: var(--ff-primary-soft);
 }
 .dropzone--passed {
   border-style: solid;
