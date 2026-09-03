@@ -1,13 +1,13 @@
 {
   "project": "FlexForge",
-  "updatedAt": "2026-09-01",
-  "currentStageId": "P17",
-  "currentStageName": "看板视图与插件声明式扩展",
-  "status": "completed",
+  "updatedAt": "2026-09-03",
+  "currentStageId": "P18",
+  "currentStageName": "前端现代极简风格化",
+  "status": "in_progress",
   "progressPercent": 100,
   "owner": "project-maintainer",
-  "nextAction": "【P00-P17 全阶段完成，项目维持 release_candidate】P17 出口 live 终验 2026-09-01（dev server+新后端镜像：example-kanban 导入激活→表格/看板切换→分列计数→卡片进详情→编辑阶段移列全闭环；连带修复存量渲染器回退缺陷 PR #41）。后续=答辩准备（docs/14；演示机预导 example-kanban/locale-en 1.0.3/example-library/example-facility，镜像重建或 docker save）与 Issue #22 余项排期；候选后续能力（CSV 导出/页脚聚合/批量操作/看板拖拽）待用户裁决",
-  "exitGate": "P17 出口证据（docs/09 P17 验收四项）：①example-kanban 导入激活后实体页表格/看板切换——live：三任务按阶段分列（待办/进行中/已完成+计数徽章+未设置兜底列组件测试覆盖），卡片点击进详情；②编辑阶段字段后返回看板列变化——live：「补看板测试用例」待办→进行中，看板实时变待办 0+空态/进行中 2；③非法声明被拒——ViewRulesKanbanTest 4 例+ExamplePluginsP17Test 坏包（groupBy 指 text/缺失）激活 400 含消息级断言+坏包自愈停用 ACTIVE（审查 P1-1 预言命中并修复）；④元数据 API 同口径——MetaApiTest kanbanViewSameDisciplineAsListAndForm（缺失/非 enum 400/合法下发 groupBy/list 误传归 null）。连带修复（PR #41）：插件实体字段 rendererId 悬空致 enum/boolean/date 表单渲染为文本框的存量缺陷（P08 起）——resolveRenderer 按 fieldType 回退 <type>.default，live 编辑表单恢复下拉。过程：PR #40（1P1+3P2+5P3 全处置）+PR #41；裁剪：示例种子数据（与 example-facility 同口径，live 手建演示数据）；门禁 21/1/0、前端 135/后端 148+ tests、登记册 §2.3 同步",
+  "nextAction": "【P18 进行中】用户裁决新增阶段：前端整体现代极简风格化（中性灰阶/发丝线/单一主色/平面层次，观感对齐当代极简设计语言）。骨架（tokens.css/base.css/LoginView 结构样式）与主题包（theme-default/theme-warm 令牌与资产）分工改造；色板取 Tailwind v4 默认色板公开值；文案不新增标注解释。验收与红线见 docs/09 P18",
+  "exitGate": "P00-P17 历史证据见 git 历史与本文件进度日志；P18 出口条件=docs/09 P18 验收四项（视觉走查统一/骨架与主题包分工可验证/主题机制回归全绿/文案基线不变）",
   "blockers": [],
   "stages": [
     {
@@ -99,6 +99,11 @@
       "id": "P17",
       "name": "看板视图与插件声明式扩展",
       "status": "completed"
+    },
+    {
+      "id": "P18",
+      "name": "前端现代极简风格化",
+      "status": "in_progress"
     }
   ]
 }

@@ -3,14 +3,14 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P17
-CURRENT_STAGE_NAME: 看板视图与插件声明式扩展
-STAGE_STATUS: completed
+CURRENT_STAGE_ID: P18
+CURRENT_STAGE_NAME: 前端现代极简风格化
+STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 100%
-LAST_UPDATED: 2026-09-01
+LAST_UPDATED: 2026-09-03
 OWNER: project-maintainer
-NEXT_ACTION: 【P00-P17 全阶段完成，项目维持 release_candidate】P17 出口 live 终验 2026-09-01（dev server+新后端镜像：example-kanban 导入激活→表格/看板切换→分列计数→卡片进详情→编辑阶段移列全闭环；连带修复存量渲染器回退缺陷 PR #41）。后续=答辩准备（docs/14；演示机预导 example-kanban/locale-en 1.0.3/example-library/example-facility，镜像重建或 docker save）与 Issue #22 余项排期；候选后续能力（CSV 导出/页脚聚合/批量操作/看板拖拽）待用户裁决
-EXIT_GATE: P17 出口证据（docs/09 P17 验收四项）：①example-kanban 导入激活后实体页表格/看板切换——live：三任务按阶段分列（待办/进行中/已完成+计数徽章+未设置兜底列组件测试覆盖），卡片点击进详情；②编辑阶段字段后返回看板列变化——live：「补看板测试用例」待办→进行中，看板实时变待办 0+空态/进行中 2；③非法声明被拒——ViewRulesKanbanTest 4 例+ExamplePluginsP17Test 坏包（groupBy 指 text/缺失）激活 400 含消息级断言+坏包自愈停用 ACTIVE（审查 P1-1 预言命中并修复）；④元数据 API 同口径——MetaApiTest kanbanViewSameDisciplineAsListAndForm（缺失/非 enum 400/合法下发 groupBy/list 误传归 null）。连带修复（PR #41）：插件实体字段 rendererId 悬空致 enum/boolean/date 表单渲染为文本框的存量缺陷（P08 起）——resolveRenderer 按 fieldType 回退 <type>.default，live 编辑表单恢复下拉。过程：PR #40（1P1+3P2+5P3 全处置）+PR #41；裁剪：示例种子数据（与 example-facility 同口径，live 手建演示数据）；门禁 21/1/0、前端 135/后端 148+ tests、登记册 §2.3 同步
+NEXT_ACTION: 【P18 进行中】用户裁决新增阶段：前端整体现代极简风格化（中性灰阶/发丝线/单一主色/平面层次，观感对齐当代极简设计语言）。骨架（tokens.css/base.css/LoginView 结构样式）与主题包（theme-default/theme-warm 令牌与资产）分工改造；色板取 Tailwind v4 默认色板公开值；文案不新增标注解释。验收与红线见 docs/09 P18
+EXIT_GATE: P00-P17 历史证据见 git 历史与本文件进度日志；P18 出口条件=docs/09 P18 验收四项（视觉走查统一/骨架与主题包分工可验证/主题机制回归全绿/文案基线不变）
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -37,6 +37,7 @@ BLOCKERS: none
 | P15 | 平台体验补全与插件生态演示 | completed | 五项验收全过（Issue 全链 UI/插件写操作/AI 配置密钥加密/中英切换/示例插件同装；live+视觉验证见 EXIT_GATE） |
 | P16 | 前端体验打磨与默认主题精修 | completed | 四项验收全过（文案无括号/统一确认+操作步数减省/默认主题视觉与主题机制回归/中英切换+门禁全绿；两轮独立审查全处置，live 容器版终验见 EXIT_GATE） |
 | P17 | 看板视图与插件声明式扩展 | completed | 四项验收全过（声明即得看板/编辑移列闭环/非法声明拒/元数据同口径；PR #40+#41，存量渲染器回退缺陷连带修复；live 终验见 EXIT_GATE） |
+| P18 | 前端现代极简风格化 | in_progress | 用户裁决新增：中性灰阶+发丝线+单一主色+平面层次的现代极简观感；骨架/主题包分工改造（docs/09 P18 验收四项） |
 
 ## 更新规则
 
@@ -164,3 +165,4 @@ BLOCKERS: none
 | 2026-09-01 | P17 | 用户提出"处理表格的插件+看板类型的插件"；方案澄清（声明式机制：新视图类型=平台内置渲染器+插件声明即得）后用户裁决本轮交付**看板视图+示例插件**（CSV 导出/页脚聚合/批量操作列为候选后续）。docs/09 P17 已登记；红线：V013 迁移扩 view_type CHECK+group_by 列；ViewRules 校验 groupBy 必填且为 enum 字段；第一版只读看板（不做拖拽）；登记册视图类型契约先登记 | docs/09 P17、本条目 |
 | 2026-09-01 | P17 | 迭代完成（PR #40，viewType=kanban 全链）：①V013 迁移（meta_view CHECK 扩 kanban+group_by 列）②ViewType/ViewRules.validateKanban（groupBy 必填且 enum 字段，FieldTypeRegistry 单点判断——单点测试拦截第一版字面量）③写模型/插件注册/前端契约全链透传 groupBy（ViewUpsert record 收敛 6 参超限；list/form 误传归 null）④KanbanView（枚举列+未设置兜底+计数+display renderer 卡片+超量提示）+ViewToggle 切换（看板态 100 条页+seq 竞态守卫）⑤example-kanban（pipeline_task 三视图+台账迁移）。审查（独立子代理）1P1+3P2+5P3 全处置：P1=坏包测试可空转（审查预言命中——实测 ACTIVE 占用拦截先于 groupBy 校验同码不可辨，修消息级断言+自愈停用）；P2=groupBy 归一/看板超量提示/meta API kanban 用例补齐。裁剪：种子数据（与 facility 同口径）。前端 134→135、后端 +6 tests、门禁 21/1/0、CI 六项绿合并 dbb97b3 | PR #40、登记册 §2.3、live 验证 2026-09-01 |
 | 2026-09-01 | P17 | live 终验发现存量缺陷（P08 起）：插件实体字段注册不带 rendererId，前端回退一律 TextField——所有插件实体 enum/boolean/date 表单一直是文本框。修复（PR #41）：resolveRenderer 悬空时按 fieldType 回退 <type>.default（契约 types rendererId 改 string|null，+1 回归用例）；live 闭环：编辑表单恢复枚举下拉→改阶段→看板列实时变化（待办 0/进行中 2/已完成 1）。CI 六项绿合并。**P17 出口复核通过置 completed；P00-P17 全阶段完成，进度 100%，release_candidate** | PR #41、live 终验 2026-09-01、Issue #22 |
+| 2026-09-03 | P18 | 用户裁决新增阶段：前端现代极简风格化。范围与红线已登记 docs/09 P18——骨架（tokens.css/base.css/LoginView 结构样式）定结构与排版基线，主题包（theme-default/theme-warm）定色彩身份与资产；色板取 Tailwind v4 公开值、字体/图标沿用 P16 自托管 Inter 与内联图标集；UI 文案不新增标注解释 | docs/09 P18、本条目 |
