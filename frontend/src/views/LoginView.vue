@@ -10,10 +10,10 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import { t } from '@/registry/localeRegistry';
 
 /**
- * 登录/注册页（P13 双模式 + P15 品牌化）。登录页无会话不能取签名主题资产
- * （已知限制，docs/09 P15）：品牌识别=平台基线 SVG+几何背景（结构），
- * 观感细节由 --ff-* 令牌承载，主题插件仍可换整体色彩。文案经 t() 可被
- * locale 插件覆盖（FR-SETUP-02；未激活语言包时回退中文基线）。
+ * 登录/注册页（P13 双模式 + P15 品牌化；P18 极简化）。登录页无会话不能取签名
+ * 主题资产（已知限制，docs/09 P15）：品牌识别=平台基线 SVG（结构），观感细节由
+ * --ff-* 令牌承载，主题插件仍可换整体色彩。文案经 t() 可被 locale 插件覆盖
+ * （FR-SETUP-02；未激活语言包时回退中文基线）。
  */
 const router = useRouter();
 const mode = ref<'login' | 'register'>('login');
@@ -60,7 +60,6 @@ function switchMode(target: 'login' | 'register'): void {
 
 <template>
   <main class="login-scene" data-testid="login-view">
-    <div class="login-aurora" aria-hidden="true"></div>
     <div class="login-card ff-animate-rise">
       <header class="login-brand">
         <AppLogo :size="40" />
@@ -121,45 +120,20 @@ function switchMode(target: 'login' | 'register'): void {
 </template>
 
 <style scoped>
+/* P18 现代极简：纯色底 + 发丝线卡片（品牌识别=平台基线 SVG；观感由令牌承载） */
 .login-scene {
-  position: relative;
   min-height: 100vh;
   display: grid;
   place-items: center;
-  overflow: hidden;
   background: var(--ff-bg);
 }
-/* 平台基线几何背景（纯 CSS，主题令牌取色；无会话不走主题资产通道） */
-.login-aurora {
-  position: absolute;
-  inset: -40%;
-  background:
-    radial-gradient(
-      42rem 42rem at 20% 25%,
-      color-mix(in srgb, var(--ff-primary) 20%, transparent),
-      transparent 60%
-    ),
-    radial-gradient(
-      36rem 36rem at 80% 70%,
-      color-mix(in srgb, var(--ff-accent, var(--ff-primary)) 16%, transparent),
-      transparent 60%
-    ),
-    radial-gradient(
-      30rem 30rem at 55% 90%,
-      color-mix(in srgb, var(--ff-primary) 10%, transparent),
-      transparent 65%
-    );
-  animation: login-drift 24s ease-in-out infinite alternate;
-}
 .login-card {
-  position: relative;
   width: min(24rem, calc(100vw - 2rem));
   padding: 2.25rem;
-  background: color-mix(in srgb, var(--ff-surface) 92%, transparent);
-  backdrop-filter: blur(10px);
+  background: var(--ff-surface);
   border: 1px solid var(--ff-border-soft);
   border-radius: var(--ff-radius-lg);
-  box-shadow: var(--ff-shadow-2);
+  box-shadow: var(--ff-shadow-1);
 }
 .login-brand {
   display: flex;
@@ -167,7 +141,7 @@ function switchMode(target: 'login' | 'register'): void {
   align-items: center;
   gap: var(--ff-space-2);
   margin-bottom: var(--ff-space-4);
-  color: var(--ff-primary);
+  color: var(--ff-text);
 }
 .login-brand h1 {
   margin: 0;
@@ -198,20 +172,5 @@ function switchMode(target: 'login' | 'register'): void {
   margin: var(--ff-space-3) 0 0;
   text-align: center;
   font-size: var(--ff-text-sm);
-}
-@keyframes login-drift {
-  from {
-    transform: translate3d(-2%, -1%, 0) scale(1);
-  }
-  to {
-    transform: translate3d(2%, 2%, 0) scale(1.06);
-  }
-}
-/* 背景循环动画为 24s 长周期，不走 --ff-motion-* 令牌（令牌面向交互反馈），
-   因此 reduced-motion 须在此显式关闭（PR #36 审查 P2） */
-@media (prefers-reduced-motion: reduce) {
-  .login-aurora {
-    animation: none;
-  }
 }
 </style>

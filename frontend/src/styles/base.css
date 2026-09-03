@@ -1,8 +1,8 @@
 /*
- * 全局观感基线（P16 拆出 App.vue）：表单控件统一/focus 环/侧栏导航分组/
- * 表格与卡片层次。全部消费 --ff-* 令牌（tokens.css 定义，主题插件可覆盖）。
+ * 全局观感基线（P16 拆出 App.vue；P18 现代极简重订）：表单控件统一/focus 环/
+ * 浅色平面侧栏/发丝线表格与卡片层次。全部消费 --ff-* 令牌（tokens.css 定义，
+ * 主题插件可覆盖）。
  */
-/* P12.5：观感值全部改为 --ff-* 令牌消费（tokens.css 定义基线，主题插件覆盖即换肤） */
 :root {
   color-scheme: light;
   font-family: var(--ff-font);
@@ -24,7 +24,8 @@ a:hover {
   text-decoration: underline;
 }
 
-/* P16 全局控件基线：原生 button/input/select/textarea 统一观感与 focus 环 */
+/* P16 全局控件基线：原生 button/input/select/textarea 统一观感与 focus 环
+   （P18：hover 中性化——去彩色描边，改表面层次） */
 button {
   padding: var(--ff-space-1) var(--ff-space-3);
   border: 1px solid var(--ff-border);
@@ -35,10 +36,11 @@ button {
   font: inherit;
   transition:
     border-color var(--ff-motion-fast) var(--ff-ease),
+    background var(--ff-motion-fast) var(--ff-ease),
     box-shadow var(--ff-motion-fast) var(--ff-ease);
 }
 button:hover:not(:disabled) {
-  border-color: var(--ff-primary);
+  background: var(--ff-surface-muted);
 }
 button:focus-visible {
   outline: none;
@@ -111,9 +113,10 @@ textarea:disabled {
   background-position: center;
 }
 
-/* P16 侧栏：垂直渐变 + 分组标题 + 图标行 + 激活左条 */
+/* P18 侧栏：浅色平面 + 右发丝线 + 分组标题 + 图标行 + 激活 pill 与左强调条 */
 .workbench-side {
-  background: linear-gradient(180deg, var(--ff-side-bg) 0%, var(--ff-side-bg-2) 100%);
+  background: var(--ff-side-bg);
+  border-right: 1px solid var(--ff-border-soft);
   color: var(--ff-side-ink);
   padding: var(--ff-space-4) var(--ff-space-3);
   display: flex;
@@ -184,7 +187,8 @@ textarea:disabled {
 }
 .side-footer button:hover:not(:disabled) {
   color: var(--ff-side-ink-strong);
-  border-color: var(--ff-side-hover);
+  border-color: transparent;
+  background: var(--ff-side-hover);
 }
 .brand {
   display: flex;
@@ -227,7 +231,7 @@ textarea:disabled {
 .entity-cards a:hover {
   box-shadow: var(--ff-shadow-2);
   transform: translateY(-2px);
-  border-color: var(--ff-primary);
+  border-color: var(--ff-border);
   text-decoration: none;
 }
 .entity-cards .entity-name {
@@ -256,7 +260,7 @@ textarea:disabled {
   color: var(--ff-primary);
 }
 
-/* P16 表格基线：表头层次 + 行 hover */
+/* P18 表格基线：发丝线分隔 + 中性行 hover + 轻量表头（去容器投影） */
 .dynamic-table {
   width: 100%;
   border-collapse: separate;
@@ -265,7 +269,6 @@ textarea:disabled {
   border: 1px solid var(--ff-border-soft);
   border-radius: var(--ff-radius-md);
   overflow: hidden;
-  box-shadow: var(--ff-shadow-1);
 }
 .dynamic-table th,
 .dynamic-table td {
@@ -274,18 +277,19 @@ textarea:disabled {
   text-align: left;
 }
 .dynamic-table thead th {
-  background: var(--ff-surface-muted);
+  background: var(--ff-surface);
   font-size: var(--ff-text-sm);
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--ff-text-muted);
+  border-bottom: 1px solid var(--ff-border);
 }
 .dynamic-table tbody tr {
   cursor: pointer;
   transition: background var(--ff-motion-fast) var(--ff-ease);
 }
 .dynamic-table tbody tr:hover {
-  background: color-mix(in srgb, var(--ff-primary) 4%, transparent);
+  background: color-mix(in srgb, var(--ff-text) 4%, transparent);
 }
 .dynamic-table tbody tr:last-child td {
   border-bottom: none;

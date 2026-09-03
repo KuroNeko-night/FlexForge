@@ -1,37 +1,39 @@
 /*
- * FlexForge 设计令牌与前端基建基线（docs/09 P12.5"结构与皮分离"）。
- * 平台只定义朴素可用的缺省值；主题插件（extension.theme-asset，FR-PLUGIN-11）
- * 通过覆盖 --ff-* 变量改变全局观感——组件/排版结构不随主题变化。
- * 动效统一走 --ff-motion-* 时长；prefers-reduced-motion 时全部收敛为瞬时。
+ * FlexForge 设计令牌与前端基建基线（docs/09 P12.5"结构与皮分离"；P18 现代极简重订）。
+ * 平台缺省观感 = 现代极简：zinc 中性阶 + 单一 indigo 主色，取值为 Tailwind v4
+ * 默认色板 oklch 原值（MIT，github.com/tailwindlabs/tailwindcss theme.css）。
+ * 主题插件（extension.theme-asset，FR-PLUGIN-11）通过覆盖 --ff-* 变量改变全局
+ * 观感——组件/排版结构不随主题变化。动效统一走 --ff-motion-* 时长；
+ * prefers-reduced-motion 时全部收敛为瞬时。
  */
 :root {
-  /* 色板（P16 精修基线：蓝灰中性阶 + 主色阶） */
-  --ff-bg: #f4f6fa;
+  /* 色板（P18：Tailwind v4 zinc 阶 + indigo/red/amber 主色阶，oklch 原值） */
+  --ff-bg: oklch(98.5% 0 0); /* zinc-50 */
   --ff-surface: #ffffff;
-  --ff-surface-muted: #eef1f7;
-  --ff-text: #1b2130;
-  --ff-text-muted: #66708a;
-  --ff-border: #c3cadb;
-  --ff-border-soft: #e5e9f2;
-  --ff-primary: #3056d3;
-  --ff-primary-hover: #2445b4;
-  --ff-primary-soft: #e8edfd;
+  --ff-surface-muted: oklch(96.7% 0.001 286.375); /* zinc-100 */
+  --ff-text: oklch(21% 0.006 285.885); /* zinc-900 */
+  --ff-text-muted: oklch(55.2% 0.016 285.938); /* zinc-500 */
+  --ff-border: oklch(87.1% 0.006 286.286); /* zinc-300 */
+  --ff-border-soft: oklch(92% 0.004 286.32); /* zinc-200 */
+  --ff-primary: oklch(51.1% 0.262 276.966); /* indigo-600 */
+  --ff-primary-hover: oklch(45.7% 0.24 277.023); /* indigo-700 */
+  --ff-primary-soft: oklch(93% 0.034 272.788); /* indigo-100 */
   --ff-primary-ink: #ffffff;
-  --ff-focus-ring: 0 0 0 3px color-mix(in srgb, var(--ff-primary) 18%, transparent);
-  --ff-danger: #b3373a;
-  --ff-danger-bg: #fcecec;
-  --ff-warn: #93611b;
-  --ff-warn-bg: #fdf3e4;
-  /* 侧栏导航：垂直渐变 + 分组标题/激活态（P16；派生键随基础键级联，
-     主题插件只需覆盖 --ff-side-bg/-ink/-active 即整体换色系） */
-  --ff-side-bg: #191e2e;
+  --ff-focus-ring: 0 0 0 2px color-mix(in srgb, var(--ff-primary) 45%, transparent);
+  --ff-danger: oklch(57.7% 0.245 27.325); /* red-600 */
+  --ff-danger-bg: oklch(97.1% 0.013 17.38); /* red-50 */
+  --ff-warn: oklch(55.5% 0.163 48.998); /* amber-700 */
+  --ff-warn-bg: oklch(98.7% 0.022 95.277); /* amber-50 */
+  /* 侧栏导航（P18 浅色平面：浅底+右发丝线，激活 pill+主色强调条）：
+     派生键随基础键级联，主题插件只需覆盖 --ff-side-bg/-ink/-active 即整体换色系 */
+  --ff-side-bg: oklch(98.5% 0 0); /* zinc-50 */
   --ff-side-bg-2: color-mix(in srgb, var(--ff-side-bg) 78%, #000);
-  --ff-side-ink: #c6cde0;
-  --ff-side-ink-strong: color-mix(in srgb, var(--ff-side-ink) 55%, #fff);
+  --ff-side-ink: oklch(44.2% 0.017 285.786); /* zinc-600 */
+  --ff-side-ink-strong: color-mix(in srgb, var(--ff-side-ink) 55%, #000);
   --ff-side-muted: color-mix(in srgb, var(--ff-side-ink) 62%, transparent);
-  --ff-side-hover: rgb(255 255 255 / 6%);
-  --ff-side-active: #262f4a;
-  --ff-side-accent: color-mix(in srgb, var(--ff-primary) 55%, #fff);
+  --ff-side-hover: color-mix(in srgb, var(--ff-side-ink) 8%, transparent);
+  --ff-side-active: color-mix(in srgb, var(--ff-side-ink) 12%, var(--ff-surface));
+  --ff-side-accent: var(--ff-primary);
 
   /* 排版（拉丁/数字自托管 Inter，中文系统栈；无运行时外链，CSP 兼容） */
   --ff-font: 'Inter', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -40,16 +42,17 @@
   --ff-text-md: 0.9rem;
   --ff-text-xl: 1.5rem;
 
-  /* 间距 / 圆角 / 阴影 */
+  /* 间距 / 圆角 / 阴影（P18：圆角与阴影取 Tailwind v4 默认刻度原值） */
   --ff-space-1: 0.25rem;
   --ff-space-2: 0.5rem;
   --ff-space-3: 0.8rem;
   --ff-space-4: 1.2rem;
-  --ff-radius-sm: 4px;
-  --ff-radius-md: 8px;
-  --ff-radius-lg: 12px;
-  --ff-shadow-1: 0 1px 2px rgb(0 0 0 / 8%);
-  --ff-shadow-2: 0 6px 18px rgb(15 23 42 / 14%);
+  --ff-radius-sm: 6px; /* tw radius-md */
+  --ff-radius-md: 8px; /* tw radius-lg */
+  --ff-radius-lg: 12px; /* tw radius-xl */
+  --ff-shadow-1: 0 1px 2px 0 rgb(0 0 0 / 5%); /* tw shadow-xs */
+  --ff-shadow-2:
+    0 4px 6px -1px rgb(0 0 0 / 10%), 0 2px 4px -2px rgb(0 0 0 / 10%); /* tw shadow-md */
 
   /* 动效 */
   --ff-motion-fast: 120ms;
@@ -109,8 +112,8 @@
     transform var(--ff-motion-fast) var(--ff-ease);
 }
 .ff-btn:hover:not(:disabled) {
-  border-color: var(--ff-primary);
-  box-shadow: var(--ff-shadow-1);
+  background: var(--ff-surface-muted);
+  border-color: var(--ff-border);
 }
 .ff-btn:active:not(:disabled) {
   transform: translateY(1px);
@@ -212,7 +215,7 @@
 .ff-drawer__overlay {
   position: fixed;
   inset: 0;
-  background: rgb(15 23 42 / 38%);
+  background: rgb(9 9 11 / 45%);
 }
 .ff-drawer__panel {
   position: fixed;
@@ -221,6 +224,7 @@
   height: 100vh;
   width: min(26rem, 92vw);
   background: var(--ff-surface);
+  border-left: 1px solid var(--ff-border-soft);
   box-shadow: var(--ff-shadow-2);
   padding: var(--ff-space-4);
   overflow-y: auto;
