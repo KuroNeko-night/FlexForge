@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="160" height="48" viewBox="0 0 160 48">
-  <!-- 默认主题动效装饰（P12.5）：SMIL 呼吸脉冲（背景引用场景下原生播放，无脚本） -->
-  <g fill="none" stroke="#2b5fd9" stroke-width="3" stroke-linecap="round">
+  <!-- 默认主题动效装饰（P18 重着色）：SMIL 呼吸脉冲（背景引用场景下原生播放，无脚本） -->
+  <g fill="none" stroke="#4f46e5" stroke-width="3" stroke-linecap="round">
     <path d="M8 24h28l8-14 10 28 10-20 8 6h16">
       <animate attributeName="stroke-opacity" values="1;0.25;1" dur="2.4s" repeatCount="indefinite"/>
     </path>
   </g>
-  <g fill="#2b5fd9">
+  <g fill="#4f46e5">
     <circle cx="112" cy="24" r="5">
       <animate attributeName="r" values="4;8;4" dur="2.4s" repeatCount="indefinite"/>
       <animate attributeName="fill-opacity" values="1;0.3;1" dur="2.4s" repeatCount="indefinite"/>

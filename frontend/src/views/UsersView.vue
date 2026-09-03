@@ -251,15 +251,27 @@ onMounted(load);
 }
 .users-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   background: var(--ff-surface);
+  border: 1px solid var(--ff-border-soft);
   border-radius: var(--ff-radius-md);
+  overflow: hidden;
 }
 .users-table th,
 .users-table td {
   padding: var(--ff-space-2) var(--ff-space-3);
   border-bottom: 1px solid var(--ff-border-soft);
   text-align: left;
+}
+.users-table thead th {
+  font-size: var(--ff-text-sm);
+  font-weight: 500;
+  color: var(--ff-text-muted);
+  border-bottom: 1px solid var(--ff-border);
+}
+.users-table tbody tr:last-child td {
+  border-bottom: none;
 }
 .user-form label,
 .role-option {

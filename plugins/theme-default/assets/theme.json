@@ -1,12 +1,14 @@
 {
-  "--ff-primary": "#3f6ee8",
+  "--ff-primary": "oklch(51.1% 0.262 276.966)",
+  "--ff-primary-hover": "oklch(45.7% 0.24 277.023)",
+  "--ff-primary-soft": "oklch(93% 0.034 272.788)",
   "--ff-primary-ink": "#ffffff",
-  "--ff-bg": "#f2f5fb",
-  "--ff-side-bg": "#1c2b4a",
-  "--ff-side-ink": "#dfe6f5",
-  "--ff-side-active": "#2d4370",
-  "--ff-radius-md": "10px",
-  "--ff-radius-lg": "14px",
-  "--ff-shadow-2": "0 8px 24px rgb(28 43 74 / 18%)",
-  "--ff-motion-base": "260ms"
+  "--ff-bg": "oklch(98.5% 0 0)",
+  "--ff-side-bg": "oklch(98.5% 0 0)",
+  "--ff-side-ink": "oklch(44.2% 0.017 285.786)",
+  "--ff-side-active": "oklch(92% 0.004 286.32)",
+  "--ff-radius-md": "8px",
+  "--ff-radius-lg": "12px",
+  "--ff-shadow-2": "0 4px 6px -1px rgb(0 0 0 / 10%), 0 2px 4px -2px rgb(0 0 0 / 10%)",
+  "--ff-motion-base": "220ms"
 }

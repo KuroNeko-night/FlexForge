@@ -149,6 +149,13 @@ function diagnosisOf(activation: PluginActivationEntry): string {
   border-bottom: 1px solid var(--ff-border-soft);
   text-align: left;
 }
+.activation-table th {
+  font-weight: 500;
+  color: var(--ff-text-muted);
+}
+.activation-table tbody tr:last-child td {
+  border-bottom: none;
+}
 .activation-table tr[data-status='FAILED'] td {
   color: var(--ff-danger);
 }

@@ -59,7 +59,7 @@ FlexForge/
 │       ├── api/                    client（错误规范化/令牌注入/401 回调，FormData multipart 不覆盖边界）+ auth/meta/data/plugins（清单+导入/激活/停用/卸载，P15）/issues（clarify/迁移/规格/生成，P15）/system/theme 客户端 + 契约类型
 │       ├── auth/token.ts           会话令牌（sessionStorage）与当前用户
 │       ├── registry/               keyed.ts 通用基座 + renderer/menu/layout/theme/recordAction/locale registry（P15：语言包+t()/语言切换）+ builtinContributions（内置部件/动作/本地菜单：Issue 工作台+插件管理+设置入口）
-│       ├── styles/                 tokens.css（设计令牌+基建原语，P16 精修：主色阶/focus 环/侧栏派生令牌）+ base.css（全局控件/表格/侧栏分组基线，P16 拆分）
+│       ├── styles/                 tokens.css（设计令牌+基建原语，P18 现代极简重订：zinc/indigo 阶取 Tailwind v4 公开值+浅色侧栏派生+--ff-scrim）+ base.css（全局控件/表格/浅色平面侧栏基线，P16 拆分/P18 重订）
 │       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards + ui/（BaseButton/BaseSwitch/ComponentCard/BaseDrawer/ConfirmDialog 统一确认，P16）+ IssueDetail/IssueDevPanel/IssueComments + PluginCard + UploadDropzone（拖拽+自动校验，P16）+ AppIcon（内联图标集，P16）+ AppLogo
 │       ├── composables/            useEntityMetadata（metaVersion 比对 → stale 刷新）
 │       └── views/                  Login/Workbench/Home/DynamicEntity（列表/详情/新建/编辑）/Issues（Issue 工作台+创建抽屉，P15）/Plugins（清单+写操作，P15）/Users（用户管理，P12.5）/Placeholder
@@ -247,3 +247,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-30 | §1 树更新：V012 ai_provider_config；flexforge-ai +config 包与 RoutingModelPort（两 ModelPort 实现退出 Bean 装配）；frontend +api/settings、views +Settings、router +/settings、菜单 +设置入口 | P15 迭代 2：设置页 + AI 运行时配置（FR-SETUP-01；docs/13 S4/§3.6-5 第二密钥通道修订、docs/02 +FR-SETUP、docs/03 §8 +/ai/config） |
 | 2026-08-30 | §1 树更新：plugins +example-library/example-facility/locale-en；frontend +registry/localeRegistry、components +AppLogo、views/SettingsView 增语言卡、LoginView 品牌化重写、tokens.css +入场动效；backend 两处 KINDS 扩 locale；app 测试 +ExamplePluginsP15Test | P15 迭代 3：i18n 通道+英文化插件+语言切换+登录/工作台品牌化+两个示例业务插件（登记册 §2.2 变更同步） |
 | 2026-08-31 | §1 树更新：frontend +styles/base.css、components +AppIcon/ConfirmDialog/IssueComments/UploadDropzone、依赖 +@fontsource/inter；api +apiErrorMessage、issues +TRANSITION_LABELS；registry recordAction +confirm；plugins/locale-en 1.0.3（+分组键） | P16 迭代 1/2：交互重构+文案净化（统一确认/迁移按钮组/上传区/列表头部创建）与默认主题精修（导航分组图标/控件 focus 环/自托管字体）——用户裁决新增阶段 |
+| 2026-09-03 | §1 树无结构变更；styles/ 行描述更新（P18 现代极简重订：zinc/indigo 令牌+浅色平面侧栏+--ff-scrim）；plugins/theme-default 1.1.0（tokens 对齐+bg/logo/pulse 重绘）、theme-warm 1.1.0（stone/orange 适配） | P18：前端现代极简风格化（用户裁决新增阶段；色板取 Tailwind v4 公开 oklch 值，无运行时外链） |

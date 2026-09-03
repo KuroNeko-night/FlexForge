@@ -1,10 +1,12 @@
 {
-  "--ff-primary": "#c2571c",
-  "--ff-bg": "#faf5ef",
+  "--ff-primary": "oklch(55.3% 0.195 38.402)",
+  "--ff-primary-hover": "oklch(47% 0.157 37.28)",
+  "--ff-primary-soft": "oklch(95.4% 0.038 75.164)",
+  "--ff-bg": "oklch(98.5% 0.001 106.423)",
   "--ff-surface": "#fffdf9",
-  "--ff-side-bg": "#4a2f1c",
-  "--ff-side-ink": "#f3e6d7",
-  "--ff-side-active": "#6b452a",
+  "--ff-side-bg": "oklch(98.5% 0.001 106.423)",
+  "--ff-side-ink": "oklch(44.4% 0.011 73.639)",
+  "--ff-side-active": "oklch(92.3% 0.003 48.717)",
   "--ff-radius-md": "14px",
   "--ff-radius-lg": "18px"
 }
