@@ -169,7 +169,7 @@ function onReasonEnter(event: KeyboardEvent): void {
 .ff-modal__overlay {
   position: fixed;
   inset: 0;
-  background: rgb(9 9 11 / 45%);
+  background: var(--ff-scrim);
   display: grid;
   place-items: center;
   z-index: 40;

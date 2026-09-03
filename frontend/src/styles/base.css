@@ -170,7 +170,7 @@ textarea:disabled {
   background: var(--ff-side-accent);
 }
 .menu-static {
-  opacity: 0.6;
+  color: var(--ff-side-muted);
 }
 .side-footer {
   margin-top: auto;

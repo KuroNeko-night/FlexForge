@@ -19,18 +19,25 @@
   --ff-primary-hover: oklch(45.7% 0.24 277.023); /* indigo-700 */
   --ff-primary-soft: oklch(93% 0.034 272.788); /* indigo-100 */
   --ff-primary-ink: #ffffff;
-  --ff-focus-ring: 0 0 0 2px color-mix(in srgb, var(--ff-primary) 45%, transparent);
+  --ff-focus-ring: 0 0 0 2px color-mix(in srgb, var(--ff-primary) 70%, transparent);
   --ff-danger: oklch(57.7% 0.245 27.325); /* red-600 */
   --ff-danger-bg: oklch(97.1% 0.013 17.38); /* red-50 */
   --ff-warn: oklch(55.5% 0.163 48.998); /* amber-700 */
   --ff-warn-bg: oklch(98.7% 0.022 95.277); /* amber-50 */
-  /* 侧栏导航（P18 浅色平面：浅底+右发丝线，激活 pill+主色强调条）：
-     派生键随基础键级联，主题插件只需覆盖 --ff-side-bg/-ink/-active 即整体换色系 */
+  --ff-scrim: rgb(9 9 11 / 45%); /* zinc-950 遮罩（抽屉/对话框统一） */
+  /* 侧栏导航（P18 浅色平面：浅底+右发丝线，激活 pill+主色强调条）。
+     派生公式面向浅色侧栏（ink-strong=加深、hover/active=浅底中性）；
+     深色侧栏主题需连带覆盖派生键（-ink-strong/-muted/-hover/-active），
+     仅覆盖 --ff-side-bg/-ink 适用于同明度换色场景 */
   --ff-side-bg: oklch(98.5% 0 0); /* zinc-50 */
-  --ff-side-bg-2: color-mix(in srgb, var(--ff-side-bg) 78%, #000);
+  --ff-side-bg-2: color-mix(
+    in srgb,
+    var(--ff-side-bg) 78%,
+    #000
+  ); /* deprecated：P18 平面侧栏无渐变消费方，保留键以稳定主题覆盖契约 */
   --ff-side-ink: oklch(44.2% 0.017 285.786); /* zinc-600 */
   --ff-side-ink-strong: color-mix(in srgb, var(--ff-side-ink) 55%, #000);
-  --ff-side-muted: color-mix(in srgb, var(--ff-side-ink) 62%, transparent);
+  --ff-side-muted: color-mix(in srgb, var(--ff-side-ink) 82%, var(--ff-surface));
   --ff-side-hover: color-mix(in srgb, var(--ff-side-ink) 8%, transparent);
   --ff-side-active: color-mix(in srgb, var(--ff-side-ink) 12%, var(--ff-surface));
   --ff-side-accent: var(--ff-primary);
@@ -215,7 +222,7 @@
 .ff-drawer__overlay {
   position: fixed;
   inset: 0;
-  background: rgb(9 9 11 / 45%);
+  background: var(--ff-scrim);
 }
 .ff-drawer__panel {
   position: fixed;

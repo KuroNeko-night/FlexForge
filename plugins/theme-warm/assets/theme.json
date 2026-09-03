@@ -1,6 +1,6 @@
 {
-  "--ff-primary": "oklch(64.6% 0.222 41.116)",
-  "--ff-primary-hover": "oklch(55.3% 0.195 38.402)",
+  "--ff-primary": "oklch(55.3% 0.195 38.402)",
+  "--ff-primary-hover": "oklch(47% 0.157 37.28)",
   "--ff-primary-soft": "oklch(95.4% 0.038 75.164)",
   "--ff-bg": "oklch(98.5% 0.001 106.423)",
   "--ff-surface": "#fffdf9",

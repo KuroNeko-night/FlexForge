@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-  <!-- FlexForge 品牌标（P12.5 默认主题）：三块拼装模块 + 铁砧基座 -->
-  <rect x="8" y="8" width="22" height="22" rx="5" fill="#2b5fd9"/>
-  <rect x="34" y="8" width="22" height="22" rx="5" fill="#5d8bf0"/>
-  <rect x="8" y="34" width="22" height="22" rx="5" fill="#3f6ee8"/>
-  <path d="M34 40h14a4 4 0 0 1 4 4v2h-8l-4 6h-6z" fill="#1f2430"/>
+  <!-- FlexForge 品牌标（P18 现代极简重绘）：三块拼装模块 + 基座（indigo/zinc 阶） -->
+  <rect x="8" y="8" width="22" height="22" rx="5" fill="#4f46e5"/>
+  <rect x="34" y="8" width="22" height="22" rx="5" fill="#818cf8"/>
+  <rect x="8" y="34" width="22" height="22" rx="5" fill="#a5b4fc"/>
+  <path d="M34 40h14a4 4 0 0 1 4 4v2h-8l-4 6h-6z" fill="#18181b"/>
 </svg>
