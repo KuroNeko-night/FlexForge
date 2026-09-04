@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "example.quality",
   "name": "来料检验示例",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "capabilityLevel": 1,
   "minPlatformVersion": "0.1.0",
   "dependencies": [],
