@@ -445,7 +445,7 @@
   - `example-safety` 安全隐患：隐患描述/位置/等级 enum（一般·较大·重大）/整改状态 enum（待整改·整改中·已闭环）/责任人/整改期限 date——list+form+**kanban**（整改闭环分列）。
   - 每包含 V001 台账表（CHECK 兜底约束）+ V002 幂等种子（与 inventory/library 同口径）。
 - **看板拖拽换列（平台基建，P17 候选项裁决纳入）**：KanbanView 原生 HTML5 DnD（零新依赖）——卡片 draggable、列 drop 高亮（transform/opacity+令牌时长）、drop 即 `updateRecord` 更新 groupBy 字段；乐观移动+服务端确认（以响应回填），失败回滚原列并局部提示（不毁整页状态）；"未设置"兜底列不可作落点（分组字段有声明选项约束），其卡片可拖出。
-- **前端动效体系（骨架，结构与皮分离原则内）**：工作台主区路由切换过渡（App 壳与工作台壳两级 router-view，out-in 淡入淡出）；动态表格行与看板卡片入场 stagger（`--stagger-i` 递增延迟、封顶截断）；列表↔看板呈现切换过渡；按钮按压态等微交互精修——全部走 `--ff-motion-*` 令牌（reduced-motion 自动静止）、只动 transform/opacity 不触 layout。
+- **前端动效体系（骨架，结构与皮分离原则内）**：工作台主区路由切换过渡（App 壳与工作台壳两级 router-view，out-in 淡入淡出）；动态表格行与看板卡片入场 stagger（`--stagger-i` 递增延迟封顶、步长令牌 `--ff-stagger-step`）；列表↔看板呈现切换过渡；按钮按压态等微交互沿用 P12.5 既有基线（tokens.css `.ff-btn:active` 位移，本轮核验无新增需求，交叉审查 P2-3 处置）——动效全部走 `--ff-motion-*`/stagger 令牌（reduced-motion 时长与步长归零即静止）、只动 transform/opacity 不触 layout。
 - **列表 CSV 导出（P17 候选项裁决纳入）**：实体列表页头部"导出 CSV"动作——导出当前已加载页记录与可见列（list 视图 columns），RFC 4180 转义（逗号/引号/换行/双引号翻倍）+ UTF-8 BOM（Excel 中文兼容），本地 Blob 下载，无新端点、无服务端改动。
 
 ### 验收标准

@@ -148,6 +148,11 @@ describe('KanbanView（P19 拖拽边界）', () => {
     expect(labels).toEqual(['待办', '进行中', '已完成', '未设置']);
     const unsetCol = wrapper.findAll('.kanban-col')[3]!;
     expect(unsetCol.classes()).toContain('is-unset-col');
+    // 直接断言：drop 到未设置列不产生 card-move（onDrop 的 !droppable 分支）
+    const unsetDrop = await dragTo(wrapper, 'r9', 3);
+    expect(unsetDrop.classes()).not.toContain('is-drop-target');
+    expect(wrapper.emitted('card-move')).toBeUndefined();
+    // 拖出未设置列到枚举列则正常上抛
     await dragTo(wrapper, 'r9', 0);
     expect(wrapper.emitted('card-move')).toHaveLength(1);
   });

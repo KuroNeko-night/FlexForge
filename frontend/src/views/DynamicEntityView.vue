@@ -5,7 +5,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { createRecord, fetchRecord, queryRecords, updateRecord } from '@/api/data';
 import { ApiError, apiErrorMessage } from '@/api/client';
 import type { RecordView, ViewDefinition } from '@/api/types';
-import { buildCsv, downloadCsv } from '@/utils/csv';
+import { buildCsv, csvSafeFilename, downloadCsv } from '@/utils/csv';
 import { visibleColumns } from '@/utils/viewColumns';
 import DynamicForm from '@/components/DynamicForm.vue';
 import DynamicTable from '@/components/DynamicTable.vue';
@@ -159,12 +159,15 @@ async function switchPresentation(next: 'table' | 'kanban'): Promise<void> {
 
 /** 看板拖拽换列（P19）：乐观移动 → PATCH 分组字段（补丁语义）→ 失败回滚原列并局部提示。 */
 const moveError = ref<string | null>(null);
+// 同卡片并发守卫：在途未结算时忽略新拖拽，防旧回滚覆盖新乐观值（审查 P3-6）
+const movingIds = new Set<string>();
 
 async function onCardMove(record: RecordView, targetOption: string): Promise<void> {
   const groupBy = kanbanView.value?.groupBy;
-  if (!groupBy) {
+  if (!groupBy || movingIds.has(record.id)) {
     return;
   }
+  movingIds.add(record.id);
   const previous = record.data[groupBy];
   record.data[groupBy] = targetOption;
   moveError.value = null;
@@ -178,6 +181,8 @@ async function onCardMove(record: RecordView, targetOption: string): Promise<voi
     record.data[groupBy] = previous;
     const detail = apiErrorMessage(e, null);
     moveError.value = detail ? `移动失败，已还原到原列：${detail}` : '移动失败，已还原到原列';
+  } finally {
+    movingIds.delete(record.id);
   }
 }
 
@@ -191,7 +196,7 @@ function exportCsv(): void {
   const rows = records.value.map((record) =>
     columns.map((field) => record.data[field.name] ?? null),
   );
-  const name = definition.value?.displayName ?? entityName.value;
+  const name = csvSafeFilename(definition.value?.displayName ?? entityName.value);
   downloadCsv(`${name}-导出.csv`, buildCsv(headers, rows));
 }
 
@@ -248,11 +253,7 @@ onMounted(refresh);
       <div v-if="state === 'ready' && mode === 'list'" class="header-actions">
         <ViewToggle v-if="kanbanView" :presentation="presentation" @change="switchPresentation" />
         <BaseButton data-testid="export-csv" @click="exportCsv">导出 CSV</BaseButton>
-        <BaseButton
-          variant="primary"
-          class="header-create"
-          @click="router.push(`/data/${entityName}/new`)"
-        >
+        <BaseButton variant="primary" @click="router.push(`/data/${entityName}/new`)">
           新增记录
         </BaseButton>
       </div>
@@ -293,11 +294,7 @@ onMounted(refresh);
           @row-click="(record) => openDetail(record.id)"
         >
           <template #actions="{ record }">
-            <RecordActionsBar
-              :actions="recordActions"
-              :record="record"
-              @run="(actionKey) => runAction(actionKey, record)"
-            />
+            <RecordActionsBar :actions="recordActions" :record="record" @run="runAction" />
           </template>
         </DynamicTable>
         <ListPager

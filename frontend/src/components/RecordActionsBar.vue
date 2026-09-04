@@ -6,7 +6,7 @@ import type { RecordView } from '@/api/types';
  * 执行上抛父级（ActionContext 在页面组装）；无业务分支。
  */
 defineProps<{ actions: { key: string; label: string }[]; record: RecordView }>();
-const emit = defineEmits<{ run: [actionKey: string] }>();
+const emit = defineEmits<{ run: [actionKey: string, record: RecordView] }>();
 </script>
 
 <template>
@@ -15,7 +15,7 @@ const emit = defineEmits<{ run: [actionKey: string] }>();
     :key="action.key"
     type="button"
     :data-action="action.key"
-    @click.stop="emit('run', action.key)"
+    @click.stop="emit('run', action.key, record)"
   >
     {{ action.label }}
   </button>

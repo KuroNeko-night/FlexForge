@@ -65,6 +65,8 @@
   --ff-motion-fast: 120ms;
   --ff-motion-base: 220ms;
   --ff-motion-slow: 320ms;
+  /* 入场 stagger 步长（P19 表格行/看板卡片共用；归零即无延迟） */
+  --ff-stagger-step: 20ms;
   --ff-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -73,6 +75,7 @@
     --ff-motion-fast: 0ms;
     --ff-motion-base: 0ms;
     --ff-motion-slow: 0ms;
+    --ff-stagger-step: 0ms;
   }
 }
 

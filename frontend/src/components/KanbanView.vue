@@ -120,6 +120,18 @@ function onDrop(column: KanbanColumn, event: DragEvent): void {
   emit('card-move', record, column.key);
 }
 
+/** 离开列时清除该列高亮（relatedTarget 仍在列内属子元素间移动，忽略；审查 P3-5）。 */
+function onDragLeave(column: KanbanColumn, event: DragEvent): void {
+  if (!column.droppable || dropTarget.value !== column.key) {
+    return;
+  }
+  const into = event.relatedTarget as Node | null;
+  const scope = event.currentTarget;
+  if (!into || !(scope instanceof Element) || !scope.contains(into)) {
+    dropTarget.value = null;
+  }
+}
+
 /** 记录当前所在列 key（用于源列过滤；不在选项内视为未设置列）。 */
 function recordColumnKey(record: RecordView): string {
   const value = record.data[props.view.groupBy ?? ''];
@@ -139,6 +151,7 @@ function recordColumnKey(record: RecordView): string {
       }"
       :data-col="column.key"
       @dragover="onDragOver(column, $event)"
+      @dragleave="onDragLeave(column, $event)"
       @drop="onDrop(column, $event)"
     >
       <header class="kanban-col-head">
@@ -245,7 +258,7 @@ function recordColumnKey(record: RecordView): string {
   box-shadow: var(--ff-shadow-1);
   cursor: grab;
   animation: ff-card-in var(--ff-motion-base) var(--ff-ease) both;
-  animation-delay: calc(var(--stagger-i, 0) * 24ms);
+  animation-delay: calc(var(--stagger-i, 0) * var(--ff-stagger-step));
   transition:
     border-color var(--ff-motion-fast) var(--ff-ease),
     box-shadow var(--ff-motion-fast) var(--ff-ease),

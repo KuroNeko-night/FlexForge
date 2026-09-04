@@ -58,11 +58,11 @@ function cellRenderer(field: FieldDefinition) {
 </template>
 
 <style scoped>
-/* P19 行入场 stagger：只动 transform/opacity（不触 layout），时长走令牌
- * （reduced-motion 归零即静止）；延迟封顶防长列表等待。 */
+/* P19 行入场 stagger：只动 transform/opacity（不触 layout），时长与步长走令牌
+ * （reduced-motion 全归零即静止无延迟）；延迟封顶防长列表等待。 */
 tbody tr {
   animation: ff-row-in var(--ff-motion-base) var(--ff-ease) both;
-  animation-delay: calc(var(--stagger-i, 0) * 18ms);
+  animation-delay: calc(var(--stagger-i, 0) * var(--ff-stagger-step));
 }
 
 @keyframes ff-row-in {

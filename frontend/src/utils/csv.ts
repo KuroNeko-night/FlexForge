@@ -33,7 +33,14 @@ export function buildCsv(headers: string[], rows: unknown[][]): string {
   return `${lines.join('\r\n')}\r\n`;
 }
 
-/** 触发浏览器下载（BOM + text/csv）；文件名由调用方给安全字符。 */
+/** 文件名清洗：替换路径分隔符/Windows 保留字符为连字符（实体显示名来自插件元数据，不可信输入）。 */
+export function csvSafeFilename(name: string): string {
+  const cleaned = name.replace(/[\\/:*?"<>|]/g, '-').trim();
+  return cleaned === '' ? 'export' : cleaned;
+}
+
+/** 触发浏览器下载（BOM + text/csv）。revoke 延迟：Safari/部分 WebView 在
+ * click 同步返回时尚未读完 blob，立即 revoke 会截断下载（审查 P2-2）。 */
 export function downloadCsv(filename: string, content: string): void {
   const blob = new Blob([`\uFEFF${content}`], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
@@ -41,5 +48,5 @@ export function downloadCsv(filename: string, content: string): void {
   anchor.href = url;
   anchor.download = filename;
   anchor.click();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
