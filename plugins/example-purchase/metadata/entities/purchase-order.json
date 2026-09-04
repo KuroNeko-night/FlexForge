@@ -1,0 +1,61 @@
+{
+  "name": "purchase_order",
+  "displayName": "采购订单",
+  "fields": [
+    {
+      "name": "code",
+      "displayName": "订单号",
+      "fieldType": "text",
+      "required": true,
+      "validation": { "maxLength": 40 },
+      "position": 0
+    },
+    {
+      "name": "supplier",
+      "displayName": "供应商",
+      "fieldType": "text",
+      "required": true,
+      "validation": { "maxLength": 80 },
+      "position": 1
+    },
+    {
+      "name": "material",
+      "displayName": "物料",
+      "fieldType": "text",
+      "required": true,
+      "validation": { "maxLength": 80 },
+      "position": 2
+    },
+    {
+      "name": "qty",
+      "displayName": "数量",
+      "fieldType": "integer",
+      "required": true,
+      "validation": { "min": 1, "max": 1000000 },
+      "position": 3
+    },
+    {
+      "name": "amount",
+      "displayName": "金额",
+      "fieldType": "decimal",
+      "required": true,
+      "validation": { "min": 0, "max": 99999999999999 },
+      "position": 4
+    },
+    {
+      "name": "status",
+      "displayName": "订单状态",
+      "fieldType": "enum",
+      "required": true,
+      "validation": { "options": ["待审批", "已下单", "部分到货", "已完结"] },
+      "position": 5
+    },
+    {
+      "name": "expected_on",
+      "displayName": "预计到货日期",
+      "fieldType": "date",
+      "required": false,
+      "position": 6
+    }
+  ]
+}

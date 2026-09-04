@@ -1,0 +1,13 @@
+{
+  "entity": "production_order",
+  "viewType": "form",
+  "name": "工单表单",
+  "columns": [
+    { "field": "code" },
+    { "field": "product" },
+    { "field": "plan_qty" },
+    { "field": "status" },
+    { "field": "team" },
+    { "field": "due_on" }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "example.quality",
+  "name": "来料检验示例",
+  "version": "0.1.0",
+  "capabilityLevel": 1,
+  "minPlatformVersion": "0.1.0",
+  "dependencies": [],
+  "permissions": ["quality.read", "quality.write"],
+  "contributions": {
+    "navigation": ["example.quality.inspections"],
+    "renderers": ["text.default", "integer.default", "boolean.default", "date.default", "enum.default"]
+  },
+  "resources": {
+    "entities": ["metadata/entities/quality-inspection.json"],
+    "views": [
+      "metadata/views/quality-inspection.list.json",
+      "metadata/views/quality-inspection.form.json"
+    ],
+    "migrations": [
+      "migrations/V001__quality_inspection.sql",
+      "migrations/V002__quality_seed.sql"
+    ]
+  }
+}

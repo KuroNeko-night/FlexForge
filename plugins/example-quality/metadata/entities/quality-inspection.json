@@ -1,0 +1,60 @@
+{
+  "name": "quality_inspection",
+  "displayName": "来料检验",
+  "fields": [
+    {
+      "name": "material",
+      "displayName": "物料名称",
+      "fieldType": "text",
+      "required": true,
+      "validation": { "maxLength": 80 },
+      "position": 0
+    },
+    {
+      "name": "supplier",
+      "displayName": "供应商",
+      "fieldType": "text",
+      "required": false,
+      "validation": { "maxLength": 80 },
+      "position": 1
+    },
+    {
+      "name": "sample_qty",
+      "displayName": "抽样数量",
+      "fieldType": "integer",
+      "required": true,
+      "validation": { "min": 1, "max": 100000 },
+      "position": 2
+    },
+    {
+      "name": "defect_qty",
+      "displayName": "不合格数量",
+      "fieldType": "integer",
+      "required": true,
+      "validation": { "min": 0, "max": 100000 },
+      "position": 3
+    },
+    {
+      "name": "verdict",
+      "displayName": "判定",
+      "fieldType": "enum",
+      "required": true,
+      "validation": { "options": ["合格", "让步接收", "不合格"] },
+      "position": 4
+    },
+    {
+      "name": "full_check",
+      "displayName": "全检",
+      "fieldType": "boolean",
+      "required": false,
+      "position": 5
+    },
+    {
+      "name": "inspected_on",
+      "displayName": "检验日期",
+      "fieldType": "date",
+      "required": true,
+      "position": 6
+    }
+  ]
+}

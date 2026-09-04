@@ -1,0 +1,14 @@
+{
+  "entity": "quality_inspection",
+  "viewType": "list",
+  "name": "检验单列表",
+  "columns": [
+    { "field": "material" },
+    { "field": "supplier" },
+    { "field": "sample_qty" },
+    { "field": "defect_qty" },
+    { "field": "verdict" },
+    { "field": "full_check" },
+    { "field": "inspected_on" }
+  ]
+}

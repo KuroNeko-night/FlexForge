@@ -1,0 +1,53 @@
+{
+  "name": "production_order",
+  "displayName": "生产工单",
+  "fields": [
+    {
+      "name": "code",
+      "displayName": "工单号",
+      "fieldType": "text",
+      "required": true,
+      "validation": { "maxLength": 40 },
+      "position": 0
+    },
+    {
+      "name": "product",
+      "displayName": "产品",
+      "fieldType": "text",
+      "required": true,
+      "validation": { "maxLength": 80 },
+      "position": 1
+    },
+    {
+      "name": "plan_qty",
+      "displayName": "计划数量",
+      "fieldType": "integer",
+      "required": true,
+      "validation": { "min": 1, "max": 1000000 },
+      "position": 2
+    },
+    {
+      "name": "status",
+      "displayName": "状态",
+      "fieldType": "enum",
+      "required": true,
+      "validation": { "options": ["计划", "执行中", "暂停", "完工"] },
+      "position": 3
+    },
+    {
+      "name": "team",
+      "displayName": "负责班组",
+      "fieldType": "text",
+      "required": false,
+      "validation": { "maxLength": 60 },
+      "position": 4
+    },
+    {
+      "name": "due_on",
+      "displayName": "计划完成日期",
+      "fieldType": "date",
+      "required": false,
+      "position": 5
+    }
+  ]
+}

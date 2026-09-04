@@ -1,0 +1,13 @@
+{
+  "entity": "production_order",
+  "viewType": "kanban",
+  "name": "工单看板",
+  "groupBy": "status",
+  "columns": [
+    { "field": "code" },
+    { "field": "product" },
+    { "field": "plan_qty" },
+    { "field": "team" },
+    { "field": "due_on" }
+  ]
+}

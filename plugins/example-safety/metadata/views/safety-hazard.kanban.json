@@ -1,0 +1,13 @@
+{
+  "entity": "safety_hazard",
+  "viewType": "kanban",
+  "name": "整改看板",
+  "groupBy": "status",
+  "columns": [
+    { "field": "summary" },
+    { "field": "location" },
+    { "field": "level" },
+    { "field": "owner" },
+    { "field": "deadline_on" }
+  ]
+}
