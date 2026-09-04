@@ -278,70 +278,72 @@ onMounted(refresh);
       <button type="button" @click="refresh">重试</button>
     </StateView>
 
-    <template v-else-if="mode === 'list' && presentation === 'kanban' && kanbanView">
-      <KanbanView
-        :definition="definition!"
-        :view="kanbanView"
-        :records="records"
-        :total="total"
-        @card-click="(record) => openDetail(record.id)"
-        @card-move="onCardMove"
-      />
-      <p v-if="moveError" class="form-error" role="alert">{{ moveError }}</p>
-    </template>
-
-    <template v-else-if="mode === 'list'">
-      <StateView v-if="records.length === 0" :state="'empty'">
-        <BaseButton variant="primary" @click="router.push(`/data/${entityName}/new`)">
-          新增记录
-        </BaseButton>
-      </StateView>
-      <DynamicTable
-        v-else
-        :definition="definition!"
-        :view="listView"
-        :records="records"
-        @row-click="(record) => openDetail(record.id)"
-      >
-        <template #actions="{ record }">
+    <!-- P19 呈现切换过渡：表格↔看板 out-in 轻位移；模式分支保持 v-else-if 链 -->
+    <Transition v-else-if="mode === 'list'" name="presentation-swap" mode="out-in">
+      <div v-if="presentation === 'kanban' && kanbanView" key="kanban" class="presentation-block">
+        <KanbanView
+          :definition="definition!"
+          :view="kanbanView"
+          :records="records"
+          :total="total"
+          @card-click="(record) => openDetail(record.id)"
+          @card-move="onCardMove"
+        />
+        <p v-if="moveError" class="form-error" role="alert">{{ moveError }}</p>
+      </div>
+      <div v-else key="table" class="presentation-block">
+        <StateView v-if="records.length === 0" :state="'empty'">
+          <BaseButton variant="primary" @click="router.push(`/data/${entityName}/new`)">
+            新增记录
+          </BaseButton>
+        </StateView>
+        <DynamicTable
+          v-else
+          :definition="definition!"
+          :view="listView"
+          :records="records"
+          @row-click="(record) => openDetail(record.id)"
+        >
+          <template #actions="{ record }">
+            <button
+              v-for="action in recordActions"
+              :key="action.key"
+              type="button"
+              :data-action="action.key"
+              @click.stop="runAction(action.key, record)"
+            >
+              {{ action.label }}
+            </button>
+          </template>
+        </DynamicTable>
+        <footer class="pager">
           <button
-            v-for="action in recordActions"
-            :key="action.key"
             type="button"
-            :data-action="action.key"
-            @click.stop="runAction(action.key, record)"
+            :disabled="page <= 1"
+            @click="
+              page--;
+              refresh();
+            "
           >
-            {{ action.label }}
+            上一页
           </button>
-        </template>
-      </DynamicTable>
-      <footer class="pager">
-        <button
-          type="button"
-          :disabled="page <= 1"
-          @click="
-            page--;
-            refresh();
-          "
-        >
-          上一页
-        </button>
-        <span
-          >第 {{ page }} / {{ Math.max(1, Math.ceil(total / pageSize)) }} 页 · 共
-          {{ total }} 条</span
-        >
-        <button
-          type="button"
-          :disabled="page >= Math.ceil(total / pageSize)"
-          @click="
-            page++;
-            refresh();
-          "
-        >
-          下一页
-        </button>
-      </footer>
-    </template>
+          <span
+            >第 {{ page }} / {{ Math.max(1, Math.ceil(total / pageSize)) }} 页 · 共
+            {{ total }} 条</span
+          >
+          <button
+            type="button"
+            :disabled="page >= Math.ceil(total / pageSize)"
+            @click="
+              page++;
+              refresh();
+            "
+          >
+            下一页
+          </button>
+        </footer>
+      </div>
+    </Transition>
 
     <StateView v-else-if="mode === 'detail' && !currentRecord" :state="'loading'" />
     <EntityDetailSection

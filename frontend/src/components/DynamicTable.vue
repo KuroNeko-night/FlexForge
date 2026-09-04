@@ -43,7 +43,12 @@ function cellRenderer(field: FieldDefinition) {
       </tr>
     </thead>
     <tbody>
-      <tr v-for="record in records" :key="record.id" @click="$emit('row-click', record)">
+      <tr
+        v-for="(record, index) in records"
+        :key="record.id"
+        :style="{ '--stagger-i': Math.min(index, 11) }"
+        @click="$emit('row-click', record)"
+      >
         <td v-for="column in columns" :key="column.id" :data-field="column.name">
           <component
             :is="cellRenderer(column)"
@@ -57,3 +62,19 @@ function cellRenderer(field: FieldDefinition) {
     </tbody>
   </table>
 </template>
+
+<style scoped>
+/* P19 行入场 stagger：只动 transform/opacity（不触 layout），时长走令牌
+ * （reduced-motion 归零即静止）；延迟封顶防长列表等待。 */
+tbody tr {
+  animation: ff-row-in var(--ff-motion-base) var(--ff-ease) both;
+  animation-delay: calc(var(--stagger-i, 0) * 18ms);
+}
+
+@keyframes ff-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+</style>
