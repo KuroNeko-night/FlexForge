@@ -101,18 +101,19 @@ describe('KanbanView（P17 看板渲染）', () => {
   });
 });
 
+/** P19 拖拽测试公共 helper：happy-dom 下构造最小 dataTransfer 载荷并完成一次拖放序列。 */
+const dataTransfer = () => ({ setData: () => {}, dropEffect: '' });
+
+async function dragTo(wrapper: ReturnType<typeof mountBoard>, fromRecord: string, toIndex: number) {
+  const card = wrapper.find(`[data-record="${fromRecord}"]`);
+  await card.trigger('dragstart', { dataTransfer: dataTransfer() });
+  const target = wrapper.findAll('.kanban-col')[toIndex]!;
+  await target.trigger('dragover', { dataTransfer: dataTransfer() });
+  await target.trigger('drop', { dataTransfer: dataTransfer() });
+  return target;
+}
+
 describe('KanbanView（P19 拖拽换列）', () => {
-  const dataTransfer = () => ({ setData: () => {}, dropEffect: '' });
-
-  async function dragTo(wrapper: ReturnType<typeof mountBoard>, fromRecord: string, toIndex: number) {
-    const card = wrapper.find(`[data-record="${fromRecord}"]`);
-    await card.trigger('dragstart', { dataTransfer: dataTransfer() });
-    const target = wrapper.findAll('.kanban-col')[toIndex]!;
-    await target.trigger('dragover', { dataTransfer: dataTransfer() });
-    await target.trigger('drop', { dataTransfer: dataTransfer() });
-    return target;
-  }
-
   it('拖到其他枚举列上抛 card-move（记录+目标选项），拖起卡片带拖拽态', async () => {
     const wrapper = mountBoard([record('r1', '接线文档', '待办')]);
     const card = wrapper.find('[data-record="r1"]');
@@ -138,7 +139,9 @@ describe('KanbanView（P19 拖拽换列）', () => {
     expect(sameCol.classes()).not.toContain('is-drop-target');
     expect(wrapper.emitted('card-move')).toBeUndefined();
   });
+});
 
+describe('KanbanView（P19 拖拽边界）', () => {
   it('未设置兜底列不可作落点（枚举外值可拖出，不可拖入）', async () => {
     const wrapper = mountBoard([record('r9', '野值任务', '已废弃')]);
     const labels = wrapper.findAll('.kanban-col-label').map((n) => n.text());

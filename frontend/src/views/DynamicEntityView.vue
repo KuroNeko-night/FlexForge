@@ -4,17 +4,21 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { createRecord, fetchRecord, queryRecords, updateRecord } from '@/api/data';
 import { ApiError, apiErrorMessage } from '@/api/client';
-import type { EntityDetail, FieldDefinition, RecordView, ViewDefinition } from '@/api/types';
+import type { RecordView, ViewDefinition } from '@/api/types';
 import { buildCsv, downloadCsv } from '@/utils/csv';
+import { visibleColumns } from '@/utils/viewColumns';
 import DynamicForm from '@/components/DynamicForm.vue';
 import DynamicTable from '@/components/DynamicTable.vue';
 import EntityDetailSection from '@/components/EntityDetailSection.vue';
 import KanbanView from '@/components/KanbanView.vue';
+import ListPager from '@/components/ListPager.vue';
+import RecordActionsBar from '@/components/RecordActionsBar.vue';
 import ViewToggle from '@/components/ViewToggle.vue';
 import StateView from '@/components/StateView.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import { useEntityMetadata } from '@/composables/useEntityMetadata';
+import { useConfirmAction } from '@/composables/useConfirmAction';
 import { visibleRecordActions, type ActionContext } from '@/registry/recordActionRegistry';
 
 /** 动态实体页（docs/09 P06 验收 1）：四模式由路由参数驱动，无业务页面代码；P17 增看板呈现。 */
@@ -136,39 +140,8 @@ async function onSubmit(values: Record<string, unknown>): Promise<void> {
   }
 }
 
-/** 列表动作统一确认（P16，registry 动作经 context.confirm；详情删除已拆 EntityDetailSection）。 */
-const confirmState = ref<{
-  open: boolean;
-  title: string;
-  message: string;
-  confirmLabel: string;
-  danger: boolean;
-} | null>(null);
-let confirmResolver: ((ok: boolean) => void) | null = null;
-
-function confirmAction(
-  message: string,
-  options?: { title?: string; confirmLabel?: string; danger?: boolean },
-): Promise<boolean> {
-  // 重入时先结算上一个等待者（false），防 Promise 悬挂（审查 P3-11）
-  confirmResolver?.(false);
-  confirmState.value = {
-    open: true,
-    title: options?.title ?? '确认操作',
-    message,
-    confirmLabel: options?.confirmLabel ?? '确认',
-    danger: options?.danger ?? false,
-  };
-  return new Promise((resolve) => {
-    confirmResolver = resolve;
-  });
-}
-
-function settleConfirm(ok: boolean): void {
-  confirmResolver?.(ok);
-  confirmResolver = null;
-  confirmState.value = null;
-}
+/** 列表动作统一确认（P16 模式，P19 抽 useConfirmAction；详情删除已拆 EntityDetailSection）。 */
+const { confirmState, confirmAction, settleConfirm } = useConfirmAction();
 
 async function openDetail(id: string): Promise<void> {
   await router.push({ name: 'entity-detail', params: { entity: entityName.value, id } });
@@ -184,8 +157,7 @@ async function switchPresentation(next: 'table' | 'kanban'): Promise<void> {
   await refresh();
 }
 
-/** 看板拖拽换列（P19）：乐观移动 → PATCH 分组字段（补丁语义）→ 失败回滚原列；
- * 错误为局部提示（列表/看板与分页状态不毁），成功以服务端响应回填规范化值。 */
+/** 看板拖拽换列（P19）：乐观移动 → PATCH 分组字段（补丁语义）→ 失败回滚原列并局部提示。 */
 const moveError = ref<string | null>(null);
 
 async function onCardMove(record: RecordView, targetOption: string): Promise<void> {
@@ -209,27 +181,16 @@ async function onCardMove(record: RecordView, targetOption: string): Promise<voi
   }
 }
 
-/** 导出列（P19）：listView 可见列（缺省=全部字段按 position 序）。 */
-const exportColumns = computed<FieldDefinition[]>(() => {
-  const ordered = [...(definition.value?.fields ?? [])].sort((a, b) => a.position - b.position);
-  const viewColumns = listView.value?.columns?.filter((column) => column.visible !== false) ?? null;
-  if (!viewColumns || viewColumns.length === 0) {
-    return ordered;
-  }
-  const byName = new Map(ordered.map((field) => [field.name, field]));
-  return viewColumns
-    .map((column) => byName.get(column.field))
-    .filter((field): field is FieldDefinition => field !== undefined);
-});
-
 /** 导出 CSV（P19）：当前已加载记录与可见列的本地生成（无网络请求）。 */
 function exportCsv(): void {
-  const columns = exportColumns.value;
+  const columns = visibleColumns(definition.value?.fields ?? [], listView.value);
   if (columns.length === 0) {
     return;
   }
   const headers = columns.map((field) => field.displayName);
-  const rows = records.value.map((record) => columns.map((field) => record.data[field.name] ?? null));
+  const rows = records.value.map((record) =>
+    columns.map((field) => record.data[field.name] ?? null),
+  );
   const name = definition.value?.displayName ?? entityName.value;
   downloadCsv(`${name}-导出.csv`, buildCsv(headers, rows));
 }
@@ -332,43 +293,26 @@ onMounted(refresh);
           @row-click="(record) => openDetail(record.id)"
         >
           <template #actions="{ record }">
-            <button
-              v-for="action in recordActions"
-              :key="action.key"
-              type="button"
-              :data-action="action.key"
-              @click.stop="runAction(action.key, record)"
-            >
-              {{ action.label }}
-            </button>
+            <RecordActionsBar
+              :actions="recordActions"
+              :record="record"
+              @run="(actionKey) => runAction(actionKey, record)"
+            />
           </template>
         </DynamicTable>
-        <footer class="pager">
-          <button
-            type="button"
-            :disabled="page <= 1"
-            @click="
-              page--;
-              refresh();
-            "
-          >
-            上一页
-          </button>
-          <span
-            >第 {{ page }} / {{ Math.max(1, Math.ceil(total / pageSize)) }} 页 · 共
-            {{ total }} 条</span
-          >
-          <button
-            type="button"
-            :disabled="page >= Math.ceil(total / pageSize)"
-            @click="
-              page++;
-              refresh();
-            "
-          >
-            下一页
-          </button>
-        </footer>
+        <ListPager
+          :page="page"
+          :total="total"
+          :page-size="pageSize"
+          @prev="
+            page--;
+            refresh();
+          "
+          @next="
+            page++;
+            refresh();
+          "
+        />
       </div>
     </Transition>
 

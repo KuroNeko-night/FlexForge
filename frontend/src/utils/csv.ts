@@ -26,7 +26,10 @@ export function csvEscape(value: unknown): string {
 
 /** 组装 CSV 文档（首行表头；CRLF 行尾）。 */
 export function buildCsv(headers: string[], rows: unknown[][]): string {
-  const lines = [headers.map(csvEscape).join(','), ...rows.map((row) => row.map(csvEscape).join(','))];
+  const lines = [
+    headers.map(csvEscape).join(','),
+    ...rows.map((row) => row.map(csvEscape).join(',')),
+  ];
   return `${lines.join('\r\n')}\r\n`;
 }
 

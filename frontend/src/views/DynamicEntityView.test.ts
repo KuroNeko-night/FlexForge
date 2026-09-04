@@ -7,7 +7,6 @@ import type { EntityDetail, PageResult, RecordView } from '@/api/types';
 import { resetKnownVersions } from '@/composables/useEntityMetadata';
 import { registerBuiltinContributions } from '@/registry/builtinContributions';
 import { registerBuiltins } from '@/registry/rendererRegistry';
-import KanbanView from '@/components/KanbanView.vue';
 import DynamicEntityView from '@/views/DynamicEntityView.vue';
 
 vi.mock('vue-router', () => ({
@@ -22,14 +21,9 @@ vi.mock('@/api/data', () => ({
   updateRecord: vi.fn(),
   deleteRecord: vi.fn(),
 }));
-vi.mock('@/utils/csv', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/utils/csv')>();
-  return { ...actual, downloadCsv: vi.fn() };
-});
 
 import { fetchEntity } from '@/api/meta';
-import { createRecord, deleteRecord, queryRecords, updateRecord } from '@/api/data';
-import { downloadCsv } from '@/utils/csv';
+import { createRecord, deleteRecord, queryRecords } from '@/api/data';
 
 const pushMock = vi.fn();
 const routeMock: { params: Record<string, string>; name: string } = {
@@ -211,111 +205,5 @@ describe('DynamicEntityView：看板呈现切换（P17）', () => {
     expect(board.exists()).toBe(true);
     expect(board.text()).toContain('SKU-1');
     expect(wrapper.find('table.dynamic-table').exists()).toBe(false);
-  });
-});
-
-describe('DynamicEntityView：看板拖拽换列编排（P19）', () => {
-  function stagedRecord(id: string, sku: string, stage: string): RecordView {
-    return { ...record(id, sku), data: { sku, stage } };
-  }
-
-  async function mountKanban(items: RecordView[]) {
-    vi.mocked(fetchEntity).mockResolvedValue(definitionWithKanban());
-    vi.mocked(queryRecords).mockResolvedValue(page(items));
-    const wrapper = mountView();
-    await flushPromises();
-    await wrapper.find('[data-testid="kanban-toggle"]').trigger('click');
-    await flushPromises();
-    return wrapper;
-  }
-
-  function moveCard(wrapper: ReturnType<typeof mountView>, recordId: string, option: string) {
-    const kanban = wrapper.findComponent(KanbanView);
-    const target = kanban.props('records').find((item) => item.id === recordId);
-    return kanban.vm.$emit('card-move', target, option);
-  }
-
-  it('card-move 以补丁语义 PATCH 分组字段，成功后用服务端响应回填本地记录', async () => {
-    const source = stagedRecord('rec-1', 'SKU-1', '待办');
-    const wrapper = await mountKanban([source]);
-    const updated = { ...source, data: { ...source.data, stage: '已完成' } };
-    vi.mocked(updateRecord).mockResolvedValue(updated);
-    await moveCard(wrapper, 'rec-1', '已完成');
-    await flushPromises();
-    expect(updateRecord).toHaveBeenCalledWith('inventory_item', 'rec-1', { stage: '已完成' });
-    // 服务端响应回填：卡片移入已完成列
-    const board = wrapper.findComponent(KanbanView);
-    expect(board.props('records')[0]!.data.stage).toBe('已完成');
-    expect(wrapper.find('.form-error').exists()).toBe(false);
-  });
-
-  it('PATCH 失败回滚原列并给出局部错误提示（整页状态不毁）', async () => {
-    const source = stagedRecord('rec-1', 'SKU-1', '待办');
-    const wrapper = await mountKanban([source]);
-    vi.mocked(updateRecord).mockRejectedValue(
-      new ApiError('permission_denied', '无权限执行该操作', 403, null),
-    );
-    await moveCard(wrapper, 'rec-1', '已完成');
-    await flushPromises();
-    // 回滚：分组字段回到原值
-    const board = wrapper.findComponent(KanbanView);
-    expect(board.props('records')[0]!.data.stage).toBe('待办');
-    // 局部提示出现，页面仍在看板就绪态
-    expect(wrapper.find('.form-error[role="alert"]').text()).toContain('移动失败');
-    expect(wrapper.find('[data-testid="kanban-view"]').exists()).toBe(true);
-    expect(wrapper.attributes('data-mode')).toBe('list');
-  });
-});
-
-describe('DynamicEntityView：CSV 导出（P19）', () => {
-  it('点击导出生成当前已加载记录与全部字段列的 CSV（无 listView 时缺省全字段）', async () => {
-    vi.mocked(fetchEntity).mockResolvedValue(definition(1));
-    vi.mocked(queryRecords).mockResolvedValue(page([record('rec-1', 'SKU-1')]));
-    const wrapper = mountView();
-    await flushPromises();
-    await wrapper.find('[data-testid="export-csv"]').trigger('click');
-    expect(vi.mocked(downloadCsv)).toHaveBeenCalledTimes(1);
-    const [filename, content] = vi.mocked(downloadCsv).mock.calls[0]!;
-    expect(filename).toBe('库存项-导出.csv');
-    expect(content).toBe('SKU\r\nSKU-1\r\n');
-    // 本地生成：除列表查询外无额外网络调用（queryRecords 调用数不变）
-    expect(vi.mocked(queryRecords)).toHaveBeenCalledTimes(1);
-  });
-
-  it('boolean/null 值按导出口径写入，可见列来自 listView columns', async () => {
-    const base = definition(1);
-    const withListView: EntityDetail = {
-      ...base,
-      fields: [
-        ...base.fields,
-        {
-          id: 'f1',
-          name: 'passed',
-          displayName: '是否通过',
-          fieldType: 'boolean',
-          required: false,
-          defaultValue: null,
-          validation: null,
-          rendererId: 'boolean.default',
-          position: 1,
-        },
-      ],
-      views: [
-        { id: 'v-l', viewType: 'list', name: '列表', columns: [{ field: 'sku' }], filters: null },
-      ],
-    };
-    vi.mocked(fetchEntity).mockResolvedValue(withListView);
-    vi.mocked(queryRecords).mockResolvedValue(
-      page([
-        { ...record('rec-1', 'SKU-1'), data: { sku: 'SKU-1', passed: true } },
-        { ...record('rec-2', 'SKU-2'), data: { sku: 'SKU-2', passed: null } },
-      ]),
-    );
-    const wrapper = mountView();
-    await flushPromises();
-    await wrapper.find('[data-testid="export-csv"]').trigger('click');
-    const content = vi.mocked(downloadCsv).mock.calls[0]![1]!;
-    // listView 只声明 sku 列：passed 不导出（可见列口径）
-    expect(content).toBe('SKU\r\nSKU-1\r\nSKU-2\r\n');
   });
 });

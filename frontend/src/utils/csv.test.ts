@@ -31,10 +31,13 @@ describe('csvEscape（P19 RFC 4180 转义）', () => {
 
 describe('buildCsv（P19 文档组装）', () => {
   it('首行表头，数据行按序，CRLF 行尾', () => {
-    const csv = buildCsv(['物料', '数量'], [
-      ['轴承', 120],
-      ['密封圈', null],
-    ]);
+    const csv = buildCsv(
+      ['物料', '数量'],
+      [
+        ['轴承', 120],
+        ['密封圈', null],
+      ],
+    );
     expect(csv).toBe('物料,数量\r\n轴承,120\r\n密封圈,\r\n');
   });
 

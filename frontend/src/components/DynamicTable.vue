@@ -3,11 +3,13 @@ import { computed } from 'vue';
 
 import type { EntityDetail, FieldDefinition, RecordView, ViewDefinition } from '@/api/types';
 import { resolveRenderer } from '@/registry/rendererRegistry';
+import { visibleColumns } from '@/utils/viewColumns';
 
 /**
  * 动态列表通用组件（docs/09 P06 验收 1/2）：列来自 list 视图 columns（缺省=全部字段），
  * 单元格经 renderer registry 按 rendererId 解析内置组件；不含任何业务字段分支。
- * 元数据只用于文本插值与组件选择，不作 HTML/脚本执行（S5）。
+ * 元数据只用于文本插值与组件选择，不作 HTML/脚本执行（S5）。P19 列解析收敛到
+ * utils/viewColumns（与 CSV 导出同一实现路径，QG-4）。
  */
 const props = defineProps<{
   definition: EntityDetail;
@@ -17,17 +19,9 @@ const props = defineProps<{
 
 defineEmits<{ 'row-click': [record: RecordView] }>();
 
-const columns = computed<FieldDefinition[]>(() => {
-  const ordered = [...props.definition.fields].sort((a, b) => a.position - b.position);
-  const viewColumns = props.view?.columns?.filter((column) => column.visible !== false) ?? null;
-  if (!viewColumns || viewColumns.length === 0) {
-    return ordered;
-  }
-  const byName = new Map(ordered.map((field) => [field.name, field]));
-  return viewColumns
-    .map((column) => byName.get(column.field))
-    .filter((field): field is FieldDefinition => field !== undefined);
-});
+const columns = computed<FieldDefinition[]>(() =>
+  visibleColumns(props.definition.fields, props.view),
+);
 
 function cellRenderer(field: FieldDefinition) {
   return resolveRenderer(field);
