@@ -4,7 +4,8 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { createRecord, fetchRecord, queryRecords, updateRecord } from '@/api/data';
 import { ApiError, apiErrorMessage } from '@/api/client';
-import type { RecordView, ViewDefinition } from '@/api/types';
+import type { EntityDetail, FieldDefinition, RecordView, ViewDefinition } from '@/api/types';
+import { buildCsv, downloadCsv } from '@/utils/csv';
 import DynamicForm from '@/components/DynamicForm.vue';
 import DynamicTable from '@/components/DynamicTable.vue';
 import EntityDetailSection from '@/components/EntityDetailSection.vue';
@@ -208,6 +209,31 @@ async function onCardMove(record: RecordView, targetOption: string): Promise<voi
   }
 }
 
+/** 导出列（P19）：listView 可见列（缺省=全部字段按 position 序）。 */
+const exportColumns = computed<FieldDefinition[]>(() => {
+  const ordered = [...(definition.value?.fields ?? [])].sort((a, b) => a.position - b.position);
+  const viewColumns = listView.value?.columns?.filter((column) => column.visible !== false) ?? null;
+  if (!viewColumns || viewColumns.length === 0) {
+    return ordered;
+  }
+  const byName = new Map(ordered.map((field) => [field.name, field]));
+  return viewColumns
+    .map((column) => byName.get(column.field))
+    .filter((field): field is FieldDefinition => field !== undefined);
+});
+
+/** 导出 CSV（P19）：当前已加载记录与可见列的本地生成（无网络请求）。 */
+function exportCsv(): void {
+  const columns = exportColumns.value;
+  if (columns.length === 0) {
+    return;
+  }
+  const headers = columns.map((field) => field.displayName);
+  const rows = records.value.map((record) => columns.map((field) => record.data[field.name] ?? null));
+  const name = definition.value?.displayName ?? entityName.value;
+  downloadCsv(`${name}-导出.csv`, buildCsv(headers, rows));
+}
+
 async function editRecord(id: string): Promise<void> {
   await router.push({ name: 'entity-edit', params: { entity: entityName.value, id } });
 }
@@ -260,6 +286,7 @@ onMounted(refresh);
       <h2>{{ definition?.displayName ?? entityName }}</h2>
       <div v-if="state === 'ready' && mode === 'list'" class="header-actions">
         <ViewToggle v-if="kanbanView" :presentation="presentation" @change="switchPresentation" />
+        <BaseButton data-testid="export-csv" @click="exportCsv">导出 CSV</BaseButton>
         <BaseButton
           variant="primary"
           class="header-create"

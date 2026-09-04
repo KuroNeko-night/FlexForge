@@ -22,9 +22,14 @@ vi.mock('@/api/data', () => ({
   updateRecord: vi.fn(),
   deleteRecord: vi.fn(),
 }));
+vi.mock('@/utils/csv', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/utils/csv')>();
+  return { ...actual, downloadCsv: vi.fn() };
+});
 
 import { fetchEntity } from '@/api/meta';
 import { createRecord, deleteRecord, queryRecords, updateRecord } from '@/api/data';
+import { downloadCsv } from '@/utils/csv';
 
 const pushMock = vi.fn();
 const routeMock: { params: Record<string, string>; name: string } = {
@@ -259,5 +264,58 @@ describe('DynamicEntityView：看板拖拽换列编排（P19）', () => {
     expect(wrapper.find('.form-error[role="alert"]').text()).toContain('移动失败');
     expect(wrapper.find('[data-testid="kanban-view"]').exists()).toBe(true);
     expect(wrapper.attributes('data-mode')).toBe('list');
+  });
+});
+
+describe('DynamicEntityView：CSV 导出（P19）', () => {
+  it('点击导出生成当前已加载记录与全部字段列的 CSV（无 listView 时缺省全字段）', async () => {
+    vi.mocked(fetchEntity).mockResolvedValue(definition(1));
+    vi.mocked(queryRecords).mockResolvedValue(page([record('rec-1', 'SKU-1')]));
+    const wrapper = mountView();
+    await flushPromises();
+    await wrapper.find('[data-testid="export-csv"]').trigger('click');
+    expect(vi.mocked(downloadCsv)).toHaveBeenCalledTimes(1);
+    const [filename, content] = vi.mocked(downloadCsv).mock.calls[0]!;
+    expect(filename).toBe('库存项-导出.csv');
+    expect(content).toBe('SKU\r\nSKU-1\r\n');
+    // 本地生成：除列表查询外无额外网络调用（queryRecords 调用数不变）
+    expect(vi.mocked(queryRecords)).toHaveBeenCalledTimes(1);
+  });
+
+  it('boolean/null 值按导出口径写入，可见列来自 listView columns', async () => {
+    const base = definition(1);
+    const withListView: EntityDetail = {
+      ...base,
+      fields: [
+        ...base.fields,
+        {
+          id: 'f1',
+          name: 'passed',
+          displayName: '是否通过',
+          fieldType: 'boolean',
+          required: false,
+          defaultValue: null,
+          validation: null,
+          rendererId: 'boolean.default',
+          position: 1,
+        },
+      ],
+      views: [
+        { id: 'v-l', viewType: 'list', name: '列表', columns: [{ field: 'sku' }], filters: null },
+      ],
+    };
+    vi.mocked(fetchEntity).mockResolvedValue(withListView);
+    vi.mocked(queryRecords).mockResolvedValue(
+      page([
+        { ...record('rec-1', 'SKU-1'), data: { sku: 'SKU-1', passed: true } },
+        { ...record('rec-2', 'SKU-2'), data: { sku: 'SKU-2', passed: null } },
+      ]),
+    );
+    const wrapper = mountView();
+    await flushPromises();
+    await wrapper.find('[data-testid="export-csv"]').trigger('click');
+    const content = vi.mocked(downloadCsv).mock.calls[0]![1]!;
+    // listView 只声明 sku 列：passed 不导出（可见列口径）
+    expect(content).toBe('SKU\r\nSKU-1\r\nSKU-2\r\n');
   });
 });
