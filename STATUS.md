@@ -3,14 +3,14 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P18
-CURRENT_STAGE_NAME: 前端现代极简风格化
-STAGE_STATUS: completed
+CURRENT_STAGE_ID: P19
+CURRENT_STAGE_NAME: 生产企业插件矩阵与前端动效完善
+STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 100%
-LAST_UPDATED: 2026-09-03
+LAST_UPDATED: 2026-09-04
 OWNER: project-maintainer
-NEXT_ACTION: 【P00-P18 全阶段完成，项目维持 release_candidate】P18 出口 live 终验 2026-09-03（前端镜像重建：七页截图走查+主题三态验证+对比度复验）。后续=答辩准备（docs/14；演示机预导 example-kanban/locale-en 1.0.3/example-library/example-facility/theme-default 1.1.1/theme-warm 1.1.1，镜像重建或 docker save）与 Issue #22 余项排期；候选后续能力（CSV 导出/页脚聚合/批量操作/看板拖拽）待用户裁决
-EXIT_GATE: P18 出口证据（docs/09 P18 验收四项）：①全站视觉走查——live 七页截图（登录/工作台/管线列表/看板/Issue/插件/设置/用户）经视觉模型核验：zinc 中性阶+发丝线+单一 indigo 主色+平面层次统一，无旧蓝系/深色渐变侧栏残留（旧字面量 grep 0 命中，独立审查复核）；②骨架与主题包分工可验证——停用全部主题后骨架基线自洽（截图核验），theme-default 1.1.1 激活色彩身份一致，theme-warm 1.1.1 覆盖生效且结构不变（主色转橙、侧栏布局一致）；③主题机制回归——tokens 通道/热切换/撤销恢复不受影响（live 三态切换+插件同版本不可变校验和拦截实测），前端 135 tests/lint/format/build 全绿、门禁 21/1/0、CI 六项绿；④文案基线不变（审查 diff 确认 t() 键与模板文字零变更）。交叉审查（独立子代理）：0 P1 + 3 P2 + 5 P3 全处置（PR #42 评论逐条回应）——P2 侧栏次要文字对比度 2.97→4.6:1（live 复验）、契约注释修正（派生公式面向浅色侧栏）、theme-default logo/pulse 重着色；P3 focus-ring 70%、warm orange-700、--ff-scrim 令牌化、死令牌标注、索引/文档同步。资源：色板取 Tailwind v4 默认色板 oklch 原值（MIT，tokens.css 注释标源，无运行时外链/无新依赖）。PR #42 合并 8371275
+NEXT_ACTION: P19 迭代实施中（分支 feat/p19-mfg-plugins-motion）：①新增 4 个生产企业业务插件（example-quality 来料检验/example-workorder 生产工单含看板/example-purchase 采购订单/example-safety 安全隐患含看板，纯声明 Level 1，不新增扩展点）②看板拖拽换列（KanbanView 原生 DnD+乐观更新+失败回滚）③前端动效体系（路由过渡/入场 stagger/呈现切换，全走 --ff-motion 令牌）④列表 CSV 导出（前端本地生成）。红线与验收见 docs/09 P19；出口需交叉审查+live 终验
+EXIT_GATE: P19 计划出口（docs/09 P19 验收五项）：①4 插件激活后菜单/列表/表单/记录往返可用，workorder/safety 看板分列正确，字段覆盖六类；②拖拽持久化+失败回滚+未设置列不可落点；③CSV 转义正确且零网络请求；④动效 transform/opacity only+reduced-motion 静止+同实体导航不回归；⑤门禁 0 fail+回归全绿+登记册无变更说明。前阶段 P18 出口证据保留于 git 历史（PR #42 合并 8371275：七页视觉走查/骨架与主题包分工三态/主题机制回归/文案基线不变）
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -38,6 +38,7 @@ BLOCKERS: none
 | P16 | 前端体验打磨与默认主题精修 | completed | 四项验收全过（文案无括号/统一确认+操作步数减省/默认主题视觉与主题机制回归/中英切换+门禁全绿；两轮独立审查全处置，live 容器版终验见 EXIT_GATE） |
 | P17 | 看板视图与插件声明式扩展 | completed | 四项验收全过（声明即得看板/编辑移列闭环/非法声明拒/元数据同口径；PR #40+#41，存量渲染器回退缺陷连带修复；live 终验见 EXIT_GATE） |
 | P18 | 前端现代极简风格化 | completed | 四项验收全过（七页视觉走查统一/骨架与主题包分工三态可验证/主题机制回归全绿/文案基线不变；审查 3P2+5P3 全处置，live 终验见 EXIT_GATE） |
+| P19 | 生产企业插件矩阵与前端动效完善 | in_progress | 验收五项（docs/09 P19）：4 业务插件可用+看板分列/拖拽持久化与回滚/CSV 转义零请求/动效令牌化+reduced-motion/门禁全绿 |
 
 ## 更新规则
 
@@ -168,3 +169,4 @@ BLOCKERS: none
 | 2026-09-03 | P18 | 用户裁决新增阶段：前端现代极简风格化。范围与红线已登记 docs/09 P18——骨架（tokens.css/base.css/LoginView 结构样式）定结构与排版基线，主题包（theme-default/theme-warm）定色彩身份与资产；色板取 Tailwind v4 公开值、字体/图标沿用 P16 自托管 Inter 与内联图标集；UI 文案不新增标注解释 | docs/09 P18、本条目 |
 | 2026-09-03 | P18 | 迭代完成（PR #42）：①骨架令牌重订——zinc 阶中性色+单一 indigo 主色（oklch 原值取自 tailwindcss v4 theme.css，MIT 标源）、圆角/阴影取 tw 刻度、侧栏令牌浅色平面派生、focus-ring 2px/70%、--ff-scrim 遮罩令牌（审查 P3 补）②base.css——浅色平面侧栏+右发丝线（去渐变）、表格去容器投影+发丝线+中性行 hover、控件 hover 中性化、menu-static 实色化（审查 P2-1 对比度 2.97→4.6:1）③LoginView 去极光漂移改纯色底+发丝线卡④主题包——theme-default/warm 迁新基线（warm 补 hover/soft 键修悬停回蓝隐患+orange-700 提对比）、bg.svg 拉伸安全淡洗、logo/pulse 重着色（审查 P2-3）；同版本不可变故两包终版 1.1.1。裁剪：无。前端 135 tests、门禁 21/1/0、CI 六项绿；live：theme.default 1.1.1 导入激活（1.0.0/1.1.0 停用留档）、warm 1.1.1 导入停用、走查临时账号已封禁降权（系统无删除用户端点） | PR #42、live 验证 2026-09-03 |
 | 2026-09-03 | P18 | 交叉审查（独立子代理，缺陷优先）：0 P1 + 3 P2 + 5 P3 全处置（PR #42 评论逐条回应）。确认达标面：令牌键集零变更（45 键 diff 一致）、oklch 值与官方逐字节比对一致、warm 全链无回蓝、bg.svg cover 语义兼容、旧字面量清零、reduced-motion 完好、文案零变更。视觉走查七页截图经视觉模型核验（登录/工作台/列表/看板/Issue/插件/设置/用户）+主题三态（基线自洽/default 一致/warm 覆盖结构不变）+对比度修复复验。**P18 出口复核通过置 completed；P00-P18 全阶段完成，进度 100%，release_candidate** | PR #42 评论、EXIT_GATE |
+| 2026-09-04 | P19 | 用户裁决新增阶段：插件多样化覆盖生产企业多种业务+前端动画完整+操作/文案完善；P17 候选项（看板拖拽/CSV 导出）一并纳入。docs/09 P19 已登记；红线：新插件纯声明 Level 1（不新增扩展点/viewType，迁移守 docs/07 前缀契约+幂等种子）；拖拽=平台 KanbanView 能力（乐观更新+失败回滚）；CSV=前端本地生成无新端点；动效只走 --ff-motion 令牌与 transform/opacity（reduced-motion 静止） | docs/09 P19、本条目 |

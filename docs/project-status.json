@@ -1,13 +1,13 @@
 {
   "project": "FlexForge",
-  "updatedAt": "2026-09-03",
-  "currentStageId": "P18",
-  "currentStageName": "前端现代极简风格化",
-  "status": "completed",
+  "updatedAt": "2026-09-04",
+  "currentStageId": "P19",
+  "currentStageName": "生产企业插件矩阵与前端动效完善",
+  "status": "in_progress",
   "progressPercent": 100,
   "owner": "project-maintainer",
-  "nextAction": "【P00-P18 全阶段完成，项目维持 release_candidate】P18 出口 live 终验 2026-09-03（前端镜像重建：七页截图走查+主题三态验证+对比度复验）。后续=答辩准备（docs/14；演示机预导 example-kanban/locale-en 1.0.3/example-library/example-facility/theme-default 1.1.1/theme-warm 1.1.1，镜像重建或 docker save）与 Issue #22 余项排期；候选后续能力（CSV 导出/页脚聚合/批量操作/看板拖拽）待用户裁决",
-  "exitGate": "P18 出口证据（docs/09 P18 验收四项）：①全站视觉走查——live 七页截图（登录/工作台/管线列表/看板/Issue/插件/设置/用户）经视觉模型核验：zinc 中性阶+发丝线+单一 indigo 主色+平面层次统一，无旧蓝系/深色渐变侧栏残留（旧字面量 grep 0 命中，独立审查复核）；②骨架与主题包分工可验证——停用全部主题后骨架基线自洽（截图核验），theme-default 1.1.1 激活色彩身份一致，theme-warm 1.1.1 覆盖生效且结构不变（主色转橙、侧栏布局一致）；③主题机制回归——tokens 通道/热切换/撤销恢复不受影响（live 三态切换+插件同版本不可变校验和拦截实测），前端 135 tests/lint/format/build 全绿、门禁 21/1/0、CI 六项绿；④文案基线不变（审查 diff 确认 t() 键与模板文字零变更）。交叉审查（独立子代理）：0 P1 + 3 P2 + 5 P3 全处置（PR #42 评论逐条回应）——P2 侧栏次要文字对比度 2.97→4.6:1（live 复验）、契约注释修正（派生公式面向浅色侧栏）、theme-default logo/pulse 重着色；P3 focus-ring 70%、warm orange-700、--ff-scrim 令牌化、死令牌标注、索引/文档同步。资源：色板取 Tailwind v4 默认色板 oklch 原值（MIT，tokens.css 注释标源，无运行时外链/无新依赖）。PR #42 合并 8371275",
+  "nextAction": "P19 迭代实施中（分支 feat/p19-mfg-plugins-motion）：①新增 4 个生产企业业务插件（example-quality 来料检验/example-workorder 生产工单含看板/example-purchase 采购订单/example-safety 安全隐患含看板，纯声明 Level 1，不新增扩展点）②看板拖拽换列（KanbanView 原生 DnD+乐观更新+失败回滚）③前端动效体系（路由过渡/入场 stagger/呈现切换，全走 --ff-motion 令牌）④列表 CSV 导出（前端本地生成）。红线与验收见 docs/09 P19；出口需交叉审查+live 终验",
+  "exitGate": "P19 计划出口（docs/09 P19 验收五项）：①4 插件激活后菜单/列表/表单/记录往返可用，workorder/safety 看板分列正确，字段覆盖六类；②拖拽持久化+失败回滚+未设置列不可落点；③CSV 转义正确且零网络请求；④动效 transform/opacity only+reduced-motion 静止+同实体导航不回归；⑤门禁 0 fail+回归全绿+登记册无变更说明。前阶段 P18 出口证据保留于 git 历史（PR #42 合并 8371275：七页视觉走查/骨架与主题包分工三态/主题机制回归/文案基线不变）",
   "blockers": [],
   "stages": [
     {
@@ -104,6 +104,11 @@
       "id": "P18",
       "name": "前端现代极简风格化",
       "status": "completed"
+    },
+    {
+      "id": "P19",
+      "name": "生产企业插件矩阵与前端动效完善",
+      "status": "in_progress"
     }
   ]
 }

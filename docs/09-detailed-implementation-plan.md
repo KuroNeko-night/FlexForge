@@ -430,3 +430,28 @@
 - 主题插件覆盖机制回归（tokens 通道/热切换/撤销恢复）不受影响；前端回归全绿、门禁 0 fail。
 - UI 文案无新增标注或解释性内容（文案基线不随风格化变更）。
 - 登记册消费方条目（extension.theme-asset）与本节同步。
+
+## P19：生产企业插件矩阵与前端动效完善（2026-09-04 用户裁决新增）
+
+> 背景：P18 出口后用户裁决继续优化——**插件多样化、覆盖生产企业的多种业务**；前端动画完整、操作逻辑与文案完善。P17 候选项（看板拖拽/CSV 导出）经本轮裁决一并纳入。
+> **红线**：新插件仍为纯声明 Level 1 包（S5 无脚本）——只复用已登记视图类型（list/form/kanban）与六类内置 renderer，**不新增扩展点、不新增 viewType**；迁移对象遵守 docs/07 前缀契约（`example_` 短名前缀物理台账表，种子幂等 ON CONFLICT）；看板拖拽=平台 KanbanView 内置能力（乐观更新+失败回滚，非插件语义）；CSV 导出=前端本地生成当前已加载记录（**无新后端端点**）；动效只消费 `--ff-motion-*` 令牌与 transform/opacity（reduced-motion 时长归零即静止，P18 基线不破）；UI 文案零解释性新增。
+
+### 实施内容
+
+- **生产企业插件矩阵（4 个 Level 1 包，复用既有注册链路）**：
+  - `example-quality` 来料检验：物料/供应商/抽样数量 integer/不合格数量 integer/判定 enum（合格·让步接收·不合格）/全检 boolean/检验日期 date——list+form（表格型，覆盖六类字段中的 5 类）。
+  - `example-workorder` 生产工单：工单号/产品/计划数量 integer/状态 enum（计划·执行中·暂停·完工）/负责班组/计划完成日期 date——list+form+**kanban**（按状态分列，拖拽换状态即工单流转）。
+  - `example-purchase` 采购订单：订单号/供应商/物料/数量 integer/金额 **decimal**/订单状态 enum（待审批·已下单·部分到货·已完结）/预计到货日期 date——list+form（补齐 decimal 字段的业务示例）。
+  - `example-safety` 安全隐患：隐患描述/位置/等级 enum（一般·较大·重大）/整改状态 enum（待整改·整改中·已闭环）/责任人/整改期限 date——list+form+**kanban**（整改闭环分列）。
+  - 每包含 V001 台账表（CHECK 兜底约束）+ V002 幂等种子（与 inventory/library 同口径）。
+- **看板拖拽换列（平台基建，P17 候选项裁决纳入）**：KanbanView 原生 HTML5 DnD（零新依赖）——卡片 draggable、列 drop 高亮（transform/opacity+令牌时长）、drop 即 `updateRecord` 更新 groupBy 字段；乐观移动+服务端确认（以响应回填），失败回滚原列并局部提示（不毁整页状态）；"未设置"兜底列不可作落点（分组字段有声明选项约束），其卡片可拖出。
+- **前端动效体系（骨架，结构与皮分离原则内）**：工作台主区路由切换过渡（App 壳与工作台壳两级 router-view，out-in 淡入淡出）；动态表格行与看板卡片入场 stagger（`--stagger-i` 递增延迟、封顶截断）；列表↔看板呈现切换过渡；按钮按压态等微交互精修——全部走 `--ff-motion-*` 令牌（reduced-motion 自动静止）、只动 transform/opacity 不触 layout。
+- **列表 CSV 导出（P17 候选项裁决纳入）**：实体列表页头部"导出 CSV"动作——导出当前已加载页记录与可见列（list 视图 columns），RFC 4180 转义（逗号/引号/换行/双引号翻倍）+ UTF-8 BOM（Excel 中文兼容），本地 Blob 下载，无新端点、无服务端改动。
+
+### 验收标准
+
+- 4 个插件导入激活后：各自菜单出现、实体页列表/表单可用、业务记录经 data_record 往返（测试覆盖 enum/integer/decimal/boolean/date 字段契约）；workorder/safety 看板按状态分列、列头计数正确。
+- 看板拖拽：拖卡片到目标列后本地立即移动且 API 持久化（重查确认）；更新失败（注入 403/500）回滚原列并出现局部错误提示；未设置列不可作为落点；既有"点击进详情"不受影响。
+- CSV 导出：文件内容=可见列+当前页记录，特殊字符正确转义，测试覆盖转义与空值口径；导出动作不产生网络请求。
+- 动效：路由过渡/入场 stagger/呈现切换过渡生效且均为 transform/opacity；reduced-motion 下全部静止且功能不损；同实体内列表↔详情导航行为不回归（不重建组件、分页保留）。
+- 门禁 0 fail、前后端回归全绿；登记册无变更（复用既有扩展点，PR 内说明）；索引与文档同步。
