@@ -183,6 +183,31 @@ async function switchPresentation(next: 'table' | 'kanban'): Promise<void> {
   await refresh();
 }
 
+/** 看板拖拽换列（P19）：乐观移动 → PATCH 分组字段（补丁语义）→ 失败回滚原列；
+ * 错误为局部提示（列表/看板与分页状态不毁），成功以服务端响应回填规范化值。 */
+const moveError = ref<string | null>(null);
+
+async function onCardMove(record: RecordView, targetOption: string): Promise<void> {
+  const groupBy = kanbanView.value?.groupBy;
+  if (!groupBy) {
+    return;
+  }
+  const previous = record.data[groupBy];
+  record.data[groupBy] = targetOption;
+  moveError.value = null;
+  try {
+    const updated = await updateRecord(entityName.value, record.id, { [groupBy]: targetOption });
+    const index = records.value.findIndex((item) => item.id === record.id);
+    if (index >= 0) {
+      records.value[index] = updated;
+    }
+  } catch (e) {
+    record.data[groupBy] = previous;
+    const detail = apiErrorMessage(e, null);
+    moveError.value = detail ? `移动失败，已还原到原列：${detail}` : '移动失败，已还原到原列';
+  }
+}
+
 async function editRecord(id: string): Promise<void> {
   await router.push({ name: 'entity-edit', params: { entity: entityName.value, id } });
 }
@@ -260,7 +285,9 @@ onMounted(refresh);
         :records="records"
         :total="total"
         @card-click="(record) => openDetail(record.id)"
+        @card-move="onCardMove"
       />
+      <p v-if="moveError" class="form-error" role="alert">{{ moveError }}</p>
     </template>
 
     <template v-else-if="mode === 'list'">

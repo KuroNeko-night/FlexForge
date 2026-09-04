@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 import type { EntityDetail, FieldDefinition, RecordView, ViewDefinition } from '@/api/types';
 import { resolveRenderer } from '@/registry/rendererRegistry';
@@ -7,8 +7,10 @@ import { resolveRenderer } from '@/registry/rendererRegistry';
 /**
  * 看板视图（P17，viewType=kanban 平台内置渲染器）：groupBy enum 字段选项为列
  * （声明式列来源，无脚本语义，S5），列头计数；卡片按视图 columns 渲染字段值
- * （复用 display renderer 单点），点击进详情——第一版只读，移动记录=详情内
- * 编辑分组字段。数据为当前加载页（父级一次拉 100 条），计数即已加载计数。
+ * （复用 display renderer 单点），点击进详情。P19 增拖拽换列（原生 HTML5 DnD，
+ * 平台能力非插件语义）：drop 上抛 card-move（record+目标枚举值），持久化与
+ * 乐观/回滚由父级（动态实体页）编排；"未设置"兜底列不可作落点（目标必须是
+ * 声明选项），其卡片可拖出。数据为当前加载页（父级一次拉 100 条）。
  */
 const props = defineProps<{
   definition: EntityDetail;
@@ -17,7 +19,10 @@ const props = defineProps<{
   /** 查询总条数：超出已加载量时提示（看板单页加载 100 条的可见边界）。 */
   total?: number;
 }>();
-const emit = defineEmits<{ 'card-click': [record: RecordView] }>();
+const emit = defineEmits<{
+  'card-click': [record: RecordView];
+  'card-move': [record: RecordView, targetOption: string];
+}>();
 
 /** groupBy 字段定义（后端保证存在且为 enum）；缺失时安全退化为单列。 */
 const groupField = computed<FieldDefinition | null>(
@@ -33,6 +38,8 @@ interface KanbanColumn {
   key: string;
   label: string;
   records: RecordView[];
+  /** 枚举列可作拖拽落点；未设置兜底列（key=UNSET）不可。 */
+  droppable: boolean;
 }
 
 const UNSET = '__unset__';
@@ -43,9 +50,10 @@ const columns = computed<KanbanColumn[]>(() => {
     key: option,
     label: option,
     records: [],
+    droppable: true,
   }));
   const byKey = new Map(defined.map((column) => [column.key, column]));
-  const unset: KanbanColumn = { key: UNSET, label: '未设置', records: [] };
+  const unset: KanbanColumn = { key: UNSET, label: '未设置', records: [], droppable: false };
   for (const record of props.records) {
     const value = record.data[props.view.groupBy ?? ''];
     const column = typeof value === 'string' && value !== '' ? byKey.get(value) : null;
@@ -66,21 +74,88 @@ const cardFields = computed<FieldDefinition[]>(() => {
     .map((column) => byName.get(column.field))
     .filter((field): field is FieldDefinition => field !== undefined);
 });
+
+/** 拖拽会话状态（P19）：源卡片与当前悬停落点列；均为 null 表示空闲。 */
+const draggingRecord = ref<RecordView | null>(null);
+const dropTarget = ref<string | null>(null);
+
+function onDragStart(record: RecordView, event: DragEvent): void {
+  draggingRecord.value = record;
+  // 标准载荷（拖出看板/可访问性语义）；drop 处理直接用本地引用不回读（兼容无 dataTransfer 的测试环境）
+  event.dataTransfer?.setData('text/plain', record.id);
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+  }
+}
+
+function onDragEnd(): void {
+  draggingRecord.value = null;
+  dropTarget.value = null;
+}
+
+/** 拖拽悬停：仅枚举列且非源记录当前所在列接收 drop（dragover 放行 = drop 可落）。 */
+function onDragOver(column: KanbanColumn, event: DragEvent): void {
+  if (!column.droppable || !draggingRecord.value) {
+    return;
+  }
+  if (recordColumnKey(draggingRecord.value) === column.key) {
+    dropTarget.value = null;
+    return;
+  }
+  event.preventDefault();
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move';
+  }
+  dropTarget.value = column.key;
+}
+
+function onDrop(column: KanbanColumn, event: DragEvent): void {
+  const record = draggingRecord.value;
+  const target = dropTarget.value;
+  onDragEnd();
+  if (!record || !column.droppable || target !== column.key) {
+    return;
+  }
+  event.preventDefault();
+  emit('card-move', record, column.key);
+}
+
+/** 记录当前所在列 key（用于源列过滤；不在选项内视为未设置列）。 */
+function recordColumnKey(record: RecordView): string {
+  const value = record.data[props.view.groupBy ?? ''];
+  return typeof value === 'string' && options.value.includes(value) ? value : UNSET;
+}
 </script>
 
 <template>
   <div class="kanban" :data-entity="definition.name" data-testid="kanban-view">
-    <section v-for="column in columns" :key="column.key" class="kanban-col" :data-col="column.key">
+    <section
+      v-for="column in columns"
+      :key="column.key"
+      class="kanban-col"
+      :class="{
+        'is-drop-target': dropTarget === column.key,
+        'is-unset-col': !column.droppable,
+      }"
+      :data-col="column.key"
+      @dragover="onDragOver(column, $event)"
+      @drop="onDrop(column, $event)"
+    >
       <header class="kanban-col-head">
         <span class="kanban-col-label">{{ column.label }}</span>
         <span class="kanban-col-count">{{ column.records.length }}</span>
       </header>
       <ul class="kanban-cards">
-        <li v-for="record in column.records" :key="record.id">
+        <li v-for="(record, index) in column.records" :key="record.id">
           <button
             type="button"
             class="kanban-card"
+            :class="{ 'is-dragging': draggingRecord?.id === record.id }"
             :data-record="record.id"
+            :style="{ '--stagger-i': Math.min(index, 9) }"
+            draggable="true"
+            @dragstart="onDragStart(record, $event)"
+            @dragend="onDragEnd"
             @click="emit('card-click', record)"
           >
             <component
@@ -120,6 +195,17 @@ const cardFields = computed<FieldDefinition[]>(() => {
   display: flex;
   flex-direction: column;
   gap: var(--ff-space-2);
+  border: 1px solid transparent;
+  transition:
+    background var(--ff-motion-fast) var(--ff-ease),
+    border-color var(--ff-motion-fast) var(--ff-ease);
+}
+.kanban-col.is-drop-target {
+  border-color: var(--ff-primary);
+  background: var(--ff-primary-soft);
+}
+.kanban-col.is-unset-col {
+  cursor: no-drop;
 }
 .kanban-col-head {
   display: flex;
@@ -157,16 +243,35 @@ const cardFields = computed<FieldDefinition[]>(() => {
   border: 1px solid var(--ff-border-soft);
   border-radius: var(--ff-radius-md);
   box-shadow: var(--ff-shadow-1);
+  cursor: grab;
+  animation: ff-card-in var(--ff-motion-base) var(--ff-ease) both;
+  animation-delay: calc(var(--stagger-i, 0) * 24ms);
   transition:
     border-color var(--ff-motion-fast) var(--ff-ease),
-    box-shadow var(--ff-motion-fast) var(--ff-ease);
+    box-shadow var(--ff-motion-fast) var(--ff-ease),
+    opacity var(--ff-motion-fast) var(--ff-ease),
+    transform var(--ff-motion-fast) var(--ff-ease);
 }
 .kanban-card:hover:not(:disabled) {
   border-color: var(--ff-primary);
   box-shadow: var(--ff-shadow-2);
 }
+.kanban-card.is-dragging {
+  opacity: 0.45;
+  transform: scale(0.98);
+  cursor: grabbing;
+}
+.kanban-card:active {
+  cursor: grabbing;
+}
 .kanban-card :deep(*:first-child) {
   font-weight: 600;
+}
+@keyframes ff-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
 }
 .kanban-empty {
   color: var(--ff-text-muted);

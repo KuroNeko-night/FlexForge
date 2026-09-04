@@ -7,6 +7,7 @@ import type { EntityDetail, PageResult, RecordView } from '@/api/types';
 import { resetKnownVersions } from '@/composables/useEntityMetadata';
 import { registerBuiltinContributions } from '@/registry/builtinContributions';
 import { registerBuiltins } from '@/registry/rendererRegistry';
+import KanbanView from '@/components/KanbanView.vue';
 import DynamicEntityView from '@/views/DynamicEntityView.vue';
 
 vi.mock('vue-router', () => ({
@@ -23,7 +24,7 @@ vi.mock('@/api/data', () => ({
 }));
 
 import { fetchEntity } from '@/api/meta';
-import { createRecord, deleteRecord, queryRecords } from '@/api/data';
+import { createRecord, deleteRecord, queryRecords, updateRecord } from '@/api/data';
 
 const pushMock = vi.fn();
 const routeMock: { params: Record<string, string>; name: string } = {
@@ -205,5 +206,58 @@ describe('DynamicEntityView：看板呈现切换（P17）', () => {
     expect(board.exists()).toBe(true);
     expect(board.text()).toContain('SKU-1');
     expect(wrapper.find('table.dynamic-table').exists()).toBe(false);
+  });
+});
+
+describe('DynamicEntityView：看板拖拽换列编排（P19）', () => {
+  function stagedRecord(id: string, sku: string, stage: string): RecordView {
+    return { ...record(id, sku), data: { sku, stage } };
+  }
+
+  async function mountKanban(items: RecordView[]) {
+    vi.mocked(fetchEntity).mockResolvedValue(definitionWithKanban());
+    vi.mocked(queryRecords).mockResolvedValue(page(items));
+    const wrapper = mountView();
+    await flushPromises();
+    await wrapper.find('[data-testid="kanban-toggle"]').trigger('click');
+    await flushPromises();
+    return wrapper;
+  }
+
+  function moveCard(wrapper: ReturnType<typeof mountView>, recordId: string, option: string) {
+    const kanban = wrapper.findComponent(KanbanView);
+    const target = kanban.props('records').find((item) => item.id === recordId);
+    return kanban.vm.$emit('card-move', target, option);
+  }
+
+  it('card-move 以补丁语义 PATCH 分组字段，成功后用服务端响应回填本地记录', async () => {
+    const source = stagedRecord('rec-1', 'SKU-1', '待办');
+    const wrapper = await mountKanban([source]);
+    const updated = { ...source, data: { ...source.data, stage: '已完成' } };
+    vi.mocked(updateRecord).mockResolvedValue(updated);
+    await moveCard(wrapper, 'rec-1', '已完成');
+    await flushPromises();
+    expect(updateRecord).toHaveBeenCalledWith('inventory_item', 'rec-1', { stage: '已完成' });
+    // 服务端响应回填：卡片移入已完成列
+    const board = wrapper.findComponent(KanbanView);
+    expect(board.props('records')[0]!.data.stage).toBe('已完成');
+    expect(wrapper.find('.form-error').exists()).toBe(false);
+  });
+
+  it('PATCH 失败回滚原列并给出局部错误提示（整页状态不毁）', async () => {
+    const source = stagedRecord('rec-1', 'SKU-1', '待办');
+    const wrapper = await mountKanban([source]);
+    vi.mocked(updateRecord).mockRejectedValue(
+      new ApiError('permission_denied', '无权限执行该操作', 403, null),
+    );
+    await moveCard(wrapper, 'rec-1', '已完成');
+    await flushPromises();
+    // 回滚：分组字段回到原值
+    const board = wrapper.findComponent(KanbanView);
+    expect(board.props('records')[0]!.data.stage).toBe('待办');
+    // 局部提示出现，页面仍在看板就绪态
+    expect(wrapper.find('.form-error[role="alert"]').text()).toContain('移动失败');
+    expect(wrapper.find('[data-testid="kanban-view"]').exists()).toBe(true);
+    expect(wrapper.attributes('data-mode')).toBe('list');
   });
 });
