@@ -1,0 +1,13 @@
+{
+  "entity": "safety_hazard",
+  "viewType": "list",
+  "name": "隐患列表",
+  "columns": [
+    { "field": "summary" },
+    { "field": "location" },
+    { "field": "level" },
+    { "field": "status" },
+    { "field": "owner" },
+    { "field": "deadline_on" }
+  ]
+}

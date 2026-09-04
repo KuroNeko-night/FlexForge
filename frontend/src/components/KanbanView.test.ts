@@ -100,3 +100,69 @@ describe('KanbanView（P17 看板渲染）', () => {
     expect(doneCol.text()).toContain('暂无记录');
   });
 });
+
+/** P19 拖拽测试公共 helper：happy-dom 下构造最小 dataTransfer 载荷并完成一次拖放序列。 */
+const dataTransfer = () => ({ setData: () => {}, dropEffect: '' });
+
+async function dragTo(wrapper: ReturnType<typeof mountBoard>, fromRecord: string, toIndex: number) {
+  const card = wrapper.find(`[data-record="${fromRecord}"]`);
+  await card.trigger('dragstart', { dataTransfer: dataTransfer() });
+  const target = wrapper.findAll('.kanban-col')[toIndex]!;
+  await target.trigger('dragover', { dataTransfer: dataTransfer() });
+  await target.trigger('drop', { dataTransfer: dataTransfer() });
+  return target;
+}
+
+describe('KanbanView（P19 拖拽换列）', () => {
+  it('拖到其他枚举列上抛 card-move（记录+目标选项），拖起卡片带拖拽态', async () => {
+    const wrapper = mountBoard([record('r1', '接线文档', '待办')]);
+    const card = wrapper.find('[data-record="r1"]');
+    expect(card.attributes('draggable')).toBe('true');
+    await card.trigger('dragstart', { dataTransfer: dataTransfer() });
+    expect(card.classes()).toContain('is-dragging');
+    const doneCol = wrapper.findAll('.kanban-col')[2]!;
+    await doneCol.trigger('dragover', { dataTransfer: dataTransfer() });
+    expect(doneCol.classes()).toContain('is-drop-target');
+    await doneCol.trigger('drop', { dataTransfer: dataTransfer() });
+    const moves = wrapper.emitted('card-move');
+    expect(moves).toHaveLength(1);
+    expect(moves![0]![0]).toMatchObject({ id: 'r1' });
+    expect(moves![0]![1]).toBe('已完成');
+    // 会话结束清理拖拽态
+    expect(card.classes()).not.toContain('is-dragging');
+    expect(doneCol.classes()).not.toContain('is-drop-target');
+  });
+
+  it('拖回源所在列不产生移动事件（dragover 不放行）', async () => {
+    const wrapper = mountBoard([record('r1', '接线文档', '进行中')]);
+    const sameCol = await dragTo(wrapper, 'r1', 1);
+    expect(sameCol.classes()).not.toContain('is-drop-target');
+    expect(wrapper.emitted('card-move')).toBeUndefined();
+  });
+});
+
+describe('KanbanView（P19 拖拽边界）', () => {
+  it('未设置兜底列不可作落点（枚举外值可拖出，不可拖入）', async () => {
+    const wrapper = mountBoard([record('r9', '野值任务', '已废弃')]);
+    const labels = wrapper.findAll('.kanban-col-label').map((n) => n.text());
+    expect(labels).toEqual(['待办', '进行中', '已完成', '未设置']);
+    const unsetCol = wrapper.findAll('.kanban-col')[3]!;
+    expect(unsetCol.classes()).toContain('is-unset-col');
+    // 直接断言：drop 到未设置列不产生 card-move（onDrop 的 !droppable 分支）
+    const unsetDrop = await dragTo(wrapper, 'r9', 3);
+    expect(unsetDrop.classes()).not.toContain('is-drop-target');
+    expect(wrapper.emitted('card-move')).toBeUndefined();
+    // 拖出未设置列到枚举列则正常上抛
+    await dragTo(wrapper, 'r9', 0);
+    expect(wrapper.emitted('card-move')).toHaveLength(1);
+  });
+
+  it('dragend 清理会话（无 drop 也不残留拖拽态）', async () => {
+    const wrapper = mountBoard([record('r1', '接线文档', '待办')]);
+    const card = wrapper.find('[data-record="r1"]');
+    await card.trigger('dragstart', { dataTransfer: dataTransfer() });
+    await card.trigger('dragend');
+    expect(card.classes()).not.toContain('is-dragging');
+    expect(wrapper.emitted('card-move')).toBeUndefined();
+  });
+});

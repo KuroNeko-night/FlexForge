@@ -1,0 +1,53 @@
+{
+  "name": "safety_hazard",
+  "displayName": "安全隐患",
+  "fields": [
+    {
+      "name": "summary",
+      "displayName": "隐患描述",
+      "fieldType": "text",
+      "required": true,
+      "validation": { "maxLength": 160 },
+      "position": 0
+    },
+    {
+      "name": "location",
+      "displayName": "位置",
+      "fieldType": "text",
+      "required": true,
+      "validation": { "maxLength": 80 },
+      "position": 1
+    },
+    {
+      "name": "level",
+      "displayName": "等级",
+      "fieldType": "enum",
+      "required": true,
+      "validation": { "options": ["一般", "较大", "重大"] },
+      "position": 2
+    },
+    {
+      "name": "status",
+      "displayName": "整改状态",
+      "fieldType": "enum",
+      "required": true,
+      "validation": { "options": ["待整改", "整改中", "已闭环"] },
+      "position": 3
+    },
+    {
+      "name": "owner",
+      "displayName": "责任人",
+      "fieldType": "text",
+      "required": false,
+      "validation": { "maxLength": 60 },
+      "position": 4
+    },
+    {
+      "name": "deadline_on",
+      "displayName": "整改期限",
+      "fieldType": "date",
+      "required": false,
+      "position": 5
+    }
+  ]
+}

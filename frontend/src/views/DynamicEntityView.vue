@@ -5,15 +5,20 @@ import { useRoute, useRouter } from 'vue-router';
 import { createRecord, fetchRecord, queryRecords, updateRecord } from '@/api/data';
 import { ApiError, apiErrorMessage } from '@/api/client';
 import type { RecordView, ViewDefinition } from '@/api/types';
+import { buildCsv, csvSafeFilename, downloadCsv } from '@/utils/csv';
+import { visibleColumns } from '@/utils/viewColumns';
 import DynamicForm from '@/components/DynamicForm.vue';
 import DynamicTable from '@/components/DynamicTable.vue';
 import EntityDetailSection from '@/components/EntityDetailSection.vue';
 import KanbanView from '@/components/KanbanView.vue';
+import ListPager from '@/components/ListPager.vue';
+import RecordActionsBar from '@/components/RecordActionsBar.vue';
 import ViewToggle from '@/components/ViewToggle.vue';
 import StateView from '@/components/StateView.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import { useEntityMetadata } from '@/composables/useEntityMetadata';
+import { useConfirmAction } from '@/composables/useConfirmAction';
 import { visibleRecordActions, type ActionContext } from '@/registry/recordActionRegistry';
 
 /** 动态实体页（docs/09 P06 验收 1）：四模式由路由参数驱动，无业务页面代码；P17 增看板呈现。 */
@@ -135,39 +140,8 @@ async function onSubmit(values: Record<string, unknown>): Promise<void> {
   }
 }
 
-/** 列表动作统一确认（P16，registry 动作经 context.confirm；详情删除已拆 EntityDetailSection）。 */
-const confirmState = ref<{
-  open: boolean;
-  title: string;
-  message: string;
-  confirmLabel: string;
-  danger: boolean;
-} | null>(null);
-let confirmResolver: ((ok: boolean) => void) | null = null;
-
-function confirmAction(
-  message: string,
-  options?: { title?: string; confirmLabel?: string; danger?: boolean },
-): Promise<boolean> {
-  // 重入时先结算上一个等待者（false），防 Promise 悬挂（审查 P3-11）
-  confirmResolver?.(false);
-  confirmState.value = {
-    open: true,
-    title: options?.title ?? '确认操作',
-    message,
-    confirmLabel: options?.confirmLabel ?? '确认',
-    danger: options?.danger ?? false,
-  };
-  return new Promise((resolve) => {
-    confirmResolver = resolve;
-  });
-}
-
-function settleConfirm(ok: boolean): void {
-  confirmResolver?.(ok);
-  confirmResolver = null;
-  confirmState.value = null;
-}
+/** 列表动作统一确认（P16 模式，P19 抽 useConfirmAction；详情删除已拆 EntityDetailSection）。 */
+const { confirmState, confirmAction, settleConfirm } = useConfirmAction();
 
 async function openDetail(id: string): Promise<void> {
   await router.push({ name: 'entity-detail', params: { entity: entityName.value, id } });
@@ -181,6 +155,49 @@ async function switchPresentation(next: 'table' | 'kanban'): Promise<void> {
   presentation.value = next;
   page.value = 1;
   await refresh();
+}
+
+/** 看板拖拽换列（P19）：乐观移动 → PATCH 分组字段（补丁语义）→ 失败回滚原列并局部提示。 */
+const moveError = ref<string | null>(null);
+// 同卡片并发守卫：在途未结算时忽略新拖拽，防旧回滚覆盖新乐观值（审查 P3-6）
+const movingIds = new Set<string>();
+
+async function onCardMove(record: RecordView, targetOption: string): Promise<void> {
+  const groupBy = kanbanView.value?.groupBy;
+  if (!groupBy || movingIds.has(record.id)) {
+    return;
+  }
+  movingIds.add(record.id);
+  const previous = record.data[groupBy];
+  record.data[groupBy] = targetOption;
+  moveError.value = null;
+  try {
+    const updated = await updateRecord(entityName.value, record.id, { [groupBy]: targetOption });
+    const index = records.value.findIndex((item) => item.id === record.id);
+    if (index >= 0) {
+      records.value[index] = updated;
+    }
+  } catch (e) {
+    record.data[groupBy] = previous;
+    const detail = apiErrorMessage(e, null);
+    moveError.value = detail ? `移动失败，已还原到原列：${detail}` : '移动失败，已还原到原列';
+  } finally {
+    movingIds.delete(record.id);
+  }
+}
+
+/** 导出 CSV（P19）：当前已加载记录与可见列的本地生成（无网络请求）。 */
+function exportCsv(): void {
+  const columns = visibleColumns(definition.value?.fields ?? [], listView.value);
+  if (columns.length === 0) {
+    return;
+  }
+  const headers = columns.map((field) => field.displayName);
+  const rows = records.value.map((record) =>
+    columns.map((field) => record.data[field.name] ?? null),
+  );
+  const name = csvSafeFilename(definition.value?.displayName ?? entityName.value);
+  downloadCsv(`${name}-导出.csv`, buildCsv(headers, rows));
 }
 
 async function editRecord(id: string): Promise<void> {
@@ -235,11 +252,8 @@ onMounted(refresh);
       <h2>{{ definition?.displayName ?? entityName }}</h2>
       <div v-if="state === 'ready' && mode === 'list'" class="header-actions">
         <ViewToggle v-if="kanbanView" :presentation="presentation" @change="switchPresentation" />
-        <BaseButton
-          variant="primary"
-          class="header-create"
-          @click="router.push(`/data/${entityName}/new`)"
-        >
+        <BaseButton data-testid="export-csv" @click="exportCsv">导出 CSV</BaseButton>
+        <BaseButton variant="primary" @click="router.push(`/data/${entityName}/new`)">
           新增记录
         </BaseButton>
       </div>
@@ -253,68 +267,51 @@ onMounted(refresh);
       <button type="button" @click="refresh">重试</button>
     </StateView>
 
-    <template v-else-if="mode === 'list' && presentation === 'kanban' && kanbanView">
-      <KanbanView
-        :definition="definition!"
-        :view="kanbanView"
-        :records="records"
-        :total="total"
-        @card-click="(record) => openDetail(record.id)"
-      />
-    </template>
-
-    <template v-else-if="mode === 'list'">
-      <StateView v-if="records.length === 0" :state="'empty'">
-        <BaseButton variant="primary" @click="router.push(`/data/${entityName}/new`)">
-          新增记录
-        </BaseButton>
-      </StateView>
-      <DynamicTable
-        v-else
-        :definition="definition!"
-        :view="listView"
-        :records="records"
-        @row-click="(record) => openDetail(record.id)"
-      >
-        <template #actions="{ record }">
-          <button
-            v-for="action in recordActions"
-            :key="action.key"
-            type="button"
-            :data-action="action.key"
-            @click.stop="runAction(action.key, record)"
-          >
-            {{ action.label }}
-          </button>
-        </template>
-      </DynamicTable>
-      <footer class="pager">
-        <button
-          type="button"
-          :disabled="page <= 1"
-          @click="
+    <!-- P19 呈现切换过渡：表格↔看板 out-in 轻位移；模式分支保持 v-else-if 链 -->
+    <Transition v-else-if="mode === 'list'" name="presentation-swap" mode="out-in">
+      <div v-if="presentation === 'kanban' && kanbanView" key="kanban" class="presentation-block">
+        <KanbanView
+          :definition="definition!"
+          :view="kanbanView"
+          :records="records"
+          :total="total"
+          @card-click="(record) => openDetail(record.id)"
+          @card-move="onCardMove"
+        />
+        <p v-if="moveError" class="form-error" role="alert">{{ moveError }}</p>
+      </div>
+      <div v-else key="table" class="presentation-block">
+        <StateView v-if="records.length === 0" :state="'empty'">
+          <BaseButton variant="primary" @click="router.push(`/data/${entityName}/new`)">
+            新增记录
+          </BaseButton>
+        </StateView>
+        <DynamicTable
+          v-else
+          :definition="definition!"
+          :view="listView"
+          :records="records"
+          @row-click="(record) => openDetail(record.id)"
+        >
+          <template #actions="{ record }">
+            <RecordActionsBar :actions="recordActions" :record="record" @run="runAction" />
+          </template>
+        </DynamicTable>
+        <ListPager
+          :page="page"
+          :total="total"
+          :page-size="pageSize"
+          @prev="
             page--;
             refresh();
           "
-        >
-          上一页
-        </button>
-        <span
-          >第 {{ page }} / {{ Math.max(1, Math.ceil(total / pageSize)) }} 页 · 共
-          {{ total }} 条</span
-        >
-        <button
-          type="button"
-          :disabled="page >= Math.ceil(total / pageSize)"
-          @click="
+          @next="
             page++;
             refresh();
           "
-        >
-          下一页
-        </button>
-      </footer>
-    </template>
+        />
+      </div>
+    </Transition>
 
     <StateView v-else-if="mode === 'detail' && !currentRecord" :state="'loading'" />
     <EntityDetailSection

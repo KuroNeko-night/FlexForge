@@ -1,0 +1,13 @@
+{
+  "entity": "safety_hazard",
+  "viewType": "form",
+  "name": "隐患登记表单",
+  "columns": [
+    { "field": "summary" },
+    { "field": "location" },
+    { "field": "level" },
+    { "field": "status" },
+    { "field": "owner" },
+    { "field": "deadline_on" }
+  ]
+}

@@ -225,7 +225,13 @@ watch(
       </div>
     </aside>
     <section class="workbench-main">
-      <router-view />
+      <!-- P19 路由过渡：out-in 淡切（时长走令牌，reduced-motion 即时切换）；
+           同组件参数导航（如实体列表↔详情）不触发重建，分页/呈现状态保留 -->
+      <router-view v-slot="{ Component }">
+        <Transition name="page-fade" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </router-view>
     </section>
   </div>
 </template>

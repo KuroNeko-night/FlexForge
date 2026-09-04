@@ -3,11 +3,13 @@ import { computed } from 'vue';
 
 import type { EntityDetail, FieldDefinition, RecordView, ViewDefinition } from '@/api/types';
 import { resolveRenderer } from '@/registry/rendererRegistry';
+import { visibleColumns } from '@/utils/viewColumns';
 
 /**
  * 动态列表通用组件（docs/09 P06 验收 1/2）：列来自 list 视图 columns（缺省=全部字段），
  * 单元格经 renderer registry 按 rendererId 解析内置组件；不含任何业务字段分支。
- * 元数据只用于文本插值与组件选择，不作 HTML/脚本执行（S5）。
+ * 元数据只用于文本插值与组件选择，不作 HTML/脚本执行（S5）。P19 列解析收敛到
+ * utils/viewColumns（与 CSV 导出同一实现路径，QG-4）。
  */
 const props = defineProps<{
   definition: EntityDetail;
@@ -17,17 +19,9 @@ const props = defineProps<{
 
 defineEmits<{ 'row-click': [record: RecordView] }>();
 
-const columns = computed<FieldDefinition[]>(() => {
-  const ordered = [...props.definition.fields].sort((a, b) => a.position - b.position);
-  const viewColumns = props.view?.columns?.filter((column) => column.visible !== false) ?? null;
-  if (!viewColumns || viewColumns.length === 0) {
-    return ordered;
-  }
-  const byName = new Map(ordered.map((field) => [field.name, field]));
-  return viewColumns
-    .map((column) => byName.get(column.field))
-    .filter((field): field is FieldDefinition => field !== undefined);
-});
+const columns = computed<FieldDefinition[]>(() =>
+  visibleColumns(props.definition.fields, props.view),
+);
 
 function cellRenderer(field: FieldDefinition) {
   return resolveRenderer(field);
@@ -43,7 +37,12 @@ function cellRenderer(field: FieldDefinition) {
       </tr>
     </thead>
     <tbody>
-      <tr v-for="record in records" :key="record.id" @click="$emit('row-click', record)">
+      <tr
+        v-for="(record, index) in records"
+        :key="record.id"
+        :style="{ '--stagger-i': Math.min(index, 11) }"
+        @click="$emit('row-click', record)"
+      >
         <td v-for="column in columns" :key="column.id" :data-field="column.name">
           <component
             :is="cellRenderer(column)"
@@ -57,3 +56,19 @@ function cellRenderer(field: FieldDefinition) {
     </tbody>
   </table>
 </template>
+
+<style scoped>
+/* P19 行入场 stagger：只动 transform/opacity（不触 layout），时长与步长走令牌
+ * （reduced-motion 全归零即静止无延迟）；延迟封顶防长列表等待。 */
+tbody tr {
+  animation: ff-row-in var(--ff-motion-base) var(--ff-ease) both;
+  animation-delay: calc(var(--stagger-i, 0) * var(--ff-stagger-step));
+}
+
+@keyframes ff-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+</style>

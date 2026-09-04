@@ -393,3 +393,33 @@ textarea:disabled {
   color: var(--ff-text-muted);
   font-size: var(--ff-text-sm);
 }
+
+/* ===== P19 页面/呈现过渡：只动 opacity/transform，时长走令牌（reduced-motion 归零即时切换） ===== */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition:
+    opacity var(--ff-motion-base) var(--ff-ease),
+    transform var(--ff-motion-base) var(--ff-ease);
+}
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+.presentation-swap-enter-active,
+.presentation-swap-leave-active {
+  transition:
+    opacity var(--ff-motion-fast) var(--ff-ease),
+    transform var(--ff-motion-fast) var(--ff-ease);
+}
+.presentation-swap-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.presentation-swap-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}

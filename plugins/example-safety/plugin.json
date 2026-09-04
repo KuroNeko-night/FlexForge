@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "example.safety",
+  "name": "安全隐患示例",
+  "version": "0.1.0",
+  "capabilityLevel": 1,
+  "minPlatformVersion": "0.1.0",
+  "dependencies": [],
+  "permissions": ["safety.read", "safety.write"],
+  "contributions": {
+    "navigation": ["example.safety.hazards"],
+    "renderers": ["text.default", "date.default", "enum.default"]
+  },
+  "resources": {
+    "entities": ["metadata/entities/safety-hazard.json"],
+    "views": [
+      "metadata/views/safety-hazard.list.json",
+      "metadata/views/safety-hazard.form.json",
+      "metadata/views/safety-hazard.kanban.json"
+    ],
+    "migrations": [
+      "migrations/V001__safety_hazard.sql",
+      "migrations/V002__safety_seed.sql"
+    ]
+  }
+}

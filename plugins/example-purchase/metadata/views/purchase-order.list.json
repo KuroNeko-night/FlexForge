@@ -1,0 +1,14 @@
+{
+  "entity": "purchase_order",
+  "viewType": "list",
+  "name": "采购订单列表",
+  "columns": [
+    { "field": "code" },
+    { "field": "supplier" },
+    { "field": "material" },
+    { "field": "qty" },
+    { "field": "amount" },
+    { "field": "status" },
+    { "field": "expected_on" }
+  ]
+}
