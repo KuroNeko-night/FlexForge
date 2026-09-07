@@ -43,7 +43,7 @@ FlexForge/
 │   ├── flexforge-system/           用户/角色/菜单/审计：管理接口+菜单聚合（extension.navigation 消费方）+审计查询+落库（P03）
 │   ├── flexforge-meta/             元数据写模型：FieldTypeRegistry 单点+MetaRegistry 缓存/版本+实体/字段/视图配置 API（service.meta，P04）
 │   ├── flexforge-data/             动态数据访问：data_record 单 JSONB 存储+实体级记录校验+白名单 SQL 构造+动态 CRUD API（service.data-access，P05）
-│   ├── flexforge-plugin/            插件包校验+版本存储+生命周期：P07 导入链路；P08 生命周期（激活/停用/升级/卸载/stale/重启恢复+MigrationScriptRunner+资产 serve）
+│   ├── flexforge-plugin/            插件包校验+版本存储+生命周期：P07 导入链路；P08 生命周期（激活/停用/升级/卸载/stale/重启恢复+MigrationScriptRunner+资产 serve）；P21 预设（PluginPresetService/Controller+PresetRepository，快照保存/收敛应用）
 │   ├── flexforge-issue/             Issue/评论/标签/状态机/版本化规格（P10）；P11：clarify/generate 编排+ai_task_log
 │   ├── flexforge-ai/                规格 Schema（RequirementSchema v1）+预览派生（P10）；P11：ModelPort+ClarifyEngine+PluginPackageGenerator+prompts/v1；P15：config/（AiEnv/AiConfigRepository/SecretCipher/AiConfigService/AiConfigController）+RoutingModelPort 运行时路由
 │   │   └── src/main/resources/prompts/v1/   提示词与 fixture 资源（clarify.md + fixture-spec.json，版本一一对应）
@@ -60,8 +60,8 @@ FlexForge/
 │       ├── auth/token.ts           会话令牌（sessionStorage）与当前用户
 │       ├── registry/               keyed.ts 通用基座 + renderer/menu/layout/theme/recordAction/locale registry（P15：语言包+t()/语言切换）+ builtinContributions（内置部件/动作/本地菜单：Issue 工作台+插件管理+设置入口）
 │       ├── styles/                 tokens.css（设计令牌+基建原语，P18 现代极简重订：zinc/indigo 阶取 Tailwind v4 公开值+浅色侧栏派生+--ff-scrim）+ base.css（全局控件/表格/浅色平面侧栏基线，P16 拆分/P18 重订）
-│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards + ui/（BaseButton/BaseSwitch/ComponentCard/BaseDrawer/ConfirmDialog 统一确认，P16）+ IssueDetail/IssueDevPanel/IssueComments + PluginCard + UploadDropzone（拖拽+自动校验，P16）+ AppIcon（内联图标集，P16）+ AppLogo + KanbanView（P17 声明式看板/P19 拖拽换列）+ ViewToggle（P17 表格看板切换）+ ListPager/RecordActionsBar（P19 拆分）+ ProcessorDrawer（P20 数据处理器执行/结果渲染）
-│       ├── composables/            useEntityMetadata（metaVersion 比对 → stale 刷新）+ useConfirmAction（P16 统一确认抽 composable）+ useKanbanMove（P19 拖拽编排）/useEntityProcessors（P20 处理器入口）
+│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards + ui/（BaseButton/BaseSwitch/ComponentCard/BaseDrawer/ConfirmDialog 统一确认，P16）+ IssueDetail/IssueDevPanel/IssueComments + PluginCard（P21 重构：当前版本+开关+版本收纳）+ UploadDropzone（拖拽+自动校验，P16）+ AppIcon（内联图标集，P16）+ AppLogo + KanbanView（P17 声明式看板/P19 拖拽换列）+ ViewToggle（P17 表格看板切换）+ ListPager/RecordActionsBar（P19 拆分）+ ProcessorDrawer（P20 数据处理器执行/结果渲染） + IssueClarifyChat（P21 对话拆分：气泡/动效/打字指示）+ PluginPresetBar（P21 预设条）
+│       ├── composables/            useEntityMetadata（metaVersion 比对 → stale 刷新）+ useConfirmAction（P16 统一确认抽 composable）+ useKanbanMove（P19 拖拽编排）/useEntityProcessors（P20 处理器入口） + usePluginPresets（P21 预设单飞与结果呈现）
 │       ├── utils/                  csv.ts（P19：RFC 4180 转义+BOM 本地导出，无新端点）+ viewColumns.ts（P19 列解析单点：表格/导出共用，QG-4）
 │       └── views/                  Login/Workbench/Home/DynamicEntity（列表/详情/新建/编辑+看板呈现与拖拽换列 P19+CSV 导出 P19）/Issues（Issue 工作台+创建抽屉，P15）/Plugins（清单+写操作，P15）/Users（用户管理，P12.5）/Placeholder
 ├── database/
@@ -257,3 +257,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-09-03 | §1 树无结构变更；styles/ 行描述更新（P18 现代极简重订：zinc/indigo 令牌+浅色平面侧栏+--ff-scrim）；plugins/theme-default 1.1.0（tokens 对齐+bg/logo/pulse 重绘）、theme-warm 1.1.0（stone/orange 适配） | P18：前端现代极简风格化（用户裁决新增阶段；色板取 Tailwind v4 公开 oklch 值，无运行时外链） |
 | 2026-09-04 | §1 树更新：plugins +example-quality/example-workorder/example-purchase/example-safety（P19 四包）并回补 example-kanban（P17 存量遗漏）；components +KanbanView/ViewToggle；views DynamicEntity 行补看板拖拽/CSV；src +utils/csv.ts；app 测试 +ExamplePluginsP19Test | P19：生产企业插件矩阵与前端动效完善（用户裁决新增阶段；复用既有扩展点，登记册零变更） |
 | 2026-09-07 | §1 树更新：plugins +example-analytics（P20 Level 2 处理器包）；components +ProcessorDrawer；composables +useKanbanMove/useEntityProcessors；api +processors；plugin 模块 +ProcessorSpec/ProcessorExecutionException/ProcessorRunner/ProcessorService/ActiveProcessorLocator/ProcessorController（+data 依赖）；backend 测试 +ExamplePluginsP20Test；Dockerfile 运行层 +python3 | P20：插件代码处理器——Python 表格处理（用户裁决激活 ADR-0002 Level 2；S6 修订双轨校验；登记册 +extension.data-processor） |
+| 2026-09-07 | §1 树更新：V014 plugin_preset；plugin 模块 +PluginPresetService/PluginPresetController/domain PresetRepository/infra JdbcPresetRepository；prompts v1→v2（clarify.md+fixture-spec）；components +IssueClarifyChat/PluginPresetBar、PluginCard 重构、IssueDetail 瘦身；composables +usePluginPresets；api plugins.ts 扩预设四函数+upgradeVersion；AppIcon +send；app 测试 +PluginPresetApiTest；ai 断言 fixture-clarify-v2 | P21：插件管理操作逻辑与 Issue 工作台对话体验（用户裁决新增阶段；FR-PLUGIN-12/FR-ISSUE-03A；提示词 v2） |
