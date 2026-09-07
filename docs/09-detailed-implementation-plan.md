@@ -459,7 +459,7 @@
 ## P20：插件代码处理器——Python 表格处理（2026-09-04 用户裁决新增，ADR-0002 Level 2 激活）
 
 > 背景：P19 出口后用户修正插件需求——8 个业务域插件在机制上同质（元数据 CRUD），无法演示插件**功能**多样化；需要插件能接入后端代码（如 Python）执行表格处理等实际计算。经核对 ADR-0002 预留的 Level 2（受信代码插件，原"毕业设计不承诺实现"），用户裁决激活，范围限定为**数据处理器**。
-> **红线（ADR-0002 修订版 + S6 修订版）**：Level 2 仅开放 `scripts/*.py` 且只经 `extension.data-processor` 声明执行；子进程 `python3 -I` + 环境清空 + 临时目录执行后清理 + 硬超时（10s）+ stdin/stdout 字节上限 + 输入行数上限（1000）+ stdout JSON 输出 Schema 校验；只允许 Python 标准库（镜像无 pip 面）；处理器无 DB 凭据/token/网络参数；失败统一 `processor_failed` 族错误码且必有失败路径测试；导入仍 ADMIN 特权、invoke 与动态数据读同权；前端仍白名单 renderer（S5 不变）；Level 1 包零代码资源的既有校验不放松。
+> **红线（ADR-0002 修订版 + S6 修订版）**：Level 2 仅开放 `scripts/*.py` 且只经 `extension.data-processor` 声明执行；子进程 `python3 -I` + 环境清空 + 临时目录执行后清理 + 硬超时（10s）+ stdin/stdout 字节上限 + 输入行数上限=平台单页上限（200，ApiConstants.MAX_PAGE_SIZE）+ stdout JSON 输出 Schema 校验；只允许 Python 标准库（镜像无 pip 面）；处理器无 DB 凭据/token/网络参数；失败统一 `processor_failed` 族错误码且必有失败路径测试；导入仍 ADMIN 特权、invoke 与动态数据读同权；前端仍白名单 renderer（S5 不变）；Level 1 包零代码资源的既有校验不放松。
 
 ### 实施内容
 

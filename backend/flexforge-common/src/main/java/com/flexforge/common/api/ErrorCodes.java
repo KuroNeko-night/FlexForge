@@ -29,6 +29,14 @@ public final class ErrorCodes {
 
     /** 使用过期激活身份的请求被拒绝。 */
     public static final String STALE_ACTIVATION = "stale_activation";
+    /** P20：数据处理器不存在或所属插件未激活。 */
+    public static final String PROCESSOR_NOT_FOUND = "processor_not_found";
+    /** P20：处理器执行失败（超时/非零退出/IO 超限，ADR-0002 Level 2 受信边界）。 */
+    public static final String PROCESSOR_FAILED = "processor_failed";
+    /** P20：处理器输出未通过 Schema 校验（非 JSON/结构违约）。 */
+    public static final String PROCESSOR_OUTPUT_INVALID = "processor_output_invalid";
+    /** P20：处理器输入超限（记录行数/序列化字节，docs/09 P20 红线）。 */
+    public static final String PROCESSOR_INPUT_TOO_LARGE = "processor_input_too_large";
     /** P10：Issue 非法状态迁移/缺原因/缺合法规格批准门（docs/08 §7 只增）。 */
     public static final String INVALID_TRANSITION = "invalid_transition";
     /** P11：模型访问失败（超时/取消/限流/离线，docs/09 P11 验收）。 */

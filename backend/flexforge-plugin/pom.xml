@@ -29,6 +29,10 @@
     </dependency>
     <dependency>
       <groupId>com.flexforge</groupId>
+      <artifactId>flexforge-data</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.flexforge</groupId>
       <artifactId>flexforge-runtime</artifactId>
     </dependency>
     <dependency>

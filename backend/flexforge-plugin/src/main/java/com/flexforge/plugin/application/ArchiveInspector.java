@@ -24,11 +24,13 @@ import java.util.zip.ZipFile;
 @Component
 public class ArchiveInspector {
 
-    /** 区域扩展名白名单（S6：无任意可执行资源）。 */
+    /** 区域扩展名白名单（S6 修订：Level 2 增 scripts/*.py——仅数据处理器声明
+     * 执行，声明核对在导入服务 manifest 解析后做双向校验）。 */
     private static final Map<String, Set<String>> AREA_EXTENSIONS = Map.of(
             "metadata", Set.of(".json"),
             "migrations", Set.of(".sql"),
-            "assets", Set.of(".png", ".svg", ".webp", ".css", ".json"));
+            "assets", Set.of(".png", ".svg", ".webp", ".css", ".json"),
+            "scripts", Set.of(".py"));
 
     /** 文本类资产扩展名（全文内容嗅探，拒绝内嵌脚本）。 */
     private static final Set<String> TEXT_ASSET_EXTENSIONS = Set.of(".svg", ".css", ".json");

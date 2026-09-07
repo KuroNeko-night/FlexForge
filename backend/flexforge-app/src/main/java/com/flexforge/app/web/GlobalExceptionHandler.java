@@ -84,6 +84,16 @@ public class GlobalExceptionHandler {
                 exception.getMessage());
     }
 
+    /** 处理器执行失败（P20）：输入超限 400（调用方可诊断）；执行/输出失败 500 +
+     * 专用码（processor_failed/processor_output_invalid），区别于平台 internal_error。 */
+    @ExceptionHandler(com.flexforge.plugin.domain.ProcessorExecutionException.class)
+    public ResponseEntity<ErrorResponse> handleProcessorExecution(
+            com.flexforge.plugin.domain.ProcessorExecutionException exception) {
+        HttpStatus status = com.flexforge.common.api.ErrorCodes.PROCESSOR_INPUT_TOO_LARGE
+                .equals(exception.code()) ? HttpStatus.BAD_REQUEST : HttpStatus.INTERNAL_SERVER_ERROR;
+        return envelope(status, exception.code(), exception.getMessage());
+    }
+
     /** 上传超过 multipart 上限（docs/13 §3.5）：4xx 可诊断，不落 500 兜底。 */
     @ExceptionHandler({org.springframework.web.multipart.MaxUploadSizeExceededException.class})
     public ResponseEntity<ErrorResponse> handleUploadSize(

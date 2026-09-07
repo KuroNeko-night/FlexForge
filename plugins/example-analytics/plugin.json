@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "example.analytics",
+  "name": "表格分析处理器示例",
+  "version": "0.1.0",
+  "capabilityLevel": 2,
+  "minPlatformVersion": "0.1.0",
+  "dependencies": [],
+  "permissions": ["analytics.read"],
+  "contributions": {
+    "processors": [
+      {
+        "key": "analytics.purchase.monthly",
+        "label": "采购月度透视",
+        "kind": "python",
+        "entry": "scripts/purchase-monthly.py",
+        "inputEntity": "purchase_order"
+      },
+      {
+        "key": "analytics.quality.yield",
+        "label": "检验合格率统计",
+        "kind": "python",
+        "entry": "scripts/quality-yield.py",
+        "inputEntity": "quality_inspection"
+      },
+      {
+        "key": "analytics.workorder.load",
+        "label": "工单负载汇总",
+        "kind": "python",
+        "entry": "scripts/workorder-load.py",
+        "inputEntity": "production_order"
+      }
+    ]
+  },
+  "resources": {}
+}
