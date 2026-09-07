@@ -77,3 +77,51 @@ export function stopActivation(activationId: string): Promise<PluginActivationEn
 export function uninstallPlugin(pluginId: string): Promise<void> {
   return apiFetch<void>(`/plugins/${pluginId}`, { method: 'DELETE' });
 }
+
+/** 切换到指定版本（upgrade 语义：停旧→激活新，失败补偿回旧版本）。 */
+export function upgradeVersion(versionId: string): Promise<PluginActivationEntry> {
+  return apiFetch<PluginActivationEntry>(`/plugins/${versionId}/upgrade`, { method: 'POST' });
+}
+
+/** 插件预设条目（FR-PLUGIN-12 快照项）。 */
+export interface PluginPresetItem {
+  pluginId: string;
+  versionId: string;
+  version: string;
+}
+
+export interface PluginPreset {
+  id: string;
+  name: string;
+  entries: PluginPresetItem[];
+  createdBy: string;
+  createdAt: string;
+}
+
+/** 应用结果：逐项上报（成功激活/成功停用/失败明细）。 */
+export interface PresetApplyResult {
+  activated: string[];
+  stopped: string[];
+  failed: { pluginId: string; action: string; message: string }[];
+}
+
+export function fetchPresets(): Promise<PluginPreset[]> {
+  return apiFetch<PluginPreset[]>('/plugins/presets');
+}
+
+/** 保存当前启用集合为命名预设（服务端生成快照）。 */
+export function savePreset(name: string): Promise<PluginPreset> {
+  return apiFetch<PluginPreset>('/plugins/presets', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  });
+}
+
+/** 应用预设（收敛：停用预设外→按预设切换/激活）。 */
+export function applyPreset(id: string): Promise<PresetApplyResult> {
+  return apiFetch<PresetApplyResult>(`/plugins/presets/${id}/apply`, { method: 'POST' });
+}
+
+export function deletePreset(id: string): Promise<void> {
+  return apiFetch<void>(`/plugins/presets/${id}`, { method: 'DELETE' });
+}

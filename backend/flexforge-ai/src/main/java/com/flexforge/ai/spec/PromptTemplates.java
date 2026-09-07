@@ -9,13 +9,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 提示词模板装载（docs/09 P11：模板按版本文件化于 prompts/v1/，代码不散落
- * 提示词字符串；fixture 与提示词版本一一对应）。
+ * 提示词模板装载（docs/09 P11：模板按版本文件化于 prompts/{VERSION}/，代码不散落
+ * 提示词字符串；fixture 与提示词版本一一对应。v2=P21：回合策略/回复边界/数据段
+ * 结构化重写，输出契约不变）。
  */
 @PublicApi
 public final class PromptTemplates {
 
-    public static final String VERSION = "v1";
+    public static final String VERSION = "v2";
 
     private static final Map<String, String> CACHE = new HashMap<>();
 

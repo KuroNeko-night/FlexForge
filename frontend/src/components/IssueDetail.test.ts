@@ -116,8 +116,9 @@ describe('IssueDetail AI 对话（clarify，FR-ISSUE-03）', () => {
     await flushPromises();
     await clickButton(wrapper, '开始 AI 澄清');
     clarifyMock.mockResolvedValueOnce({ specProduced: true, questions: [], spec });
-    await wrapper.find('textarea').setValue('物料档案 material_archive');
-    await clickButton(wrapper, '提交回答');
+    await wrapper.find('[data-testid="clarify-input"]').setValue('物料档案 material_archive');
+    await wrapper.find('[data-testid="clarify-send"]').trigger('click');
+    await flushPromises();
     expect(clarifyMock).toHaveBeenLastCalledWith('i1', '物料档案 material_archive');
     expect(wrapper.find('[data-testid="spec-section"]').text()).toContain('修订 1');
   });

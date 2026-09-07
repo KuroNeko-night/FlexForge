@@ -1,31 +1,52 @@
 <script setup lang="ts">
-import type { PluginActivationEntry, PluginInventoryEntry } from '@/api/plugins';
+import { computed, ref } from 'vue';
+
+import type { PluginInventoryEntry } from '@/api/plugins';
+import BaseSwitch from '@/components/ui/BaseSwitch.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ComponentCard from '@/components/ui/ComponentCard.vue';
 
 /**
- * 插件卡片（P15 从 PluginsView 拆出）：版本激活/停用/卸载入口 +
- * 激活尝试诊断表（stage+errorCode）。动作只上抛，API 调用与单飞守卫在父视图。
+ * 插件卡片（P21 操作逻辑重构）：只呈现当前版本与启停开关——开=激活当前版本，
+ * 关=停用；激活历史表不再展示，最近一次失败保留一行诊断；多版本收纳进展开区
+ * （切换经 upgrade 语义，服务端保证占用与补偿）。动作只上抛，API 与单飞守卫在父视图。
  */
-defineProps<{
+const props = defineProps<{
   plugin: PluginInventoryEntry;
   pending: boolean;
-  hasActive: boolean;
 }>();
 const emit = defineEmits<{
-  activate: [versionId: string, version: string];
-  stop: [];
+  toggle: [next: boolean];
+  switchVersion: [versionId: string, version: string];
   uninstall: [];
 }>();
 
-/** 失败诊断文案：失败尝试展示"阶段 · 错误码"，其余展示当前阶段。 */
-function diagnosisOf(activation: PluginActivationEntry): string {
-  if (activation.status === 'FAILED') {
-    const code = activation.errorCode ? ` · ${activation.errorCode}` : '';
-    return `失败于 ${activation.stage ?? '?'}${code}`;
+const versionsOpen = ref(false);
+
+const activeEntry = computed(() =>
+  props.plugin.activations.find((item) => item.status === 'ACTIVE'),
+);
+const hasActive = computed(() => activeEntry.value !== undefined);
+/** 当前版本：启用中取占用版本，未启用取最新导入版本（清单按创建时间升序）；
+ * 占用版本已不在清单（异常数据）时回退最新导入，避免"已启用/无版本"自相矛盾。 */
+const currentVersion = computed(() => {
+  const occupying = activeEntry.value?.pluginVersionId;
+  return (
+    props.plugin.versions.find((v) => v.versionId === occupying) ?? props.plugin.versions.at(-1)
+  );
+});
+/** 最近一次失败诊断（清单按开始时间倒序，首个 FAILED 即最近）。 */
+const lastFailure = computed(() => {
+  const failed = props.plugin.activations.find((item) => item.status === 'FAILED');
+  if (!failed) {
+    return null;
   }
-  return activation.stage ?? '—';
-}
+  const code = failed.errorCode ? ` · ${failed.errorCode}` : '';
+  return `最近激活失败于 ${failed.stage ?? '?'}${code}`;
+});
+const extraVersions = computed(() =>
+  props.plugin.versions.filter((v) => v.versionId !== currentVersion.value?.versionId),
+);
 </script>
 
 <template>
@@ -34,56 +55,49 @@ function diagnosisOf(activation: PluginActivationEntry): string {
       <div class="plugin-head">
         <strong>{{ plugin.name }}</strong>
         <span class="plugin-id">{{ plugin.pluginId }}</span>
-        <span class="status-badge" :data-status="plugin.instanceStatus">
-          {{ plugin.instanceStatus }}
-        </span>
       </div>
     </template>
-    <ul class="version-list" data-testid="plugin-versions">
-      <li v-for="v in plugin.versions" :key="v.versionId">
+    <div class="plugin-row" data-testid="plugin-toggle-row">
+      <span class="version-badge" data-testid="plugin-current-version">
+        {{ currentVersion ? `v${currentVersion.version}` : '无版本' }}
+      </span>
+      <span class="state-label" :data-state="hasActive ? 'on' : 'off'">
+        {{ hasActive ? '已启用' : '已停用' }}
+      </span>
+      <BaseSwitch
+        class="plugin-switch"
+        :model-value="hasActive"
+        :disabled="pending || plugin.versions.length === 0"
+        label="启用插件"
+        data-testid="plugin-toggle"
+        @update:model-value="emit('toggle', $event)"
+      />
+    </div>
+    <p v-if="lastFailure" class="plugin-failure" data-testid="plugin-last-failure">
+      {{ lastFailure }}
+    </p>
+    <div v-if="plugin.versions.length > 1" class="plugin-versions-toggle">
+      <button type="button" class="versions-link" @click="versionsOpen = !versionsOpen">
+        {{ versionsOpen ? '收起版本' : `另有 ${extraVersions.length} 个版本` }}
+      </button>
+    </div>
+    <ul v-if="versionsOpen" class="version-list" data-testid="plugin-versions">
+      <li v-for="v in extraVersions" :key="v.versionId">
         <code>{{ v.version }}</code>
-        <BaseButton size="sm" :disabled="pending" @click="emit('activate', v.versionId, v.version)">
-          激活
+        <BaseButton
+          size="sm"
+          :disabled="pending"
+          @click="emit('switchVersion', v.versionId, v.version)"
+        >
+          切换到此版本
         </BaseButton>
       </li>
-      <li v-if="plugin.versions.length === 0">无版本</li>
     </ul>
     <div class="plugin-ops">
-      <BaseButton size="sm" :disabled="pending || !hasActive" @click="emit('stop')"
-        >停用</BaseButton
-      >
       <BaseButton size="sm" variant="danger" :disabled="pending" @click="emit('uninstall')">
         卸载
       </BaseButton>
     </div>
-    <table class="activation-table" data-testid="activation-table">
-      <caption class="sr-only">
-        激活尝试
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col">状态</th>
-          <th scope="col">阶段 / 诊断</th>
-          <th scope="col">操作者</th>
-          <th scope="col">开始时间</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="activation in plugin.activations"
-          :key="activation.id"
-          :data-status="activation.status"
-        >
-          <td>{{ activation.status }}</td>
-          <td data-testid="activation-diagnosis">{{ diagnosisOf(activation) }}</td>
-          <td>{{ activation.requestedBy ?? '—' }}</td>
-          <td>{{ activation.startedAt ?? '—' }}</td>
-        </tr>
-        <tr v-if="plugin.activations.length === 0">
-          <td colspan="4">无激活尝试</td>
-        </tr>
-      </tbody>
-    </table>
   </ComponentCard>
 </template>
 
@@ -99,28 +113,53 @@ function diagnosisOf(activation: PluginActivationEntry): string {
   font-family: var(--ff-font-mono);
   font-size: var(--ff-text-sm);
 }
-.status-badge {
-  margin-left: auto;
+.plugin-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ff-space-2);
+  margin: var(--ff-space-2) 0;
+}
+.version-badge {
   padding: var(--ff-space-1) var(--ff-space-2);
-  border-radius: 999px;
+  border-radius: var(--ff-radius-sm);
+  font-family: var(--ff-font-mono);
   font-size: var(--ff-text-sm);
   background: var(--ff-surface-muted);
   color: var(--ff-text-muted);
 }
-.status-badge[data-status='active'],
-.status-badge[data-status='ACTIVE'] {
-  background: color-mix(in srgb, var(--ff-primary) 14%, transparent);
+.state-label {
+  font-size: var(--ff-text-sm);
+  color: var(--ff-text-muted);
+}
+.state-label[data-state='on'] {
   color: var(--ff-primary);
 }
-.status-badge[data-status='failed'],
-.status-badge[data-status='FAILED'] {
-  background: var(--ff-danger-bg);
+.plugin-switch {
+  margin-left: auto;
+}
+.plugin-failure {
+  margin: 0 0 var(--ff-space-2);
+  font-size: var(--ff-text-sm);
   color: var(--ff-danger);
+}
+.plugin-versions-toggle {
+  margin-bottom: var(--ff-space-1);
+}
+.versions-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ff-primary);
+  font-size: var(--ff-text-sm);
+  cursor: pointer;
+}
+.versions-link:hover {
+  text-decoration: underline;
 }
 .version-list {
   list-style: none;
   padding: 0;
-  margin: var(--ff-space-2) 0;
+  margin: var(--ff-space-1) 0 var(--ff-space-2);
   display: flex;
   flex-direction: column;
   gap: var(--ff-space-1);
@@ -135,35 +174,6 @@ function diagnosisOf(activation: PluginActivationEntry): string {
 }
 .plugin-ops {
   display: flex;
-  gap: var(--ff-space-2);
-  margin-bottom: var(--ff-space-2);
-}
-.activation-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--ff-text-sm);
-}
-.activation-table th,
-.activation-table td {
-  padding: var(--ff-space-1) var(--ff-space-2);
-  border-bottom: 1px solid var(--ff-border-soft);
-  text-align: left;
-}
-.activation-table th {
-  font-weight: 500;
-  color: var(--ff-text-muted);
-}
-.activation-table tbody tr:last-child td {
-  border-bottom: none;
-}
-.activation-table tr[data-status='FAILED'] td {
-  color: var(--ff-danger);
-}
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
+  justify-content: flex-end;
 }
 </style>

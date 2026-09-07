@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * 固定 fixture 模型（docs/09 P11：模型接口未最终确认前，开发与回归只依赖
  * fixture；fixture 优先）。脚本化两轮澄清：首轮追问字段/规则/验收标准，
- * 收到回答后产出与 prompts/v1 一一对应的确定性规格草稿（资源文件化，
+ * 收到回答后产出与 prompts/v2 一一对应的确定性规格草稿（资源文件化，
  * 回归可重复）。P15 起不注册为 Bean——由 RoutingModelPort 按有效配置路由持有。
  */
 @PublicApi
@@ -36,14 +36,14 @@ public class FixtureModelPort implements ModelPort {
 
     @Override
     public String name() {
-        return "fixture-clarify-v1";
+        return "fixture-clarify-v2";
     }
 
     private static String loadFixtureSpec() {
         try (InputStream in = FixtureModelPort.class.getResourceAsStream(
-                "/prompts/v1/fixture-spec.json")) {
+                "/prompts/v2/fixture-spec.json")) {
             if (in == null) {
-                throw new IllegalStateException("fixture 规格资源缺失: prompts/v1/fixture-spec.json");
+                throw new IllegalStateException("fixture 规格资源缺失: prompts/v2/fixture-spec.json");
             }
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {

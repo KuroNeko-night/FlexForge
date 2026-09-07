@@ -61,6 +61,10 @@ withDefaults(defineProps<{ name: string; size?: number }>(), { size: 18 });
       <path d="m2 17 10 5 10-5" />
       <path d="m2 12 10 5 10-5" />
     </template>
+    <template v-else-if="name === 'send'">
+      <path d="m22 2-7 20-4-9-9-4z" />
+      <path d="M22 2 11 13" />
+    </template>
     <template v-else>
       <rect x="3" y="3" width="7" height="7" rx="1" />
       <rect x="14" y="3" width="7" height="7" rx="1" />
