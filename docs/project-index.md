@@ -56,12 +56,12 @@ FlexForge/
 │   ├── eslint.config.js / eslint.config.targets.js   硬上限 error / 建议目标 warn（P06 补浏览器 globals）
 │   └── src/
 │       ├── main.ts / App.vue / router.ts   路由壳（登录守卫体验跳转，安全边界在服务端 S2）
-│       ├── api/                    client（错误规范化/令牌注入/401 回调，FormData multipart 不覆盖边界）+ auth/meta/data/plugins（清单+导入/激活/停用/卸载，P15）/issues（clarify/迁移/规格/生成，P15）/system/theme 客户端 + 契约类型
+│       ├── api/                    client（错误规范化/令牌注入/401 回调，FormData multipart 不覆盖边界）+ auth/meta/data/plugins（清单+导入/激活/停用/卸载，P15）/processors（P20 清单+invoke）/issues（clarify/迁移/规格/生成，P15）/system/theme 客户端 + 契约类型
 │       ├── auth/token.ts           会话令牌（sessionStorage）与当前用户
 │       ├── registry/               keyed.ts 通用基座 + renderer/menu/layout/theme/recordAction/locale registry（P15：语言包+t()/语言切换）+ builtinContributions（内置部件/动作/本地菜单：Issue 工作台+插件管理+设置入口）
 │       ├── styles/                 tokens.css（设计令牌+基建原语，P18 现代极简重订：zinc/indigo 阶取 Tailwind v4 公开值+浅色侧栏派生+--ff-scrim）+ base.css（全局控件/表格/浅色平面侧栏基线，P16 拆分/P18 重订）
-│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards + ui/（BaseButton/BaseSwitch/ComponentCard/BaseDrawer/ConfirmDialog 统一确认，P16）+ IssueDetail/IssueDevPanel/IssueComments + PluginCard + UploadDropzone（拖拽+自动校验，P16）+ AppIcon（内联图标集，P16）+ AppLogo + KanbanView（P17 声明式看板/P19 拖拽换列）+ ViewToggle（P17 表格看板切换）+ ListPager/RecordActionsBar（P19 拆分）
-│       ├── composables/            useEntityMetadata（metaVersion 比对 → stale 刷新）+ useConfirmAction（P16 统一确认抽 composable）
+│       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards + ui/（BaseButton/BaseSwitch/ComponentCard/BaseDrawer/ConfirmDialog 统一确认，P16）+ IssueDetail/IssueDevPanel/IssueComments + PluginCard + UploadDropzone（拖拽+自动校验，P16）+ AppIcon（内联图标集，P16）+ AppLogo + KanbanView（P17 声明式看板/P19 拖拽换列）+ ViewToggle（P17 表格看板切换）+ ListPager/RecordActionsBar（P19 拆分）+ ProcessorDrawer（P20 数据处理器执行/结果渲染）
+│       ├── composables/            useEntityMetadata（metaVersion 比对 → stale 刷新）+ useConfirmAction（P16 统一确认抽 composable）+ useKanbanMove（P19 拖拽编排）/useEntityProcessors（P20 处理器入口）
 │       ├── utils/                  csv.ts（P19：RFC 4180 转义+BOM 本地导出，无新端点）+ viewColumns.ts（P19 列解析单点：表格/导出共用，QG-4）
 │       └── views/                  Login/Workbench/Home/DynamicEntity（列表/详情/新建/编辑+看板呈现与拖拽换列 P19+CSV 导出 P19）/Issues（Issue 工作台+创建抽屉，P15）/Plugins（清单+写操作，P15）/Users（用户管理，P12.5）/Placeholder
 ├── database/
@@ -85,6 +85,7 @@ FlexForge/
 │   ├── example-workorder/          生产工单示例包（P19：状态看板，拖拽换列=状态流转）
 │   ├── example-purchase/           采购订单示例包（P19：decimal 金额字段形态+幂等种子）
 │   ├── example-safety/             安全隐患示例包（P19：整改闭环状态看板+幂等种子）
+│   ├── example-analytics/          表格分析处理器包（P20：capabilityLevel=2，三个 Python 数据处理器——月度透视/合格率/负载汇总，纯标准库）
 │   ├── locale-en/                  英文语言包（P15：kind=locale JSON 文案表，FR-SETUP-02）
 │   ├── theme-default/              默认主题 Level 1 包（P12.5：SVG 背景/标/动效 + tokens 键值表）
 │   └── theme-warm/                 暖色覆盖主题包（P12.5：同名 tokens 覆盖证明插件可自定义样式）
@@ -255,3 +256,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-08-31 | §1 树更新：frontend +styles/base.css、components +AppIcon/ConfirmDialog/IssueComments/UploadDropzone、依赖 +@fontsource/inter；api +apiErrorMessage、issues +TRANSITION_LABELS；registry recordAction +confirm；plugins/locale-en 1.0.3（+分组键） | P16 迭代 1/2：交互重构+文案净化（统一确认/迁移按钮组/上传区/列表头部创建）与默认主题精修（导航分组图标/控件 focus 环/自托管字体）——用户裁决新增阶段 |
 | 2026-09-03 | §1 树无结构变更；styles/ 行描述更新（P18 现代极简重订：zinc/indigo 令牌+浅色平面侧栏+--ff-scrim）；plugins/theme-default 1.1.0（tokens 对齐+bg/logo/pulse 重绘）、theme-warm 1.1.0（stone/orange 适配） | P18：前端现代极简风格化（用户裁决新增阶段；色板取 Tailwind v4 公开 oklch 值，无运行时外链） |
 | 2026-09-04 | §1 树更新：plugins +example-quality/example-workorder/example-purchase/example-safety（P19 四包）并回补 example-kanban（P17 存量遗漏）；components +KanbanView/ViewToggle；views DynamicEntity 行补看板拖拽/CSV；src +utils/csv.ts；app 测试 +ExamplePluginsP19Test | P19：生产企业插件矩阵与前端动效完善（用户裁决新增阶段；复用既有扩展点，登记册零变更） |
+| 2026-09-07 | §1 树更新：plugins +example-analytics（P20 Level 2 处理器包）；components +ProcessorDrawer；composables +useKanbanMove/useEntityProcessors；api +processors；plugin 模块 +ProcessorSpec/ProcessorExecutionException/ProcessorRunner/ProcessorService/ActiveProcessorLocator/ProcessorController（+data 依赖）；backend 测试 +ExamplePluginsP20Test；Dockerfile 运行层 +python3 | P20：插件代码处理器——Python 表格处理（用户裁决激活 ADR-0002 Level 2；S6 修订双轨校验；登记册 +extension.data-processor） |
