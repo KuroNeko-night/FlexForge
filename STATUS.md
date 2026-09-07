@@ -5,12 +5,12 @@
 <!-- FLEXFORGE_STATUS:BEGIN -->
 CURRENT_STAGE_ID: P20
 CURRENT_STAGE_NAME: 插件代码处理器——Python 表格处理
-STAGE_STATUS: in_progress
+STAGE_STATUS: completed
 PROJECT_PROGRESS: 100%
-LAST_UPDATED: 2026-09-04
+LAST_UPDATED: 2026-09-07
 OWNER: project-maintainer
-NEXT_ACTION: P20 迭代实施中（分支 feat/p20-data-processor）：激活 ADR-0002 Level 2（受信代码插件，范围=数据处理器）——插件携带 Python 脚本经 extension.data-processor 注册，平台子进程受控执行（-I 隔离/超时/IO 上限/输出 Schema 校验）做表格透视/聚合/统计；交付 example-analytics 三处理器 + 实体页分析抽屉。红线见 docs/09 P20（S6 修订双轨校验）；出口需交叉审查+live 终验。前阶段 P19 出口证据保留于 git 历史（PR #43 合并 5ba12ab）
-EXIT_GATE: P20 计划出口（docs/09 P20 验收四项）：①三处理器计算正确+前端渲染；②失败路径全测（超时/非零退出/非 JSON/超 Schema/行数超限）；③安全边界可验证（Level 1 带 .py 拒/未声明脚本拒/无环境凭据/停用即 not_found）；④门禁 0 fail+回归全绿+登记册/ADR/S6/索引同步
+NEXT_ACTION: 【P00-P20 全阶段完成，项目维持 release_candidate】P20 出口 live 终验 2026-09-07（Linux 容器三处理器真实计算+UI 抽屉执行截图视觉模型核验；CI 六项绿含 Linux 后端权威验证）。后续=答辩准备（docs/14；演示机预导清单增 example-analytics——需后端镜像含 python3；答辩亮点=插件功能多样化两级模型：Level 1 声明式 CRUD×8 域 + Level 2 Python 数据处理器×3 型）与 Issue #22 余项排期；候选后续（stdout 文件重定向/DB_PASSWORD 回退收紧/实体间路由过渡/CSV 公式注入防护）待裁决
+EXIT_GATE: P20 出口证据（docs/09 P20 验收四项）：①三处理器计算正确（后端断言透视 18600/合格率 50%/负载汇总+前端 table·summary 渲染 4 用例）——live Linux 容器（python3 3.12）实测与 UI 截图核验；②失败路径全测 6/6（超时真 kill sleep30→10s/非零退出/非 JSON/结构违约/字段违约/输入行数 201>200 拒 processor_input_too_large/失败留审计≥5 条）；③安全边界可验证（Level 1 带 .py 拒/未声明脚本拒双向两分支/声明缺失拒/实体不匹配/未知 key 404 processor_not_found/进程环境敏感键=0 实测/停用即失效）；④门禁 21/1/0+前端 154+CI 六项绿。交叉审查（独立子代理）2 P1+6 P2+5 P3 全处置（PR #44 评论逐条回应）：P1-1 Linux NPE（CI+live 双证，fa821ee 判空修复，CI 权威复验）/P1-2 串行闸 Semaphore；P2 全修（join 竞态/测试整包重建/超限用例/成败双审计/专用码 404/残留能力披露）；P3 修 3 记 2。ADR-0002 Level 2 激活+S6 双轨修订+登记册 extension.data-processor（R-GOV-03 对齐 ExtensionPoint 6）。实施期另修两真缺陷：执行流读死锁（超时前 read 阻塞）与 Windows GBK 破坏 UTF-8 契约（-X utf8 钉死）。live 走查账号已封禁（P19 walkthrough 号沿用后封禁）。PR #44 合并 67d39ad
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -39,7 +39,7 @@ BLOCKERS: none
 | P17 | 看板视图与插件声明式扩展 | completed | 四项验收全过（声明即得看板/编辑移列闭环/非法声明拒/元数据同口径；PR #40+#41，存量渲染器回退缺陷连带修复；live 终验见 EXIT_GATE） |
 | P18 | 前端现代极简风格化 | completed | 四项验收全过（七页视觉走查统一/骨架与主题包分工三态可验证/主题机制回归全绿/文案基线不变；审查 3P2+5P3 全处置，live 终验见 EXIT_GATE） |
 | P19 | 生产企业插件矩阵与前端动效完善 | completed | 五项验收全过（4 插件+看板分列/拖拽持久化与回滚/CSV 转义零请求/动效令牌化+reduced-motion/门禁 21/1/0+CI 六项绿；审查 3P2+8P3 全处置，live 终验见 EXIT_GATE） |
-| P20 | 插件代码处理器——Python 表格处理 | in_progress | 验收四项（docs/09 P20）：三处理器计算正确+渲染/失败路径全测/安全边界可验证/门禁全绿（ADR-0002 Level 2 激活+S6 双轨修订） |
+| P20 | 插件代码处理器——Python 表格处理 | completed | 验收四项（docs/09 P20）：三处理器计算正确+渲染/失败路径全测/安全边界可验证/门禁全绿（ADR-0002 Level 2 激活+S6 双轨修订） |
 
 ## 更新规则
 
@@ -176,3 +176,4 @@ BLOCKERS: none
 | 2026-09-04 | P20 | 用户修正插件需求：需要插件接入后端代码（如 Python）做表格处理等功能性操作——现有 8 个业务插件机制同质（元数据 CRUD）无法演示功能多样化。核对 ADR-0002 预留 Level 2（受信代码插件，原不承诺实现）后用户裁决激活，范围限定"数据处理器"。已完成：ADR-0002 修订（Level 2 受信边界表：ADMIN 导入特权替代签名/子进程隔离/超时与 IO 上限/JSON 契约）+ S6 修订（双轨校验）+ 登记册 extension.data-processor + docs/09 P20 | ADR-0002 修订、docs/13 S6、登记册、本条目 |
 | 2026-09-07 | P20 | 迭代完成（分支 feat/p20-data-processor）：①后端全链——ManifestValidator 扩 Level 2（processors 声明校验）/ArchiveInspector scripts 区/导入双向核对+脚本载荷（asset_payloads）/激活注册（DB+内存，绑定 activationId 可撤销）/ProcessorRunner（子进程 python -I -X utf8：隔离模式+环境清空+临时目录+10s 超时 kill+stdout 1MB 上限+stdio UTF-8 钉死——Windows 默认 GBK 实测破坏契约后修正）/ProcessorService（输入组装=白名单查询平台单页上限 200 行+2MB 字节上限/输出 table·summary Schema 校验/审计）+ 清单与 invoke 端点（ADMIN/USER 同数据读权）+ 错误码 processor_not_found/failed/output_invalid/input_too_large + GlobalExceptionHandler 映射（@PublicApi 治理）②example-analytics 三处理器（采购月度透视/检验合格率/工单负载汇总，纯标准库本地冒烟通过）③前端——实体页"数据分析"抽屉（useEntityProcessors 入口/ProcessorDrawer 清单+执行+table·summary 渲染+失败局部提示）④测试——后端 5/5（含真实超时 kill 验证/非零退出/非 JSON/结构违约/字段违约/Level1 带脚本拒/未声明脚本拒/实体不匹配/未知 key/进程无环境凭据/停用失效）+前端 4 用例（154 全绿）；存量契约测试随 Level 2 更新（capabilityLevel 1|2）。门禁 21/1/0 | 本分支提交 2830dbd/fdf1265/b7d15f0 |
 | 2026-09-07 | P20 | 交叉审查（独立子代理，缺陷优先）：**2 P1 + 6 P2 + 5 P3**，逐条处置。P1-1 Linux 容器 PATHEXT/SystemRoot 为 null 致 Map.of NPE（Windows 宿主测试盲区；CI 红与本会话 live 双证）→fa821ee 逐键判空修复+容器验证；P1-2 ADR"invoke 串行"无代码对应→ProcessorRunner 单许可 Semaphore 实现；P2：stdout 采集竞态（collector join）/未声明脚本测试空转（整包重建+补声明缺失方向）/input_too_large 零测试（201 行用例）/失败无审计（invoke 成败双审计+断言）/not_found 码失配（locator 专用异常+404 映射+断言）/受信边界披露不完整（ADR+S6 补"文件系统与网络可访问，信任根=ADMIN"）；P3 修 3 记 2（单元格 2000 字符上限/locator 载荷缺失 warn/抽屉 watch entity；记：输出超限以超时形态报告属已知限制、resolveBin 负结果不缓存）。测试拆分 ExamplePluginsP20SecurityTest（4 用例），后端 6/6、门禁 21/1/0 | PR #44 评论、本条目 |
+| 2026-09-07 | P20 | **P20 出口复核通过置 completed；P00-P20 全阶段完成，进度 100%，release_candidate**。出口证据见 EXIT_GATE（live Linux 容器三处理器+UI 截图/6/6 失败与安全边界/门禁 21/1/0/CI 六项绿含 Linux 权威复验）；交叉审查 2P1+6P2+5P3 全处置 | PR #44（合并 67d39ad）、EXIT_GATE |
