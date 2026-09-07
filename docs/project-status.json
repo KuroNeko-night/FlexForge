@@ -3,11 +3,11 @@
   "updatedAt": "2026-09-07",
   "currentStageId": "P21",
   "currentStageName": "插件管理操作逻辑与 Issue 工作台对话体验",
-  "status": "in_progress",
+  "status": "completed",
   "progressPercent": 100,
   "owner": "project-maintainer",
-  "nextAction": "【P21 进行中（2026-09-07 用户裁决新增），P00-P20 已完成，项目维持 release_candidate】两项交付：①插件管理操作逻辑——卡片只呈现当前版本与启停开关（不再平铺历史版本与激活记录表，最近失败诊断保留一行），多版本经展开区切换（upgrade 语义），插件预设（保存当前启用集合快照/一键应用收敛，FR-PLUGIN-12）；②Issue 工作台——对话界面现代化（角色气泡/进入动画/打字指示）+ AI 系统提示词升版 v2（提问功能调用策略+回复边界+数据段防注入保留，FR-ISSUE-03A）。红线见 docs/09 P21",
-  "exitGate": "待交付后填写",
+  "nextAction": "【P00-P21 全阶段完成，项目维持 release_candidate】P21 出口 live 终验 2026-09-07（Linux 容器 V014 迁移+API 预设闭环 10/10 PASS+clarify v2 两轮判轮+ai_task_log v2 落账；插件页/对话页截图视觉模型核验四项全过）。后续=答辩准备（docs/14；演示机预导清单增 example-analytics——需后端镜像含 python3；答辩亮点新增：插件预设场景一键切换 + AI 澄清 v2 提问策略与回复边界）与 Issue #22 余项排期；候选后续（stdout 文件重定向/DB_PASSWORD 回退收紧/实体间路由过渡/CSV 公式注入防护/预设名失败草稿回填）待裁决",
+  "exitGate": "P21 出口证据（docs/09 P21 验收五项）：①卡片只呈现当前版本与启停开关——live 截图核验（版本徽标/已启用已停用态/开关/最近失败一行；无版本平铺无激活记录表），多版本收纳展开经 upgrade 切换（前端测试断言 upgrade 调用）；②预设闭环——后端 E2E 5 用例（快照保存→断开场景→应用恢复含版本级、坏版本条目 failed 其余成功 200 逐项上报、名称空/超长/重名 400、USER 403、删除后 404）+live 容器 10/10 PASS（走查场景A 12 插件快照→停看板→apply 回启用 activated/stopped/failed 全口径）+审计 plugin.preset.save/apply/delete；③对话界面——IssueClarifyChat 拆分（:key 复位），前端 9 用例（打字指示时序/分角色气泡/IME 与 Shift+Enter/规格上抛/权限提示），live 截图四项全过（AI 方形头像+标题副标题+三问气泡+输入区+Enter 提示，样式无破损）；④提示词 v2——回合策略（信息不足必须先提问≤3 编号可答）/输出契约双态/规格硬约束/回复边界/数据段防注入；fixture 资源迁移+判轮标记唯一性审查确认+IssueAiApiTest 断言 model=fixture-clarify-v2 与 prompt_version='v2'（live ai_task_log 复核）；⑤门禁 21/1/0+后端 167/0/0+前端 164/164+CI 六项绿。交叉审查（独立子代理）0 P1+3 P2+3 P3 全修（PR #45 评论逐条回应 9502acb）：P2 版本切换惰性闭包化/prompt_version 落账断言/索引树 prompts 指向 v2；P3 预设名 IME 守卫/卡片 pending 纳入预设在途/占用版本失配回退。实施期修正一处装配缺陷：PresetKernel 纯记录未注册 Bean 致上下文加载失败（testcontainers 全量先红后绿）。走查号 p21walk 已封禁。PR #45 合并 3979ee8",
   "blockers": [],
   "stages": [
     {
@@ -118,7 +118,7 @@
     {
       "id": "P21",
       "name": "插件管理操作逻辑与 Issue 工作台对话体验",
-      "status": "in_progress"
+      "status": "completed"
     }
   ]
 }
