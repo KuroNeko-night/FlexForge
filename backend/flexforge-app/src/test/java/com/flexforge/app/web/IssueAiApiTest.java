@@ -98,7 +98,7 @@ class IssueAiApiTest {
         String model = jdbc.queryForObject(
                 "SELECT model FROM ai_task_log WHERE issue_id = ? LIMIT 1", String.class,
                 issueId);
-        assertThat(model).isEqualTo("fixture-clarify-v1");
+        assertThat(model).isEqualTo("fixture-clarify-v2");
     }
 
     // ===== FR-ISSUE-05：手工规格兜底 → 生成 → 标准导入激活 → IN_TESTING → USER CRUD =====

@@ -13,7 +13,7 @@ public interface ModelPort {
     /** 单轮补全：入参提示词（已模板化），出参模型原始文本（调用方负责解析校验）。 */
     ModelReply complete(ModelRequest request);
 
-    /** 模型标识（任务记录用，如 fixture-clarify-v1 / openai-compatible）。 */
+    /** 模型标识（任务记录用，如 fixture-clarify-v2 / openai-compatible）。 */
     String name();
 
     @PublicApi
