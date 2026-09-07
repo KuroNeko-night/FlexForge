@@ -455,3 +455,23 @@
 - CSV 导出：文件内容=可见列+当前页记录，特殊字符正确转义，测试覆盖转义与空值口径；导出动作不产生网络请求。
 - 动效：路由过渡/入场 stagger/呈现切换过渡生效且均为 transform/opacity；reduced-motion 下全部静止且功能不损；同实体内列表↔详情导航行为不回归（不重建组件、分页保留）。
 - 门禁 0 fail、前后端回归全绿；登记册无变更（复用既有扩展点，PR 内说明）；索引与文档同步。
+
+## P20：插件代码处理器——Python 表格处理（2026-09-04 用户裁决新增，ADR-0002 Level 2 激活）
+
+> 背景：P19 出口后用户修正插件需求——8 个业务域插件在机制上同质（元数据 CRUD），无法演示插件**功能**多样化；需要插件能接入后端代码（如 Python）执行表格处理等实际计算。经核对 ADR-0002 预留的 Level 2（受信代码插件，原"毕业设计不承诺实现"），用户裁决激活，范围限定为**数据处理器**。
+> **红线（ADR-0002 修订版 + S6 修订版）**：Level 2 仅开放 `scripts/*.py` 且只经 `extension.data-processor` 声明执行；子进程 `python3 -I` + 环境清空 + 临时目录执行后清理 + 硬超时（10s）+ stdin/stdout 字节上限 + 输入行数上限=平台单页上限（200，ApiConstants.MAX_PAGE_SIZE）+ stdout JSON 输出 Schema 校验；只允许 Python 标准库（镜像无 pip 面）；处理器无 DB 凭据/token/网络参数；失败统一 `processor_failed` 族错误码且必有失败路径测试；导入仍 ADMIN 特权、invoke 与动态数据读同权；前端仍白名单 renderer（S5 不变）；Level 1 包零代码资源的既有校验不放松。
+
+### 实施内容
+
+- **契约与登记**：ADR-0002 修订（Level 2 受信边界表）+ S6 修订（双轨校验）+ 登记册 `extension.data-processor`（payload {key,label,kind:'python',entry,inputEntity}；执行契约 stdin `{records}` → stdout `{kind:'table'|'summary',...}`）。
+- **后端引擎（flexforge-plugin）**：包校验扩展——capabilityLevel=2 时允许且仅允许 `scripts/*.py`（entry 必须指向存在脚本、大小上限）；激活注册 ProcessorContribution（绑定 activationId 可撤销，停用/卸载即失效）；`ProcessorRunner`（解释器=内置候选 python3→python、临时目录、`-I -X utf8` + 最小环境、单许可 Semaphore 串行、超时 kill、输出上限、采集线程退出后 join）；`ProcessorService`（输入组装=经 service.data-access 白名单查询目标实体 ≤1000 行 → JSON → 执行 → 输出 Schema 校验 → 结果视图）；invoke 端点（POST `/api/v1/plugins/processors/{key}/invoke`）+ 处理器清单端点（GET `/api/v1/plugins/processors?entity=`）；审计 `plugin.processor.invoke`；错误码 `processor_not_found`/`processor_failed`/`processor_output_invalid`/`processor_input_too_large`。
+- **示例插件 example-analytics（capabilityLevel 2）**：三个真实表格处理器（纯标准库）——①采购月度透视（行=供应商×列=月份×值=金额合计）②检验合格率（按供应商分组聚合+百分比）③工单负载汇总（按状态计数/计划量合计+Top 班组）——证明"平台数据→Python 计算→结构化结果"的功能多样化。
+- **前端消费面**：实体列表页头部"分析"入口（该实体有声明的处理器时出现）→ BaseDrawer 抽屉：处理器列表 → 执行（loading 态）→ 结果渲染（table=结构表 / summary=指标卡，平台组件渲染非插件 UI）。
+- **运行环境**：后端镜像运行层 `apk add python3`（构建层不变）。
+
+### 验收标准
+
+- example-analytics 导入激活后：实体页出现"分析"入口，三个处理器可执行并返回正确计算结果（后端断言透视/聚合数值）；处理器结果前端正确渲染。
+- 失败路径全测：脚本超时（sleep）、非零退出、stdout 非 JSON、输出超 Schema、输入行数超限——统一错误码、不崩溃、有审计。
+- 安全边界可验证：Level 1 包带 .py 被拒；Level 2 包 manifest 未声明的脚本文件被拒（entry 白名单双向核对）；处理器进程无环境凭据（脚本断言 environ 无密钥类键）；停用插件后 invoke 返回 processor_not_found。
+- 既有插件/视图/主题机制回归不受影响；门禁 0 fail、前后端回归全绿；登记册/ADR/S6/索引/STATUS 同步。

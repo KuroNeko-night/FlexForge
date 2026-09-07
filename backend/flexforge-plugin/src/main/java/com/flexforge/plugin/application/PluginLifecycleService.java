@@ -267,6 +267,11 @@ public class PluginLifecycleService {
             kernel.lifecycle().insertRegistration(activation.id(), ExtensionPoints.THEME_ASSET,
                     asset.key(), PluginContributionFactory.themeAssetPayload(asset));
         }
+        for (com.flexforge.plugin.domain.ProcessorSpec spec
+                : PluginContributionFactory.processorsOf(version)) {
+            kernel.lifecycle().insertRegistration(activation.id(), ExtensionPoints.DATA_PROCESSOR,
+                    spec.key(), PluginContributionFactory.processorPayload(spec));
+        }
     }
 
     private void registerEntities(ActivationRecord activation, PluginVersionRecord version,
@@ -322,6 +327,11 @@ public class PluginLifecycleService {
         for (ThemeAssetSpec asset : PluginContributionFactory.themeAssetsOf(version)) {
             kernel.extensions().register(ExtensionPoints.THEME_ASSET,
                     PluginContributionFactory.themeAssetContribution(asset), activationId);
+        }
+        for (com.flexforge.plugin.domain.ProcessorSpec spec
+                : PluginContributionFactory.processorsOf(version)) {
+            kernel.extensions().register(ExtensionPoints.DATA_PROCESSOR,
+                    PluginContributionFactory.processorContribution(spec), activationId);
         }
     }
 

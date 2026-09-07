@@ -131,6 +131,37 @@ public class PluginImportService {
             }
         }
         requireAssetsDeclared(manifest, entries);
+        requireScriptsDeclared(manifest, entries);
+    }
+
+    /** scripts/ 双向核对（P20，S6 修订）：Level 2 时声明 entry 必在包内、包内
+     * scripts/*.py 必被某条 processors 声明引用；Level 1 时 scripts/ 出现任何文件即拒。 */
+    private static void requireScriptsDeclared(PluginManifest manifest, Set<String> entries) {
+        if (manifest.capabilityLevel() != 2) {
+            for (String entry : entries) {
+                if (entry.startsWith("scripts/")) {
+                    throw PluginValidationException.invalidManifest(
+                            "Level 1 插件不允许携带脚本文件（纯声明式，S6）: " + entry);
+                }
+            }
+            return;
+        }
+        Set<String> declaredScripts = new java.util.HashSet<>();
+        for (com.flexforge.plugin.domain.ProcessorSpec spec : manifest.processors()) {
+            declaredScripts.add(spec.entry());
+        }
+        for (String script : declaredScripts) {
+            if (!entries.contains(script)) {
+                throw PluginValidationException.invalidManifest(
+                        "processors 声明的脚本在包内缺失: " + script);
+            }
+        }
+        for (String entry : entries) {
+            if (entry.startsWith("scripts/") && !declaredScripts.contains(entry)) {
+                throw PluginValidationException.invalidManifest(
+                        "包内脚本文件未被 contributions.processors 声明: " + entry);
+            }
+        }
     }
 
     private static boolean isUndeclaredManagedFile(String entry, Set<String> declared) {
@@ -195,6 +226,10 @@ public class PluginImportService {
         for (com.flexforge.plugin.domain.ThemeAssetSpec asset : manifest.themeAssets()) {
             assetPayloads.putIfAbsent(asset.path(),
                     java.util.Base64.getEncoder().encodeToString(archive.fileBytes(asset.path())));
+        }
+        for (com.flexforge.plugin.domain.ProcessorSpec spec : manifest.processors()) {
+            assetPayloads.putIfAbsent(spec.entry(),
+                    java.util.Base64.getEncoder().encodeToString(archive.fileBytes(spec.entry())));
         }
         return new PluginVersionRecord("pv-" + UUID.randomUUID(), manifest.id(),
                 manifest.version(), hash, manifest.capabilityLevel(), manifest.raw().toString(),

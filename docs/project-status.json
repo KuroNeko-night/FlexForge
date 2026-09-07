@@ -1,13 +1,13 @@
 {
   "project": "FlexForge",
   "updatedAt": "2026-09-04",
-  "currentStageId": "P19",
-  "currentStageName": "生产企业插件矩阵与前端动效完善",
-  "status": "completed",
+  "currentStageId": "P20",
+  "currentStageName": "插件代码处理器——Python 表格处理",
+  "status": "in_progress",
   "progressPercent": 100,
   "owner": "project-maintainer",
-  "nextAction": "【P00-P19 全阶段完成，项目维持 release_candidate】P19 出口 live 终验 2026-09-04（4 插件导入激活/工单看板四列/拖拽换列 API 持久化复验/CSV blob 下载捕获/动效类核验+截图视觉模型走查）。后续=答辩准备（docs/14；演示机预导插件建议清单更新为 example-kanban/locale-en 1.0.3/example-library/example-facility/example-quality 0.1.2/example-workorder 0.1.1/example-purchase/example-safety/theme-default 1.1.1/theme-warm 1.1.1，镜像重建或 docker save）与 Issue #22 余项排期；候选后续（实体间路由过渡/CSV 公式注入防护）待裁决",
-  "exitGate": "P19 出口证据（docs/09 P19 验收五项）：①4 插件（quality 0.1.2/workorder 0.1.1/purchase 0.1.0/safety 0.1.0）导入激活后菜单/列表/表单/记录往返可用，workorder/safety 看板分列正确，字段覆盖六类（后端 ExamplePluginsP19Test：注册+台账迁移+13 条种子+groupBy 契约+integer min 失败路径+补丁语义）；②拖拽 live 生效——WO-2609-002 计划→执行中经 DnD 事件序列换列并 API 重查持久化，失败回滚/未设置列不可落点/同列不放行有测试；③CSV 转义正确（RFC 4180 用例）且零网络请求（集成断言 queryRecords 恒 1 次），live 捕获 blob 下载\"生产工单-导出.csv\"；④动效 transform/opacity only+--ff-motion-*/--ff-stagger-step 令牌（reduced-motion 双归零静止）+同实体导航不重建（审查核验）；⑤门禁 21/1/0、前端 150 tests、CI 六项绿（audit 首跑遇 npm registry 全局 503，本地+GitHub runner 双证外部故障，rerun 通过 35s）。交叉审查（独立子代理）：0 P1+3 P2+8 P3——P2 全修（stagger 步长令牌化/CSV revoke 延迟 4s/微交互文档口径对齐存量）；P3 修 6 记 2（裁剪：CSV 公式注入防护记录复查触发=接入外部数据源；实体间过渡与分页保留红线冲突列候选）；处置再修正：quality 0.1.1 显式 ON CONFLICT 目标与 0.1.0 已装表失配 live 实测 migration_failed→0.1.2 无目标形式（升级路径兼容实证，ADR-0005 语义）。live 走查临时号 walkthrough-p19 已封禁。PR #43 合并 5ba12ab",
+  "nextAction": "P20 迭代实施中（分支 feat/p20-data-processor）：激活 ADR-0002 Level 2（受信代码插件，范围=数据处理器）——插件携带 Python 脚本经 extension.data-processor 注册，平台子进程受控执行（-I 隔离/超时/IO 上限/输出 Schema 校验）做表格透视/聚合/统计；交付 example-analytics 三处理器 + 实体页分析抽屉。红线见 docs/09 P20（S6 修订双轨校验）；出口需交叉审查+live 终验。前阶段 P19 出口证据保留于 git 历史（PR #43 合并 5ba12ab）",
+  "exitGate": "P20 计划出口（docs/09 P20 验收四项）：①三处理器计算正确+前端渲染；②失败路径全测（超时/非零退出/非 JSON/超 Schema/行数超限）；③安全边界可验证（Level 1 带 .py 拒/未声明脚本拒/无环境凭据/停用即 not_found）；④门禁 0 fail+回归全绿+登记册/ADR/S6/索引同步",
   "blockers": [],
   "stages": [
     {
@@ -109,6 +109,11 @@
       "id": "P19",
       "name": "生产企业插件矩阵与前端动效完善",
       "status": "completed"
+    },
+    {
+      "id": "P20",
+      "name": "插件代码处理器——Python 表格处理",
+      "status": "in_progress"
     }
   ]
 }

@@ -72,8 +72,9 @@ class ManifestValidatorTest {
     }
 
     @Test
-    void onlyLevelOneSupported() {
-        assertThat(failing(manifest().replace("\"capabilityLevel\":1", "\"capabilityLevel\":2"))
+    void capabilityLevelMustBeOneOrTwo() {
+        // P20（ADR-0002 修订）：Level 1 声明式 / Level 2 数据处理器合法；3 与缺省拒绝
+        assertThat(failing(manifest().replace("\"capabilityLevel\":1", "\"capabilityLevel\":3"))
                 .getMessage()).contains("capabilityLevel");
         assertThat(failing(manifest().replace("\"capabilityLevel\":1,", ""))
                 .getMessage()).contains("capabilityLevel");

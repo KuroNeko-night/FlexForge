@@ -3,6 +3,7 @@ package com.flexforge.plugin.application;
 import com.flexforge.common.api.ErrorCodes;
 import com.flexforge.meta.domain.FieldTypeRegistry;
 import com.flexforge.plugin.domain.DependencySpec;
+import com.flexforge.plugin.domain.ProcessorSpec;
 import com.flexforge.plugin.domain.PluginManifest;
 import com.flexforge.plugin.domain.PluginValidationException;
 import com.flexforge.plugin.domain.ThemeAssetSpec;
@@ -17,10 +18,11 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * plugin.json 校验器（schemaVersion 分派，docs/09 P07）：
+ * plugin.json 校验器（schemaVersion 分派，docs/09 P07；P20 扩 Level 2）：
  * 未知 schemaVersion → unsupported_schema_version；V1 校验必填字段、格式、
- * 能力等级（MVP 仅 Level 1）、贡献键与 renderer ID 对登记册/平台白名单校验、
- * 依赖声明结构。产出结构化 {@link PluginManifest}。
+ * 能力等级（Level 1 声明式 / Level 2 数据处理器，ADR-0002 修订）、贡献键与
+ * renderer ID 对登记册/平台白名单校验、依赖声明结构、processors 声明
+ * （Level 2 专属，S6 修订）。产出结构化 {@link PluginManifest}。
  */
 @Component
 public class ManifestValidator {
@@ -31,9 +33,15 @@ public class ManifestValidator {
     private static final Pattern KEY_PATTERN = Pattern.compile("^[a-z][a-z0-9_]*(\\.[a-z0-9_]*)*$");
     private static final Pattern ASSET_PATH_PATTERN =
             Pattern.compile("^assets/[a-z0-9_-]+(/[a-z0-9_-]+)*\\.(png|svg|webp|css|json)$");
-    /** themeAssets 为对象数组，单独解析；字符串贡献键仅 navigation/renderers。 */
+    /** themeAssets 为对象数组，单独解析；字符串贡献键仅 navigation/renderers；
+     * processors 为 Level 2 专属对象数组（P20，S6 修订）。 */
     private static final Set<String> STRING_CONTRIBUTION_KEYS = Set.of("navigation", "renderers");
-    private static final Set<String> CONTRIBUTION_KEYS = Set.of("navigation", "renderers", "themeAssets");
+    private static final Set<String> CONTRIBUTION_KEYS =
+            Set.of("navigation", "renderers", "themeAssets", "processors");
+    /** 处理器脚本路径白名单（ADR-0002 Level 2：scripts/ 下 flat py 文件）。 */
+    private static final Pattern SCRIPT_PATH_PATTERN =
+            Pattern.compile("^scripts/[a-z0-9_-]+\\.py$");
+    private static final Pattern ENTITY_NAME_PATTERN = Pattern.compile("^[a-z][a-z0-9_]*$");
 
     public PluginManifest validate(JsonNode root, int schemaVersion) {
         if (schemaVersion != 1) {
@@ -52,7 +60,7 @@ public class ManifestValidator {
         if (!VERSION_PATTERN.matcher(version).matches()) {
             throw PluginValidationException.invalidManifest("version 须为 X.Y.Z 语义化版本: " + version);
         }
-        requireLevel1(root, id);
+        int capabilityLevel = capabilityLevelOf(root, id);
         String minPlatform = requiredText(root, "minPlatformVersion");
         if (!VERSION_PATTERN.matcher(minPlatform).matches()) {
             throw PluginValidationException.invalidManifest("minPlatformVersion 须为 X.Y.Z: " + minPlatform);
@@ -61,18 +69,90 @@ public class ManifestValidator {
         List<String> permissions = stringList(root.get("permissions"), "permissions", KEY_PATTERN);
         JsonNode contributionsNode = root.get("contributions");
         List<ThemeAssetSpec> themeAssets = themeAssetsOf(contributionsNode);
+        List<ProcessorSpec> processors = processorsOf(contributionsNode, capabilityLevel);
         Map<String, List<String>> contributions = contributionsOf(contributionsNode);
         PluginManifest.Resources resources = resourcesOf(root);
-        return new PluginManifest(1, id, name, version, 1, minPlatform,
-                dependencies, permissions, contributions, themeAssets, resources, root);
+        return new PluginManifest(1, id, name, version, capabilityLevel, minPlatform,
+                dependencies, permissions, contributions, themeAssets, processors, resources, root);
     }
 
-    private static void requireLevel1(JsonNode root, String id) {
+    /** 能力等级（ADR-0002 修订）：Level 1 声明式 / Level 2 数据处理器。 */
+    private static int capabilityLevelOf(JsonNode root, String id) {
         JsonNode level = root.get("capabilityLevel");
-        if (level == null || !level.isInt() || level.intValue() != 1) {
+        if (level == null || !level.isInt() || (level.intValue() != 1 && level.intValue() != 2)) {
             throw PluginValidationException.invalidManifest(
-                    "capabilityLevel 必须为 1（MVP 仅支持 Level 1 声明式插件）: " + id);
+                    "capabilityLevel 必须为 1（声明式）或 2（数据处理器）: " + id);
         }
+        return level.intValue();
+    }
+
+    /** processors 声明（Level 2 专属）：缺省/空段时 Level 2 拒、Level 1 合法空；
+     * Level 1 出现 processors 段即拒（S6 双轨：Level 1 零代码语义不变）。 */
+    private static List<ProcessorSpec> processorsOf(JsonNode contributionsNode, int capabilityLevel) {
+        JsonNode node = contributionsNode == null ? null : contributionsNode.get("processors");
+        boolean declared = node != null && !node.isNull();
+        if (!declared) {
+            return requireNoneOrReject(capabilityLevel);
+        }
+        if (capabilityLevel != 2) {
+            throw PluginValidationException.invalidManifest(
+                    "processors 贡献仅 Level 2 插件可声明（Level 1 为纯声明式）");
+        }
+        return parseProcessors(node);
+    }
+
+    private static List<ProcessorSpec> requireNoneOrReject(int capabilityLevel) {
+        if (capabilityLevel == 2) {
+            throw PluginValidationException.invalidManifest(
+                    "Level 2 插件必须声明 contributions.processors（数据处理器）");
+        }
+        return List.of();
+    }
+
+    private static List<ProcessorSpec> parseProcessors(JsonNode node) {
+        if (!node.isArray()) {
+            throw PluginValidationException.invalidManifest("contributions.processors 必须是数组");
+        }
+        List<ProcessorSpec> result = new ArrayList<>();
+        Set<String> seenKeys = new java.util.HashSet<>();
+        for (JsonNode item : node) {
+            ProcessorSpec spec = processorOf(item);
+            if (!seenKeys.add(spec.key())) {
+                throw PluginValidationException.invalidManifest("processor key 重复: " + spec.key());
+            }
+            result.add(spec);
+        }
+        if (result.isEmpty()) {
+            throw PluginValidationException.invalidManifest("Level 2 插件 processors 不能为空");
+        }
+        return List.copyOf(result);
+    }
+
+    private static ProcessorSpec processorOf(JsonNode item) {
+        if (item == null || !item.isObject()) {
+            throw PluginValidationException.invalidManifest("contributions.processors 含非对象项");
+        }
+        String key = fieldText(item, "key");
+        if (!KEY_PATTERN.matcher(key).matches()) {
+            throw PluginValidationException.invalidManifest("processor key 非法: " + key);
+        }
+        String label = fieldText(item, "label");
+        String kind = fieldText(item, "kind");
+        if (!ProcessorSpec.KINDS.contains(kind)) {
+            throw PluginValidationException.invalidManifest(
+                    "processor kind 非法（允许 python）: " + kind);
+        }
+        String entry = fieldText(item, "entry");
+        if (!SCRIPT_PATH_PATTERN.matcher(entry).matches()) {
+            throw PluginValidationException.invalidManifest(
+                    "processor entry 须为包内 scripts/*.py 相对路径: " + entry);
+        }
+        String inputEntity = fieldText(item, "inputEntity");
+        if (!ENTITY_NAME_PATTERN.matcher(inputEntity).matches()) {
+            throw PluginValidationException.invalidManifest(
+                    "processor inputEntity 须为小写下划线实体名: " + inputEntity);
+        }
+        return new ProcessorSpec(key, label, kind, entry, inputEntity);
     }
 
     private static List<DependencySpec> dependenciesOf(JsonNode root, String selfId) {

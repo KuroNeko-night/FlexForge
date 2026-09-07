@@ -84,6 +84,23 @@ public class GlobalExceptionHandler {
                 exception.getMessage());
     }
 
+    /** 处理器执行失败（P20）：not_found→404 / 输入超限→400 / 执行与输出失败→500，
+     * 均带专用稳定码（区别于通用 not_found 与 internal_error，审查 P2-5）。 */
+    @ExceptionHandler(com.flexforge.plugin.domain.ProcessorExecutionException.class)
+    public ResponseEntity<ErrorResponse> handleProcessorExecution(
+            com.flexforge.plugin.domain.ProcessorExecutionException exception) {
+        HttpStatus status;
+        if (com.flexforge.common.api.ErrorCodes.PROCESSOR_NOT_FOUND.equals(exception.code())) {
+            status = HttpStatus.NOT_FOUND;
+        } else if (com.flexforge.common.api.ErrorCodes.PROCESSOR_INPUT_TOO_LARGE
+                .equals(exception.code())) {
+            status = HttpStatus.BAD_REQUEST;
+        } else {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        return envelope(status, exception.code(), exception.getMessage());
+    }
+
     /** 上传超过 multipart 上限（docs/13 §3.5）：4xx 可诊断，不落 500 兜底。 */
     @ExceptionHandler({org.springframework.web.multipart.MaxUploadSizeExceededException.class})
     public ResponseEntity<ErrorResponse> handleUploadSize(

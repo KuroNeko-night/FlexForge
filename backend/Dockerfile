@@ -32,6 +32,8 @@ RUN ./mvnw -B -ntp package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
+# P20 数据处理器运行时（ADR-0002 Level 2）：python3 仅标准库、无 pip 安装面（S6 修订）
+RUN apk add --no-cache python3
 # 非 root 运行
 RUN addgroup -S flexforge && adduser -S flexforge -G flexforge
 COPY --from=build /build/backend/flexforge-app/target/*.jar app.jar

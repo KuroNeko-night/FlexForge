@@ -26,9 +26,14 @@ public final class ExtensionPoints {
     /** 美术资产贡献：背景图/图标/动画（FR-PLUGIN-11；P06 前端消费面落地）。 */
     public static final String THEME_ASSET = "extension.theme-asset";
 
+    /** 数据处理器贡献（ADR-0002 Level 2，P20 激活）：插件声明 Python 数据处理器，
+     * 平台子进程受控执行，输出经 Schema 校验（S6 修订双轨）。 */
+    public static final String DATA_PROCESSOR = "extension.data-processor";
+
     /** 登记册 active 全集，供注册-撤销测试与 R-GOV-03 比对遍历。 */
     public static final List<String> ALL =
-            List.of(NAVIGATION, FIELD_RENDERER, RECORD_ACTION, LAYOUT, THEME_ASSET);
+            List.of(NAVIGATION, FIELD_RENDERER, RECORD_ACTION, LAYOUT, THEME_ASSET,
+                    DATA_PROCESSOR);
 
     private ExtensionPoints() {
     }

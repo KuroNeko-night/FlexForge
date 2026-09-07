@@ -9,6 +9,7 @@ import com.flexforge.meta.domain.ViewRules;
 import com.flexforge.meta.domain.ViewType;
 import com.flexforge.plugin.domain.PluginValidationException;
 import com.flexforge.plugin.domain.PluginVersionRecord;
+import com.flexforge.plugin.domain.ProcessorSpec;
 import com.flexforge.plugin.domain.ThemeAssetSpec;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -163,6 +164,35 @@ final class PluginContributionFactory {
         return new ThemeAssetContribution(spec.key(), spec.kind(), spec.path(), spec.scope());
     }
 
+    /** processors 声明（P20，extension.data-processor；manifest JSON 解析）。 */
+    static List<ProcessorSpec> processorsOf(PluginVersionRecord version) {
+        JsonNode node = JSON.readTree(version.manifestJson())
+                .path("contributions").path("processors");
+        if (!node.isArray()) {
+            return List.of();
+        }
+        List<ProcessorSpec> result = new ArrayList<>();
+        for (int i = 0; i < node.size(); i++) {
+            JsonNode item = node.get(i);
+            result.add(new ProcessorSpec(item.path("key").asString(),
+                    item.path("label").asString(), item.path("kind").asString(),
+                    item.path("entry").asString(), item.path("inputEntity").asString()));
+        }
+        return List.copyOf(result);
+    }
+
+    /** 内存注册对象（data-processor 契约类型）。 */
+    static com.flexforge.common.contract.ProcessorContribution processorContribution(
+            ProcessorSpec spec) {
+        return new com.flexforge.common.contract.ProcessorContribution(
+                spec.key(), spec.label(), spec.kind(), spec.entry(), spec.inputEntity());
+    }
+
+    /** plugin_registration 持久化载荷（data-processor 契约完整字段）。 */
+    static String processorPayload(ProcessorSpec spec) {
+        return JSON.writeValueAsString(processorContribution(spec));
+    }
+
     /** plugin_registration 持久化载荷（§2.2 契约完整字段）。 */
     static String themeAssetPayload(ThemeAssetSpec spec) {
         return JSON.writeValueAsString(themeAssetContribution(spec));
@@ -207,8 +237,8 @@ final class PluginContributionFactory {
         }
         Map<String, List<String>> result = new HashMap<>();
         for (String key : contributions.propertyNames()) {
-            if ("themeAssets".equals(key)) {
-                continue; // 对象数组贡献，经 themeAssetsOf 单独解析
+            if ("themeAssets".equals(key) || "processors".equals(key)) {
+                continue; // 对象数组贡献，经 themeAssetsOf/processorsOf 单独解析（P20）
             }
             JsonNode array = contributions.get(key);
             if (array != null && array.isArray()) {
