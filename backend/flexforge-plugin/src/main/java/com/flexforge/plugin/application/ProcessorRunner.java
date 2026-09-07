@@ -125,17 +125,25 @@ public class ProcessorRunner {
         };
     }
 
-    /** 环境清空至最小集：仅保留解释器解析所必需的 PATH 与 Windows 系统键；
-     * stdio 的 UTF-8 由命令行 -X utf8 钉死（-I 会忽略 PYTHON* 环境变量）；
-     * 平台凭据类键（DB_/AUTH_/FLEXFORGE_）无从进入（S6 修订）。 */
+    /** 环境清空至最小集：仅保留解释器解析所必需的 PATH 与 Windows 系统键
+     * （PATHEXT/SystemRoot 仅 Windows 存在，Linux 容器为 null——逐键判空放入，
+     * live 实测 Map.of 遇 null 抛 NPE）；stdio 的 UTF-8 由命令行 -X utf8 钉死
+     * （-I 会忽略 PYTHON* 环境变量）；平台凭据类键无从进入（S6 修订）。 */
     private static void sanitizeEnvironment(ProcessBuilder builder) {
         Map<String, String> env = builder.environment();
-        Map<String, String> keep = Map.of(
-                "PATH", env.getOrDefault("PATH", System.getenv("PATH")),
-                "PATHEXT", env.getOrDefault("PATHEXT", System.getenv("PATHEXT")),
-                "SystemRoot", env.getOrDefault("SystemRoot", System.getenv("SystemRoot")));
+        String path = env.getOrDefault("PATH", System.getenv("PATH"));
+        String pathext = env.getOrDefault("PATHEXT", System.getenv("PATHEXT"));
+        String systemRoot = env.getOrDefault("SystemRoot", System.getenv("SystemRoot"));
         env.clear();
-        env.putAll(keep);
+        if (path != null) {
+            env.put("PATH", path);
+        }
+        if (pathext != null) {
+            env.put("PATHEXT", pathext);
+        }
+        if (systemRoot != null) {
+            env.put("SystemRoot", systemRoot);
+        }
     }
 
     private PythonBin resolveBin() {
