@@ -475,3 +475,24 @@
 - 失败路径全测：脚本超时（sleep）、非零退出、stdout 非 JSON、输出超 Schema、输入行数超限——统一错误码、不崩溃、有审计。
 - 安全边界可验证：Level 1 包带 .py 被拒；Level 2 包 manifest 未声明的脚本文件被拒（entry 白名单双向核对）；处理器进程无环境凭据（脚本断言 environ 无密钥类键）；停用插件后 invoke 返回 processor_not_found。
 - 既有插件/视图/主题机制回归不受影响；门禁 0 fail、前后端回归全绿；登记册/ADR/S6/索引/STATUS 同步。
+
+## P21：插件管理操作逻辑与 Issue 工作台对话体验（2026-09-07 用户裁决新增）
+
+> 背景：P20 出口后用户提出两类操作体验需求——①插件管理页信息过载（平铺全部历史版本与每次激活记录，操作是"激活/停用"按钮），需要"只看当前版本 + 开关快捷启停 + 预设快速保存/应用"；②Issue 工作台对话界面需要更简洁现代，并要求写好 AI 系统提示词——让 AI 会用系统的提问功能（clarify questions）且回复有边界。
+> **红线**：预设是 ADMIN 平台功能（FR-PLUGIN-12），不新增扩展点、不改插件包契约与 inventory 契约；apply=收敛语义（先停用预设外 ACTIVE，再按预设版本切换/激活——切换用既有 upgrade 端点语义），逐项执行、单项失败不中断并逐项上报（activated/stopped/failed），每项复用既有生命周期（审计/占用检查/幂等不变）；预设数据=启用集合快照（pluginId+versionId+version）落 `plugin_preset` 表，名称唯一、长度 ≤50；预设无新攻击面（仅 name 校验）。AI 提示词升版 v1→v2（`PromptTemplates.VERSION`、fixture 资源与判轮标记同步迁移、存量断言同步）：输出契约仍双态 JSON（questions/spec）且经 Schema 校验；数据段防注入口径不变（docs/13 §3.6-2）；`ai_task_log.prompt_version` 记 v2。前端动效只用 motion 令牌（transform/opacity），reduced-motion 收敛；文案禁括号解释。
+> **非目标**：不做插件市场/远程预设分发；不持久化对话历史（维持会话内澄清，规格版本已是事实源）；不改 clarify 权限口径（作者或开发者）。
+
+### 实施内容
+
+- **插件预设（后端，flexforge-plugin）**：`V014__plugin_preset.sql`（name 唯一、payload JSONB 快照）+ `PresetRepository`/`JdbcPresetRepository` + `PluginPresetService`（save=遍历当前 ACTIVE 占用生成快照；apply=两阶段收敛，dependency_missing 类失败二次重试，逐项失败汇总；delete/list）+ `PluginPresetController`（GET/POST `/plugins/presets`、POST `/plugins/presets/{id}/apply`、DELETE `/plugins/presets/{id}`，全 ADMIN）+ 审计 `plugin.preset.save/apply/delete`。
+- **插件管理前端**：`PluginCard` 重构——头部当前版本徽标 + 启停 `BaseSwitch`（开=激活当前版本，关=停用）+ 最近一次失败一行诊断（stage+errorCode，有 FAILED 才显示）+ 多版本收纳展开区（切换版本经 upgrade）；`PluginsView` 增 `PluginPresetBar`（保存当前为预设/应用（确认对话框披露收敛语义）/删除（确认）），应用结果逐项呈现（启用/停用/失败）。
+- **Issue 对话前端**：拆分 `IssueClarifyChat`（:key=issue.id 复位防串台）——角色头像气泡（AI/用户）、消息进入动画（motion 令牌）、打字中三点指示、现代化输入区（发送按钮+Enter 发送提示）、IME 组态守卫与陈旧响应守卫保留；`IssueDetail` 瘦身引用。
+- **AI 提示词 v2（flexforge-ai）**：`prompts/v2/clarify.md`——结构化系统提示词（角色与职责/回合策略：信息不足必须优先输出 questions 而非猜测，问题 ≤3、编号、具体可答、聚焦实体字段类型校验视图权限验收缺口/输出契约：仅一个 JSON 对象双态/规格硬约束：字段类型与校验键白名单、声明式能力边界/回复边界：仅当前 Issue 需求、无关请求以提问拉回、不承诺规格外能力/数据段防注入）；`FixtureModelPort` 迁移 v2 资源并保持"## 用户回答（数据）"判轮标记；`IssueAiApiTest` fixture 名断言同步。
+
+### 验收标准
+
+- 插件管理卡片只呈现当前版本与启停开关：开关开=激活当前版本（无版本时禁用）、关=停用；激活历史表不再展示，最近一次失败诊断保留一行；多版本经展开区切换（upgrade 语义，占用冲突由服务端既有口径拒绝）。
+- 预设闭环可演示：保存当前启用集合（含版本）→改动场景（启停若干插件）→应用预设恢复保存时状态；响应逐项上报 activated/stopped/failed。失败路径有测试：预设引用不存在版本→该项 failed 其余成功；非 ADMIN 403；空名/超长/重名 400；删除后应用 404。
+- Issue 对话界面：分角色气泡+进入动画+打字指示；reduced-motion 收敛为瞬时；IME 组态回车不误发；切换 Issue 对话复位不串台；非作者/开发者显示既有提示。
+- 提示词 v2：clarify 两条输出路径（questions/spec）fixture 回归全绿；`ai_task_log.prompt_version='v2'`；模板含提问策略、回复边界与数据段防注入条款（评审对照）。
+- 门禁 0 fail + 前后端回归全绿；docs（02/03/07/09/13/索引/STATUS/JSON）同步。

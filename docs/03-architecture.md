@@ -171,6 +171,10 @@ AI 不直接获得数据库管理员权限、服务器命令权限或生产发�
 | `POST` | `/api/v1/plugins/{newVersionId}/upgrade` | 升级（停旧→激活新；失败补偿回旧版本保持 current 可用，P11 迭代回路） |
 | `DELETE` | `/api/v1/plugins/{pluginId}` | 卸载（清理注册与实体；审计保留） |
 | `GET` | `/api/v1/plugins/inventory` | 查看插件版本、激活和失败诊断 |
+| `GET` | `/api/v1/plugins/presets` | 插件预设清单（P21，FR-PLUGIN-12，ADMIN） |
+| `POST` | `/api/v1/plugins/presets` | 保存当前启用集合为命名预设（body `{name}`；快照含版本） |
+| `POST` | `/api/v1/plugins/presets/{id}/apply` | 应用预设（收敛：停用预设外→按预设切换/激活；逐项结果 activated/stopped/failed） |
+| `DELETE` | `/api/v1/plugins/presets/{id}` | 删除预设 |
 | `POST` | `/api/v1/system/users` | 创建用户（ADMIN，事务内绑定角色，审计） |
 | `GET` | `/api/v1/system/users` | 用户分页查询（ADMIN） |
 | `PUT` | `/api/v1/system/users/{id}/roles` | 变更用户角色（ADMIN，审计） |

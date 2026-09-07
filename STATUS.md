@@ -3,14 +3,14 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P20
-CURRENT_STAGE_NAME: 插件代码处理器——Python 表格处理
-STAGE_STATUS: completed
+CURRENT_STAGE_ID: P21
+CURRENT_STAGE_NAME: 插件管理操作逻辑与 Issue 工作台对话体验
+STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 100%
 LAST_UPDATED: 2026-09-07
 OWNER: project-maintainer
-NEXT_ACTION: 【P00-P20 全阶段完成，项目维持 release_candidate】P20 出口 live 终验 2026-09-07（Linux 容器三处理器真实计算+UI 抽屉执行截图视觉模型核验；CI 六项绿含 Linux 后端权威验证）。后续=答辩准备（docs/14；演示机预导清单增 example-analytics——需后端镜像含 python3；答辩亮点=插件功能多样化两级模型：Level 1 声明式 CRUD×8 域 + Level 2 Python 数据处理器×3 型）与 Issue #22 余项排期；候选后续（stdout 文件重定向/DB_PASSWORD 回退收紧/实体间路由过渡/CSV 公式注入防护）待裁决
-EXIT_GATE: P20 出口证据（docs/09 P20 验收四项）：①三处理器计算正确（后端断言透视 18600/合格率 50%/负载汇总+前端 table·summary 渲染 4 用例）——live Linux 容器（python3 3.12）实测与 UI 截图核验；②失败路径全测 6/6（超时真 kill sleep30→10s/非零退出/非 JSON/结构违约/字段违约/输入行数 201>200 拒 processor_input_too_large/失败留审计≥5 条）；③安全边界可验证（Level 1 带 .py 拒/未声明脚本拒双向两分支/声明缺失拒/实体不匹配/未知 key 404 processor_not_found/进程环境敏感键=0 实测/停用即失效）；④门禁 21/1/0+前端 154+CI 六项绿。交叉审查（独立子代理）2 P1+6 P2+5 P3 全处置（PR #44 评论逐条回应）：P1-1 Linux NPE（CI+live 双证，fa821ee 判空修复，CI 权威复验）/P1-2 串行闸 Semaphore；P2 全修（join 竞态/测试整包重建/超限用例/成败双审计/专用码 404/残留能力披露）；P3 修 3 记 2。ADR-0002 Level 2 激活+S6 双轨修订+登记册 extension.data-processor（R-GOV-03 对齐 ExtensionPoint 6）。实施期另修两真缺陷：执行流读死锁（超时前 read 阻塞）与 Windows GBK 破坏 UTF-8 契约（-X utf8 钉死）。live 走查账号已封禁（P19 walkthrough 号沿用后封禁）。PR #44 合并 67d39ad
+NEXT_ACTION: 【P21 进行中（2026-09-07 用户裁决新增），P00-P20 已完成，项目维持 release_candidate】两项交付：①插件管理操作逻辑——卡片只呈现当前版本与启停开关（不再平铺历史版本与激活记录表，最近失败诊断保留一行），多版本经展开区切换（upgrade 语义），插件预设（保存当前启用集合快照/一键应用收敛，FR-PLUGIN-12）；②Issue 工作台——对话界面现代化（角色气泡/进入动画/打字指示）+ AI 系统提示词升版 v2（提问功能调用策略+回复边界+数据段防注入保留，FR-ISSUE-03A）。红线见 docs/09 P21
+EXIT_GATE: 待交付后填写
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -40,6 +40,7 @@ BLOCKERS: none
 | P18 | 前端现代极简风格化 | completed | 四项验收全过（七页视觉走查统一/骨架与主题包分工三态可验证/主题机制回归全绿/文案基线不变；审查 3P2+5P3 全处置，live 终验见 EXIT_GATE） |
 | P19 | 生产企业插件矩阵与前端动效完善 | completed | 五项验收全过（4 插件+看板分列/拖拽持久化与回滚/CSV 转义零请求/动效令牌化+reduced-motion/门禁 21/1/0+CI 六项绿；审查 3P2+8P3 全处置，live 终验见 EXIT_GATE） |
 | P20 | 插件代码处理器——Python 表格处理 | completed | 验收四项（docs/09 P20）：三处理器计算正确+渲染/失败路径全测/安全边界可验证/门禁全绿（ADR-0002 Level 2 激活+S6 双轨修订） |
+| P21 | 插件管理操作逻辑与 Issue 工作台对话体验 | in_progress | 验收标准见 docs/09 P21：卡片当前版本+开关+预设闭环/对话现代化+提示词 v2/门禁全绿 |
 
 ## 更新规则
 
@@ -177,3 +178,4 @@ BLOCKERS: none
 | 2026-09-07 | P20 | 迭代完成（分支 feat/p20-data-processor）：①后端全链——ManifestValidator 扩 Level 2（processors 声明校验）/ArchiveInspector scripts 区/导入双向核对+脚本载荷（asset_payloads）/激活注册（DB+内存，绑定 activationId 可撤销）/ProcessorRunner（子进程 python -I -X utf8：隔离模式+环境清空+临时目录+10s 超时 kill+stdout 1MB 上限+stdio UTF-8 钉死——Windows 默认 GBK 实测破坏契约后修正）/ProcessorService（输入组装=白名单查询平台单页上限 200 行+2MB 字节上限/输出 table·summary Schema 校验/审计）+ 清单与 invoke 端点（ADMIN/USER 同数据读权）+ 错误码 processor_not_found/failed/output_invalid/input_too_large + GlobalExceptionHandler 映射（@PublicApi 治理）②example-analytics 三处理器（采购月度透视/检验合格率/工单负载汇总，纯标准库本地冒烟通过）③前端——实体页"数据分析"抽屉（useEntityProcessors 入口/ProcessorDrawer 清单+执行+table·summary 渲染+失败局部提示）④测试——后端 5/5（含真实超时 kill 验证/非零退出/非 JSON/结构违约/字段违约/Level1 带脚本拒/未声明脚本拒/实体不匹配/未知 key/进程无环境凭据/停用失效）+前端 4 用例（154 全绿）；存量契约测试随 Level 2 更新（capabilityLevel 1|2）。门禁 21/1/0 | 本分支提交 2830dbd/fdf1265/b7d15f0 |
 | 2026-09-07 | P20 | 交叉审查（独立子代理，缺陷优先）：**2 P1 + 6 P2 + 5 P3**，逐条处置。P1-1 Linux 容器 PATHEXT/SystemRoot 为 null 致 Map.of NPE（Windows 宿主测试盲区；CI 红与本会话 live 双证）→fa821ee 逐键判空修复+容器验证；P1-2 ADR"invoke 串行"无代码对应→ProcessorRunner 单许可 Semaphore 实现；P2：stdout 采集竞态（collector join）/未声明脚本测试空转（整包重建+补声明缺失方向）/input_too_large 零测试（201 行用例）/失败无审计（invoke 成败双审计+断言）/not_found 码失配（locator 专用异常+404 映射+断言）/受信边界披露不完整（ADR+S6 补"文件系统与网络可访问，信任根=ADMIN"）；P3 修 3 记 2（单元格 2000 字符上限/locator 载荷缺失 warn/抽屉 watch entity；记：输出超限以超时形态报告属已知限制、resolveBin 负结果不缓存）。测试拆分 ExamplePluginsP20SecurityTest（4 用例），后端 6/6、门禁 21/1/0 | PR #44 评论、本条目 |
 | 2026-09-07 | P20 | **P20 出口复核通过置 completed；P00-P20 全阶段完成，进度 100%，release_candidate**。出口证据见 EXIT_GATE（live Linux 容器三处理器+UI 截图/6/6 失败与安全边界/门禁 21/1/0/CI 六项绿含 Linux 权威复验）；交叉审查 2P1+6P2+5P3 全处置 | PR #44（合并 67d39ad）、EXIT_GATE |
+| 2026-09-07 | P21 | 用户裁决新增阶段：①插件管理操作逻辑——只显示当前安装版本而非安装修改记录、开关快捷启停（替代按钮）、插件预设快速保存与应用；②Issue 工作台——更简洁现代的对话界面、AI 系统提示词（可调用系统提问功能、约束回复边界）。已完成规划：docs/09 P21 节（红线+验收）、docs/02 增 FR-PLUGIN-12/FR-ISSUE-03A、docs/03 §8 增预设四端点、docs/07 增 plugin_preset 表、docs/13 §3.2/§3.6 补预设与提示词 v2 口径 | docs/09 P21、docs/02/03/07/13、本条目 |

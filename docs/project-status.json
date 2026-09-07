@@ -1,13 +1,13 @@
 {
   "project": "FlexForge",
   "updatedAt": "2026-09-07",
-  "currentStageId": "P20",
-  "currentStageName": "插件代码处理器——Python 表格处理",
-  "status": "completed",
+  "currentStageId": "P21",
+  "currentStageName": "插件管理操作逻辑与 Issue 工作台对话体验",
+  "status": "in_progress",
   "progressPercent": 100,
   "owner": "project-maintainer",
-  "nextAction": "【P00-P20 全阶段完成，项目维持 release_candidate】P20 出口 live 终验 2026-09-07（Linux 容器三处理器真实计算+UI 抽屉执行截图视觉模型核验；CI 六项绿含 Linux 后端权威验证）。后续=答辩准备（docs/14；演示机预导清单增 example-analytics——需后端镜像含 python3；答辩亮点=插件功能多样化两级模型：Level 1 声明式 CRUD×8 域 + Level 2 Python 数据处理器×3 型）与 Issue #22 余项排期；候选后续（stdout 文件重定向/DB_PASSWORD 回退收紧/实体间路由过渡/CSV 公式注入防护）待裁决",
-  "exitGate": "P20 出口证据（docs/09 P20 验收四项）：①三处理器计算正确（后端断言透视 18600/合格率 50%/负载汇总+前端 table·summary 渲染 4 用例）——live Linux 容器（python3 3.12）实测与 UI 截图核验；②失败路径全测 6/6（超时真 kill sleep30→10s/非零退出/非 JSON/结构违约/字段违约/输入行数 201>200 拒 processor_input_too_large/失败留审计≥5 条）；③安全边界可验证（Level 1 带 .py 拒/未声明脚本拒双向两分支/声明缺失拒/实体不匹配/未知 key 404 processor_not_found/进程环境敏感键=0 实测/停用即失效）；④门禁 21/1/0+前端 154+CI 六项绿。交叉审查（独立子代理）2 P1+6 P2+5 P3 全处置（PR #44 评论逐条回应）：P1-1 Linux NPE（CI+live 双证，fa821ee 判空修复，CI 权威复验）/P1-2 串行闸 Semaphore；P2 全修（join 竞态/测试整包重建/超限用例/成败双审计/专用码 404/残留能力披露）；P3 修 3 记 2。ADR-0002 Level 2 激活+S6 双轨修订+登记册 extension.data-processor（R-GOV-03 对齐 ExtensionPoint 6）。实施期另修两真缺陷：执行流读死锁（超时前 read 阻塞）与 Windows GBK 破坏 UTF-8 契约（-X utf8 钉死）。live 走查账号已封禁（P19 walkthrough 号沿用后封禁）。PR #44 合并 67d39ad",
+  "nextAction": "【P21 进行中（2026-09-07 用户裁决新增），P00-P20 已完成，项目维持 release_candidate】两项交付：①插件管理操作逻辑——卡片只呈现当前版本与启停开关（不再平铺历史版本与激活记录表，最近失败诊断保留一行），多版本经展开区切换（upgrade 语义），插件预设（保存当前启用集合快照/一键应用收敛，FR-PLUGIN-12）；②Issue 工作台——对话界面现代化（角色气泡/进入动画/打字指示）+ AI 系统提示词升版 v2（提问功能调用策略+回复边界+数据段防注入保留，FR-ISSUE-03A）。红线见 docs/09 P21",
+  "exitGate": "待交付后填写",
   "blockers": [],
   "stages": [
     {
@@ -114,6 +114,11 @@
       "id": "P20",
       "name": "插件代码处理器——Python 表格处理",
       "status": "completed"
+    },
+    {
+      "id": "P21",
+      "name": "插件管理操作逻辑与 Issue 工作台对话体验",
+      "status": "in_progress"
     }
   ]
 }
