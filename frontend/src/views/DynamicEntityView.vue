@@ -12,6 +12,7 @@ import DynamicTable from '@/components/DynamicTable.vue';
 import EntityDetailSection from '@/components/EntityDetailSection.vue';
 import KanbanView from '@/components/KanbanView.vue';
 import ListPager from '@/components/ListPager.vue';
+import ProcessorDrawer from '@/components/ProcessorDrawer.vue';
 import RecordActionsBar from '@/components/RecordActionsBar.vue';
 import ViewToggle from '@/components/ViewToggle.vue';
 import StateView from '@/components/StateView.vue';
@@ -19,6 +20,8 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import { useEntityMetadata } from '@/composables/useEntityMetadata';
 import { useConfirmAction } from '@/composables/useConfirmAction';
+import { useEntityProcessors } from '@/composables/useEntityProcessors';
+import { useKanbanMove } from '@/composables/useKanbanMove';
 import { visibleRecordActions, type ActionContext } from '@/registry/recordActionRegistry';
 
 /** 动态实体页（docs/09 P06 验收 1）：四模式由路由参数驱动，无业务页面代码；P17 增看板呈现。 */
@@ -157,34 +160,9 @@ async function switchPresentation(next: 'table' | 'kanban'): Promise<void> {
   await refresh();
 }
 
-/** 看板拖拽换列（P19）：乐观移动 → PATCH 分组字段（补丁语义）→ 失败回滚原列并局部提示。 */
-const moveError = ref<string | null>(null);
-// 同卡片并发守卫：在途未结算时忽略新拖拽，防旧回滚覆盖新乐观值（审查 P3-6）
-const movingIds = new Set<string>();
-
-async function onCardMove(record: RecordView, targetOption: string): Promise<void> {
-  const groupBy = kanbanView.value?.groupBy;
-  if (!groupBy || movingIds.has(record.id)) {
-    return;
-  }
-  movingIds.add(record.id);
-  const previous = record.data[groupBy];
-  record.data[groupBy] = targetOption;
-  moveError.value = null;
-  try {
-    const updated = await updateRecord(entityName.value, record.id, { [groupBy]: targetOption });
-    const index = records.value.findIndex((item) => item.id === record.id);
-    if (index >= 0) {
-      records.value[index] = updated;
-    }
-  } catch (e) {
-    record.data[groupBy] = previous;
-    const detail = apiErrorMessage(e, null);
-    moveError.value = detail ? `移动失败，已还原到原列：${detail}` : '移动失败，已还原到原列';
-  } finally {
-    movingIds.delete(record.id);
-  }
-}
+/** 看板拖拽换列编排（P19，P20 抽 useKanbanMove）/ 处理器分析入口（P20）。 */
+const { moveError, onCardMove } = useKanbanMove(entityName, kanbanView, records);
+const { available: hasProcessors, drawerOpen: analysisOpen } = useEntityProcessors(entityName);
 
 /** 导出 CSV（P19）：当前已加载记录与可见列的本地生成（无网络请求）。 */
 function exportCsv(): void {
@@ -252,6 +230,9 @@ onMounted(refresh);
       <h2>{{ definition?.displayName ?? entityName }}</h2>
       <div v-if="state === 'ready' && mode === 'list'" class="header-actions">
         <ViewToggle v-if="kanbanView" :presentation="presentation" @change="switchPresentation" />
+        <BaseButton v-if="hasProcessors" data-testid="open-analysis" @click="analysisOpen = true">
+          数据分析
+        </BaseButton>
         <BaseButton data-testid="export-csv" @click="exportCsv">导出 CSV</BaseButton>
         <BaseButton variant="primary" @click="router.push(`/data/${entityName}/new`)">
           新增记录
@@ -343,5 +324,7 @@ onMounted(refresh);
       @confirm="settleConfirm(true)"
       @cancel="settleConfirm(false)"
     />
+
+    <ProcessorDrawer :open="analysisOpen" :entity="entityName" @close="analysisOpen = false" />
   </article>
 </template>

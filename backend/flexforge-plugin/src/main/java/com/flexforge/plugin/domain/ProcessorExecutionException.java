@@ -1,5 +1,6 @@
 package com.flexforge.plugin.domain;
 
+import com.flexforge.common.PublicApi;
 import com.flexforge.common.api.ErrorCodes;
 
 /**
@@ -7,6 +8,7 @@ import com.flexforge.common.api.ErrorCodes;
  * 的统一异常形态；code 取 processor_failed / processor_output_invalid /
  * processor_input_too_large（docs/09 P20 验收②的失败路径载体）。
  */
+@PublicApi
 public class ProcessorExecutionException extends RuntimeException {
 
     private final String code;
