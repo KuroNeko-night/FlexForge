@@ -45,8 +45,8 @@ FlexForge/
 │   ├── flexforge-data/             动态数据访问：data_record 单 JSONB 存储+实体级记录校验+白名单 SQL 构造+动态 CRUD API（service.data-access，P05）
 │   ├── flexforge-plugin/            插件包校验+版本存储+生命周期：P07 导入链路；P08 生命周期（激活/停用/升级/卸载/stale/重启恢复+MigrationScriptRunner+资产 serve）；P21 预设（PluginPresetService/Controller+PresetRepository，快照保存/收敛应用）
 │   ├── flexforge-issue/             Issue/评论/标签/状态机/版本化规格（P10）；P11：clarify/generate 编排+ai_task_log
-│   ├── flexforge-ai/                规格 Schema（RequirementSchema v1）+预览派生（P10）；P11：ModelPort+ClarifyEngine+PluginPackageGenerator+prompts/v1；P15：config/（AiEnv/AiConfigRepository/SecretCipher/AiConfigService/AiConfigController）+RoutingModelPort 运行时路由
-│   │   └── src/main/resources/prompts/v1/   提示词与 fixture 资源（clarify.md + fixture-spec.json，版本一一对应）
+│   ├── flexforge-ai/                规格 Schema（RequirementSchema v1）+预览派生（P10）；P11：ModelPort+ClarifyEngine+PluginPackageGenerator+prompts（P21 起 v2）；P15：config/（AiEnv/AiConfigRepository/SecretCipher/AiConfigService/AiConfigController）+RoutingModelPort 运行时路由
+│   │   └── src/main/resources/prompts/v2/   提示词与 fixture 资源（clarify.md + fixture-spec.json，版本一一对应；v1 为历史保留，P21 起装载 v2）
 │   └── flexforge-app/              启动、配置、健康检查；web/ 统一错误装配 + requestId 过滤器 + logback 脱敏基线（P02 迭代 2）；Testcontainers 冒烟 + ArchUnit（5 规则）+ R-GOV-06 fixture 测试 + AgentIssueE2eTest/E2eDemoScript（RB-E2E 五场景×3 干净库，P12）
 ├── frontend/                       Vue 3 + TS + Vite（P01 骨架 + P06 动态渲染）
 │   ├── package.json / package-lock.json   +vue-router；dev 依赖 +@vue/test-utils/happy-dom/globals（P06）；运行依赖 +@fontsource/inter（自托管字体，P16）

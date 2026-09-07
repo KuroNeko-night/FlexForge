@@ -27,12 +27,13 @@ const activeEntry = computed(() =>
   props.plugin.activations.find((item) => item.status === 'ACTIVE'),
 );
 const hasActive = computed(() => activeEntry.value !== undefined);
-/** 当前版本：启用中取占用版本，未启用取最新导入版本（清单按创建时间升序）。 */
+/** 当前版本：启用中取占用版本，未启用取最新导入版本（清单按创建时间升序）；
+ * 占用版本已不在清单（异常数据）时回退最新导入，避免"已启用/无版本"自相矛盾。 */
 const currentVersion = computed(() => {
-  if (activeEntry.value) {
-    return props.plugin.versions.find((v) => v.versionId === activeEntry.value?.pluginVersionId);
-  }
-  return props.plugin.versions.at(-1);
+  const occupying = activeEntry.value?.pluginVersionId;
+  return (
+    props.plugin.versions.find((v) => v.versionId === occupying) ?? props.plugin.versions.at(-1)
+  );
 });
 /** 最近一次失败诊断（清单按开始时间倒序，首个 FAILED 即最近）。 */
 const lastFailure = computed(() => {

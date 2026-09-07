@@ -204,11 +204,12 @@ function onToggle(plugin: PluginInventoryEntry, next: boolean): void {
   }
 }
 
-/** 版本切换：启用中经 upgrade（自动停旧+失败补偿），未启用直接激活。 */
+/** 版本切换：启用中经 upgrade（自动停旧+失败补偿），未启用直接激活。
+ * 动作须惰性求值——急切创建会在 run 单飞拒绝时留下无人消费的已发请求（审查 P2-1）。 */
 function onSwitchVersion(plugin: PluginInventoryEntry, versionId: string, version: string): void {
   const active = plugin.activations.find((item) => item.status === 'ACTIVE');
-  const action = active ? upgradeVersion(versionId) : activateVersion(versionId);
-  void run(`switch:${versionId}`, () => action, `已切换 ${plugin.name} 到 ${version}`);
+  const action = () => (active ? upgradeVersion(versionId) : activateVersion(versionId));
+  void run(`switch:${versionId}`, action, `已切换 ${plugin.name} 到 ${version}`);
 }
 
 async function submitConfirm(): Promise<void> {
@@ -285,7 +286,7 @@ onMounted(() => {
       <li v-for="plugin in plugins" :key="plugin.pluginId">
         <PluginCard
           :plugin="plugin"
-          :pending="pendingKey !== null"
+          :pending="pendingKey !== null || presetOps.busy.value"
           @toggle="(next) => onToggle(plugin, next)"
           @switch-version="(versionId, version) => onSwitchVersion(plugin, versionId, version)"
           @uninstall="confirmTarget = { kind: 'uninstall', plugin }"

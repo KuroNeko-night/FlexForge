@@ -99,6 +99,11 @@ class IssueAiApiTest {
                 "SELECT model FROM ai_task_log WHERE issue_id = ? LIMIT 1", String.class,
                 issueId);
         assertThat(model).isEqualTo("fixture-clarify-v2");
+        // P21：提示词 v2 落账断言（VERSION 常量回归即红，审查 P2-2）
+        String promptVersion = jdbc.queryForObject(
+                "SELECT prompt_version FROM ai_task_log WHERE issue_id = ? LIMIT 1", String.class,
+                issueId);
+        assertThat(promptVersion).isEqualTo("v2");
     }
 
     // ===== FR-ISSUE-05：手工规格兜底 → 生成 → 标准导入激活 → IN_TESTING → USER CRUD =====

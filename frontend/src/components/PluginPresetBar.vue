@@ -28,6 +28,13 @@ function submitSave(): void {
   draftName.value = '';
   emit('save', name);
 }
+
+/** IME 组态中的回车是选词不是提交（与澄清对话同口径，审查 P3-1）。 */
+function onNameEnter(event: KeyboardEvent): void {
+  if (!event.isComposing) {
+    submitSave();
+  }
+}
 </script>
 
 <template>
@@ -43,7 +50,7 @@ function submitSave(): void {
         maxlength="50"
         placeholder="预设名称"
         :disabled="busy"
-        @keydown.enter.prevent="submitSave"
+        @keydown.enter.prevent="onNameEnter"
       />
       <BaseButton variant="primary" :disabled="busy || draftName.trim() === ''" @click="submitSave">
         保存当前为预设
