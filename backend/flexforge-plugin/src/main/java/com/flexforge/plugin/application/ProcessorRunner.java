@@ -42,9 +42,10 @@ public class ProcessorRunner {
 
     private volatile PythonBin resolvedBin;
 
-    /** 执行脚本：stdin=inputJson（文件重定向），返回 stdout 全文；失败抛 ProcessorExecutionException。
-     * stdout 在后台线程采集（进程不产出时 read 阻塞，不占住 waitFor 的超时判定）。 */
+    /** 执行脚本（串行闸内，审查 P1-2"invoke 串行"）：stdin 文件重定向，stdout 后台采集。
+     * 失败抛 ProcessorExecutionException。 */
     public String run(byte[] scriptBytes, String inputJson) {
+        acquireSlot();
         Path workDir = null;
         try {
             workDir = Files.createTempDirectory("flexforge-processor-");
@@ -60,33 +61,67 @@ public class ProcessorRunner {
             Process process = builder.start();
             java.util.concurrent.atomic.AtomicReference<String> stdoutRef = new java.util.concurrent.atomic.AtomicReference<>();
             java.util.concurrent.atomic.AtomicReference<RuntimeException> readError = new java.util.concurrent.atomic.AtomicReference<>();
-            startCollector(process, stdoutRef, readError);
-
-            if (!process.waitFor(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
-                process.destroyForcibly();
-                process.waitFor(5, TimeUnit.SECONDS);
-                throw ProcessorExecutionException.failed("处理器执行超时（上限 "
-                        + TIMEOUT.toSeconds() + " 秒）");
-            }
+            Thread collectorThread = startCollector(process, stdoutRef, readError);
+            await(process);
+            joinCollector(collectorThread);
             if (readError.get() != null) {
                 throw readError.get();
             }
             requireZeroExit(process);
             return stdoutRef.get() == null ? "" : stdoutRef.get();
-        } catch (IOException e) {
-            throw ProcessorExecutionException.failed("处理器进程启动失败");
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw ProcessorExecutionException.failed("处理器执行被中断");
+        } catch (IOException | InterruptedException e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw ProcessorExecutionException.failed(e instanceof InterruptedException
+                    ? "处理器执行被中断" : "处理器进程启动失败");
         } finally {
+            releaseSlot();
             if (workDir != null) {
                 deleteRecursively(workDir);
             }
         }
     }
 
-    /** stdout 后台采集线程（read 阻塞不影响主线程超时判定）。 */
-    private static void startCollector(Process process,
+    /** 串行闸（审查 P1-2）：获取/释放单许可——并发 invoke 在此排队。 */
+    private final java.util.concurrent.Semaphore executionSlot =
+            new java.util.concurrent.Semaphore(1);
+
+    private void acquireSlot() {
+        try {
+            executionSlot.acquire();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw ProcessorExecutionException.failed("处理器执行被中断");
+        }
+    }
+
+    private void releaseSlot() {
+        executionSlot.release();
+    }
+
+    /** 等采集线程排干管道（审查 P2-1：waitFor 返回只代表进程退出，不代表采集完成，
+     * 不等待存在取到空串假报非法 JSON 的竞态）。 */
+    private static void joinCollector(Thread collector) {
+        try {
+            collector.join(2000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    /** 等待进程退出；超时强杀并统一 processor_failed（docs/09 P20 硬超时红线）。 */
+    private static void await(Process process) throws InterruptedException {
+        if (!process.waitFor(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
+            process.destroyForcibly();
+            process.waitFor(5, TimeUnit.SECONDS);
+            throw ProcessorExecutionException.failed(
+                    "处理器执行超时（上限 " + TIMEOUT.toSeconds() + " 秒）");
+        }
+    }
+
+    /** stdout 后台采集线程（read 阻塞不影响主线程超时判定）；返回线程供退出后 join。 */
+    private static Thread startCollector(Process process,
                                        java.util.concurrent.atomic.AtomicReference<String> stdoutRef,
                                        java.util.concurrent.atomic.AtomicReference<RuntimeException> readError) {
         Thread collector = new Thread(() -> {
@@ -98,6 +133,7 @@ public class ProcessorRunner {
         }, "processor-stdout");
         collector.setDaemon(true);
         collector.start();
+        return collector;
     }
 
     /** 非零退出统一 processor_failed（stderr 摘要只进服务端日志，S8）。 */

@@ -51,9 +51,10 @@ async function run(entry: ProcessorEntry): Promise<void> {
   }
 }
 
+// 抽屉开着切实体路由也重拉清单（审查 P3-3：旧清单+新实体 invoke 必 400）
 watch(
-  () => props.open,
-  (open) => {
+  () => [props.open, props.entity] as const,
+  ([open]) => {
     if (open) {
       void load();
     }

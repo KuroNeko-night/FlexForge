@@ -35,7 +35,7 @@
 - **S3 凭据慢哈希**：密码只存 bcrypt（cost ≥ 10）或 Argon2id；禁止明文、可逆加密、MD5/SHA-1/无盐哈希。
 - **S4 密钥零暴露**：JWT 密钥只经环境变量注入；模型 API key 经环境变量**或**管理员设置页录入（P15 起第二条受控通道，语义见 §3.6-5：AES-256-GCM 加密落库、读接口只回掩码）。密钥不得出现在仓库、日志、错误响应、API 明文出参或前端产物中。
 - **S5 前端无动态执行**：禁 `v-html`/`eval`/`new Function`；渲染只走白名单 renderer（对齐 `docs/coding-standards.md` §3）。
-- **S6 插件资源双轨校验（2026-09-04 修订，ADR-0002 Level 2 激活）**：Level 1 包只接受声明式资源、无任何代码文件；Level 2 包额外允许 `scripts/*.py` 且**仅**经 `extension.data-processor` 声明执行——上传包全链路校验（Schema、路径、大小、资源类型）不变。处理器执行边界：子进程 `python3 -I` + 环境清空 + 临时目录执行后清理 + 硬超时 kill + stdin/stdout 字节上限 + 输入行数上限=平台单页上限（200）+ stdout JSON 输出 Schema 校验；超时/非零退出/非 JSON/超限统一 `processor_failed` 族错误码且必有失败路径测试。处理器无 DB 凭据/平台 token/网络参数；调用（invoke）与动态数据读同权（ADMIN/USER），导入仍 ADMIN 特权。原"无任意代码"语义收窄为"无平台内代码执行"（脚本只在受控子进程跑数据计算）。
+- **S6 插件资源双轨校验（2026-09-04 修订，ADR-0002 Level 2 激活）**：Level 1 包只接受声明式资源、无任何代码文件；Level 2 包额外允许 `scripts/*.py` 且**仅**经 `extension.data-processor` 声明执行——上传包全链路校验（Schema、路径、大小、资源类型）不变。处理器执行边界：子进程 `python3 -I` + 环境清空 + 临时目录执行后清理 + 硬超时 kill + stdin/stdout 字节上限 + 输入行数上限=平台单页上限（200）+ stdout JSON 输出 Schema 校验；超时/非零退出/非 JSON/超限统一 `processor_failed` 族错误码且必有失败路径测试。处理器进程环境无平台注入的凭据键（DB_/AUTH_/FLEXFORGE_，测试实证）、执行串行（Semaphore）；**披露**：`-I` 仅隔离解释器配置，受信脚本仍可访问运行用户文件系统与网络——信任根=ADMIN 导入者，非多租户边界（ADR-0002 Level 2 表）；调用（invoke）与动态数据读同权（ADMIN/USER），导入仍 ADMIN 特权。原"无任意代码"语义收窄为"无平台内代码执行"（脚本只在受控子进程跑数据计算）。
 - **S7 AI 输出是数据不是指令**：模型输出必须通过 JSON Schema 校验与资源白名单才可进入系统；输出中的"指令性内容"一律不执行。
 - **S8 脱敏**：日志与错误响应不含密码、令牌、密钥、完整 Authorization 头、堆栈、SQL 与内部路径（对齐 `docs/coding-standards.md` §5、R-GOV-08）。
 - **S9 最小暴露**：Actuator 仅暴露 health；CORS 禁止通配 `*`；调试端点不进入演示/交付配置。

@@ -464,7 +464,7 @@
 ### 实施内容
 
 - **契约与登记**：ADR-0002 修订（Level 2 受信边界表）+ S6 修订（双轨校验）+ 登记册 `extension.data-processor`（payload {key,label,kind:'python',entry,inputEntity}；执行契约 stdin `{records}` → stdout `{kind:'table'|'summary',...}`）。
-- **后端引擎（flexforge-plugin）**：包校验扩展——capabilityLevel=2 时允许且仅允许 `scripts/*.py`（entry 必须指向存在脚本、大小上限）；激活注册 ProcessorContribution（绑定 activationId 可撤销，停用/卸载即失效）；`ProcessorRunner`（解释器解析 env>python3>python、临时目录、`-I` + 最小环境、超时 kill、输出上限）；`ProcessorService`（输入组装=经 service.data-access 白名单查询目标实体 ≤1000 行 → JSON → 执行 → 输出 Schema 校验 → 结果视图）；invoke 端点（POST `/api/v1/plugins/processors/{key}/invoke`）+ 处理器清单端点（GET `/api/v1/plugins/processors?entity=`）；审计 `plugin.processor.invoke`；错误码 `processor_not_found`/`processor_failed`/`processor_output_invalid`/`processor_input_too_large`。
+- **后端引擎（flexforge-plugin）**：包校验扩展——capabilityLevel=2 时允许且仅允许 `scripts/*.py`（entry 必须指向存在脚本、大小上限）；激活注册 ProcessorContribution（绑定 activationId 可撤销，停用/卸载即失效）；`ProcessorRunner`（解释器=内置候选 python3→python、临时目录、`-I -X utf8` + 最小环境、单许可 Semaphore 串行、超时 kill、输出上限、采集线程退出后 join）；`ProcessorService`（输入组装=经 service.data-access 白名单查询目标实体 ≤1000 行 → JSON → 执行 → 输出 Schema 校验 → 结果视图）；invoke 端点（POST `/api/v1/plugins/processors/{key}/invoke`）+ 处理器清单端点（GET `/api/v1/plugins/processors?entity=`）；审计 `plugin.processor.invoke`；错误码 `processor_not_found`/`processor_failed`/`processor_output_invalid`/`processor_input_too_large`。
 - **示例插件 example-analytics（capabilityLevel 2）**：三个真实表格处理器（纯标准库）——①采购月度透视（行=供应商×列=月份×值=金额合计）②检验合格率（按供应商分组聚合+百分比）③工单负载汇总（按状态计数/计划量合计+Top 班组）——证明"平台数据→Python 计算→结构化结果"的功能多样化。
 - **前端消费面**：实体列表页头部"分析"入口（该实体有声明的处理器时出现）→ BaseDrawer 抽屉：处理器列表 → 执行（loading 态）→ 结果渲染（table=结构表 / summary=指标卡，平台组件渲染非插件 UI）。
 - **运行环境**：后端镜像运行层 `apk add python3`（构建层不变）。

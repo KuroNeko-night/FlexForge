@@ -34,7 +34,7 @@ PluginDescriptor  ->  PluginContext  ->  Service/Extension Registry
 | 原 Level 2 要求 | 本项目落地 | 裁剪论证 |
 | --- | --- | --- |
 | 签名 | 不做；信任前提 = 插件导入是 ADMIN 特权操作（与 Level 1 同信任链：S6 校验 + 审计 + 版本不可变） | 毕设无外部分发渠道，导入者即信任根 |
-| 隔离运行时 | 子进程执行：`python3 -I`（隔离模式）+ 环境变量清空 + 临时目录落脚本、执行后清理；容器 cgroup 资源上限兜底 | 不引入独立沙箱（语言级沙箱超出范围，S 基线"明确不防"清单已有边界陈述） |
+| 隔离运行时 | 子进程执行：`python3 -I -X utf8`（隔离模式+stdio UTF-8）+ 环境变量清空 + 临时目录落脚本、执行后清理 + 单许可 Semaphore 串行；容器 cgroup 资源上限兜底 | 不引入独立沙箱（语言级沙箱超出范围）。**残留能力披露（2026-09-07 审查 P2-6）**：`-I` 只隔离解释器配置——受信脚本仍可访问运行用户文件系统与网络（如 stdlib socket）；信任根=ADMIN 导入者（与 Level 1 同链），非多租户边界 |
 | 资源限制 | 硬超时（默认 10s，超时 kill）；stdin/stdout 字节上限；输入记录行数上限（平台单页上限 200 行） | 处理器是短时批计算，无并发放大面（invoke 串行） |
 | 兼容性协议 | stdin/stdout JSON 契约（输入 `{records}`；输出 `{kind: table\|summary, ...}` 经平台 Schema 校验）+ 只允许 Python 标准库（镜像只装 python3 本体，无 pip 安装面） | 无第三方依赖即无供应链面（§3.9） |
 

@@ -39,6 +39,9 @@ public class ProcessorService {
     private static final int MAX_ROWS = 1000;
     private static final int MAX_ITEMS = 50;
 
+    /** 单元格文本上限（审查 P3-4：防单个近 1MB 文本渲染进一个单元格）。 */
+    private static final int MAX_CELL_TEXT = 2000;
+
     private final ActiveProcessorLocator locator;
     private final DynamicRecordService records;
     private final ProcessorRunner runner;
@@ -67,8 +70,20 @@ public class ProcessorService {
         return List.copyOf(result);
     }
 
-    /** 执行：entity 必须与处理器声明的 inputEntity 一致（声明式输入契约）。 */
+    /** 执行：entity 必须与处理器声明的 inputEntity 一致（声明式输入契约）；
+     * 成败均审计（docs/09 P20 验收②，审查 P2-4——超时等失败正是资源滥用信号）。 */
     public JsonNode invoke(String actor, String key, String entity) {
+        try {
+            JsonNode validated = doInvoke(key, entity);
+            audit.record(AuditEvents.of(actor, "plugin.processor.invoke", key, "success", clock));
+            return validated;
+        } catch (RuntimeException e) {
+            audit.record(AuditEvents.of(actor, "plugin.processor.invoke", key, "failure", clock));
+            throw e;
+        }
+    }
+
+    private JsonNode doInvoke(String key, String entity) {
         ActiveProcessorLocator.ActiveProcessor processor = locator.findByKey(key);
         if (!processor.spec().inputEntity().equals(entity)) {
             throw new PluginValidationException(ErrorCodes.VALIDATION_ERROR,
@@ -76,9 +91,7 @@ public class ProcessorService {
                             + "，与请求实体 " + entity + " 不一致");
         }
         JsonNode output = runAndParse(processor.script(), assembleInput(entity));
-        JsonNode validated = OutputValidator.validate(output);
-        audit.record(AuditEvents.of(actor, "plugin.processor.invoke", key, "success", clock));
-        return validated;
+        return OutputValidator.validate(output);
     }
 
     /** 执行并解析 stdout（非法 JSON 即 output_invalid）。 */
@@ -173,6 +186,10 @@ public class ProcessorService {
             for (JsonNode cell : row) {
                 if (!cell.isValueNode()) {
                     throw ProcessorExecutionException.outputInvalid("table 单元格必须是标量值");
+                }
+                if (cell.isTextual() && cell.asText().length() > MAX_CELL_TEXT) {
+                    throw ProcessorExecutionException.outputInvalid(
+                            "table 单元格文本超过 " + MAX_CELL_TEXT + " 字符上限");
                 }
             }
         }
