@@ -1,12 +1,36 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { Chart } from 'chart.js';
+import {
+  ArcElement,
+  BarController,
+  BarElement,
+  CategoryScale,
+  Chart,
+  Legend,
+  LinearScale,
+  PieController,
+  Tooltip,
+} from 'chart.js';
+
+// chart.js v4 裸入口不自动注册控制器（审查 P1-1）：条形/饼所需最小集显式注册
+Chart.register(
+  BarController,
+  BarElement,
+  PieController,
+  ArcElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend,
+);
 
 /**
  * 图表基建（P22，FR-CHART-01）：Chart.js 封装，条形/饼两种图型。
  * 调色板经 getComputedStyle 读取 --ff-chart-c1..c6 令牌（主题包覆盖即换肤）；
  * prefers-reduced-motion 下动画时长归零；canvas 带 aria 摘要 + 下方紧凑数据表
  * （可访问性与数据核对兜底）。数据由平台校验层保证（categories/values 等长）。
+ * 契约：props 视为不可变——父层以 :key/result 替换重建本组件（审查 P3-5），
+ * 不监听 props 变化重绘。
  */
 const props = defineProps<{
   type: 'bar' | 'pie';
@@ -15,18 +39,20 @@ const props = defineProps<{
   values: number[];
 }>();
 
+const FALLBACK_COLOR = '#6366f1';
+
 const canvas = ref<HTMLCanvasElement | null>(null);
 let chart: Chart | null = null;
 
-function palette(): string[] {
-  const styles = getComputedStyle(document.documentElement);
-  return ['c1', 'c2', 'c3', 'c4', 'c5', 'c6'].map(
-    (slot) => styles.getPropertyValue(`--ff-chart-${slot}`).trim() || '#6366f1',
-  );
+function tokenColor(styles: CSSStyleDeclaration, name: string): string {
+  return styles.getPropertyValue(name).trim() || FALLBACK_COLOR;
 }
 
-function total(): number {
-  return props.values.reduce((sum, value) => sum + value, 0);
+function palette(): string[] {
+  const styles = getComputedStyle(document.documentElement);
+  return ['c1', 'c2', 'c3', 'c4', 'c5', 'c6'].map((slot) =>
+    tokenColor(styles, `--ff-chart-${slot}`),
+  );
 }
 
 function render(): void {
@@ -34,7 +60,10 @@ function render(): void {
     // 无 2d 上下文（极老环境/测试环境）：canvas 绘制跳过，数据表兜底呈现
     return;
   }
+  const styles = getComputedStyle(document.documentElement);
   const colors = palette();
+  // canvas 不解析 CSS 变量：表面色取实值（审查 P2-1）
+  const surface = tokenColor(styles, '--ff-surface');
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   chart = new Chart(canvas.value, {
     type: props.type,
@@ -53,7 +82,7 @@ function render(): void {
               label: props.title,
               data: props.values,
               backgroundColor: props.categories.map((_, index) => colors[index % colors.length]),
-              borderColor: 'var(--ff-surface)',
+              borderColor: surface,
               borderWidth: 2,
             },
       ],
@@ -72,18 +101,31 @@ onBeforeUnmount(() => {
   chart?.destroy();
   chart = null;
 });
+
+/** 展示值：两位舍入，避免浮点尾数直出数据表（审查 P3-3）。 */
+function displayValue(value: number): string {
+  return String(Math.round(value * 100) / 100);
+}
+
+function totalText(): string {
+  const sum = props.values.reduce((acc, value) => acc + value, 0);
+  return Number.isFinite(sum) ? displayValue(sum) : '—';
+}
+
+/** aria 摘要：至多前 5 项，防 50 项级超长朗读（审查 P3-2）。 */
+function ariaSummary(): string {
+  const head = props.categories
+    .slice(0, 5)
+    .map((category, index) => `${category} ${displayValue(props.values[index])}`);
+  const suffix = props.categories.length > head.length ? ` 等 ${props.categories.length} 项` : '';
+  return `${props.title}：${head.join('、')}${suffix}`;
+}
 </script>
 
 <template>
   <figure class="chart-canvas" data-testid="chart-canvas">
     <div class="chart-frame">
-      <canvas
-        ref="canvas"
-        role="img"
-        :aria-label="`${title}：${categories
-          .map((category, index) => `${category} ${values[index]}`)
-          .join('、')}`"
-      ></canvas>
+      <canvas ref="canvas" role="img" :aria-label="ariaSummary()"></canvas>
     </div>
     <figcaption class="chart-title">{{ title }}</figcaption>
     <table class="chart-data" data-testid="chart-data">
@@ -102,13 +144,13 @@ onBeforeUnmount(() => {
       <tbody>
         <tr v-for="(category, index) in categories" :key="category">
           <td>{{ category }}</td>
-          <td>{{ values[index] }}</td>
+          <td>{{ displayValue(values[index]) }}</td>
         </tr>
       </tbody>
       <tfoot>
         <tr>
           <td>合计</td>
-          <td>{{ Math.round(total() * 100) / 100 }}</td>
+          <td>{{ totalText() }}</td>
         </tr>
       </tfoot>
     </table>

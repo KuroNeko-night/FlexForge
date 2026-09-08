@@ -13,6 +13,10 @@ for record in data.get("records", []):
 ordered = sorted(m for m in monthly if m != "未排期")
 if "未排期" in monthly:
     ordered.append("未排期")
+if not ordered:
+    # 空数据占位：输出合法 chart 而非空 categories（空数组会被平台契约拒绝，
+    # 终端用户对"暂无数据"的合法实体应看到空图而非 processor_output_invalid）
+    ordered = ["暂无数据"]
 print(json.dumps({
     "kind": "chart",
     "chartType": "bar",

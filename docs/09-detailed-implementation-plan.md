@@ -515,4 +515,4 @@
 - 图表基建可用：ChartCanvas 以条形/饼两种图型渲染任意 categories/values 输入，颜色取自令牌（主题包覆盖后图表随之换色），reduced-motion 下无动画；canvas 带 aria 摘要且下方数据表可核对。
 - 处理器图表闭环：example-analytics 0.2.0 激活后实体页"数据分析"抽屉出现两个图表处理器，执行返回 chart 结果并渲染为条形图/饼图（数值后端断言+前端渲染测试+live 截图核验）。
 - 契约边界可验证：坏 chart 输出（缺 chartType/长度不齐/pie 负值）统一 processor_output_invalid；既有 table/summary 处理器回归不受影响。
-- 门禁 0 fail + 前后端回归全绿 + 新依赖审计通过；docs（02/07/09/登记册/索引/STATUS/JSON）同步。
+- 门禁 0 fail + 前后端回归全绿 + 新依赖审计通过；docs（02/09/登记册/索引/STATUS/JSON）同步——处理器 stdout 输出契约自 P20 起唯一登记于登记册 §2.2，docs/07 不承载（审查 P3-6 口径修正）。

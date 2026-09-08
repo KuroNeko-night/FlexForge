@@ -7,6 +7,7 @@ import ChartCanvas from '@/components/ui/ChartCanvas.vue';
 interface ChartDatasetLike {
   data: number[];
   backgroundColor: string | string[];
+  borderColor?: string;
 }
 
 interface ChartConfigLike {
@@ -23,16 +24,29 @@ interface MockChartInstance {
   destroy: () => void;
 }
 
-// Chart 构造参数捕获（配置映射断言用）；destroy 可追踪卸载清理
+// Chart 构造参数捕获（配置映射断言用）；destroy 可追踪卸载清理；
+// register 静态为组件模块加载所调用，须与真实 API 同形
 vi.mock('chart.js', () => ({
-  Chart: vi.fn().mockImplementation(function mockChart(
-    this: MockChartInstance,
-    _canvas: HTMLCanvasElement,
-    config: unknown,
-  ) {
-    this.config = config;
-    this.destroy = vi.fn();
-  }),
+  Chart: Object.assign(
+    vi.fn().mockImplementation(function mockChart(
+      this: MockChartInstance,
+      _canvas: HTMLCanvasElement,
+      config: unknown,
+    ) {
+      this.config = config;
+      this.destroy = vi.fn();
+    }),
+    { register: vi.fn() },
+  ),
+  // 组件模块加载期解构的具名导出（仅作 Chart.register 入参，无需行为）
+  BarController: vi.fn(),
+  BarElement: vi.fn(),
+  PieController: vi.fn(),
+  ArcElement: vi.fn(),
+  CategoryScale: vi.fn(),
+  LinearScale: vi.fn(),
+  Tooltip: vi.fn(),
+  Legend: vi.fn(),
 }));
 
 import { Chart } from 'chart.js';
@@ -87,6 +101,8 @@ function setupEnv(): void {
 function teardownEnv(): void {
   vi.restoreAllMocks();
   document.documentElement.style.removeProperty('--ff-chart-c1');
+  document.documentElement.style.removeProperty('--ff-chart-c2');
+  document.documentElement.style.removeProperty('--ff-surface');
 }
 
 describe('ChartCanvas 配置映射（P22，FR-CHART-01）', () => {
@@ -106,8 +122,9 @@ describe('ChartCanvas 配置映射（P22，FR-CHART-01）', () => {
     expect(wrapper.find('[data-testid="chart-canvas"]').exists()).toBe(true);
   });
 
-  it('饼图：逐类目取调色板并显示图例', async () => {
+  it('饼图：逐类目取调色板、表面色实值描边并显示图例', async () => {
     document.documentElement.style.setProperty('--ff-chart-c2', 'rgb(20, 184, 166)');
+    document.documentElement.style.setProperty('--ff-surface', 'rgb(255, 255, 255)');
     mountChart({ type: 'pie' });
     await flushPromises();
     const config = lastConfig();
@@ -116,6 +133,8 @@ describe('ChartCanvas 配置映射（P22，FR-CHART-01）', () => {
       'rgb(99, 102, 241)',
       'rgb(20, 184, 166)',
     ]);
+    // canvas 不解析 CSS 变量：描边取表面色实值（审查 P2-1）
+    expect(config.data.datasets[0].borderColor).toBe('rgb(255, 255, 255)');
     expect(config.options.plugins.legend.display).toBe(true);
   });
 

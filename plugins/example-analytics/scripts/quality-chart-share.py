@@ -11,6 +11,9 @@ for record in data.get("records", []):
     verdicts[verdict] += 1
 
 categories = sorted(verdicts)
+if not categories:
+    # 空数据占位：输出合法 chart 而非空 categories（契约拒绝空数组，空数据≠故障）
+    categories = ["暂无数据"]
 print(json.dumps({
     "kind": "chart",
     "chartType": "pie",
