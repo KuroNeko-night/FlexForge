@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "example.analytics",
   "name": "表格分析处理器示例",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "capabilityLevel": 2,
   "minPlatformVersion": "0.1.0",
   "dependencies": [],
@@ -29,6 +29,20 @@
         "kind": "python",
         "entry": "scripts/workorder-load.py",
         "inputEntity": "production_order"
+      },
+      {
+        "key": "analytics.purchase.chart_monthly",
+        "label": "采购月度金额条形图",
+        "kind": "python",
+        "entry": "scripts/purchase-chart-monthly.py",
+        "inputEntity": "purchase_order"
+      },
+      {
+        "key": "analytics.quality.chart_share",
+        "label": "检验结论占比饼图",
+        "kind": "python",
+        "entry": "scripts/quality-chart-share.py",
+        "inputEntity": "quality_inspection"
       }
     ]
   },

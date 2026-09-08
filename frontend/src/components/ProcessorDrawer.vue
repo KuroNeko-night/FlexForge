@@ -10,11 +10,13 @@ import {
 import { apiErrorMessage } from '@/api/client';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseDrawer from '@/components/ui/BaseDrawer.vue';
+import ChartCanvas from '@/components/ui/ChartCanvas.vue';
 
 /**
  * 数据处理器抽屉（P20，extension.data-processor 消费面）：该实体声明的处理器
- * 清单 → 执行（loading/错误态）→ 结果渲染（table 结构表 / summary 指标卡）。
- * 结果由平台组件渲染（S5 白名单语义不变，插件无前端代码）。
+ * 清单 → 执行（loading/错误态）→ 结果渲染（table 结构表 / summary 指标卡 /
+ * chart 图表，P22 FR-CHART-01）。结果由平台组件渲染（S5 白名单语义不变，
+ * 插件无前端代码）。
  */
 const props = defineProps<{ open: boolean; entity: string }>();
 const emit = defineEmits<{ close: [] }>();
@@ -111,12 +113,19 @@ watch(
               </tbody>
             </table>
           </div>
-          <dl v-else class="processor-summary">
+          <dl v-else-if="result.kind === 'summary'" class="processor-summary">
             <template v-for="item in result.items" :key="item.label">
               <dt>{{ item.label }}</dt>
               <dd>{{ item.value === null ? '—' : String(item.value) }}</dd>
             </template>
           </dl>
+          <ChartCanvas
+            v-else
+            :type="result.chartType"
+            :title="result.title"
+            :categories="result.categories"
+            :values="result.values"
+          />
         </section>
       </template>
     </div>

@@ -24,6 +24,15 @@
   --ff-danger-bg: oklch(97.1% 0.013 17.38); /* red-50 */
   --ff-warn: oklch(55.5% 0.163 48.998); /* amber-700 */
   --ff-warn-bg: oklch(98.7% 0.022 95.277); /* amber-50 */
+  /* 图表分类色板（P22，FR-CHART-01）：canvas/chart.js 色彩运算不认 oklch，
+     用 Tailwind v4 同名色 hex 实值（indigo/teal/amber/rose/sky/violet -500）；
+     主题包覆盖此组令牌即可给图表换肤；多于六色时循环取用 */
+  --ff-chart-c1: #6366f1; /* indigo-500 */
+  --ff-chart-c2: #14b8a6; /* teal-500 */
+  --ff-chart-c3: #f59e0b; /* amber-500 */
+  --ff-chart-c4: #f43f5e; /* rose-500 */
+  --ff-chart-c5: #0ea5e9; /* sky-500 */
+  --ff-chart-c6: #8b5cf6; /* violet-500 */
   --ff-scrim: rgb(9 9 11 / 45%); /* zinc-950 遮罩（抽屉/对话框统一） */
   /* 侧栏导航（P18 浅色平面：浅底+右发丝线，激活 pill+主色强调条）。
      派生公式面向浅色侧栏（ink-strong=加深、hover/active=浅底中性）；
