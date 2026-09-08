@@ -77,6 +77,28 @@ describe('ProcessorDrawer：清单与 table 结果（P20）', () => {
   });
 });
 
+describe('ProcessorDrawer：chart 结果（P22 FR-CHART-01）', () => {
+  it('执行 chart 处理器渲染图表基建与数据表', async () => {
+    const chart: ProcessorResult = {
+      kind: 'chart',
+      chartType: 'bar',
+      title: '采购月度金额合计',
+      categories: ['2026-09', '2026-10'],
+      values: [18600, 47200.5],
+    };
+    vi.mocked(invokeProcessor).mockResolvedValue(chart);
+    const wrapper = mountDrawer();
+    await flushPromises();
+    await wrapper.find('[data-testid="run-analytics.purchase.monthly"]').trigger('click');
+    await flushPromises();
+    // happy-dom 无 2d 上下文：canvas 绘制降级，数据表与标题仍完整呈现（基建兜底）
+    expect(wrapper.find('[data-testid="chart-canvas"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="chart-data"]').text()).toContain('2026-09');
+    expect(wrapper.find('[data-testid="chart-data"]').text()).toContain('47200.5');
+    expect(wrapper.find('.chart-title').text()).toContain('采购月度金额合计');
+  });
+});
+
 describe('ProcessorDrawer：summary 结果与失败路径（P20）', () => {
   it('执行 summary 处理器渲染指标列表', async () => {
     const summary: ProcessorResult = {
