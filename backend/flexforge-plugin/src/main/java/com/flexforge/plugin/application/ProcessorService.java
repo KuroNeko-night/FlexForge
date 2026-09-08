@@ -24,7 +24,7 @@ import java.util.Map;
  * 处理器编排（P20，extension.data-processor 责任模块）：清单查询（ACTIVE 激活
  * 展开，经 {@link ActiveProcessorLocator}）与 invoke——输入组装（经
  * service.data-access 白名单查询目标实体，行数/字节上限）→ {@link ProcessorRunner}
- * 受控执行 → 输出契约校验（table/summary，登记册 §2.2）→ 结果返回并审计。
+ * 受控执行 → 输出契约校验（table/summary/chart，登记册 §2.2，P22 增 chart）→ 结果返回并审计。
  */
 @Service
 public class ProcessorService {
@@ -41,6 +41,11 @@ public class ProcessorService {
 
     /** 单元格文本上限（审查 P3-4：防单个近 1MB 文本渲染进一个单元格）。 */
     private static final int MAX_CELL_TEXT = 2000;
+
+    /** 图表契约上限（P22，FR-PLUGIN-13）：点位/标签/标题。 */
+    private static final int MAX_CHART_POINTS = 50;
+    private static final int MAX_CHART_LABEL = 100;
+    private static final int MAX_CHART_TITLE = 200;
 
     private final ActiveProcessorLocator locator;
     private final DynamicRecordService records;
@@ -129,8 +134,9 @@ public class ProcessorService {
     public record ProcessorView(String key, String label, String pluginId, String inputEntity) {
     }
 
-    /** 输出契约校验（登记册 §2.2）：kind=table（columns/rows 定宽二维标量）或
-     * kind=summary（items 标量）；违约 processor_output_invalid。 */
+    /** 输出契约校验（登记册 §2.2）：kind=table（columns/rows 定宽二维标量）、
+     * kind=summary（items 标量）或 kind=chart（chartType bar|pie + categories/values，
+     * FR-PLUGIN-13）；违约 processor_output_invalid。 */
     static final class OutputValidator {
 
         private OutputValidator() {
@@ -141,13 +147,12 @@ public class ProcessorService {
                 throw ProcessorExecutionException.outputInvalid("处理器输出必须是 JSON 对象");
             }
             String kind = output.path("kind").asString("");
-            if ("table".equals(kind)) {
-                requireTable(output);
-            } else if ("summary".equals(kind)) {
-                requireSummary(output);
-            } else {
-                throw ProcessorExecutionException.outputInvalid(
-                        "输出 kind 必须是 table 或 summary: " + kind);
+            switch (kind) {
+                case "table" -> requireTable(output);
+                case "summary" -> requireSummary(output);
+                case "chart" -> requireChart(output);
+                default -> throw ProcessorExecutionException.outputInvalid(
+                        "输出 kind 必须是 table、summary 或 chart: " + kind);
             }
             return output;
         }
@@ -205,6 +210,55 @@ public class ProcessorService {
                     throw ProcessorExecutionException.outputInvalid(
                             "summary.items 每项须含非空 label 与标量 value");
                 }
+            }
+        }
+
+        /** 图表契约（P22，FR-PLUGIN-13）：chartType bar|pie、标题、categories/values 逐点校验。 */
+        private static void requireChart(JsonNode output) {
+            requireChartHeader(output);
+            JsonNode categories = output.path("categories");
+            JsonNode values = output.path("values");
+            if (!categories.isArray() || categories.isEmpty()
+                    || categories.size() > MAX_CHART_POINTS) {
+                throw ProcessorExecutionException.outputInvalid(
+                        "chart.categories 必须是非空数组（≤" + MAX_CHART_POINTS + " 项）");
+            }
+            if (!values.isArray() || values.size() != categories.size()) {
+                throw ProcessorExecutionException.outputInvalid(
+                        "chart.values 必须是与 categories 等长的数字数组");
+            }
+            for (int i = 0; i < categories.size(); i++) {
+                requireChartPoint(categories.get(i), values.get(i), "pie".equals(
+                        output.path("chartType").asString()));
+            }
+        }
+
+        /** 图表头校验：chartType 白名单与标题长度。 */
+        private static void requireChartHeader(JsonNode output) {
+            String chartType = output.path("chartType").asString("");
+            if (!"bar".equals(chartType) && !"pie".equals(chartType)) {
+                throw ProcessorExecutionException.outputInvalid(
+                        "chart.chartType 必须是 bar 或 pie: " + chartType);
+            }
+            String title = output.path("title").asString("");
+            if (title.isBlank() || title.length() > MAX_CHART_TITLE) {
+                throw ProcessorExecutionException.outputInvalid(
+                        "chart.title 必须是非空文本（≤" + MAX_CHART_TITLE + " 字符）");
+            }
+        }
+
+        /** 单点校验：标签非空定长；值有限数字；饼图份额不允许负值。 */
+        private static void requireChartPoint(JsonNode category, JsonNode value, boolean pie) {
+            String label = category.asString("");
+            if (!category.isTextual() || label.isBlank() || label.length() > MAX_CHART_LABEL) {
+                throw ProcessorExecutionException.outputInvalid(
+                        "chart.categories 每项须为非空文本（≤" + MAX_CHART_LABEL + " 字符）");
+            }
+            if (!value.isNumber() || !Double.isFinite(value.asDouble())) {
+                throw ProcessorExecutionException.outputInvalid("chart.values 每项须为有限数字");
+            }
+            if (pie && value.asDouble() < 0) {
+                throw ProcessorExecutionException.outputInvalid("饼图份额不允许负值");
             }
         }
     }

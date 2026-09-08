@@ -71,7 +71,7 @@ class ExamplePluginsP20Test {
     void processorsComputeRealEntityData() throws Exception {
         ensureP19PluginsActivated();
         seedEntityRecords();
-        importAndActivate(analyticsZip);
+        reactivateAnalyticsBase();
 
         // 清单端点（USER 可读，与数据读同权）：三处理器注册可见，按实体过滤生效
         String listBody = getJson("/api/v1/plugins/processors", userBearer);
@@ -124,6 +124,22 @@ class ExamplePluginsP20Test {
         ensureActivated(Path.of("..", "..", "plugins", "example-purchase"), "example.purchase");
         ensureActivated(Path.of("..", "..", "plugins", "example-quality"), "example.quality");
         ensureActivated(Path.of("..", "..", "plugins", "example-workorder"), "example.workorder");
+    }
+
+    /** 回到 0.2.0 基线：先停占用，再激活清单中既有 versionId——重打包字节漂移
+     * 会撞同版本不可变契约，导入仅在该版本从未存在时发生（共享库类序不保证）。 */
+    private void reactivateAnalyticsBase() throws Exception {
+        stopActive("example.analytics");
+        String inventory = getJson("/api/v1/plugins/inventory", adminBearer);
+        String versionId = versionIdOf(inventory, "0.2.0");
+        if (versionId == null) {
+            importAndActivate(analyticsZip);
+            return;
+        }
+        mockMvc.perform(MockMvcRequestBuilders.post(
+                        "/api/v1/plugins/" + versionId + "/activate")
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isOk());
     }
 
     private void seedEntityRecords() throws Exception {
@@ -205,6 +221,18 @@ class ExamplePluginsP20Test {
         stopActive("example.analytics");
     }
 
+    /** 从清单展开目标版本号（Java 侧筛选，避免嵌套 JsonPath 过滤兼容性）。 */
+    private static String versionIdOf(String inventory, String version) {
+        List<java.util.Map<String, Object>> versions = JsonPath.read(inventory,
+                "$[?(@.pluginId == 'example.analytics')].versions[*]");
+        for (java.util.Map<String, Object> entry : versions) {
+            if (version.equals(entry.get("version"))) {
+                return String.valueOf(entry.get("versionId"));
+            }
+        }
+        return null;
+    }
+
     private void ensureActivated(Path dir, String pluginId) throws Exception {
         String inventory = getJson("/api/v1/plugins/inventory", adminBearer);
         List<String> activeIds = JsonPath.read(inventory,
@@ -252,15 +280,22 @@ class ExamplePluginsP20Test {
     private static byte[] scriptPackage(String scriptContent, String version) throws Exception {
         byte[] manifest = Files.readAllBytes(ANALYTICS_DIR.resolve("plugin.json"));
         byte[] mutated = new String(manifest, StandardCharsets.UTF_8)
-                .replace("\"version\": \"0.1.0\"", "\"version\": \"" + version + "\"")
+                .replace("\"version\": \"0.2.0\"", "\"version\": \"" + version + "\"")
                 .getBytes(StandardCharsets.UTF_8);
+        // P22 起 manifest 声明五个脚本（含双图处理器）：坏包须带全声明脚本（导入双向核对）
         return zipOf(new Entry("plugin.json", mutated),
                 new Entry("scripts/purchase-monthly.py",
                         scriptContent.getBytes(StandardCharsets.UTF_8)),
                 new Entry("scripts/quality-yield.py",
                         Files.readAllBytes(ANALYTICS_DIR.resolve("scripts/quality-yield.py"))),
                 new Entry("scripts/workorder-load.py",
-                        Files.readAllBytes(ANALYTICS_DIR.resolve("scripts/workorder-load.py"))));
+                        Files.readAllBytes(ANALYTICS_DIR.resolve("scripts/workorder-load.py"))),
+                new Entry("scripts/purchase-chart-monthly.py",
+                        Files.readAllBytes(ANALYTICS_DIR.resolve(
+                                "scripts/purchase-chart-monthly.py"))),
+                new Entry("scripts/quality-chart-share.py",
+                        Files.readAllBytes(ANALYTICS_DIR.resolve(
+                                "scripts/quality-chart-share.py"))));
     }
 
     private record Entry(String name, byte[] bytes) {

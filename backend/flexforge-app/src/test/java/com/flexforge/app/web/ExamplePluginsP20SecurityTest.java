@@ -78,7 +78,7 @@ class ExamplePluginsP20SecurityTest {
     @Test
     void invokeSecurityBoundaries() throws Exception {
         ensureP19PluginsActivated();
-        importAndActivate(analyticsZip);
+        reactivateAnalyticsBase();
         // 实体不匹配：purchase 处理器传 production_order
         mockMvc.perform(invokePost("analytics.purchase.monthly")
                         .header("Authorization", adminBearer)
@@ -124,7 +124,7 @@ class ExamplePluginsP20SecurityTest {
     @Test
     void inputRowsBeyondPlatformPageCapRejected() throws Exception {
         ensureP19PluginsActivated();
-        importAndActivate(analyticsZip);
+        reactivateAnalyticsBase();
         // 造 201 条检验记录（> 平台单页上限 200 = 处理器输入行数上限，审查 P2-3）
         for (int i = 0; i < 201; i++) {
             postJson("/api/v1/data/quality_inspection", String.format(
@@ -195,6 +195,38 @@ class ExamplePluginsP20SecurityTest {
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
     }
 
+    /** 回到 0.2.0 基线：先停占用，再激活清单中既有 versionId（字节不可变契约下
+     * 重打包导入必 400；导入仅在该版本从未存在时发生——共享库类序不保证）。 */
+    private void reactivateAnalyticsBase() throws Exception {
+        stopActive("example.analytics");
+        String inventory = mockMvc.perform(MockMvcRequestBuilders.get(
+                        "/api/v1/plugins/inventory").header("Authorization", adminBearer))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        String versionId = versionIdOf(inventory);
+        if (versionId == null) {
+            importAndActivate(analyticsZip);
+            return;
+        }
+        mockMvc.perform(MockMvcRequestBuilders.post(
+                        "/api/v1/plugins/" + versionId + "/activate")
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isOk());
+    }
+
+    /** 从清单展开 0.2.0 版本号（Java 侧筛选，避免嵌套 JsonPath 过滤兼容性）。 */
+    private static String versionIdOf(String inventory) {
+        java.util.List<java.util.Map<String, Object>> versions =
+                com.jayway.jsonpath.JsonPath.read(inventory,
+                        "$[?(@.pluginId == 'example.analytics')].versions[*]");
+        for (java.util.Map<String, Object> entry : versions) {
+            if ("0.2.0".equals(entry.get("version"))) {
+                return String.valueOf(entry.get("versionId"));
+            }
+        }
+        return null;
+    }
+
     private String importOnly(byte[] zip) throws Exception {
         String body = mockMvc.perform(
                         MockMvcRequestBuilders.multipart("/api/v1/plugins/import")
@@ -232,14 +264,20 @@ class ExamplePluginsP20SecurityTest {
     private static byte[] scriptPackage(String scriptContent, String version) throws Exception {
         byte[] manifest = Files.readAllBytes(ANALYTICS_DIR.resolve("plugin.json"));
         byte[] mutated = new String(manifest, StandardCharsets.UTF_8)
-                .replace("\"version\": \"0.1.0\"", "\"version\": \"" + version + "\"")
+                .replace("\"version\": \"0.2.0\"", "\"version\": \"" + version + "\"")
                 .getBytes(StandardCharsets.UTF_8);
         return zipOf(new Entry("plugin.json", mutated),
                 new Entry("scripts/purchase-monthly.py", scriptContent.getBytes(StandardCharsets.UTF_8)),
                 new Entry("scripts/quality-yield.py",
                         Files.readAllBytes(ANALYTICS_DIR.resolve("scripts/quality-yield.py"))),
                 new Entry("scripts/workorder-load.py",
-                        Files.readAllBytes(ANALYTICS_DIR.resolve("scripts/workorder-load.py"))));
+                        Files.readAllBytes(ANALYTICS_DIR.resolve("scripts/workorder-load.py"))),
+                new Entry("scripts/purchase-chart-monthly.py",
+                        Files.readAllBytes(ANALYTICS_DIR.resolve(
+                                "scripts/purchase-chart-monthly.py"))),
+                new Entry("scripts/quality-chart-share.py",
+                        Files.readAllBytes(ANALYTICS_DIR.resolve(
+                                "scripts/quality-chart-share.py"))));
     }
 
     /** Level 1 声明（无 processors）+ 包内携带脚本：S6 双轨拒绝面。 */
@@ -273,6 +311,12 @@ class ExamplePluginsP20SecurityTest {
                         Files.readAllBytes(ANALYTICS_DIR.resolve("scripts/quality-yield.py"))),
                 new Entry("scripts/workorder-load.py",
                         Files.readAllBytes(ANALYTICS_DIR.resolve("scripts/workorder-load.py"))),
+                new Entry("scripts/purchase-chart-monthly.py",
+                        Files.readAllBytes(ANALYTICS_DIR.resolve(
+                                "scripts/purchase-chart-monthly.py"))),
+                new Entry("scripts/quality-chart-share.py",
+                        Files.readAllBytes(ANALYTICS_DIR.resolve(
+                                "scripts/quality-chart-share.py"))),
                 new Entry("scripts/extra.py",
                         "print('undeclared')\n".getBytes(StandardCharsets.UTF_8)));
     }
