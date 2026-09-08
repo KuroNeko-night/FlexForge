@@ -496,3 +496,23 @@
 - Issue 对话界面：分角色气泡+进入动画+打字指示；reduced-motion 收敛为瞬时；IME 组态回车不误发；切换 Issue 对话复位不串台；非作者/开发者显示既有提示。
 - 提示词 v2：clarify 两条输出路径（questions/spec）fixture 回归全绿；`ai_task_log.prompt_version='v2'`；模板含提问策略、回复边界与数据段防注入条款（评审对照）。
 - 门禁 0 fail + 前后端回归全绿；docs（02/03/07/09/13/索引/STATUS/JSON）同步。
+
+## P22：图表渲染基建与处理器图表输出（2026-09-08 用户裁决新增）
+
+> 背景：P21 出口后用户指令"同样的思路继续优化程序和添加功能，同时完善一个基建，程序要有渲染图表的能力（条形图，饼图）"。图表是平台级基建缺口：动态实体/处理器结果目前只有表格与指标卡两种呈现。
+> **红线**：图表基建=**平台前端白名单渲染**（FR-CHART-01）——新组件 ChartCanvas 封装开源 chart.js（MIT；canvas 绘制、无运行时外链，CSP 不变；新依赖单独提交并在 docs/13 §3.9 口径内说明用途/许可证/替代方案）；插件仍无前端代码（S5 不变），只能经数据处理器 stdout 声明图表数据。处理器输出契约**只增不改**：新增 `kind='chart'`（chartType ∈ {bar, pie}；title 非空 ≤200；categories 非空字符串数组 ≤50 项每项 ≤100 字符；values 有限数字数组与 categories 等长 ≤50；pie 值必须 ≥0），违约复用 `processor_output_invalid`；既有 table/summary 契约与错误码不动。example-analytics 同版本不可变→升 0.2.0（既有三处理器保留，新增条形/饼图两处理器，纯标准库）。动效：Chart.js 动画时长在 prefers-reduced-motion 下归零；调色板走 `--ff-chart-c1..c6` 结构令牌（主题包可覆盖=结构与皮分离）。
+> **非目标**：不做可视化图表设计器/交互式钻取；不支持时序/散点等扩展图型（登记为候选）；不改变处理器执行边界（子进程/超时/IO 上限/S6 双轨均不变）。
+
+### 实施内容
+
+- **前端基建（frontend）**：新依赖 `chart.js`（单独提交）；`components/ui/ChartCanvas.vue`——props {type: 'bar'|'pie', title, categories, values}，getComputedStyle 读取调色板令牌，canvas + role="img" + aria-label 摘要 + 下方紧凑数据表（可访问性与数据核对兜底），unmount 销毁实例；`styles/tokens.css` 增 `--ff-chart-c1..c6` 六色基线（reduced-motion 不涉及时长动画，Chart.js options 按 matchMedia 归零）。
+- **处理器契约扩展（flexforge-plugin）**：`ProcessorService.OutputValidator` 增 `requireChart`——按上述规则校验；`ProcessorDrawer` 结果区增 chart 分支（ChartCanvas 渲染）；`api/processors.ts` ProcessorResult 联合增 chart 变体。
+- **示例插件 example-analytics 0.2.0**：`analytics.purchase.chart-monthly`（条形图：采购单按月金额合计）+ `analytics.quality.chart-share`（饼图：检验结论占比），stdin/stdout 契约同既有处理器。
+- **测试**：后端——0.2.0 包导入激活、两图处理器计算正确断言（categories/values 数值）、坏 chart 输出三向（chartType 缺失/values 与 categories 不等长/pie 负值）→ processor_output_invalid（坏包用独立版本号，仿 P17 替换手法）；前端——ChartCanvas 配置映射（bar/pie 数据集、调色板、reduced-motion）与抽屉 chart 分支渲染。
+
+### 验收标准
+
+- 图表基建可用：ChartCanvas 以条形/饼两种图型渲染任意 categories/values 输入，颜色取自令牌（主题包覆盖后图表随之换色），reduced-motion 下无动画；canvas 带 aria 摘要且下方数据表可核对。
+- 处理器图表闭环：example-analytics 0.2.0 激活后实体页"数据分析"抽屉出现两个图表处理器，执行返回 chart 结果并渲染为条形图/饼图（数值后端断言+前端渲染测试+live 截图核验）。
+- 契约边界可验证：坏 chart 输出（缺 chartType/长度不齐/pie 负值）统一 processor_output_invalid；既有 table/summary 处理器回归不受影响。
+- 门禁 0 fail + 前后端回归全绿 + 新依赖审计通过；docs（02/07/09/登记册/索引/STATUS/JSON）同步。

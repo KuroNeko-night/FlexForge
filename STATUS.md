@@ -3,13 +3,13 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P21
-CURRENT_STAGE_NAME: 插件管理操作逻辑与 Issue 工作台对话体验
-STAGE_STATUS: completed
+CURRENT_STAGE_ID: P22
+CURRENT_STAGE_NAME: 图表渲染基建与处理器图表输出
+STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 100%
 LAST_UPDATED: 2026-09-07
 OWNER: project-maintainer
-NEXT_ACTION: 【P00-P21 全阶段完成，项目维持 release_candidate】P21 出口 live 终验 2026-09-07（Linux 容器 V014 迁移+API 预设闭环 10/10 PASS+clarify v2 两轮判轮+ai_task_log v2 落账；插件页/对话页截图视觉模型核验四项全过）。后续=答辩准备（docs/14；演示机预导清单增 example-analytics——需后端镜像含 python3；答辩亮点新增：插件预设场景一键切换 + AI 澄清 v2 提问策略与回复边界）与 Issue #22 余项排期；候选后续（stdout 文件重定向/DB_PASSWORD 回退收紧/实体间路由过渡/CSV 公式注入防护/预设名失败草稿回填）待裁决
+NEXT_ACTION: 【P22 进行中（2026-09-08 用户裁决新增），P00-P21 已完成，项目维持 release_candidate】P21 出口 live 终验 2026-09-07（Linux 容器 V014 迁移+API 预设闭环 10/10 PASS+clarify v2 两轮判轮+ai_task_log v2 落账；插件页/对话页截图视觉模型核验四项全过）。后续=答辩准备（docs/14；演示机预导清单增 example-analytics——需后端镜像含 python3；答辩亮点新增：插件预设场景一键切换 + AI 澄清 v2 提问策略与回复边界）与 Issue #22 余项排期；候选后续（stdout 文件重定向/DB_PASSWORD 回退收紧/实体间路由过渡/CSV 公式注入防护/预设名失败草稿回填）待裁决
 EXIT_GATE: P21 出口证据（docs/09 P21 验收五项）：①卡片只呈现当前版本与启停开关——live 截图核验（版本徽标/已启用已停用态/开关/最近失败一行；无版本平铺无激活记录表），多版本收纳展开经 upgrade 切换（前端测试断言 upgrade 调用）；②预设闭环——后端 E2E 5 用例（快照保存→断开场景→应用恢复含版本级、坏版本条目 failed 其余成功 200 逐项上报、名称空/超长/重名 400、USER 403、删除后 404）+live 容器 10/10 PASS（走查场景A 12 插件快照→停看板→apply 回启用 activated/stopped/failed 全口径）+审计 plugin.preset.save/apply/delete；③对话界面——IssueClarifyChat 拆分（:key 复位），前端 9 用例（打字指示时序/分角色气泡/IME 与 Shift+Enter/规格上抛/权限提示），live 截图四项全过（AI 方形头像+标题副标题+三问气泡+输入区+Enter 提示，样式无破损）；④提示词 v2——回合策略（信息不足必须先提问≤3 编号可答）/输出契约双态/规格硬约束/回复边界/数据段防注入；fixture 资源迁移+判轮标记唯一性审查确认+IssueAiApiTest 断言 model=fixture-clarify-v2 与 prompt_version='v2'（live ai_task_log 复核）；⑤门禁 21/1/0+后端 167/0/0+前端 164/164+CI 六项绿。交叉审查（独立子代理）0 P1+3 P2+3 P3 全修（PR #45 评论逐条回应 9502acb）：P2 版本切换惰性闭包化/prompt_version 落账断言/索引树 prompts 指向 v2；P3 预设名 IME 守卫/卡片 pending 纳入预设在途/占用版本失配回退。实施期修正一处装配缺陷：PresetKernel 纯记录未注册 Bean 致上下文加载失败（testcontainers 全量先红后绿）。走查号 p21walk 已封禁。PR #45 合并 3979ee8
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -41,6 +41,7 @@ BLOCKERS: none
 | P19 | 生产企业插件矩阵与前端动效完善 | completed | 五项验收全过（4 插件+看板分列/拖拽持久化与回滚/CSV 转义零请求/动效令牌化+reduced-motion/门禁 21/1/0+CI 六项绿；审查 3P2+8P3 全处置，live 终验见 EXIT_GATE） |
 | P20 | 插件代码处理器——Python 表格处理 | completed | 验收四项（docs/09 P20）：三处理器计算正确+渲染/失败路径全测/安全边界可验证/门禁全绿（ADR-0002 Level 2 激活+S6 双轨修订） |
 | P21 | 插件管理操作逻辑与 Issue 工作台对话体验 | completed | 验收五项（docs/09 P21）：当前版本卡片+开关启停/预设闭环（FR-PLUGIN-12）/对话现代化+IME 守卫/提示词 v2（FR-ISSUE-03A）落账 v2/门禁 21/1/0+CI 六项绿（live 终验见 EXIT_GATE） |
+| P22 | 图表渲染基建与处理器图表输出 | in_progress | 验收标准见 docs/09 P22：图表基建（条形/饼，令牌化调色板）/处理器 chart 输出契约扩展/example-analytics 0.2.0 双图处理器/门禁全绿 |
 
 ## 更新规则
 
@@ -182,3 +183,4 @@ BLOCKERS: none
 | 2026-09-07 | P21 | 迭代完成（分支 feat/p21-plugin-ux-clarity）：①插件预设后端——V014 plugin_preset（快照 JSONB+名称唯一）+PresetRepository/Jdbc 实现+PluginPresetService（save=ACTIVE 占用快照；apply=两阶段收敛：停用预设外→upgrade 切换/激活，dependency_missing 重试一轮，逐项 activated/stopped/failed；delete/list）+ADMIN 四端点+审计三动作；LifecycleConfig 增 PresetKernel Bean（首跑 testcontainers 红暴露纯记录未装配，补后全绿）②提示词 v2——prompts/v2/clarify.md（回合策略：信息不足必须先提问≤3 编号可答/输出契约双态 JSON/规格硬约束/回复边界：仅当前 Issue 需求+不臆造平台能力+语言跟随/数据段防注入保留）+PromptTemplates.VERSION=v2+fixture 迁移（判轮标记保留）+存量断言同步 ③前端——PluginCard 重构（当前版本徽标+BaseSwitch 启停+多版本收纳展开 upgrade 切换+最近失败一行）、PluginPresetBar+usePluginPresets（单飞+逐项结果呈现）、PluginsView 统一确认对话框三分支、IssueClarifyChat 拆分（AI 方形头像+角色气泡+进入动画+打字三点+Enter/Shift+Enter/IME 守卫）、IssueDetail 瘦身、AppIcon+send ④测试——后端 PluginPresetApiTest 5 用例（含坏版本失败上报/403/404）+prompt_version 断言，前端 164/164（新增 9 用例）。门禁 21/1/0 | PR #45（合并 3979ee8） |
 | 2026-09-07 | P21 | 交叉审查（独立子代理，缺陷优先）：**0 P1 + 3 P2 + 3 P3**，全部修复（9502acb）：P2 版本切换急切 Promise 绕过单飞守卫（惰性闭包化）/验收列 prompt_version='v2' 无断言（IssueAiApiTest 补落账断言）/索引树仍指 prompts/v1（同步 v2）；P3 预设名输入无 IME 守卫（同对话口径补齐）/卡片 pending 不含预设在途（纳入）/占用版本失配显示自相矛盾（回退最新导入）。审查同时确认：apply 收敛语义/JSONB 往返/异常映射/menuKeys 断言真实/共享库用例次序不敏感/:key 复位等价/判轮标记唯一 | PR #45 评论 |
 | 2026-09-07 | P21 | **P21 出口复核通过置 completed；P00-P21 全阶段完成，进度 100%，release_candidate**。live Linux 容器终验：V014 迁移落地；API 走查 10/10（两插件激活→保存预设 12 条目快照→停看板→apply 回启用且 activated/stopped/failed 全口径→预设清单；clarify v2 首轮三问/次轮规格 revision=2）；ai_task_log model=fixture-clarify-v2 且 prompt_version=v2；插件页截图视觉模型核验四项全过（预设条含走查场景A 胶囊与计数/卡片只显示 v 当前版本+已停用启用+开关+失败一行/无历史平铺/无样式破损）；对话页四项全过（AI 头像+副标题+三问气泡+输入区+提示）。走查号 p21walk 用后即封 BLOCKED。演示注意：库内已有同版本插件时不可重打包导入（不可变契约），须沿用既有 versionId | EXIT_GATE、本条目 |
+| 2026-09-08 | P22 | 用户裁决新增阶段：以同思路继续优化并添加功能，同时完善基建——程序要具备渲染图表能力（条形图、饼图）。规划：图表基建=前端 ChartCanvas（封装 chart.js，canvas 渲染，调色板走 --ff-chart-* 令牌，主题可换肤，reduced-motion 动画归零，aria+数据表兜底）；处理器输出契约扩展 kind=chart（chartType bar/pie、categories/values 定长数值数组，OutputValidator 校验，违约 processor_output_invalid）；example-analytics 升 0.2.0 增条形/饼图两处理器（同版本不可变）。docs：02 增 FR-CHART-01/FR-PLUGIN-13、07 与登记册契约行、09 P22 节、13 §3.9 供应链口径 | docs/09 P22、docs/02/07/13、登记册、本条目 |

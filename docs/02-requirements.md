@@ -68,6 +68,11 @@
 - `NFR-OPS-01` Docker Compose 可以启动完整开发环境。
 - `NFR-OPS-02` 数据库迁移可重复执行，失败可定位。
 - `NFR-UX-01` 加载、空数据、校验失败、无权限和服务异常均有明确界面反馈。
+
+### 图表基建
+
+- `FR-CHART-01` 平台提供图表渲染基建（条形图/饼图）：图表由平台组件以白名单方式渲染（canvas，无插件前端代码），配色走平台结构令牌、主题插件可覆盖，reduced-motion 下动画归零（P22）。
+- `FR-PLUGIN-13` Level 2 数据处理器可以输出图表数据（kind=chart：chartType=bar|pie + categories/values），经平台 Schema 校验后由图表基建渲染；违约返回 processor_output_invalid（输出契约只增不改）。
 - `NFR-TEST-01` 主流程具备自动化冒烟测试。
 - `NFR-PLUGIN-01` 每个插件注册项都能在停用或卸载时撤销，不允许残留菜单、权限和监听器。
 - `NFR-MAINT-01` 代码满足 `docs/coding-standards.md` §7 的文件长度与复杂度硬约束，由 CI 阻断违规。

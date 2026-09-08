@@ -104,7 +104,7 @@
 
 1. 锁文件必须提交；新增依赖说明用途、许可证与替代方案（对齐 `docs/repository-maintenance.md` §6）。
 2. 依赖漏洞扫描（本节新增要求）：前端 `npm audit`、后端启用 Dependabot alerts 或 OWASP dependency-check；纳入 `scripts/check-repo-health` 报告项。高危漏洞（CVSS ≥ 7.0）7 天内修复，或开 Issue 登记豁免理由与复查时间。
-3. 不引入无维护、来源不明的包；Docker 基础镜像固定版本。
+3. 不引入无维护、来源不明的包；Docker 基础镜像固定版本。前端图表依赖 chart.js（MIT，canvas 绘制、构建期内置无运行时外链，P22 图表基建；替代方案 ECharts 体积过大、手搓 canvas 不可维护，均不采纳）。
 
 ### 3.10 数据库与迁移
 
