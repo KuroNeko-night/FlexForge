@@ -507,7 +507,7 @@
 
 - **前端基建（frontend）**：新依赖 `chart.js`（单独提交）；`components/ui/ChartCanvas.vue`——props {type: 'bar'|'pie', title, categories, values}，getComputedStyle 读取调色板令牌，canvas + role="img" + aria-label 摘要 + 下方紧凑数据表（可访问性与数据核对兜底），unmount 销毁实例；`styles/tokens.css` 增 `--ff-chart-c1..c6` 六色基线（reduced-motion 不涉及时长动画，Chart.js options 按 matchMedia 归零）。
 - **处理器契约扩展（flexforge-plugin）**：`ProcessorService.OutputValidator` 增 `requireChart`——按上述规则校验；`ProcessorDrawer` 结果区增 chart 分支（ChartCanvas 渲染）；`api/processors.ts` ProcessorResult 联合增 chart 变体。
-- **示例插件 example-analytics 0.2.0**：`analytics.purchase.chart-monthly`（条形图：采购单按月金额合计）+ `analytics.quality.chart-share`（饼图：检验结论占比），stdin/stdout 契约同既有处理器。
+- **示例插件 example-analytics 0.2.0**：`analytics.purchase.chart_monthly`（条形图：采购单按月金额合计）+ `analytics.quality.chart_share`（饼图：检验结论占比），key 下划线（KEY_PATTERN 不含连字符，脚本文件名不受限），stdin/stdout 契约同既有处理器。
 - **测试**：后端——0.2.0 包导入激活、两图处理器计算正确断言（categories/values 数值）、坏 chart 输出三向（chartType 缺失/values 与 categories 不等长/pie 负值）→ processor_output_invalid（坏包用独立版本号，仿 P17 替换手法）；前端——ChartCanvas 配置映射（bar/pie 数据集、调色板、reduced-motion）与抽屉 chart 分支渲染。
 
 ### 验收标准
