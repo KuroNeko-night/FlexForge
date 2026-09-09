@@ -6,6 +6,7 @@ import { createRecord, fetchRecord, queryRecords, updateRecord } from '@/api/dat
 import { ApiError, apiErrorMessage } from '@/api/client';
 import type { RecordView, ViewDefinition } from '@/api/types';
 import { buildCsv, csvSafeFilename, downloadCsv } from '@/utils/csv';
+import { buildXlsx, downloadXlsx } from '@/utils/xlsx';
 import { visibleColumns } from '@/utils/viewColumns';
 import DynamicForm from '@/components/DynamicForm.vue';
 import DynamicTable from '@/components/DynamicTable.vue';
@@ -180,6 +181,21 @@ function exportCsv(): void {
   downloadCsv(`${name}-导出.csv`, buildCsv(headers, rows));
 }
 
+/** P23 XLSX 导出：同口径（可见列+当前已加载记录），本地生成无网络请求。 */
+async function exportXlsx(): Promise<void> {
+  const columns = visibleColumns(definition.value?.fields ?? [], listView.value);
+  if (columns.length === 0) {
+    return;
+  }
+  const headers = columns.map((field) => field.displayName);
+  const rows = records.value.map((record) =>
+    columns.map((field) => record.data[field.name] ?? null),
+  );
+  const name = csvSafeFilename(definition.value?.displayName ?? entityName.value);
+  const data = await buildXlsx(name, headers, rows);
+  await downloadXlsx(`${name}-导出.xlsx`, data);
+}
+
 async function editRecord(id: string): Promise<void> {
   await router.push({ name: 'entity-edit', params: { entity: entityName.value, id } });
 }
@@ -236,6 +252,7 @@ onMounted(refresh);
           数据分析
         </BaseButton>
         <BaseButton data-testid="export-csv" @click="exportCsv">导出 CSV</BaseButton>
+        <BaseButton data-testid="export-xlsx" @click="exportXlsx">导出 XLSX</BaseButton>
         <BaseButton variant="primary" @click="router.push(`/data/${entityName}/new`)">
           新增记录
         </BaseButton>
