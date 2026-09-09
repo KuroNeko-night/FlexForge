@@ -11,4 +11,8 @@ public class PermissionDeniedException extends RuntimeException {
     public PermissionDeniedException() {
         super("没有执行该操作的权限");
     }
+
+    public PermissionDeniedException(String message) {
+        super(message);
+    }
 }

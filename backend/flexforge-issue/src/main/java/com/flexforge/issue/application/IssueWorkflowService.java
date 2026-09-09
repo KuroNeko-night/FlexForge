@@ -62,18 +62,41 @@ public class IssueWorkflowService {
         return updated;
     }
 
-    /** 保存规格新版本：校验快照随版本留存（invalid 也保存，供修改迭代与审计）。 */
-    public SpecRevisionRecord saveSpec(String operator, String issueId, JsonNode spec) {
+    /** 保存规格新版本：校验快照随版本留存（invalid 也保存，供修改迭代与审计）；
+     * briefJson=三段简报（提示词 v3 规格轮产出，手工保存传 null）。 */
+    public SpecRevisionRecord saveSpec(String operator, String issueId, JsonNode spec,
+                                       JsonNode brief) {
         requireOpen(issueId);
         List<String> errors = RequirementSchema.validate(spec);
         IssueRepository.SpecContent content = new IssueRepository.SpecContent(
                 RequirementSchema.CURRENT_VERSION, spec.toString(), errors.isEmpty(),
-                JSON.valueToTree(errors).toString());
+                JSON.valueToTree(errors).toString(),
+                brief == null ? null : brief.toString());
         SpecRevisionRecord revision = repository.insertSpec(issueId, content, operator);
         audit.record(AuditEvents.of(operator, "issue.spec.update",
                 issueId + "#" + revision.revision(),
                 errors.isEmpty() ? "valid" : "invalid", clock));
         return revision;
+    }
+
+    /** 确认并推送（P23 FR-ISSUE-07）：门=最新规格 valid 且简报齐备；
+     * 幂等——已发布直接返回当前记录（不覆盖时间）。 */
+    public IssueRepository.IssueRecord publish(String operator, String issueId) {
+        IssueRepository.IssueRecord issue = requireOpen(issueId);
+        if (issue.publishedAt() != null) {
+            return issue;
+        }
+        SpecRevisionRecord latest = repository.latestSpec(issueId);
+        if (latest == null || !latest.valid()) {
+            throw new IllegalArgumentException("尚无有效规格版本，先完成需求澄清再确认推送");
+        }
+        if (latest.briefJson() == null || latest.briefJson().isBlank()) {
+            throw new IllegalArgumentException("最新规格版本缺少三段简报，需经 AI 澄清产出后再确认推送");
+        }
+        repository.markPublished(issueId);
+        audit.record(AuditEvents.of(operator, "issue.publish", issueId,
+                "spec#" + latest.revision(), clock));
+        return repository.findIssue(issueId);
     }
 
     public SpecRevisionRecord latestSpec(String issueId) {

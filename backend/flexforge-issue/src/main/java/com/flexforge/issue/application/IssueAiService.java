@@ -54,10 +54,11 @@ public class IssueAiService {
         this.clock = clock;
     }
 
-    /** 澄清结果：追问（下一轮由用户回答）或规格草稿（已存为新版本）。 */
+    /** 澄清结果：追问（下一轮由用户回答）或规格草稿+三段简报（已存为新版本）。 */
     @PublicApi
     public record ClarifyOutcome(boolean specProduced, java.util.List<String> questions,
-                                 IssueRepository.SpecRevisionRecord spec) {
+                                 IssueRepository.SpecRevisionRecord spec,
+                                 tools.jackson.databind.node.ObjectNode brief) {
     }
 
     /** 澄清（FR-ISSUE-03）：模板化提示词 → 模型 → 校验/重试 → 规格草稿版本。 */
@@ -77,15 +78,16 @@ public class IssueAiService {
             ClarifyEngine.ClarifyResult result = new ClarifyEngine(model).clarify(prompt);
             if (!result.specProduced()) {
                 taskLog.insert(clarifyEntry(call, result.modelAttempts() - 1, true, null));
-                return new ClarifyOutcome(false, result.questions(), null);
+                return new ClarifyOutcome(false, result.questions(), null, null);
             }
             // 先落规格版本再记成功：saveSpec 失败不产生 output_valid=true 的假记录
-            IssueRepository.SpecRevisionRecord revision =
-                    kernel.workflow().saveSpec(operator, issueId, result.spec());
+            IssueRepository.SpecRevisionRecord revision = kernel.workflow().saveSpec(
+                    operator, issueId, result.spec(), result.brief());
             taskLog.insert(clarifyEntry(call, result.modelAttempts() - 1, true, null));
             audit.record(AuditEvents.of(operator, "issue.clarify", issueId,
                     "spec#" + revision.revision(), clock));
-            return new ClarifyOutcome(true, java.util.List.of(), revision);
+            return new ClarifyOutcome(true, java.util.List.of(), revision,
+                    (tools.jackson.databind.node.ObjectNode) result.brief());
         } catch (ClarifyEngine.ModelOutputInvalidException e) {
             taskLog.insert(clarifyEntry(call, e.attempts - 1, false, e.code()));
             throw e;
