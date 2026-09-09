@@ -40,7 +40,9 @@ const formError = ref<string | null>(null);
 
 const entityName = computed(() => String(route.params.entity ?? ''));
 const mode = computed<'list' | 'detail' | 'new' | 'edit'>(() => {
-  if (route.params.id === 'new') {
+  // 静态段路由 data/:entity/new 不会产出 params.id（vue-router 仅参数段进 params），
+  // 必须按路由名判定；params.id === 'new' 分支保留兼容既有 mock 路由的测试
+  if (route.name === 'entity-new' || route.params.id === 'new') {
     return 'new';
   }
   if (route.name === 'entity-edit') {
