@@ -48,6 +48,7 @@ const baseIssue: IssueRecord = {
   labels: [],
   createdAt: '2026-08-30T02:00:00Z',
   updatedAt: '2026-08-30T02:00:00Z',
+  publishedAt: null,
 };
 
 const spec: SpecRevision = {
@@ -58,6 +59,7 @@ const spec: SpecRevision = {
   specJson: '{"schemaVersion":1}',
   valid: true,
   validationErrors: null,
+  briefJson: null,
   createdBy: 'ai',
   createdAt: '2026-08-30T02:01:00Z',
 };
@@ -90,6 +92,14 @@ async function clickButton(wrapper: ReturnType<typeof mountDetail>, label: strin
   await flushPromises();
 }
 
+/** 追问轮 mock 工厂（describe 外置守行数上限）。 */
+const noSpecRound = (question: string) => ({
+  specProduced: false,
+  questions: [question],
+  spec: null,
+  brief: null,
+});
+
 describe('IssueDetail AI 对话（clarify，FR-ISSUE-03）', () => {
   beforeEach(() => {
     resetMocks();
@@ -98,7 +108,12 @@ describe('IssueDetail AI 对话（clarify，FR-ISSUE-03）', () => {
   });
 
   it('开始澄清：首轮无回答→AI 追问渲染为对话', async () => {
-    clarifyMock.mockResolvedValue({ specProduced: false, questions: ['实体叫什么？'], spec: null });
+    clarifyMock.mockResolvedValue({
+      specProduced: false,
+      questions: ['实体叫什么？'],
+      spec: null,
+      brief: null,
+    });
     const wrapper = mountDetail();
     await flushPromises();
     await clickButton(wrapper, '开始 AI 澄清');
@@ -107,15 +122,11 @@ describe('IssueDetail AI 对话（clarify，FR-ISSUE-03）', () => {
   });
 
   it('提交回答后生成规格草稿：spec 更新并提示', async () => {
-    clarifyMock.mockResolvedValueOnce({
-      specProduced: false,
-      questions: ['实体叫什么？'],
-      spec: null,
-    });
+    clarifyMock.mockResolvedValueOnce(noSpecRound('实体叫什么？'));
     const wrapper = mountDetail();
     await flushPromises();
     await clickButton(wrapper, '开始 AI 澄清');
-    clarifyMock.mockResolvedValueOnce({ specProduced: true, questions: [], spec });
+    clarifyMock.mockResolvedValueOnce({ specProduced: true, questions: [], spec, brief: null });
     await wrapper.find('[data-testid="clarify-input"]').setValue('物料档案 material_archive');
     await wrapper.find('[data-testid="clarify-send"]').trigger('click');
     await flushPromises();
@@ -149,7 +160,12 @@ describe('IssueDetail 切换复位（PR #34 审查 P2）', () => {
   });
 
   it('切换 Issue 复位对话与草稿（组件复用防串台）', async () => {
-    clarifyMock.mockResolvedValue({ specProduced: false, questions: ['A 的追问'], spec: null });
+    clarifyMock.mockResolvedValue({
+      specProduced: false,
+      questions: ['A 的追问'],
+      spec: null,
+      brief: null,
+    });
     const wrapper = mountDetail('SUBMITTED');
     await flushPromises();
     await clickButton(wrapper, '开始 AI 澄清');

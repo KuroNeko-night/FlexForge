@@ -42,6 +42,7 @@ const issue = (overrides: Partial<IssueRecord> = {}): IssueRecord => ({
   labels: ['库存'],
   createdAt: '2026-08-30T02:00:00Z',
   updatedAt: '2026-08-30T02:00:00Z',
+  publishedAt: null,
   ...overrides,
 });
 
@@ -57,7 +58,8 @@ const stubs = { teleport: true };
 describe('IssuesView 列表渲染（P15）', () => {
   beforeEach(() => {
     resetMocks();
-    saveSession('t', { id: 1, username: 'alice', displayName: 'A', roles: ['USER'] });
+    // 列表/详情用例走开发者信息面（P23 起纯 USER 渲染对话工作台）
+    saveSession('t', { id: 1, username: 'alice', displayName: 'A', roles: ['DEVELOPER'] });
   });
 
   it('渲染列表并按状态徽章展示；选中后展示详情', async () => {
@@ -91,7 +93,7 @@ describe('IssuesView 列表渲染（P15）', () => {
 describe('IssuesView 创建与角色（P15）', () => {
   beforeEach(() => {
     resetMocks();
-    saveSession('t', { id: 1, username: 'alice', displayName: 'A', roles: ['USER'] });
+    saveSession('t', { id: 1, username: 'alice', displayName: 'A', roles: ['DEVELOPER'] });
     commentsMock.mockResolvedValue([]);
     specMock.mockResolvedValue(null);
   });
@@ -121,12 +123,29 @@ describe('IssuesView 创建与角色（P15）', () => {
   });
 
   it('USER 角色不渲染开发者面板，作者可见 AI 对话入口', async () => {
+    saveSession('t', { id: 3, username: 'carol', displayName: 'C', roles: ['USER'] });
     commentsMock.mockResolvedValue([]);
     specMock.mockResolvedValue(null);
     const wrapper = mount(IssueDetail, { props: { issue: issue() } });
     await flushPromises();
     expect(wrapper.find('[data-testid="clarify-chat"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="transition-section"]').exists()).toBe(false);
+    clearSession();
+  });
+});
+
+describe('IssuesView 用户端工作台（P23 FR-ISSUE-07）', () => {
+  beforeEach(() => {
+    resetMocks();
+    saveSession('t', { id: 2, username: 'bob', displayName: 'B', roles: ['USER'] });
+  });
+
+  it('纯 USER 角色渲染对话工作台而非开发者列表', async () => {
+    listMock.mockResolvedValue([issue()]);
+    const wrapper = mount(IssuesView, { global: { stubs } });
+    await flushPromises();
+    expect(wrapper.find('[data-testid="issue-chat-workbench"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="issue-list"]').exists()).toBe(false);
     clearSession();
   });
 });

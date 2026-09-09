@@ -2,7 +2,12 @@
 import { nextTick, ref, watch } from 'vue';
 
 import { apiErrorMessage } from '@/api/client';
-import { clarifyIssue, type ClarifyOutcome, type SpecRevision } from '@/api/issues';
+import {
+  clarifyIssue,
+  type ClarifyBrief,
+  type ClarifyOutcome,
+  type SpecRevision,
+} from '@/api/issues';
 import AppIcon from '@/components/AppIcon.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 
@@ -10,10 +15,14 @@ import BaseButton from '@/components/ui/BaseButton.vue';
  * 需求澄清对话（P15 建面，P21 现代化重构）：clarify 多轮问答（FR-ISSUE-03，
  * 提示词 v2——信息不足 AI 先提问）。分角色气泡+进入动画+打字指示；IME 组态
  * 守卫与陈旧响应守卫保留；权限由父层判定（canClarify），服务端为边界。
- * 父层以 :key=issue.id 挂载，切换 Issue 即整体复位。
+ * 父层以 :key=issue.id 挂载，切换 Issue 即整体复位。P23（提示词 v3）：规格成稿
+ * 时口语化确认（brief.colloquial）作为 AI 消息进对话流，简报全量经 specSaved
+ * 上抛（父层决定确认推送卡/开发者分区展示）。
  */
 const props = defineProps<{ issueId: string; canClarify: boolean }>();
-const emit = defineEmits<{ specSaved: [spec: SpecRevision] }>();
+const emit = defineEmits<{
+  specSaved: [spec: SpecRevision, brief: ClarifyBrief | null];
+}>();
 
 interface ChatMessage {
   role: 'ai' | 'user';
@@ -43,7 +52,11 @@ function applyOutcome(text: string | null, outcome: ClarifyOutcome): void {
     chat.value = [...chat.value, { role: 'user', text }];
   }
   if (outcome.specProduced) {
-    emit('specSaved', outcome.spec as SpecRevision);
+    emit('specSaved', outcome.spec as SpecRevision, outcome.brief);
+    if (outcome.brief) {
+      // v3：口语化确认先入对话流（面向用户的成稿复述）
+      chat.value = [...chat.value, { role: 'ai', text: outcome.brief.colloquial }];
+    }
     chat.value = [
       ...chat.value,
       { role: 'ai', text: '已按当前回答生成规格草稿，可在下方规格区查看与继续迭代。' },

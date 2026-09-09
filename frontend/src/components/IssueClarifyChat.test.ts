@@ -25,12 +25,13 @@ const spec: SpecRevision = {
   specJson: '{"schemaVersion":1}',
   valid: true,
   validationErrors: null,
+  briefJson: null,
   createdBy: 'ai',
   createdAt: '2026-08-30T02:01:00Z',
 };
 
 function outcome(partial: Partial<ClarifyOutcome>): ClarifyOutcome {
-  return { specProduced: false, questions: [], spec: null, ...partial };
+  return { specProduced: false, questions: [], spec: null, brief: null, ...partial };
 }
 
 function mountChat(canClarify = true) {
