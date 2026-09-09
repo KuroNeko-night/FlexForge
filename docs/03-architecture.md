@@ -175,6 +175,10 @@ AI 不直接获得数据库管理员权限、服务器命令权限或生产发�
 | `POST` | `/api/v1/plugins/presets` | 保存当前启用集合为命名预设（body `{name}`；快照含版本） |
 | `POST` | `/api/v1/plugins/presets/{id}/apply` | 应用预设（收敛：停用预设外→按预设切换/激活；逐项结果 activated/stopped/failed） |
 | `DELETE` | `/api/v1/plugins/presets/{id}` | 删除预设 |
+| `GET` | `/api/v1/plugins/processors?entity={name}` | 激活处理器清单（ADMIN/USER 同数据读权，P20；登记于登记册 §2.2） |
+| `POST` | `/api/v1/plugins/processors/{key}/invoke` | 执行实体输入处理器（body `{recordQuery?}`；stdin 实体数据→stdout 契约校验，P20） |
+| `POST` | `/api/v1/plugins/processors/{key}/invoke-file` | 执行文件输入处理器（multipart file；扩展名/魔数/大小三重校验→argv[1] 输入路径+FLEXFORGE_OUTPUT_DIR，FR-PLUGIN-14，P23） |
+| `GET` | `/api/v1/plugins/processors/artifacts/{artifactId}/download` | 处理器产物下载（创建者本人或 ADMIN；归属/过期校验，RFC5987 文件名+no-store，P23） |
 | `POST` | `/api/v1/system/users` | 创建用户（ADMIN，事务内绑定角色，审计） |
 | `GET` | `/api/v1/system/users` | 用户分页查询（ADMIN） |
 | `PUT` | `/api/v1/system/users/{id}/roles` | 变更用户角色（ADMIN，审计） |
@@ -191,6 +195,7 @@ AI 不直接获得数据库管理员权限、服务器命令权限或生产发�
 | `PUT` | `/api/v1/issues/{id}/spec` | 保存规格新版本（开发者；校验快照随版本留存，FR-ISSUE-04/06） |
 | `GET` | `/api/v1/issues/{id}/spec` / `spec/revisions` | 最新规格 / 版本历史 |
 | `GET` | `/api/v1/issues/{id}/preview` | 预览将要生成的插件资源（开发者，P10） |
+| `POST` | `/api/v1/issues/{id}/publish` | 用户确认并推送需求（本人；门=最新规格 valid 且简报三段齐备；幂等，FR-ISSUE-07，P23） |
 | `GET` | `/api/v1/ai/config` | AI 模型运行时配置（ADMIN；只回 provider/base-url/model 与密钥掩码位，P15） |
 | `PUT` | `/api/v1/ai/config` | 更新 AI 运行时配置（ADMIN；API Key AES-GCM 加密落库，审计，P15） |
 

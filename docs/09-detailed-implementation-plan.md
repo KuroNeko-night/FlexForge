@@ -516,3 +516,29 @@
 - 处理器图表闭环：example-analytics 0.2.0 激活后实体页"数据分析"抽屉出现两个图表处理器，执行返回 chart 结果并渲染为条形图/饼图（数值后端断言+前端渲染测试+live 截图核验）。
 - 契约边界可验证：坏 chart 输出（缺 chartType/长度不齐/pie 负值）统一 processor_output_invalid；既有 table/summary 处理器回归不受影响。
 - 门禁 0 fail + 前后端回归全绿 + 新依赖审计通过；docs（02/09/登记册/索引/STATUS/JSON）同步——处理器 stdout 输出契约自 P20 起唯一登记于登记册 §2.2，docs/07 不承载（审查 P3-6 口径修正）。
+
+## P23：体验补全与文件工具插件（2026-09-09 用户裁决新增）
+
+> 背景：P22 验收报告三件事——①验收发现 P0 缺陷"所有功能页面点击新增记录无窗口弹出"（已独立修复：PR #47，mode 判定依赖 `params.id` 但静态段路由 `data/:entity/new` 不产出该参数，自 P06 潜伏、单测 mock 路由掩盖，补真实 createRouter 回归测试）；②全功能支持 CSV 导出后要求同样支持 XLSX；③Issue 工作台按角色分置：用户端只要对话界面+可折叠"已发布需求"侧栏（参考用户提供的对话式界面截图），AI 产出三段式（口语化确认→用户 / 结构化规格+可行性+agent 制作提示词→开发者），用户确认后需求推送后台；④插件功能多样化："输入一个表格文件，输出一个处理好的表格文件"（参考 fyt-data-mgs 的句柄化上传/子进程桥/受控下载链路与 dsh 的文件 seam 设计）。
+> **红线**：
+> - XLSX 导出=前端本地生成（延续 P19 CSV 口径，无新端点、无服务端渲染），新依赖 exceljs（MIT）单独提交并在 docs/13 §3.9 登记；
+> - 提示词 v3 只增不改：questions 双态保留；信息足够时输出四字段 `{colloquial, spec, feasibility, agentPrompt}`（spec 结构=RequirementSpec v1 不变）；回复边界与数据段防注入保留；
+> - Issue 角色分置是**服务端**权限收口（S2）：USER 列表/详情/评论按"本人创建"过滤与校验，前端分支只是体验；publish=USER 本人+存在 valid 最新规格+brief 三段齐备，幂等可重入；
+> - 文件处理器=Level 2 输入输出扩展（S6 修订）：manifest processors 声明 additive 可选 `inputMode:'file'`（缺省 entity）+ `accept`（扩展名白名单）+ `maxInputMB`；上传经扩展名+魔数+大小三重校验（S1，csv/xlsx/txt 白名单）；脚本经 argv[1] 收输入路径、env `FLEXFORGE_OUTPUT_DIR` 收输出目录（-I 隔离/超时/串行/环境清空不变）；stdout 契约 additive 新增 `kind='file'`（filename 经安全字符集校验且文件必须位于输出目录内、产物 ≤10MB）；产物落 `processor_artifact` 表（归属+TTL 10 分钟），下载走归属校验+RFC5987 文件名+no-store；定时清理过期行与磁盘目录；
+> - 新平台路由 `/tools`（文件工具页）：平台能力页（同插件管理页定位，空态=无 ACTIVE 文件处理器；NFR-SKEL-01 不破），菜单对 ADMIN/USER 可见；文件处理器执行与 invoke 同权（ADMIN/USER）；
+> - example-filetools 新插件 0.1.0（纯标准库）：`filetools.csv.clean`（CSV 去空行/去重/列名规范化 → 输出清洗后 CSV 文件）+ `filetools.csv.profile`（CSV → table 分析：行数/列数/每列填充率）；处理器 key 下划线；同版本不可变。
+> **非目标**：不做异步任务队列/进度推送（同步 invoke+10s 超时口径不变）；不做 xlsx 运行时解析（示例插件限 CSV；xlsx 输入解析登记为候选）；不做用户端 Issue 表格/标签/指派/状态机操作（开发者界面专属）；产物不做版本化长期保留（TTL 临时产物，长期化登记候选）。
+
+### 实施内容
+
+- **A. XLSX 导出（FR-META-06）**：`utils/xlsx.ts`（exceljs Workbook：sheet=实体显示名、表头=可见列 label、行=当前已加载记录，同 CSV 的 viewColumns 单点）；`DynamicEntityView` 导出按钮组（CSV 保留+XLSX 新增）；下载沿用 blob+revoke 延迟清理口径。
+- **B. Issue 角色分置（FR-ISSUE-03B/07）**：V015 迁移（`requirement_spec.brief_json JSONB`、`issue.published_at TIMESTAMPTZ`）；prompts/v3/clarify.md（三段产出契约）+PromptTemplates.VERSION=v3+fixture 资产迁移；`POST /issues/{id}/publish`（本人/幂等/门条件校验）+USER 列表过滤（`mine` 语义：USER 角色强制 created_by=自己）+评论本人校验；前端：`IssuesView` 按角色分支——USER 渲染 `IssueChatWorkbench`（左侧可折叠"已发布需求"栏+中央对话流+底部输入卡，参考截图布局；对话+确认推送+查看讨论），DEV/ADMIN 保留现有列表+`IssueDetail` 三段产出分区展示（口语化确认/规格/可行性/agent 提示词，提示词可复制）。
+- **C. 文件处理器（FR-PLUGIN-14）**：V016 `processor_artifact` 表+@Scheduled TTL 清理；manifest 校验扩展（inputMode/accept/maxInputMB ≤5）；`invoke-file`（multipart→三重校验→临时目录→子进程）与 artifact 下载端点；OutputValidator 增 kind=file（filename 白名单字符集 ≤200，产物在 OUTPUT_DIR 内且 ≤10MB）；错误码 `processor_input_invalid`/`artifact_not_found`/`artifact_expired`（docs/08 §7 登记）；前端 `/tools` 工具页（处理器卡片：上传→执行→产物下载/结果渲染/失败提示）+菜单项；example-filetools 0.1.0 两处理器；ADR-0002 Level 2 边界表修订（文件 IO 面）+ S6 修订。
+- **测试**：后端——xlsx 无（前端能力）；issue：v3 三段落库/publish 门条件（无规格 400/非本人 403/幂等 200）/USER 列表过滤/评论越权 403；文件处理器：导入校验（accept 非法/超限）、invoke-file 三重校验失败路径（伪扩展名/超大小/坏 zip）、file 输出契约（filename 违规/超限/目录外路径→processor_output_invalid）、artifact 下载归属 403/过期 410、TTL 清理；前端——xlsx builder（表头/行/sheet 名）、导出按钮组、chat 工作台（侧栏折叠/对话流/确认推送门条件/publish 后状态）、tools 页（上传执行下载/失败提示）；plugin 既有测试基线随 0.2.0 不动。
+
+### 验收标准
+
+- XLSX 可用：实体页可分别导出 CSV 与 XLSX；XLSX 打开含表头与当前记录（本地生成无网络请求）；exceljs 经 npm audit。
+- 用户端对话闭环：USER 登录后 Issue 入口=对话工作台（可折叠已发布需求侧栏+对话+底部输入）；与 AI 澄清若干轮后产出三段（口语化确认可见于用户端）；点击确认→publish 成功→侧栏出现该需求（已发布标识）；用户端不可见开发者信息面（表格/状态机操作/agent 提示词）；DEV/ADMIN 端可见三段完整分区且 agentPrompt 可复制。
+- 文件处理器闭环：example-filetools 导入激活后 /tools 出现两处理器；上传 CSV 执行 clean → 下载产物（清洗后 CSV 内容后端断言）；profile → table 结果渲染；伪扩展名/超大文件被拒且错误码稳定；产物过期后下载 410。
+- 权限与失败路径：USER 越权（他人 issue publish/评论）403；无 valid 规格不可 publish；坏 manifest（accept 非法）导入被拒；门禁 0 fail+前后端回归全绿+新依赖审计通过；docs（02/03/07/08/09/13/登记册/ADR-0002/索引/STATUS/JSON）同步。

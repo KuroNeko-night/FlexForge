@@ -12,6 +12,7 @@
 | `plugin_migration` | 插件版本内已应用的迁移脚本（PluginRuntime runner 记录，非 Flyway） | `plugin_version_id`、`activation_id`、`script_name`、`checksum`、`applied_at` |
 | `plugin_audit_event` | 追加式插件领域事件 | `event_id`、`plugin_id`、`activation_id`、`event_type`、`payload_json`、`occurred_at` |
 | `plugin_preset` | 插件预设（P21，FR-PLUGIN-12）：ADMIN 保存的启用集合快照，应用=收敛 | `id`、`name`（唯一）、`payload`（[{pluginId,versionId,version}]）、`created_by`、`created_at` |
+| `processor_artifact` | 文件处理器产物（P23，FR-PLUGIN-14）：临时产物登记与归属，TTL 过期后由定时任务清理（行+磁盘目录） | `id`、`processor_key`、`filename`（展示名）、`content_type`、`size_bytes`、`storage_dir`、`created_by`、`created_at`、`expires_at`、`downloaded_at`（首次下载时间，可重复下载直至过期） |
 
 > MVP 实现口径（对齐 V006/V007）：`plugin_instance` 不设 `current_version_id/next_version_id/owner_id` 列；"当前版本"语义由 `plugin_activation` 的同插件唯一占用（V009 部分唯一索引 + 应用层检查）承载，升级失败走补偿性重新激活旧版本而非 next 列状态位。
 

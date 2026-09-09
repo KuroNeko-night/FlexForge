@@ -19,7 +19,8 @@
 | 登录接口 | 暴力破解、用户枚举 | 失败锁定 + 统一错误（§3.1） |
 | 插件上传 | zip-slip、zip 炸弹、恶意资源 | 声明式白名单校验（S6、`docs/09` P07） |
 | 前端动态渲染 | XSS | 白名单 renderer + CSP（S5、§3.4） |
-| 插件代码处理器（Level 2，2026-09-04） | 恶意脚本、资源耗尽、注入输出 | ADMIN 特权导入 + 子进程隔离/超时/IO 上限 + 输出 Schema 校验（S6、ADR-0002 §Level 2） |
+| 插件代码处理器（Level 2，2026-09-04） | 恶意脚本、资源耗尽、注入输出 | ADMIN 特权导入 + 子进程隔离/超时/IO 上限 + 输出 Schema 校验（S6、ADR-0002 §Level 2）；文件输入处理器（P23）另加：上传三重校验、UUID 路径隔离、产物目录边界与 TTL（§3.5-5） |
+| 处理器文件上传（P23） | 伪装文件、路径穿越、越权下载 | 扩展名+魔数+大小三重校验、UUID 存储路径、产物归属校验+过期 410（§3.5-5、S1/S2） |
 | AI 链路 | 提示词注入、密钥泄漏 | Schema 校验 + 密钥后端隔离（S7、§3.6） |
 | 依赖与构建 | 供应链投毒 | 锁文件 + 漏洞扫描（§3.9） |
 | 权限边界 | 水平/垂直越权 | 服务端 RBAC（S2、§3.2） |
@@ -35,7 +36,7 @@
 - **S3 凭据慢哈希**：密码只存 bcrypt（cost ≥ 10）或 Argon2id；禁止明文、可逆加密、MD5/SHA-1/无盐哈希。
 - **S4 密钥零暴露**：JWT 密钥只经环境变量注入；模型 API key 经环境变量**或**管理员设置页录入（P15 起第二条受控通道，语义见 §3.6-5：AES-256-GCM 加密落库、读接口只回掩码）。密钥不得出现在仓库、日志、错误响应、API 明文出参或前端产物中。
 - **S5 前端无动态执行**：禁 `v-html`/`eval`/`new Function`；渲染只走白名单 renderer（对齐 `docs/coding-standards.md` §3）。
-- **S6 插件资源双轨校验（2026-09-04 修订，ADR-0002 Level 2 激活）**：Level 1 包只接受声明式资源、无任何代码文件；Level 2 包额外允许 `scripts/*.py` 且**仅**经 `extension.data-processor` 声明执行——上传包全链路校验（Schema、路径、大小、资源类型）不变。处理器执行边界：子进程 `python3 -I` + 环境清空 + 临时目录执行后清理 + 硬超时 kill + stdin/stdout 字节上限 + 输入行数上限=平台单页上限（200）+ stdout JSON 输出 Schema 校验；超时/非零退出/非 JSON/超限统一 `processor_failed` 族错误码且必有失败路径测试。处理器进程环境无平台注入的凭据键（DB_/AUTH_/FLEXFORGE_，测试实证）、执行串行（Semaphore）；**披露**：`-I` 仅隔离解释器配置，受信脚本仍可访问运行用户文件系统与网络——信任根=ADMIN 导入者，非多租户边界（ADR-0002 Level 2 表）；调用（invoke）与动态数据读同权（ADMIN/USER），导入仍 ADMIN 特权。原"无任意代码"语义收窄为"无平台内代码执行"（脚本只在受控子进程跑数据计算）。
+- **S6 插件资源双轨校验（2026-09-04 修订，ADR-0002 Level 2 激活；2026-09-09 P23 增补文件 IO 面）**：Level 1 包只接受声明式资源、无任何代码文件；Level 2 包额外允许 `scripts/*.py` 且**仅**经 `extension.data-processor` 声明执行——上传包全链路校验（Schema、路径、大小、资源类型）不变。处理器执行边界：子进程 `python3 -I` + 环境清空 + 临时目录执行后清理 + 硬超时 kill + stdin/stdout 字节上限 + 输入行数上限=平台单页上限（200）+ stdout JSON 输出 Schema 校验；超时/非零退出/非 JSON/超限统一 `processor_failed` 族错误码且必有失败路径测试。处理器进程环境无平台注入的凭据键（DB_/AUTH_/FLEXFORGE_ 输出目录变量除外，测试实证）、执行串行（Semaphore）；P23 起文件输入处理器（FR-PLUGIN-14）扩展输入输出面：上传三重校验（§3.5-5）、脚本经 argv/env 收平台分配的 UUID 路径（无用户可控路径段）、产物必须落在指定输出目录内且经登记后才可下载（TTL 清理）；**披露**：`-I` 仅隔离解释器配置，受信脚本仍可访问运行用户文件系统与网络——信任根=ADMIN 导入者，非多租户边界（ADR-0002 Level 2 表）；调用（invoke/invoke-file）与动态数据读同权（ADMIN/USER），导入仍 ADMIN 特权。原"无任意代码"语义收窄为"无平台内代码执行"（脚本只在受控子进程跑数据计算）。
 - **S7 AI 输出是数据不是指令**：模型输出必须通过 JSON Schema 校验与资源白名单才可进入系统；输出中的"指令性内容"一律不执行。
 - **S8 脱敏**：日志与错误响应不含密码、令牌、密钥、完整 Authorization 头、堆栈、SQL 与内部路径（对齐 `docs/coding-standards.md` §5、R-GOV-08）。
 - **S9 最小暴露**：Actuator 仅暴露 health；CORS 禁止通配 `*`；调试端点不进入演示/交付配置。
@@ -77,6 +78,7 @@
 2. 本文补充（数值以本节为唯一来源）：解压后文件数量 ≤ **1000**；解压必须流式进行并累计字节数，超限立即中止，不得解压完成后再检查；文件名拒绝控制字符与超长路径。
 3. 上传时校验 Content-Type 并做魔数嗅探，不信任客户端文件名与类型声明。
 4. 插件资产 serve（P08）：响应头固定 `Content-Security-Policy: default-src 'none'` + `Content-Disposition: attachment` + `X-Content-Type-Options: nosniff`（svg 事件属性纵深，与 §3.5-3 导入期魔数/文本嗅探构成两层防御）；按 activationId 做 stale 校验，路径为存储键精确匹配（无文件系统访问面）。
+5. 处理器文件输入（P23，FR-PLUGIN-14）：`invoke-file` 上传**非管理员特权**（与 invoke 同权 ADMIN/USER），但受处理器声明白名单约束——扩展名 ∈ 声明 `accept`（平台级仅 csv/xlsx/txt）、魔数嗅探（csv/txt=文本可解码无 NUL，xlsx=PK zip 头）、大小 ≤ min(声明 `maxInputMB`, 平台上限 **5MB**)，任一不符 `processor_input_invalid`；上传文件落 per-invoke 临时目录（UUID 存储名，展示名单独清洗），不信任客户端文件名；脚本输出产物必须位于 `FLEXFORGE_OUTPUT_DIR` 指定目录内且 ≤ **10MB**（stdout `kind=file` 的 filename 白名单字符集校验，目录外路径/超限 → `processor_output_invalid`）；产物登记 `processor_artifact`（归属=创建者），下载端点做归属校验（本人或 ADMIN；过期 `artifact_expired` 410）+ RFC5987 文件名 + `Cache-Control: no-store` + nosniff；TTL **10 分钟**，定时任务清理过期行与磁盘目录；产物与上传目录均在平台临时根下按 UUID 隔离，无用户可控路径段（NFR-SEC-02）。
 
 ### 3.6 AI 链路
 
@@ -104,7 +106,7 @@
 
 1. 锁文件必须提交；新增依赖说明用途、许可证与替代方案（对齐 `docs/repository-maintenance.md` §6）。
 2. 依赖漏洞扫描（本节新增要求）：前端 `npm audit`、后端启用 Dependabot alerts 或 OWASP dependency-check；纳入 `scripts/check-repo-health` 报告项。高危漏洞（CVSS ≥ 7.0）7 天内修复，或开 Issue 登记豁免理由与复查时间。
-3. 不引入无维护、来源不明的包；Docker 基础镜像固定版本。前端图表依赖 chart.js（MIT，canvas 绘制、构建期内置无运行时外链，P22 图表基建；替代方案 ECharts 体积过大、手搓 canvas 不可维护，均不采纳）。
+3. 不引入无维护、来源不明的包；Docker 基础镜像固定版本。前端图表依赖 chart.js（MIT，canvas 绘制、构建期内置无运行时外链，P22 图表基建；替代方案 ECharts 体积过大、手搓 canvas 不可维护，均不采纳）。前端 XLSX 导出依赖 exceljs（MIT，P23 FR-META-06；前端本地生成无服务端渲染，替代方案 SheetJS CE npm 渠道停更且存已知高危审计项、服务端 POI 引入重量级新攻击面，均不采纳）。
 
 ### 3.10 数据库与迁移
 
