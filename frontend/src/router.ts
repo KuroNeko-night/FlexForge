@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 
 import { session } from '@/auth/token';
+import AuditView from '@/views/AuditView.vue';
 import DynamicEntityView from '@/views/DynamicEntityView.vue';
 import HomeView from '@/views/HomeView.vue';
 import IssuesView from '@/views/IssuesView.vue';
@@ -55,6 +56,11 @@ export const router = createRouter({
           path: 'system/users',
           name: 'system-users',
           component: UsersView,
+        },
+        {
+          path: 'system/audit',
+          name: 'system-audit',
+          component: AuditView,
         },
         {
           path: 'settings',

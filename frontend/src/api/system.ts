@@ -42,3 +42,50 @@ export function updateStatus(userId: number, status: 'ACTIVE' | 'BLOCKED'): Prom
     body: JSON.stringify({ status }),
   });
 }
+
+/** 批量停启用（P24，FR-AUTH-05）：单请求批量，响应为逐用户终态（顺序与去重后请求一致）。 */
+export function batchUpdateStatus(
+  userIds: number[],
+  status: 'ACTIVE' | 'BLOCKED',
+): Promise<SystemUser[]> {
+  return apiFetch<SystemUser[]>('/system/users/batch-status', {
+    method: 'POST',
+    body: JSON.stringify({ userIds, status }),
+  });
+}
+
+/** 审计事件（P24 前端消费面；后端契约自 P03：result ∈ success/failure）。 */
+export interface AuditEventRecord {
+  id: string;
+  actor: string;
+  action: string;
+  objectId: string;
+  result: string;
+  occurredAt: string;
+}
+
+export interface AuditQueryParams {
+  page?: number;
+  pageSize?: number;
+  actor?: string;
+  action?: string;
+  objectId?: string;
+}
+
+/** 审计事件查询（ADMIN）：过滤项全可选，空值不下发参数。 */
+export function queryAuditEvents(params: AuditQueryParams): Promise<PageResult<AuditEventRecord>> {
+  const search = new URLSearchParams();
+  if (params.page !== undefined) {
+    search.set('page', String(params.page));
+  }
+  if (params.pageSize !== undefined) {
+    search.set('pageSize', String(params.pageSize));
+  }
+  for (const key of ['actor', 'action', 'objectId'] as const) {
+    const value = params[key]?.trim();
+    if (value) {
+      search.set(key, value);
+    }
+  }
+  return apiFetch<PageResult<AuditEventRecord>>(`/system/audit-events?${search.toString()}`);
+}
