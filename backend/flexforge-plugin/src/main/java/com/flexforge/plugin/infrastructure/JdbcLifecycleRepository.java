@@ -193,7 +193,11 @@ public class JdbcLifecycleRepository implements LifecycleRepository {
                             + " VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?)",
                     "meta-" + UUID.randomUUID(), actualId, field.name(), field.displayName(),
                     field.fieldType(), field.required(),
-                    orEmpty(field.defaultValueJson()), orEmpty(field.validationJson()), position++);
+                    // default_value 可空列：无默认存 NULL（P25 缺陷修复：orEmpty(null)
+                    // →'{}' 曾使表单预填渲染为 "[object Object]"，自 P08 潜伏）；
+                    // validation 列 NOT NULL，缺省仍写 '{}'（读侧 parse 归一为 null）
+                    field.defaultValueJson(),
+                    field.validationJson() == null ? "{}" : field.validationJson(), position++);
         }
         return actualId;
     }
@@ -242,10 +246,6 @@ public class JdbcLifecycleRepository implements LifecycleRepository {
     private String activationSelect() {
         return "SELECT id, plugin_id, plugin_version_id, operation, status, stage, error_code,"
                 + " requested_by, started_at, finished_at FROM plugin_activation";
-    }
-
-    private static String orEmpty(String json) {
-        return json == null ? "{}" : json;
     }
 
     /** 视图列/过滤缺省为空数组（meta_view 契约：columns/filters 为数组）。 */

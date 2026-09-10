@@ -75,6 +75,8 @@ class PluginActivationApiTest {
                         + " WHERE e.plugin_id = 'life.one'", Integer.class);
         assertThat(fields).isEqualTo(2);
 
+        assertNullDefaultsForPluginFields();
+
         Integer migrations = jdbc.queryForObject(
                 "SELECT count(*) FROM plugin_migration pm JOIN plugin_activation pa"
                         + " ON pm.activation_id = pa.id WHERE pa.id = ?",
@@ -260,5 +262,22 @@ class PluginActivationApiTest {
     private Integer entityCountOf(String pluginId) {
         return jdbc.queryForObject(
                 "SELECT count(*) FROM meta_entity WHERE plugin_id = ?", Integer.class, pluginId);
+    }
+    /** P25 缺陷修复回归：无 defaultValue/validation 的字段存 NULL（原 orEmpty 写 '{}'，
+     * 缺省值对象曾渲染进表单为 "[object Object]"）；by-name 读侧同步为 null。 */
+    private void assertNullDefaultsForPluginFields() throws Exception {
+        Integer nullDefaults = jdbc.queryForObject(
+                "SELECT count(*) FROM meta_field f JOIN meta_entity e ON f.entity_id = e.id"
+                        + " WHERE e.plugin_id = 'life.one' AND f.default_value IS NULL",
+                Integer.class);
+        assertThat(nullDefaults).isEqualTo(2);
+        String byName = mockMvc.perform(
+                        org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                                .get("/api/v1/meta/entities/by-name/life_one_item")
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        Object defaultValue = com.jayway.jsonpath.JsonPath.read(byName, "$.fields[0].defaultValue");
+        assertThat(defaultValue).isNull();
     }
 }

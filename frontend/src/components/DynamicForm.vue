@@ -44,7 +44,12 @@ function initialValue(): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const field of props.definition.fields) {
     const fromRecord = props.initial?.[field.name];
-    result[field.name] = fromRecord !== undefined ? fromRecord : (field.defaultValue ?? null);
+    // 非标量默认值守卫（P25 缺陷修复）：历史 {} 缺省值曾以对象预填渲染为
+    // "[object Object]"——对象/数组默认值按无默认处理
+    const fallback = field.defaultValue;
+    const safeFallback =
+      fallback !== null && typeof fallback === 'object' ? null : (fallback ?? null);
+    result[field.name] = fromRecord !== undefined ? fromRecord : safeFallback;
   }
   return result;
 }
