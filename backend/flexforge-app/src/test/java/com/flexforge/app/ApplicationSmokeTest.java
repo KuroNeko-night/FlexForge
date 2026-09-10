@@ -51,7 +51,8 @@ class ApplicationSmokeTest {
     void onlyPlatformTablesExist() {
         // 骨架纯净性：平台迁移不得创建任何业务表（ADR-0004，R-GOV-09 的前置断言）。
         // 平台前缀 = repository-maintenance §5：sys_*/meta_*/data_*/plugin_*/issue_*/ai_*
-        // + issue/requirement_spec（P10 Issue 域）+ ai_task_log（P11 AI 任务记录）+ flyway_*
+        // + issue/requirement_spec（P10 Issue 域）+ ai_task_log（P11 AI 任务记录）
+        // + processor_artifact（P23 文件处理器产物，V016）+ flyway_*
         Integer nonPlatform = jdbc.queryForObject(
                 "select count(*) from information_schema.tables "
                         + "where table_schema = 'public' "
@@ -62,6 +63,7 @@ class ApplicationSmokeTest {
                         + "and table_name not like 'issue%' "
                         + "and table_name not like 'requirement_spec' "
                         + "and table_name not like 'ai_%' "
+                        + "and table_name not like 'processor_%' "
                         + "and table_name not like 'flyway_%'",
                 Integer.class);
         assertThat(nonPlatform).isZero();

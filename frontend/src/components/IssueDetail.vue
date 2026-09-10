@@ -10,6 +10,7 @@ import {
   type SpecRevision,
 } from '@/api/issues';
 import { session } from '@/auth/token';
+import IssueBriefCard from '@/components/IssueBriefCard.vue';
 import IssueClarifyChat from '@/components/IssueClarifyChat.vue';
 import IssueComments from '@/components/IssueComments.vue';
 import IssueDevPanel from '@/components/IssueDevPanel.vue';
@@ -26,6 +27,8 @@ const emit = defineEmits<{
   updated: [issue: IssueRecord];
   specSaved: [spec: SpecRevision];
 }>();
+
+const briefJson = ref<string | null>(null);
 
 const comments = ref<IssueComment[]>([]);
 const spec = ref<SpecRevision | null>(null);
@@ -48,6 +51,7 @@ async function loadDetail(): Promise<void> {
     }
     comments.value = nextComments;
     spec.value = nextSpec;
+    briefJson.value = nextSpec?.briefJson ?? null;
   } catch {
     /* 详情子区加载失败不毁面板：评论区/规格区各自显示空态 */
   }
@@ -61,9 +65,10 @@ watch(
   { immediate: true },
 );
 
-/** 对话产出规格草稿：本地同步 + 透传给父级（列表/详情共用一份规格状态）。 */
+/** 对话产出规格草稿：本地同步 + 透传给父级；简报快照同步给三段分区。 */
 function onSpecSaved(next: SpecRevision): void {
   spec.value = next;
+  briefJson.value = next.briefJson;
   emit('specSaved', next);
 }
 </script>
@@ -72,6 +77,9 @@ function onSpecSaved(next: SpecRevision): void {
   <article class="issue-detail" data-testid="issue-detail">
     <header class="detail-head">
       <h3>{{ issue.title }}</h3>
+      <span v-if="issue.publishedAt" class="published-badge" data-testid="detail-published-badge">
+        已发布
+      </span>
       <span class="status-badge" :data-status="issue.status">
         {{ ISSUE_STATUS_LABELS[issue.status] }}
       </span>
@@ -90,6 +98,8 @@ function onSpecSaved(next: SpecRevision): void {
         @spec-saved="onSpecSaved"
       />
     </ComponentCard>
+
+    <IssueBriefCard :brief-json="briefJson" />
 
     <IssueDevPanel
       v-if="isDeveloper"
@@ -142,6 +152,13 @@ function onSpecSaved(next: SpecRevision): void {
   font-size: var(--ff-text-sm);
   background: var(--ff-surface-muted);
   color: var(--ff-text-muted);
+}
+.published-badge {
+  padding: var(--ff-space-1) var(--ff-space-2);
+  border-radius: 999px;
+  font-size: var(--ff-text-sm);
+  background: color-mix(in srgb, var(--ff-primary) 14%, transparent);
+  color: var(--ff-primary);
 }
 .status-badge[data-status='APPROVED'],
 .status-badge[data-status='TESTED'],

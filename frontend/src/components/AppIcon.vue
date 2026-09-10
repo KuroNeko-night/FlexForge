@@ -65,6 +65,12 @@ withDefaults(defineProps<{ name: string; size?: number }>(), { size: 18 });
       <path d="m22 2-7 20-4-9-9-4z" />
       <path d="M22 2 11 13" />
     </template>
+    <template v-else-if="name === 'chevron-left'">
+      <polyline points="15 18 9 12 15 6" />
+    </template>
+    <template v-else-if="name === 'chevron-right'">
+      <polyline points="9 18 15 12 9 6" />
+    </template>
     <template v-else>
       <rect x="3" y="3" width="7" height="7" rx="1" />
       <rect x="14" y="3" width="7" height="7" rx="1" />

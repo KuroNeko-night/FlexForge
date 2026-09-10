@@ -1,0 +1,25 @@
+{
+  "spec": {
+    "schemaVersion": 1,
+    "summary": "fixture 澄清规格",
+    "entities": [
+      {
+        "name": "clarify_item",
+        "displayName": "澄清项",
+        "fields": [
+          {"name": "name", "displayName": "名称", "fieldType": "text", "required": true},
+          {"name": "qty", "displayName": "数量", "fieldType": "integer",
+           "validation": {"min": 0}}
+        ]
+      }
+    ],
+    "permissions": ["clarify.read"],
+    "rules": [{"name": "非负", "description": "数量不得小于 0"}],
+    "acceptance": ["qty=-1 被拒绝", "列表可见"]
+  },
+  "brief": {
+    "colloquial": "你想做一个记录\"澄清项\"的小模块：每条记录有名称和数量，名称必填，数量不能是负数，做好后能在列表里看到这些记录。这就是你要的吗？确认后我们就把这份需求推送给开发。",
+    "feasibility": "在声明式插件能力内可直接落地：一个实体（text 名称 + integer 数量，数量带 min=0 校验）+ 默认列表视图 + 只读权限；无外部依赖与裁剪项，风险低。",
+    "agentPrompt": "请制作一个 FlexForge Level 1 声明式插件：实体 clarify_item（显示名\"澄清项\"），字段 name（text，必填，显示名\"名称\"）与 qty（integer，显示名\"数量\"，校验 min=0）；提供 list 视图；权限 clarify.read；业务规则：数量不得小于 0；验收标准：qty=-1 创建被拒绝、列表可见名称与数量。"
+  }
+}

@@ -13,11 +13,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /** 澄清引擎（RB-AI：非法 JSON/Schema 违约重试与上限）。 */
 class ClarifyEngineTest {
 
+    /** v3 契约：规格轮输出须同轮携带三段简报 brief。 */
     private static final String VALID_SPEC = """
             {"spec":{"schemaVersion":1,"summary":"s","entities":[
             {"name":"a_item","displayName":"A","fields":[
             {"name":"name","displayName":"N","fieldType":"text","required":true}]}],
-            "acceptance":["可查询"]}}
+            "acceptance":["可查询"]},
+            "brief":{"colloquial":"c","feasibility":"f","agentPrompt":"a"}}
             """;
 
     @Test
@@ -122,6 +124,32 @@ class ClarifyEngineTest {
         };
         assertThatThrownBy(() -> new ClarifyEngine(down).clarify("p"))
                 .isInstanceOf(ModelUnavailableException.class);
+    }
+
+    /** P23 审查 P2-3：规格合法但简报缺失/超长 → 携修正反馈重试后成功。 */
+    @Test
+    void briefViolationRetriedWithFeedbackThenValid() {
+        AtomicInteger calls = new AtomicInteger();
+        String specOnly = VALID_SPEC.replace(
+                ",\"brief\":{\"colloquial\":\"c\",\"feasibility\":\"f\",\"agentPrompt\":\"a\"}}", "}");
+        ModelPort scripted = new ModelPort() {
+            @Override
+            public ModelReply complete(ModelRequest request) {
+                if (calls.incrementAndGet() == 1) {
+                    return new ModelReply(specOnly);
+                }
+                assertThat(request.prompt()).contains("brief");
+                return new ModelReply(VALID_SPEC);
+            }
+
+            @Override
+            public String name() {
+                return "scripted";
+            }
+        };
+        ClarifyEngine.ClarifyResult result = new ClarifyEngine(scripted).clarify("p");
+        assertThat(result.specProduced()).isTrue();
+        assertThat(result.brief()).isNotNull();
     }
 
     @Test

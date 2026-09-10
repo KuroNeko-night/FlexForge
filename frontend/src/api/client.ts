@@ -78,6 +78,23 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   return JSON.parse(text) as T;
 }
 
+/** Blob 下载（P23 处理器产物）：与 apiFetch 同错误口径，成功返回二进制。 */
+export async function apiFetchBlob(path: string): Promise<Blob> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/v1${path}`, { headers: buildHeaders() });
+  } catch {
+    throw new ApiError('network_error', '网络异常，请稍后重试', 0, null);
+  }
+  if (response.status === 401) {
+    unauthorizedHandler?.();
+  }
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
+  return response.blob();
+}
+
 /**
  * 错误呈现统一口径（P16 文案规范）：ApiError 附追踪码用中点分隔，
  * 不用括号解释性后缀；非 ApiError 给兜底文案（null=交由消费方默认态）。

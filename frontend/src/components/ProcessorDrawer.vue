@@ -120,7 +120,7 @@ watch(
             </template>
           </dl>
           <ChartCanvas
-            v-else
+            v-else-if="result.kind === 'chart'"
             :type="result.chartType"
             :title="result.title"
             :categories="result.categories"

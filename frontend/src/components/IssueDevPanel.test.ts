@@ -32,6 +32,7 @@ const baseIssue: IssueRecord = {
   labels: [],
   createdAt: '2026-08-30T02:00:00Z',
   updatedAt: '2026-08-30T02:00:00Z',
+  publishedAt: null,
 };
 
 const spec: SpecRevision = {
@@ -42,6 +43,7 @@ const spec: SpecRevision = {
   specJson: '{"schemaVersion":1}',
   valid: true,
   validationErrors: null,
+  briefJson: null,
   createdBy: 'ai',
   createdAt: '2026-08-30T02:01:00Z',
 };

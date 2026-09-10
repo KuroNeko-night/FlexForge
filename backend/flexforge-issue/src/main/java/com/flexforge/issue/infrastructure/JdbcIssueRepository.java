@@ -36,7 +36,7 @@ public class JdbcIssueRepository implements IssueRepository {
     @Override
     public IssueRecord findIssue(String issueId) {
         return jdbc.query("SELECT id, title, description, status, created_by, assigned_to,"
-                        + " created_at, updated_at FROM issue WHERE id = ?",
+                        + " created_at, updated_at, published_at FROM issue WHERE id = ?",
                 issueRow, issueId).stream().findFirst().orElse(null);
     }
 
@@ -63,13 +63,28 @@ public class JdbcIssueRepository implements IssueRepository {
     public List<IssueRecord> listIssues(IssueStatus status, int offset, int limit) {
         if (status == null) {
             return jdbc.query("SELECT id, title, description, status, created_by, assigned_to,"
-                    + " created_at, updated_at FROM issue ORDER BY created_at DESC"
+                    + " created_at, updated_at, published_at FROM issue ORDER BY created_at DESC"
                     + " OFFSET ? LIMIT ?", issueRow, offset, limit);
         }
         return jdbc.query("SELECT id, title, description, status, created_by, assigned_to,"
-                        + " created_at, updated_at FROM issue WHERE status = ?"
+                        + " created_at, updated_at, published_at FROM issue WHERE status = ?"
                         + " ORDER BY created_at DESC OFFSET ? LIMIT ?",
                 issueRow, status.name(), offset, limit);
+    }
+
+    @Override
+    public List<IssueRecord> listIssuesByCreator(String creator, int offset, int limit) {
+        return jdbc.query("SELECT id, title, description, status, created_by, assigned_to,"
+                        + " created_at, updated_at, published_at FROM issue"
+                        + " WHERE created_by = ? ORDER BY created_at DESC OFFSET ? LIMIT ?",
+                issueRow, creator, offset, limit);
+    }
+
+    @Override
+    @Transactional
+    public void markPublished(String issueId) {
+        jdbc.update("UPDATE issue SET published_at = now(), updated_at = now()"
+                + " WHERE id = ? AND published_at IS NULL", issueId);
     }
 
     @Override
@@ -116,12 +131,13 @@ public class JdbcIssueRepository implements IssueRepository {
         for (int attempt = 0; attempt < 3; attempt++) {
             try {
                 jdbc.update("INSERT INTO requirement_spec (id, issue_id, schema_version,"
-                                + " revision, spec_json, valid, validation_errors, created_by)"
+                                + " revision, spec_json, valid, validation_errors, brief_json,"
+                                + " created_by)"
                                 + " SELECT ?, ?, ?, coalesce(max(revision), 0) + 1, ?::jsonb, ?,"
-                                + " ?::jsonb, ? FROM requirement_spec WHERE issue_id = ?",
+                                + " ?::jsonb, ?::jsonb, ? FROM requirement_spec WHERE issue_id = ?",
                         "rs-" + UUID.randomUUID(), issueId, content.schemaVersion(),
-                        content.specJson(), content.valid(), content.errorsJson(), createdBy,
-                        issueId);
+                        content.specJson(), content.valid(), content.errorsJson(),
+                        content.briefJson(), createdBy, issueId);
                 return latestSpec(issueId);
             } catch (org.springframework.dao.DuplicateKeyException e) {
                 // 并发窗口：另一保存已占用该 revision，换号重试
@@ -133,8 +149,8 @@ public class JdbcIssueRepository implements IssueRepository {
     @Override
     public SpecRevisionRecord latestSpec(String issueId) {
         return jdbc.query("SELECT id, issue_id, schema_version, revision, spec_json::text,"
-                        + " valid, validation_errors::text, created_by, created_at"
-                        + " FROM requirement_spec WHERE issue_id = ?"
+                        + " valid, validation_errors::text, brief_json::text, created_by,"
+                        + " created_at FROM requirement_spec WHERE issue_id = ?"
                         + " ORDER BY revision DESC LIMIT 1", specRow, issueId)
                 .stream().findFirst().orElse(null);
     }
@@ -142,8 +158,8 @@ public class JdbcIssueRepository implements IssueRepository {
     @Override
     public List<SpecRevisionRecord> specRevisionsOf(String issueId) {
         return jdbc.query("SELECT id, issue_id, schema_version, revision, spec_json::text,"
-                        + " valid, validation_errors::text, created_by, created_at"
-                        + " FROM requirement_spec WHERE issue_id = ?"
+                        + " valid, validation_errors::text, brief_json::text, created_by,"
+                        + " created_at FROM requirement_spec WHERE issue_id = ?"
                         + " ORDER BY revision DESC", specRow, issueId);
     }
 
@@ -161,11 +177,13 @@ public class JdbcIssueRepository implements IssueRepository {
         List<String> labels = jdbc.queryForList(
                 "SELECT label FROM issue_label WHERE issue_id = ? ORDER BY label",
                 String.class, id);
+        java.sql.Timestamp published = rs.getTimestamp("published_at");
         return new IssueRecord(id, rs.getString("title"), rs.getString("description"),
                 IssueStatus.fromName(rs.getString("status")), rs.getString("created_by"),
                 rs.getString("assigned_to"), List.copyOf(labels),
                 rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("updated_at").toInstant());
+                rs.getTimestamp("updated_at").toInstant(),
+                published == null ? null : published.toInstant());
     }
 
     private final RowMapper<IssueCommentRecord> commentRow = (rs, n) -> new IssueCommentRecord(
@@ -182,6 +200,6 @@ public class JdbcIssueRepository implements IssueRepository {
     private final RowMapper<SpecRevisionRecord> specRow = (rs, n) -> new SpecRevisionRecord(
             rs.getString("id"), rs.getString("issue_id"), rs.getInt("schema_version"),
             rs.getInt("revision"), rs.getString("spec_json"), rs.getBoolean("valid"),
-            rs.getString("validation_errors"), rs.getString("created_by"),
-            rs.getTimestamp("created_at").toInstant());
+            rs.getString("validation_errors"), rs.getString("brief_json"),
+            rs.getString("created_by"), rs.getTimestamp("created_at").toInstant());
 }

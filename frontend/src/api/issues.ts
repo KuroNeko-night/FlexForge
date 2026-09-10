@@ -15,6 +15,8 @@ export interface IssueRecord {
   labels: string[];
   createdAt: string;
   updatedAt: string;
+  /** P23 FR-ISSUE-07：确认推送时间（null=未发布）。 */
+  publishedAt: string | null;
 }
 
 export type IssueStatusName =
@@ -44,15 +46,25 @@ export interface SpecRevision {
   specJson: string;
   valid: boolean;
   validationErrors: string | null;
+  /** P23 FR-ISSUE-03B：三段简报 JSON 快照（v2 及更早版本为 null）。 */
+  briefJson: string | null;
   createdBy: string;
   createdAt: string;
 }
 
-/** clarify 结果：未成规格时给出下一轮追问（FR-ISSUE-03 多轮对话）。 */
+/** 三段简报（提示词 v3）：口语化确认→用户；可行性/制作提示词→开发者。 */
+export interface ClarifyBrief {
+  colloquial: string;
+  feasibility: string;
+  agentPrompt: string;
+}
+
+/** clarify 结果：未成规格时给出下一轮追问；成规格时附三段简报（P23 v3）。 */
 export interface ClarifyOutcome {
   specProduced: boolean;
   questions: string[];
   spec: SpecRevision | null;
+  brief: ClarifyBrief | null;
 }
 
 export interface GenerateOutcome {
@@ -89,6 +101,11 @@ export function createIssue(payload: {
 
 export function fetchIssue(issueId: string): Promise<IssueRecord> {
   return apiFetch<IssueRecord>(`/issues/${issueId}`);
+}
+
+/** 确认并推送（P23 FR-ISSUE-07）：作者本人；门=有效规格+简报齐备；幂等。 */
+export function publishIssue(issueId: string): Promise<IssueRecord> {
+  return apiFetch<IssueRecord>(`/issues/${issueId}/publish`, { method: 'POST' });
 }
 
 export function fetchComments(issueId: string): Promise<IssueComment[]> {

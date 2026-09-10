@@ -69,6 +69,14 @@ public class IssueService {
                 (safePage - 1) * pageSize, pageSize);
     }
 
+    /** 按创建者过滤的列表（P23 FR-ISSUE-07：USER 视角范围收口）。 */
+    public List<IssueRepository.IssueRecord> listMine(String creator,
+                                                      int page, int pageSize) {
+        int safePage = Math.min(Math.max(1, page), 10_000);
+        return repository.listIssuesByCreator(creator,
+                (safePage - 1) * pageSize, pageSize);
+    }
+
     public void comment(String actor, String issueId, String body) {
         require(issueId);
         if (body == null || body.isBlank() || body.length() > 2000) {

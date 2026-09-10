@@ -5,6 +5,7 @@ import com.flexforge.auth.AuthPrincipal;
 import com.flexforge.auth.Roles;
 import com.flexforge.auth.api.JwtAuthFilter;
 import com.flexforge.auth.api.RequireRole;
+import com.flexforge.auth.PermissionDeniedException;
 import com.flexforge.auth.core.AuthService;
 import com.flexforge.common.ApiConstants;
 import com.flexforge.common.PublicApi;
@@ -31,6 +32,8 @@ import java.util.List;
  * Issue 接口（docs/03 §8、FR-ISSUE-01/02/04/06）：创建/评论/标签/指派为
  * 登录用户可用（普通用户提交与跟踪，docs/02 §1）；状态迁移、规格保存与
  * 预览为开发者职责（审核需求/配置元数据，与 meta 写权限同口径）。
+ * P23（FR-ISSUE-07）角色分置：纯 USER 角色的列表/详情/评论按"本人创建"
+ * 服务端收口（S2），publish=作者本人确认推送（幂等）。
  */
 @PublicApi
 @RestController
@@ -78,14 +81,22 @@ public class IssueController {
 
     @GetMapping
     public List<IssueRepository.IssueRecord> list(
+            @RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize) {
-        return issues.list(status, page, Math.min(Math.max(1, pageSize), 100));
+        int safeSize = Math.min(Math.max(1, pageSize), 100);
+        if (userOnly(principal)) {
+            return issues.listMine(actor(principal), page, safeSize);
+        }
+        return issues.list(status, page, safeSize);
     }
 
     @GetMapping("/{issueId}")
-    public IssueRepository.IssueRecord detail(@PathVariable String issueId) {
+    public IssueRepository.IssueRecord detail(
+            @RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
+            @PathVariable String issueId) {
+        requireOwnOrPrivileged(principal, issueId);
         return issues.require(issueId);
     }
 
@@ -93,11 +104,15 @@ public class IssueController {
     public void comment(
             @RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
             @PathVariable String issueId, @RequestBody CommentRequest request) {
+        requireOwnOrPrivileged(principal, issueId);
         issues.comment(actor(principal), issueId, request.body());
     }
 
     @GetMapping("/{issueId}/comments")
-    public List<IssueRepository.IssueCommentRecord> comments(@PathVariable String issueId) {
+    public List<IssueRepository.IssueCommentRecord> comments(
+            @RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
+            @PathVariable String issueId) {
+        requireOwnOrPrivileged(principal, issueId);
         return issues.comments(issueId);
     }
 
@@ -118,7 +133,9 @@ public class IssueController {
 
     @GetMapping("/{issueId}/transitions")
     public List<IssueRepository.IssueTransitionRecord> transitions(
+            @RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
             @PathVariable String issueId) {
+        requireOwnOrPrivileged(principal, issueId);
         return issues.transitions(issueId);
     }
 
@@ -138,17 +155,22 @@ public class IssueController {
     public IssueRepository.SpecRevisionRecord saveSpec(
             @RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
             @PathVariable String issueId, @RequestBody JsonNode spec) {
-        return workflow.saveSpec(actor(principal), issueId, spec);
+        return workflow.saveSpec(actor(principal), issueId, spec, null);
     }
 
     @GetMapping("/{issueId}/spec")
-    public IssueRepository.SpecRevisionRecord latestSpec(@PathVariable String issueId) {
+    public IssueRepository.SpecRevisionRecord latestSpec(
+            @RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
+            @PathVariable String issueId) {
+        requireOwnOrPrivileged(principal, issueId);
         return workflow.latestSpec(issueId);
     }
 
     @GetMapping("/{issueId}/spec/revisions")
     public List<IssueRepository.SpecRevisionRecord> specRevisions(
+            @RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
             @PathVariable String issueId) {
+        requireOwnOrPrivileged(principal, issueId);
         return workflow.specRevisions(issueId);
     }
 
@@ -157,6 +179,18 @@ public class IssueController {
     @RequireRole(Roles.DEVELOPER)
     public SpecPreview.Preview preview(@PathVariable String issueId) {
         return workflow.preview(issueId);
+    }
+
+    /** 确认并推送（P23 FR-ISSUE-07）：仅 Issue 作者本人；门=最新规格 valid 且简报齐备。 */
+    @PostMapping("/{issueId}/publish")
+    public IssueRepository.IssueRecord publish(
+            @RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
+            @PathVariable String issueId) {
+        String operator = actor(principal);
+        if (!issues.require(issueId).createdBy().equals(operator)) {
+            throw new PermissionDeniedException("只能确认推送自己创建的 Issue");
+        }
+        return workflow.publish(operator, issueId);
     }
 
     /** AI 澄清（docs/03 §8 clarify；FR-ISSUE-03）：Issue 作者或开发者。 */
@@ -180,6 +214,20 @@ public class IssueController {
             @RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
             @PathVariable String issueId) throws java.io.IOException {
         return ai.generate(actor(principal), issueId);
+    }
+
+    /** 纯 USER 角色（无 DEVELOPER/ADMIN）：P23 用户端视角，服务端范围收口。 */
+    private static boolean userOnly(AuthPrincipal principal) {
+        return !principal.roles().contains(Roles.DEVELOPER)
+                && !principal.roles().contains(Roles.ADMIN);
+    }
+
+    /** USER 只能访问本人创建的 Issue（S2：服务端判定，前端分支只是体验）。 */
+    private void requireOwnOrPrivileged(AuthPrincipal principal, String issueId) {
+        if (userOnly(principal)
+                && !issues.require(issueId).createdBy().equals(actor(principal))) {
+            throw new PermissionDeniedException("只能访问自己创建的 Issue");
+        }
     }
 
     private String actor(AuthPrincipal principal) {

@@ -5,8 +5,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { createRecord, fetchRecord, queryRecords, updateRecord } from '@/api/data';
 import { ApiError, apiErrorMessage } from '@/api/client';
 import type { RecordView, ViewDefinition } from '@/api/types';
-import { buildCsv, csvSafeFilename, downloadCsv } from '@/utils/csv';
-import { visibleColumns } from '@/utils/viewColumns';
 import DynamicForm from '@/components/DynamicForm.vue';
 import DynamicTable from '@/components/DynamicTable.vue';
 import EntityDetailSection from '@/components/EntityDetailSection.vue';
@@ -18,13 +16,14 @@ import ViewToggle from '@/components/ViewToggle.vue';
 import StateView from '@/components/StateView.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
+import { useEntityExport } from '@/composables/useEntityExport';
 import { useEntityMetadata } from '@/composables/useEntityMetadata';
 import { useConfirmAction } from '@/composables/useConfirmAction';
 import { useEntityProcessors } from '@/composables/useEntityProcessors';
 import { useKanbanMove } from '@/composables/useKanbanMove';
 import { visibleRecordActions, type ActionContext } from '@/registry/recordActionRegistry';
 
-/** 动态实体页（docs/09 P06 验收 1）：四模式由路由参数驱动，无业务页面代码；P17 增看板呈现。 */
+/** 动态实体页（P06）：四模式由路由驱动，无业务页面代码；P17 增看板，P19 CSV，P23 XLSX。 */
 const route = useRoute();
 const router = useRouter();
 const { definition, versionChanged, load } = useEntityMetadata();
@@ -59,6 +58,17 @@ const formView = computed<ViewDefinition | null>(
 const kanbanView = computed<ViewDefinition | null>(
   () => definition.value?.views.find((view) => view.viewType === 'kanban') ?? null,
 );
+const {
+  exportCsv,
+  exportXlsx,
+  exportError: exportErr,
+} = useEntityExport({
+  definition,
+  listView,
+  records,
+  entityName,
+});
+
 /** 列表页呈现切换（P17）：实体声明了 kanban 视图即可在看板/表格间切换。 */
 const presentation = ref<'table' | 'kanban'>('table');
 const pageSize = computed(() => (presentation.value === 'kanban' ? 100 : 20));
@@ -167,19 +177,6 @@ const { moveError, onCardMove } = useKanbanMove(entityName, kanbanView, records)
 const { available: hasProcessors, drawerOpen: analysisOpen } = useEntityProcessors(entityName);
 
 /** 导出 CSV（P19）：当前已加载记录与可见列的本地生成（无网络请求）。 */
-function exportCsv(): void {
-  const columns = visibleColumns(definition.value?.fields ?? [], listView.value);
-  if (columns.length === 0) {
-    return;
-  }
-  const headers = columns.map((field) => field.displayName);
-  const rows = records.value.map((record) =>
-    columns.map((field) => record.data[field.name] ?? null),
-  );
-  const name = csvSafeFilename(definition.value?.displayName ?? entityName.value);
-  downloadCsv(`${name}-导出.csv`, buildCsv(headers, rows));
-}
-
 async function editRecord(id: string): Promise<void> {
   await router.push({ name: 'entity-edit', params: { entity: entityName.value, id } });
 }
@@ -213,7 +210,7 @@ watch(
     if (!route.params.entity) {
       return;
     }
-    // 仅切换实体时重置分页与呈现；同实体内详情/编辑/翻页保留位置
+    // 仅切换实体时重置分页与呈现；同实体内导航保留位置
     if (route.params.entity !== watchedEntity) {
       watchedEntity = String(route.params.entity);
       page.value = 1;
@@ -236,10 +233,12 @@ onMounted(refresh);
           数据分析
         </BaseButton>
         <BaseButton data-testid="export-csv" @click="exportCsv">导出 CSV</BaseButton>
+        <BaseButton data-testid="export-xlsx" @click="exportXlsx">导出 XLSX</BaseButton>
         <BaseButton variant="primary" @click="router.push(`/data/${entityName}/new`)">
           新增记录
         </BaseButton>
       </div>
+      <p v-if="exportErr" class="form-error" role="alert">{{ exportErr }}</p>
       <p v-if="state === 'ready' && versionChanged" class="stale-note">
         元数据已更新，数据已按新版本重新加载
       </p>

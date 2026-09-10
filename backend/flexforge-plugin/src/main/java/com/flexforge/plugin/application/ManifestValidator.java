@@ -86,73 +86,9 @@ public class ManifestValidator {
         return level.intValue();
     }
 
-    /** processors 声明（Level 2 专属）：缺省/空段时 Level 2 拒、Level 1 合法空；
-     * Level 1 出现 processors 段即拒（S6 双轨：Level 1 零代码语义不变）。 */
+    /** processors 声明（P23 抽至 ProcessorDeclarationValidator：inputMode 分流）。 */
     private static List<ProcessorSpec> processorsOf(JsonNode contributionsNode, int capabilityLevel) {
-        JsonNode node = contributionsNode == null ? null : contributionsNode.get("processors");
-        boolean declared = node != null && !node.isNull();
-        if (!declared) {
-            return requireNoneOrReject(capabilityLevel);
-        }
-        if (capabilityLevel != 2) {
-            throw PluginValidationException.invalidManifest(
-                    "processors 贡献仅 Level 2 插件可声明（Level 1 为纯声明式）");
-        }
-        return parseProcessors(node);
-    }
-
-    private static List<ProcessorSpec> requireNoneOrReject(int capabilityLevel) {
-        if (capabilityLevel == 2) {
-            throw PluginValidationException.invalidManifest(
-                    "Level 2 插件必须声明 contributions.processors（数据处理器）");
-        }
-        return List.of();
-    }
-
-    private static List<ProcessorSpec> parseProcessors(JsonNode node) {
-        if (!node.isArray()) {
-            throw PluginValidationException.invalidManifest("contributions.processors 必须是数组");
-        }
-        List<ProcessorSpec> result = new ArrayList<>();
-        Set<String> seenKeys = new java.util.HashSet<>();
-        for (JsonNode item : node) {
-            ProcessorSpec spec = processorOf(item);
-            if (!seenKeys.add(spec.key())) {
-                throw PluginValidationException.invalidManifest("processor key 重复: " + spec.key());
-            }
-            result.add(spec);
-        }
-        if (result.isEmpty()) {
-            throw PluginValidationException.invalidManifest("Level 2 插件 processors 不能为空");
-        }
-        return List.copyOf(result);
-    }
-
-    private static ProcessorSpec processorOf(JsonNode item) {
-        if (item == null || !item.isObject()) {
-            throw PluginValidationException.invalidManifest("contributions.processors 含非对象项");
-        }
-        String key = fieldText(item, "key");
-        if (!KEY_PATTERN.matcher(key).matches()) {
-            throw PluginValidationException.invalidManifest("processor key 非法: " + key);
-        }
-        String label = fieldText(item, "label");
-        String kind = fieldText(item, "kind");
-        if (!ProcessorSpec.KINDS.contains(kind)) {
-            throw PluginValidationException.invalidManifest(
-                    "processor kind 非法（允许 python）: " + kind);
-        }
-        String entry = fieldText(item, "entry");
-        if (!SCRIPT_PATH_PATTERN.matcher(entry).matches()) {
-            throw PluginValidationException.invalidManifest(
-                    "processor entry 须为包内 scripts/*.py 相对路径: " + entry);
-        }
-        String inputEntity = fieldText(item, "inputEntity");
-        if (!ENTITY_NAME_PATTERN.matcher(inputEntity).matches()) {
-            throw PluginValidationException.invalidManifest(
-                    "processor inputEntity 须为小写下划线实体名: " + inputEntity);
-        }
-        return new ProcessorSpec(key, label, kind, entry, inputEntity);
+        return ProcessorDeclarationValidator.processorsOf(contributionsNode, capabilityLevel);
     }
 
     private static List<DependencySpec> dependenciesOf(JsonNode root, String selfId) {

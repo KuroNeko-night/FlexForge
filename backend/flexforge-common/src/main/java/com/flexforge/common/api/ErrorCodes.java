@@ -37,6 +37,12 @@ public final class ErrorCodes {
     public static final String PROCESSOR_OUTPUT_INVALID = "processor_output_invalid";
     /** P20：处理器输入超限（记录行数/序列化字节，docs/09 P20 红线）。 */
     public static final String PROCESSOR_INPUT_TOO_LARGE = "processor_input_too_large";
+    /** P23：文件处理器输入未过三重校验（扩展名不在声明白名单/魔数不符/超大小）。 */
+    public static final String PROCESSOR_INPUT_INVALID = "processor_input_invalid";
+    /** P23：处理器产物不存在（或无权访问，防枚举同码）。 */
+    public static final String ARTIFACT_NOT_FOUND = "artifact_not_found";
+    /** P23：处理器产物已过 TTL（临时产物口径，docs/13 §3.5-5）。 */
+    public static final String ARTIFACT_EXPIRED = "artifact_expired";
     /** P10：Issue 非法状态迁移/缺原因/缺合法规格批准门（docs/08 §7 只增）。 */
     public static final String INVALID_TRANSITION = "invalid_transition";
     /** P11：模型访问失败（超时/取消/限流/离线，docs/09 P11 验收）。 */

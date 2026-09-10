@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "example.filetools",
+  "name": "表格文件工具示例",
+  "version": "0.1.0",
+  "capabilityLevel": 2,
+  "minPlatformVersion": "0.1.0",
+  "dependencies": [],
+  "permissions": ["filetools.read"],
+  "contributions": {
+    "processors": [
+      {
+        "key": "filetools.csv.clean",
+        "label": "CSV 清洗（去空行/去重/列名规范化）",
+        "kind": "python",
+        "entry": "scripts/csv-clean.py",
+        "inputMode": "file",
+        "accept": ["csv", "txt"],
+        "maxInputMB": 5
+      },
+      {
+        "key": "filetools.csv.profile",
+        "label": "CSV 画像（行列规模与每列填充率）",
+        "kind": "python",
+        "entry": "scripts/csv-profile.py",
+        "inputMode": "file",
+        "accept": ["csv", "txt"],
+        "maxInputMB": 5
+      }
+    ]
+  },
+  "resources": {}
+}
