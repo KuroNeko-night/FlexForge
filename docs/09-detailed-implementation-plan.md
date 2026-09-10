@@ -573,3 +573,28 @@
 - 批量停启用：勾选多个用户→确认→一次请求全部变更（审计逐用户落库）；选择含自己/未知 id/超 100/非管理员均有可诊断失败；执行后选择清空+列表刷新。
 - Agent Skill：开发者简报卡可下载 SKILL.md；内容覆盖包结构/清单/实体/视图/迁移/处理器（entity+file）/打包校验红线/导入激活流程，与平台校验器口径一致（键模式/白名单/不可变）。
 - Issue 切换：开发者侧切换 Issue 后评论/规格即时清空（新数据到达前无旧内容）；用户侧切换需求后讨论输入草稿复位；门禁 21/1/0+前后端回归全绿+CI 六项；docs（02/03/09/索引/STATUS/JSON）同步。
+
+## P25：前端排版分布与视觉精修（2026-09-10 用户裁决新增）
+
+> 背景：P24 验收反馈两项——①"不要简单对内容进行居中设置，通过调整排版来让内容均匀分布"（P24 对窄表单/设置列采用的"收窄+居中"方案被否——右侧空白问题要靠排版本身消化：字段网格、多列卡片分布）；②"前端设计还可以再精致一点，使用不同的字体，字体大小，背景图等"。
+> **红线**：
+> - 排版只动表现层：动态表单改全宽卡片容器+字段网格（auto-fill 自适应列数），设置页改卡片多列网格（auto-fit），用户端新需求表单铺满；占位页保留空态居中但结构化（图标+标题+说明）；
+> - 字体系统走 @fontsource 自托管（延续 P16 Inter 口径，无运行时外链、CSP 不变）：新增 Space Grotesk（display，latin 500/700）+ Noto Sans SC（中文正文 400/500/700，unicode-range 分片按需加载）；`--ff-font` 兼容别名保留（既有消费方零改动），新增 `--ff-font-display`；
+> - 骨架背景只放灰阶 CSS 纹理基线（radial 网点+渐变，无彩色身份——结构与皮分离，色彩身份归主题包）；theme-default/theme-warm 升版 1.1.2 重绘背景（同版本不可变）；
+> - 文案零变更（P18 红线传承）；reduced-motion/对比度基线不破；主题机制（tokens 覆盖/热切换/撤销恢复）回归全绿；
+> - 数字排版：表格金额/计数 tabular-nums（font-feature-settings）。
+> **非目标**：不做暗色模式（登记候选）；不做可视化主题编辑器；不改 chart 调色板与侧栏结构；不做中文衬线标题（保持黑体家族，层级靠字重/字号/字距）。
+
+### 实施内容
+
+- **A. 排版均匀分布**：`base.css` `.dynamic-form` 改全宽卡片（surface+border+padding+圆角）+ `.form-grid`（repeat(auto-fill, minmax(15rem,1fr))）+ 按钮组右置；`SettingsView` 卡片网格 repeat(auto-fit, minmax(24rem,1fr))；`IssueChatWorkbench` 新需求表单铺满+字段双列；`PlaceholderView` 结构化空态卡。
+- **B. 字体系统**：新依赖单独提交（space-grotesk+noto-sans-sc）；main.ts 引入分片 css；tokens 增 `--ff-font-display`/`--ff-text-2xl`/`--ff-text-lg`/`--ff-tracking-tight`；应用面=各视图 h2 页面标题、侧栏品牌、登录页 h1、卡片标题 text-lg、表格数字 tabular-nums。
+- **C. 背景与氛围**：骨架 `--ff-bg-texture`（CSS 渐变组合，workbench-main 与 login-scene 消费，灰阶极淡不破对比度）；theme-default 1.1.2 bg.svg 重绘（细网格+柔光晕，cover 拉伸安全）；theme-warm 1.1.2 同步（暖色晕）；登录卡升级（渐变发丝描边+柔化阴影）。
+- **测试**：前端——既有 203 例回归（DOM 结构变化不破语义断言）+排版类新增断言（表单网格类/设置网格类存在性）；主题机制回归（themeRegistry 测试不动即绿）；对比度以令牌不变保证（纹理为背景层不影响前景对比）。
+
+### 验收标准
+
+- 表单均匀分布：实体新建/编辑表单字段以网格铺满内容区（宽屏 ≥2 列自适应、无右侧大片空白、无"窄列居中"观感）；设置页卡片多列分布。
+- 字体层级：页面标题/品牌用 display 字体（中西文混排协调、层级 2xl/lg/md/sm 分明）；中文正文 Noto Sans SC 渲染；表格数字等宽对齐。
+- 背景呈现：工作台主区与登录页有可感知的背景纹理（基线灰阶）；theme-default 1.1.2 激活后背景换装、停用恢复基线；theme-warm 1.1.2 同理。
+- 质量门：文案零变更；reduced-motion/CSP/对比度不破；前端回归全绿+门禁 21/1/0+CI 六项；新依赖 npm audit（high+ 0）+docs/13 §3.9 登记；docs（09/13/索引/STATUS/JSON）同步；交叉审查独立子代理执行。
