@@ -38,7 +38,12 @@ function request(status: 'ACTIVE' | 'BLOCKED'): void {
     <BaseButton size="sm" :disabled="running" data-testid="batch-block" @click="request('BLOCKED')">
       批量停用
     </BaseButton>
-    <BaseButton size="sm" :disabled="running" data-testid="batch-activate" @click="request('ACTIVE')">
+    <BaseButton
+      size="sm"
+      :disabled="running"
+      data-testid="batch-activate"
+      @click="request('ACTIVE')"
+    >
       批量启用
     </BaseButton>
     <BaseButton size="sm" variant="ghost" :disabled="running" @click="emit('clear')">

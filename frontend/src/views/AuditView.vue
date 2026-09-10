@@ -34,7 +34,11 @@ function appliedParams(): { actor?: string; action?: string; objectId?: string }
 async function load(): Promise<void> {
   state.value = 'loading';
   try {
-    const result = await queryAuditEvents({ page: page.value, pageSize: PAGE_SIZE, ...appliedParams() });
+    const result = await queryAuditEvents({
+      page: page.value,
+      pageSize: PAGE_SIZE,
+      ...appliedParams(),
+    });
     events.value = result.items;
     total.value = result.total;
     state.value = result.items.length === 0 && page.value === 1 ? 'empty' : 'ready';
@@ -111,7 +115,9 @@ onMounted(load);
         <tr v-for="event in events" :key="event.id">
           <td class="cell-time">{{ formatTime(event.occurredAt) }}</td>
           <td>{{ event.actor }}</td>
-          <td><code>{{ event.action }}</code></td>
+          <td>
+            <code>{{ event.action }}</code>
+          </td>
           <td class="cell-object">{{ event.objectId }}</td>
           <td>
             <span class="result-chip" :data-result="event.result">{{ event.result }}</span>

@@ -55,7 +55,9 @@ async function load(): Promise<void> {
 }
 
 /** 本页可选账号（自己不可批量变更——与单人路径同守卫）。 */
-const selectableIds = computed(() => users.value.filter((u) => u.id !== selfId.value).map((u) => u.id));
+const selectableIds = computed(() =>
+  users.value.filter((u) => u.id !== selfId.value).map((u) => u.id),
+);
 const allSelected = computed(
   () => selectableIds.value.length > 0 && selectableIds.value.every((id) => batch.isSelected(id)),
 );

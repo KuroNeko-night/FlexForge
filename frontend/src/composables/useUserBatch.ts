@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue';
+import { computed, ref, type Ref } from 'vue';
 
 import { ApiError } from '@/api/client';
 import { batchUpdateStatus } from '@/api/system';
@@ -15,49 +15,26 @@ export function useUserBatch(reload: () => Promise<unknown>) {
   const batchNotice = ref<string | null>(null);
 
   const hasSelection = computed(() => selectedIds.value.length > 0);
-
-  function isSelected(id: number): boolean {
-    return selectedIds.value.includes(id);
-  }
-
-  function toggle(id: number): void {
-    selectedIds.value = isSelected(id)
-      ? selectedIds.value.filter((item) => item !== id)
-      : [...selectedIds.value, id];
+  const clearFeedback = (): void => {
     batchError.value = null;
     batchNotice.value = null;
-  }
+  };
 
-  function setSelection(ids: number[]): void {
-    selectedIds.value = ids;
-  }
+  const { isSelected, toggle, setSelection, prune, clear } = selectionOps(
+    selectedIds,
+    clearFeedback,
+  );
 
-  /** 列表重载后剔除已不存在的选择（防陈旧 id 触发整批 404）。 */
-  function prune(validIds: number[]): void {
-    selectedIds.value = selectedIds.value.filter((id) => validIds.includes(id));
-  }
-
-  function clear(): void {
-    selectedIds.value = [];
-  }
-
-  async function run(status: 'ACTIVE' | 'BLOCKED'): Promise<void> {
-    if (!hasSelection.value || running.value) {
-      return;
-    }
-    running.value = true;
-    batchError.value = null;
-    batchNotice.value = null;
-    try {
-      const updated = await batchUpdateStatus([...selectedIds.value], status);
-      batchNotice.value = `已${status === 'BLOCKED' ? '停用' : '启用'} ${updated.length} 个账号`;
-      clear();
-      await reload();
-    } catch (e) {
-      batchError.value = e instanceof ApiError ? e.message : '批量操作失败，请稍后重试';
-    } finally {
-      running.value = false;
-    }
+  function run(status: 'ACTIVE' | 'BLOCKED'): Promise<void> {
+    return runBatch(status, {
+      selectedIds,
+      running,
+      batchError,
+      batchNotice,
+      hasSelection,
+      clear,
+      reload,
+    });
   }
 
   return {
@@ -73,4 +50,66 @@ export function useUserBatch(reload: () => Promise<unknown>) {
     clear,
     run,
   };
+}
+
+/** 选择集操作族（从 useUserBatch 拆出守 50 行上限）。 */
+function selectionOps(
+  selectedIds: Ref<number[]>,
+  onChanged: () => void,
+): {
+  isSelected: (id: number) => boolean;
+  toggle: (id: number) => void;
+  setSelection: (ids: number[]) => void;
+  prune: (validIds: number[]) => void;
+  clear: () => void;
+} {
+  const isSelected = (id: number): boolean => selectedIds.value.includes(id);
+  const toggle = (id: number): void => {
+    selectedIds.value = isSelected(id)
+      ? selectedIds.value.filter((item) => item !== id)
+      : [...selectedIds.value, id];
+    onChanged();
+  };
+  const setSelection = (ids: number[]): void => {
+    selectedIds.value = ids;
+  };
+  /** 列表重载后剔除已不存在的选择（防陈旧 id 触发整批 404）。 */
+  const prune = (validIds: number[]): void => {
+    selectedIds.value = selectedIds.value.filter((id) => validIds.includes(id));
+  };
+  const clear = (): void => {
+    selectedIds.value = [];
+  };
+  return { isSelected, toggle, setSelection, prune, clear };
+}
+
+/** 单请求批量提交（从 useUserBatch 拆出守 50 行上限）：成功清选+重载，失败保留选择。 */
+async function runBatch(
+  status: 'ACTIVE' | 'BLOCKED',
+  ctx: {
+    selectedIds: Ref<number[]>;
+    running: Ref<boolean>;
+    batchError: Ref<string | null>;
+    batchNotice: Ref<string | null>;
+    hasSelection: Ref<boolean>;
+    clear: () => void;
+    reload: () => Promise<unknown>;
+  },
+): Promise<void> {
+  if (!ctx.hasSelection.value || ctx.running.value) {
+    return;
+  }
+  ctx.running.value = true;
+  ctx.batchError.value = null;
+  ctx.batchNotice.value = null;
+  try {
+    const updated = await batchUpdateStatus([...ctx.selectedIds.value], status);
+    ctx.batchNotice.value = `已${status === 'BLOCKED' ? '停用' : '启用'} ${updated.length} 个账号`;
+    ctx.clear();
+    await ctx.reload();
+  } catch (e) {
+    ctx.batchError.value = e instanceof ApiError ? e.message : '批量操作失败，请稍后重试';
+  } finally {
+    ctx.running.value = false;
+  }
 }

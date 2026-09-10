@@ -46,14 +46,20 @@ const active = (id: string, startedAt: string) => ({
 describe('PluginCard 失败行降噪（P24）', () => {
   it('成功激活晚于失败：陈旧失败行不呈现', () => {
     const wrapper = mount(PluginCard, {
-      props: { plugin: entry([active('a2', '2026-09-10T02:00:00Z'), failed('a1', '2026-09-09T02:00:00Z')]), pending: false },
+      props: {
+        plugin: entry([active('a2', '2026-09-10T02:00:00Z'), failed('a1', '2026-09-09T02:00:00Z')]),
+        pending: false,
+      },
     });
     expect(wrapper.find('[data-testid="plugin-last-failure"]').exists()).toBe(false);
   });
 
   it('失败晚于成功激活（如升级失败补偿回旧版）：诊断行保留', () => {
     const wrapper = mount(PluginCard, {
-      props: { plugin: entry([failed('a2', '2026-09-10T02:00:00Z'), active('a1', '2026-09-09T02:00:00Z')]), pending: false },
+      props: {
+        plugin: entry([failed('a2', '2026-09-10T02:00:00Z'), active('a1', '2026-09-09T02:00:00Z')]),
+        pending: false,
+      },
     });
     expect(wrapper.find('[data-testid="plugin-last-failure"]').text()).toContain(
       '最近激活失败于 MIGRATION · migration_failed',

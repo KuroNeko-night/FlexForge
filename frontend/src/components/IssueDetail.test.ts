@@ -174,10 +174,24 @@ describe('IssueDetail 切换复位（PR #34 审查 P2）', () => {
     expect(wrapper.text()).not.toContain('A 的追问');
     expect((wrapper.find('.spec-editor').element as HTMLTextAreaElement).value).toBe('');
   });
+});
 
-  it('切换 Issue 即时清空旧评论（P24：B 数据到达前不残留 A 内容）', async () => {
+describe('IssueDetail 切换即时清空（P24）', () => {
+  beforeEach(() => {
+    resetMocks();
+    commentsMock.mockResolvedValue([]);
+    specMock.mockResolvedValue(null);
+  });
+
+  it('切换 Issue 即时清空旧评论（B 数据到达前不残留 A 内容）', async () => {
     commentsMock.mockResolvedValue([
-      { id: 'c1', issueId: 'i1', author: 'alice', body: 'A 的评论内容', createdAt: '2026-09-10T00:00:00Z' },
+      {
+        id: 'c1',
+        issueId: 'i1',
+        author: 'alice',
+        body: 'A 的评论内容',
+        createdAt: '2026-09-10T00:00:00Z',
+      },
     ]);
     specMock.mockResolvedValue(spec);
     const wrapper = mountDetail('SUBMITTED');

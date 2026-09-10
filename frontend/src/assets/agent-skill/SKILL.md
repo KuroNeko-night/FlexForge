@@ -56,10 +56,7 @@ assets/<file>                      ← 主题资产（可选，需 manifest 声�
   },
   "resources": {
     "entities": ["metadata/entities/meeting_room.json"],
-    "views": [
-      "metadata/views/meeting_room.list.json",
-      "metadata/views/meeting_room.form.json"
-    ],
+    "views": ["metadata/views/meeting_room.list.json", "metadata/views/meeting_room.form.json"],
     "migrations": ["migrations/V001__meeting_room.sql"]
   }
 }
@@ -87,18 +84,52 @@ assets/<file>                      ← 主题资产（可选，需 manifest 声�
   "name": "meeting_room",
   "displayName": "会议室预约",
   "fields": [
-    { "name": "title", "displayName": "会议主题", "fieldType": "text",
-      "required": true, "validation": { "maxLength": 80 }, "position": 0 },
-    { "name": "attendees", "displayName": "人数", "fieldType": "integer",
-      "required": true, "validation": { "min": 1, "max": 500 }, "position": 1 },
-    { "name": "room", "displayName": "会议室", "fieldType": "enum",
-      "required": true, "validation": { "options": ["第一会议室", "第二会议室", "多功能厅"] }, "position": 2 },
-    { "name": "booked_on", "displayName": "日期", "fieldType": "date",
-      "required": false, "position": 3 },
-    { "name": "projector", "displayName": "需要投影", "fieldType": "boolean",
-      "required": false, "position": 4 },
-    { "name": "fee", "displayName": "费用", "fieldType": "decimal",
-      "required": false, "validation": { "min": 0 }, "position": 5 }
+    {
+      "name": "title",
+      "displayName": "会议主题",
+      "fieldType": "text",
+      "required": true,
+      "validation": { "maxLength": 80 },
+      "position": 0
+    },
+    {
+      "name": "attendees",
+      "displayName": "人数",
+      "fieldType": "integer",
+      "required": true,
+      "validation": { "min": 1, "max": 500 },
+      "position": 1
+    },
+    {
+      "name": "room",
+      "displayName": "会议室",
+      "fieldType": "enum",
+      "required": true,
+      "validation": { "options": ["第一会议室", "第二会议室", "多功能厅"] },
+      "position": 2
+    },
+    {
+      "name": "booked_on",
+      "displayName": "日期",
+      "fieldType": "date",
+      "required": false,
+      "position": 3
+    },
+    {
+      "name": "projector",
+      "displayName": "需要投影",
+      "fieldType": "boolean",
+      "required": false,
+      "position": 4
+    },
+    {
+      "name": "fee",
+      "displayName": "费用",
+      "fieldType": "decimal",
+      "required": false,
+      "validation": { "min": 0 },
+      "position": 5
+    }
   ]
 }
 ```
@@ -149,8 +180,13 @@ assets/<file>                      ← 主题资产（可选，需 manifest 声�
 ### 6.1 实体输入模式（默认）：分析该实体的记录
 
 ```json
-{ "key": "demo.meeting.room_stats", "label": "各会议室预约数", "kind": "python",
-  "entry": "scripts/room_stats.py", "inputEntity": "meeting_room" }
+{
+  "key": "demo.meeting.room_stats",
+  "label": "各会议室预约数",
+  "kind": "python",
+  "entry": "scripts/room_stats.py",
+  "inputEntity": "meeting_room"
+}
 ```
 
 - `inputEntity` 必填且必须是同包声明的实体；不接受文件字段。
@@ -161,9 +197,15 @@ assets/<file>                      ← 主题资产（可选，需 manifest 声�
 ### 6.2 文件输入模式：上传表格文件 → 处理 → 输出
 
 ```json
-{ "key": "demo.csv.clean", "label": "CSV 清洗", "kind": "python",
-  "entry": "scripts/csv_clean.py", "inputMode": "file",
-  "accept": ["csv", "txt"], "maxInputMB": 5 }
+{
+  "key": "demo.csv.clean",
+  "label": "CSV 清洗",
+  "kind": "python",
+  "entry": "scripts/csv_clean.py",
+  "inputMode": "file",
+  "accept": ["csv", "txt"],
+  "maxInputMB": 5
+}
 ```
 
 - `inputMode: "file"`；`accept` ⊆ `csv/xlsx/txt`；`maxInputMB` 1..5；

@@ -36,6 +36,26 @@ const baseRows = () => [user(1, 'admin', ['ADMIN']), user(2, 'demo-user', ['USER
 // Teleport stub：抽屉渲染在组件树内，供 wrapper.find 定位
 const stubs = { teleport: true };
 
+/** 批量用例共用：清桩 + 以管理员身份操作（selfId=9 不与列表行重叠）。 */
+function resetBatchMocks(): void {
+  listMock.mockReset();
+  createMock.mockReset();
+  rolesMock.mockReset();
+  statusMock.mockReset();
+  batchMock.mockReset();
+  saveSession('t', { id: 9, username: 'operator', displayName: '操作者', roles: ['ADMIN'] });
+}
+
+/** 挂载并勾选两个可批量账号（返回批量条断言用包装）。 */
+async function mountWithTwoSelected() {
+  listMock.mockResolvedValue(page(baseRows()));
+  const wrapper = mount(UsersView, { global: { stubs } });
+  await flushPromises();
+  await wrapper.find('[data-testid="select-user-1"]').setValue(true);
+  await wrapper.find('[data-testid="select-user-2"]').setValue(true);
+  return wrapper;
+}
+
 describe('UsersView 列表与权限（P12.5 缺陷③）', () => {
   beforeEach(() => {
     listMock.mockReset();
@@ -133,30 +153,19 @@ describe('UsersView 停启用（P13）', () => {
   });
 });
 
-describe('UsersView 批量停启用（P24，FR-AUTH-05）', () => {
-  beforeEach(() => {
-    listMock.mockReset();
-    createMock.mockReset();
-    rolesMock.mockReset();
-    statusMock.mockReset();
-    batchMock.mockReset();
-    saveSession('t', { id: 9, username: 'operator', displayName: '操作者', roles: ['ADMIN'] });
-  });
+describe('UsersView 批量停用流程（P24，FR-AUTH-05）', () => {
+  beforeEach(resetBatchMocks);
 
   afterEach(() => {
     clearSession();
   });
 
   it('勾选两人→批量停用→危险确认→单请求提交并清选', async () => {
-    listMock.mockResolvedValue(page(baseRows()));
     batchMock.mockResolvedValue([
       { ...baseRows()[0], status: 'BLOCKED' },
       { ...baseRows()[1], status: 'BLOCKED' },
     ]);
-    const wrapper = mount(UsersView, { global: { stubs } });
-    await flushPromises();
-    await wrapper.find('[data-testid="select-user-1"]').setValue(true);
-    await wrapper.find('[data-testid="select-user-2"]').setValue(true);
+    const wrapper = await mountWithTwoSelected();
     expect(wrapper.find('[data-testid="user-batch-bar"]').text()).toContain('已选 2 项');
 
     await wrapper.find('[data-testid="batch-block"]').trigger('click');
@@ -167,6 +176,14 @@ describe('UsersView 批量停启用（P24，FR-AUTH-05）', () => {
     expect(batchMock).toHaveBeenCalledWith([1, 2], 'BLOCKED');
     // 成功后清选：批量条隐藏，列表重载
     expect(wrapper.find('[data-testid="user-batch-bar"]').exists()).toBe(false);
+  });
+});
+
+describe('UsersView 批量启用与选择守卫（P24）', () => {
+  beforeEach(resetBatchMocks);
+
+  afterEach(() => {
+    clearSession();
   });
 
   it('批量启用免确认直发；失败呈现错误且选择保留（可重试）', async () => {
