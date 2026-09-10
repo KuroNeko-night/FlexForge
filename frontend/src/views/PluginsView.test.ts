@@ -135,7 +135,8 @@ describe('PluginsView 插件清单（P21 当前版本卡片）', () => {
     expect(text).toContain('gen.iabc123');
     expect(text).toContain('v0.1.2');
     expect(text).toContain('已启用');
-    expect(text).toContain('最近激活失败于 DEPENDENCY_CHECK · dependency_missing');
+    // P24 降噪：默认夹具中成功激活（a2）晚于失败（a1），陈旧失败行不再呈现
+    expect(text).not.toContain('最近激活失败于');
     expect(text).toContain('另有 1 个版本');
     // 历史明细不在默认视图（用户裁决：不展示安装修改记录）
     expect(text).not.toContain('0.1.1');

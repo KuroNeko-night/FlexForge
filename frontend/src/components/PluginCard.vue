@@ -35,12 +35,20 @@ const currentVersion = computed(() => {
     props.plugin.versions.find((v) => v.versionId === occupying) ?? props.plugin.versions.at(-1)
   );
 });
-/** 最近一次失败诊断（清单按开始时间倒序，首个 FAILED 即最近）。 */
+/** 最近一次失败诊断（清单按开始时间倒序，首个 FAILED 即最近）。
+ * 降噪（P24）：已有更新的成功激活时陈旧失败不呈现——只在失败晚于当前
+ * ACTIVE（如升级失败经补偿回旧版）或从未成功激活时保留诊断行。 */
 const lastFailure = computed(() => {
-  const failed = props.plugin.activations.find((item) => item.status === 'FAILED');
-  if (!failed) {
+  const activations = props.plugin.activations;
+  const failedIdx = activations.findIndex((item) => item.status === 'FAILED');
+  if (failedIdx < 0) {
     return null;
   }
+  const activeIdx = activations.findIndex((item) => item.status === 'ACTIVE');
+  if (activeIdx >= 0 && activeIdx < failedIdx) {
+    return null;
+  }
+  const failed = activations[failedIdx];
   const code = failed.errorCode ? ` · ${failed.errorCode}` : '';
   return `最近激活失败于 ${failed.stage ?? '?'}${code}`;
 });
