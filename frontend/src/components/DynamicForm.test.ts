@@ -54,6 +54,38 @@ function definition(): EntityDetail {
   };
 }
 
+describe('DynamicForm 取消按钮（P24）', () => {
+  it('提供 cancelLabel 时渲染取消并上抛 cancel（不触发提交），缺省不渲染', async () => {
+    registerBuiltins();
+    const wrapper = mount(DynamicForm, {
+      props: {
+        definition: definition(),
+        view: null,
+        initial: null,
+        submitLabel: '创建',
+        cancelLabel: '取消',
+        submitting: false,
+      },
+    });
+    const cancel = wrapper.findAll('button').find((b) => b.text() === '取消');
+    expect(cancel).toBeDefined();
+    await cancel!.trigger('click');
+    expect(wrapper.emitted('cancel')).toHaveLength(1);
+    expect(wrapper.emitted('submit')).toBeFalsy();
+
+    const bare = mount(DynamicForm, {
+      props: {
+        definition: definition(),
+        view: null,
+        initial: null,
+        submitLabel: '创建',
+        submitting: false,
+      },
+    });
+    expect(bare.findAll('button').some((b) => b.text() === '取消')).toBe(false);
+  });
+});
+
 describe('DynamicForm（默认值补齐 + 提交载荷清洗）', () => {
   it('渲染全部字段（position 序），必填标记与默认值可见', () => {
     registerBuiltins();

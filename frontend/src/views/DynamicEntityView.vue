@@ -134,6 +134,18 @@ async function refresh(): Promise<void> {
   }
 }
 
+/** 取消返回（P24）：新建回列表、编辑回该记录详情——纯前端路由，不触服务端。 */
+async function cancelForm(): Promise<void> {
+  if (mode.value === 'edit' && route.params.id) {
+    await router.push({
+      name: 'entity-detail',
+      params: { entity: entityName.value, id: String(route.params.id) },
+    });
+    return;
+  }
+  await router.push({ name: 'entity-list', params: { entity: entityName.value } });
+}
+
 async function onSubmit(values: Record<string, unknown>): Promise<void> {
   submitting.value = true;
   formError.value = null;
@@ -311,8 +323,10 @@ onMounted(refresh);
       :view="formView"
       :initial="mode === 'edit' ? currentRecord?.data : null"
       :submit-label="mode === 'new' ? '创建' : '保存'"
+      cancel-label="取消"
       :submitting="submitting"
       @submit="onSubmit"
+      @cancel="cancelForm"
     />
     <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
 
