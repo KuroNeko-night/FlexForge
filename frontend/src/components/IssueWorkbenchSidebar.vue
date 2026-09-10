@@ -68,6 +68,7 @@ const drafts = computed(() => props.issues.filter((issue) => !issue.publishedAt)
           type="button"
           class="issue-entry"
           :class="{ active: activeId === issue.id }"
+          :data-testid="`issue-entry-${issue.id}`"
           @click="$emit('select', issue)"
         >
           <span class="entry-title">{{ issue.title }}</span>

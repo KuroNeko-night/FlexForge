@@ -16,16 +16,16 @@ import {
   type SpecRevision,
 } from '@/api/issues';
 import IssueClarifyChat from '@/components/IssueClarifyChat.vue';
+import { parseClarifyBrief } from '@/utils/clarifyBrief';
 import IssueDiscussion from '@/components/IssueDiscussion.vue';
 import IssueWorkbenchSidebar from '@/components/IssueWorkbenchSidebar.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 
 /**
- * 用户端需求对话工作台（P23，FR-ISSUE-07）：纯 USER 视角——只有对话与
- * 自己的需求。左侧可折叠"我的需求"侧栏（IssueWorkbenchSidebar，已发布
- * 分组置顶）；中央为 AI 澄清对话（IssueClarifyChat 复用，v3 口语化确认
- * 进对话流）+ 确认推送卡（publish）+ 讨论区（IssueDiscussion）。
- * 开发者信息面（状态机/规格 JSON/agent 提示词）不在本视图（S2 服务端收口）。
+ * 用户端需求对话工作台（P23，FR-ISSUE-07）：纯 USER 视角——对话与自己的需求。
+ * 侧栏 IssueWorkbenchSidebar（可折叠，已发布分组）；对话复用 IssueClarifyChat
+ *（v3 口语化确认进流）；确认推送卡 + 讨论区 IssueDiscussion。开发者信息面
+ * 不在本视图（S2 服务端收口）。
  */
 const issues = ref<IssueRecord[]>([]);
 const loading = ref(true);
@@ -58,21 +58,6 @@ function syncIssue(next: IssueRecord): void {
   issues.value = issues.value.map((issue) => (issue.id === next.id ? next : issue));
 }
 
-function parseBrief(briefJson: string | null): ClarifyBrief | null {
-  if (!briefJson) {
-    return null;
-  }
-  try {
-    const parsed = JSON.parse(briefJson) as Partial<ClarifyBrief>;
-    if (!parsed.colloquial || !parsed.feasibility || !parsed.agentPrompt) {
-      return null;
-    }
-    return { ...parsed } as ClarifyBrief;
-  } catch {
-    return null;
-  }
-}
-
 /** 打开一条需求：刷新详情（发布态/状态）+ 简报（成稿后仍在）+ 讨论。 */
 async function open(issue: IssueRecord): Promise<void> {
   active.value = issue;
@@ -93,7 +78,7 @@ async function open(issue: IssueRecord): Promise<void> {
     comments.value = nextComments;
     const spec = await fetchSpec(issueId).catch(() => null);
     if (active.value?.id === issueId) {
-      activeBrief.value = parseBrief(spec?.briefJson ?? null);
+      activeBrief.value = parseClarifyBrief(spec?.briefJson ?? null);
     }
   } catch {
     /* 详情失败保留列表态，子区各自空态 */
@@ -102,19 +87,23 @@ async function open(issue: IssueRecord): Promise<void> {
 
 /** 对话产出规格+简报：暂存简报（未发布时确认卡出现）。 */
 function onSpecSaved(spec: SpecRevision, brief: ClarifyBrief | null): void {
-  activeBrief.value = brief ?? parseBrief(spec.briefJson);
+  activeBrief.value = brief ?? parseClarifyBrief(spec.briefJson);
 }
 
 async function confirmPublish(): Promise<void> {
   if (!active.value || publishing.value) {
     return;
   }
+  const issueId = active.value.id;
   publishing.value = true;
   publishError.value = null;
   try {
-    const next = await publishIssue(active.value.id);
+    const next = await publishIssue(issueId);
     syncIssue(next);
-    active.value = next;
+    // 陈旧守卫：推送期间切换到其他需求时不回写视图（审查 P3-6）
+    if (active.value?.id === issueId) {
+      active.value = next;
+    }
   } catch (e) {
     publishError.value = apiErrorMessage(e, '确认推送失败，请稍后重试');
   } finally {
@@ -180,6 +169,7 @@ onMounted(load);
               v-model="form.description"
               data-testid="new-requirement-description"
               rows="4"
+              maxlength="4000"
               required
             />
           </label>

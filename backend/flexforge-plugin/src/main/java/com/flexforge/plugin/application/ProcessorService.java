@@ -92,6 +92,10 @@ public class ProcessorService {
 
     private JsonNode doInvoke(String key, String entity) {
         ActiveProcessorLocator.ActiveProcessor processor = locator.findByKey(key);
+        if (processor.spec().fileMode()) {
+            throw new PluginValidationException(ErrorCodes.VALIDATION_ERROR,
+                    "处理器 " + key + " 是文件输入模式，请经文件工具页上传执行");
+        }
         if (!processor.spec().inputEntity().equals(entity)) {
             throw new PluginValidationException(ErrorCodes.VALIDATION_ERROR,
                     "处理器 " + key + " 声明的目标实体是 " + processor.spec().inputEntity()

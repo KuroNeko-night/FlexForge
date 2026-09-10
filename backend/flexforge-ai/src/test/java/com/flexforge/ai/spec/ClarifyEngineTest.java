@@ -126,6 +126,32 @@ class ClarifyEngineTest {
                 .isInstanceOf(ModelUnavailableException.class);
     }
 
+    /** P23 审查 P2-3：规格合法但简报缺失/超长 → 携修正反馈重试后成功。 */
+    @Test
+    void briefViolationRetriedWithFeedbackThenValid() {
+        AtomicInteger calls = new AtomicInteger();
+        String specOnly = VALID_SPEC.replace(
+                ",\"brief\":{\"colloquial\":\"c\",\"feasibility\":\"f\",\"agentPrompt\":\"a\"}}", "}");
+        ModelPort scripted = new ModelPort() {
+            @Override
+            public ModelReply complete(ModelRequest request) {
+                if (calls.incrementAndGet() == 1) {
+                    return new ModelReply(specOnly);
+                }
+                assertThat(request.prompt()).contains("brief");
+                return new ModelReply(VALID_SPEC);
+            }
+
+            @Override
+            public String name() {
+                return "scripted";
+            }
+        };
+        ClarifyEngine.ClarifyResult result = new ClarifyEngine(scripted).clarify("p");
+        assertThat(result.specProduced()).isTrue();
+        assertThat(result.brief()).isNotNull();
+    }
+
     @Test
     void unknownTopLevelShapeTreatedAsInvalid() {
         List<String> outputs = List.of("{\"foo\": 1}", "{\"spec\": \"not-object\"}");

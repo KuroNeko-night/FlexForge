@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 
-import type { ClarifyBrief } from '@/api/issues';
+import { parseClarifyBrief } from '@/utils/clarifyBrief';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ComponentCard from '@/components/ui/ComponentCard.vue';
 
@@ -12,20 +12,7 @@ import ComponentCard from '@/components/ui/ComponentCard.vue';
  */
 const props = defineProps<{ briefJson: string | null }>();
 
-const brief = computed<ClarifyBrief | null>(() => {
-  if (!props.briefJson) {
-    return null;
-  }
-  try {
-    const parsed = JSON.parse(props.briefJson) as Partial<ClarifyBrief>;
-    if (!parsed.colloquial || !parsed.feasibility || !parsed.agentPrompt) {
-      return null;
-    }
-    return { ...parsed } as ClarifyBrief;
-  } catch {
-    return null;
-  }
-});
+const brief = computed(() => parseClarifyBrief(props.briefJson));
 
 const copied = ref(false);
 

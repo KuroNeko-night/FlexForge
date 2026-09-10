@@ -75,15 +75,21 @@ public class FileProcessorService {
         String artifactId = ProcessorArtifactStore.newArtifactId();
         Path targetDir = artifacts.newArtifactDir(artifactId);
         ProcessorRunner.FileRun run = runner.runFile(processor.script(), payload, targetDir);
-        JsonNode output = parseStdout(run.stdout());
-        ProcessorService.OutputValidator.validate(output, true);
-
-        if ("file".equals(output.path("kind").asString())) {
-            return fileResult(processor, output, artifactId, targetDir, actor);
+        // runFile 之后产物目录已落盘但尚无登记行（sweep 只扫有行的过期目录）——
+        // 校验/登记任一失败必须显式清理，否则目录泄漏到 TTL 之外（审查 P2-1）
+        try {
+            JsonNode output = parseStdout(run.stdout());
+            ProcessorService.OutputValidator.validate(output, true);
+            if ("file".equals(output.path("kind").asString())) {
+                return fileResult(processor, output, artifactId, targetDir, actor);
+            }
+            // 非文件输出（table/summary/chart 分析形态）：产物目录未使用即清理
+            artifacts.discard(targetDir);
+            return output;
+        } catch (RuntimeException e) {
+            artifacts.discard(targetDir);
+            throw e;
         }
-        // 非文件输出（table/summary/chart 分析形态）：产物目录未使用即清理
-        artifacts.discard(targetDir);
-        return output;
     }
 
     /** 上传三重校验（S1：不信任客户端文件名与类型声明）。 */
