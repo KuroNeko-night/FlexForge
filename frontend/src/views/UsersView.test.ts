@@ -174,8 +174,11 @@ describe('UsersView 批量停用流程（P24，FR-AUTH-05）', () => {
     await wrapper.find('[data-testid="confirm-submit"]').trigger('click');
     await flushPromises();
     expect(batchMock).toHaveBeenCalledWith([1, 2], 'BLOCKED');
-    // 成功后清选：批量条隐藏，列表重载
-    expect(wrapper.find('[data-testid="user-batch-bar"]').exists()).toBe(false);
+    // 成功后清选：按钮组收起，成功通知仍可见（审查 P3-3），列表已重载
+    const bar = wrapper.find('[data-testid="user-batch-bar"]');
+    expect(bar.text()).toContain('已停用 2 个账号');
+    expect(bar.text()).not.toContain('已选');
+    expect(wrapper.find('[data-testid="batch-block"]').exists()).toBe(false);
   });
 });
 

@@ -68,7 +68,7 @@ assets/<file>                      ← 主题资产（可选，需 manifest 声�
   全局唯一，建议 `作者.业务` 形态。
 - `version`：严格 `X.Y.Z` 三段数字。
 - `capabilityLevel`：`1`（纯声明）或 `2`（含 Python 处理器）。不含处理器必须填 1。
-- `dependencies`：依赖的其他插件，项为 `{"id": "...", "versionRange": "^1.0.0"}`；
+- `dependencies`：依赖的其他插件，项为 `{"pluginId": "...", "versionRange": "^1.0.0"}`；
   `^0.x` 锁次版本、`^1.x` 锁主版本、`*` 任意。被依赖插件必须**已激活**（仅导入不够）。
 - `contributions.navigation`：导航键数组，键全局唯一，建议 `<插件id>.<实体名>`；
   菜单点击会进入**第一个实体**的数据页。
@@ -190,7 +190,7 @@ assets/<file>                      ← 主题资产（可选，需 manifest 声�
 ```
 
 - `inputEntity` 必填且必须是同包声明的实体；不接受文件字段。
-- 运行契约：平台把该实体记录（JSON 数组，单页 ≤200 行、≤2MB）写入**stdin**；
+- 运行契约：平台把 `{"records": [{...}, ...]}` 对象（单页 ≤200 行、≤2MB）写入**stdin**，脚本按 `json.load(sys.stdin)["records"]` 取记录数组；
   脚本用 `python3 -I` 隔离模式执行、环境变量清空、10 秒超时、串行执行；
   stdout 必须是**单个 JSON 对象**（≤1MB），进程退出码必须为 0。
 
@@ -217,12 +217,13 @@ assets/<file>                      ← 主题资产（可选，需 manifest 声�
 ### 6.3 输出契约（stdout 单个 JSON 对象，四选一）
 
 ```json
-{"kind": "table", "title": "各会议室预约数", "columns": [{"key": "room", "label": "会议室"}, {"key": "count", "label": "次数"}], "rows": [{"room": "第一会议室", "count": 3}]}
+{"kind": "table", "title": "各会议室预约数", "columns": [{"name": "room", "label": "会议室"}, {"name": "count", "label": "次数"}], "rows": [["第一会议室", 3]]}
 {"kind": "summary", "title": "汇总", "items": [{"label": "总预约数", "value": "12"}]}
 {"kind": "chart", "chartType": "bar", "title": "月度金额", "categories": ["2026-08", "2026-09"], "values": [1200.5, 860.0]}
 {"kind": "file", "filename": "cleaned.csv"}
 ```
 
+- `table` 形态：`columns` 每列必含非空 `name`+`label`；`rows` 每行是**与列等宽的数组**（标量），不是对象。
 - `file` 形态：把产物文件写入 `FLEXFORGE_OUTPUT_DIR`（仅文件输入模式可用）；
   `filename` 匹配 `^[A-Za-z0-9][A-Za-z0-9._-]*$` 且 ≤200 字符、产物 ≤10MB、
   必须落在输出目录内。产物是临时文件（10 分钟 TTL），用户经平台下载。
@@ -268,7 +269,7 @@ findings 全过才可导入）→ 导入 → 打开插件开关（=激活当前�
 ```
 POST /api/v1/plugins/validate    multipart file=<zip>     # 预检，不落库
 POST /api/v1/plugins/import      multipart file=<zip>     # 导入（幂等：同内容重导返回既有版本）
-POST /api/v1/plugins/versions/{versionId}/activate        # 激活
+POST /api/v1/plugins/{versionId}/activate        # 激活
 GET  /api/v1/plugins/inventory                            # 清单（版本/激活/失败诊断）
 ```
 

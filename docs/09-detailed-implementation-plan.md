@@ -563,7 +563,7 @@
 - **D. 系统管理扩展（FR-AUTH-04/05）**：后端 `UserAdminService.batchUpdateStatus`（校验/守卫/逐用户审计）+ `SystemUserController` POST batch-status + 失败路径测试；前端 `AuditView`（过滤+表格+分页，消费既有 API）+ 路由 `/system/audit` + 菜单"审计日志"（ADMIN）；`UsersView` 批量操作（行复选+全选+批量条 `UserBatchBar`（内嵌确认对话）+`useUserBatch` composable（≤350 行约束拆分））。
 - **E. Agent Skill（FR-ISSUE-08）**：`frontend/src/assets/agent-skill/SKILL.md`（唯一事实源，`?raw` 导入）；`IssueBriefCard` agent 提示词区增"下载 Skill"按钮（blob text/markdown、RFC 文件名、revoke 延迟清理）。
 - **F. Issue 切换残留**：`IssueDetail` watch 即时清空 `comments`/`spec`；`IssueChatWorkbench` 的 `IssueDiscussion` 加 `:key="active.id"`；两侧回归测试。
-- **测试**：后端——batch-status 成功（两用户 BLOCKED+审计行+响应）/含自己 400/未知 id 400/超 100 拒/非 ADMIN 403/幂等（同状态不写）；前端——PluginCard 降噪 3 例、DynamicForm 取消 2 例、IssueDetail 切换清空 1 例、Workbench 草稿复位 1 例、AuditView 3 例（列表/过滤/403）、UsersView 批量 3 例（选择+确认调用/自选禁用/成功清选）、IssueBriefCard 下载 1 例；MenuServiceTest 期望 +1 菜单项。
+- **测试**：后端——batch-status 成功（两用户 BLOCKED+审计行+响应）/含自己 400/未知 id 404（整批拒绝无审计残留）/超 100 拒/非 ADMIN 403/幂等（同状态不写）；前端——PluginCard 降噪 3 例、DynamicForm 取消 1 例（正反断言）、IssueDetail 切换清空 1 例、Workbench 草稿复位 1 例、AuditView 3 例（列表/过滤/403）、UsersView 批量 3 例（选择+确认调用/自选禁用/成功清选）、IssueBriefCard 下载 1 例；MenuServiceTest 期望 +1 菜单项。
 
 ### 验收标准
 

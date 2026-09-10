@@ -33,22 +33,35 @@ function request(status: 'ACTIVE' | 'BLOCKED'): void {
 </script>
 
 <template>
-  <div v-if="count > 0" class="batch-bar" data-testid="user-batch-bar">
-    <span class="batch-count">已选 {{ count }} 项</span>
-    <BaseButton size="sm" :disabled="running" data-testid="batch-block" @click="request('BLOCKED')">
-      批量停用
-    </BaseButton>
-    <BaseButton
-      size="sm"
-      :disabled="running"
-      data-testid="batch-activate"
-      @click="request('ACTIVE')"
-    >
-      批量启用
-    </BaseButton>
-    <BaseButton size="sm" variant="ghost" :disabled="running" @click="emit('clear')">
-      清除选择
-    </BaseButton>
+  <!-- 审查 P3-3：成功/失败反馈独立于选择呈现（成功清选后通知仍可见，
+       下一次勾选/清除时由 useUserBatch 清反馈） -->
+  <div
+    v-if="count > 0 || notice !== null || error !== null"
+    class="batch-bar"
+    data-testid="user-batch-bar"
+  >
+    <template v-if="count > 0">
+      <span class="batch-count">已选 {{ count }} 项</span>
+      <BaseButton
+        size="sm"
+        :disabled="running"
+        data-testid="batch-block"
+        @click="request('BLOCKED')"
+      >
+        批量停用
+      </BaseButton>
+      <BaseButton
+        size="sm"
+        :disabled="running"
+        data-testid="batch-activate"
+        @click="request('ACTIVE')"
+      >
+        批量启用
+      </BaseButton>
+      <BaseButton size="sm" variant="ghost" :disabled="running" @click="emit('clear')">
+        清除选择
+      </BaseButton>
+    </template>
     <span v-if="notice" class="batch-notice" role="status">{{ notice }}</span>
     <span v-else-if="error" class="form-error" role="alert">{{ error }}</span>
   </div>

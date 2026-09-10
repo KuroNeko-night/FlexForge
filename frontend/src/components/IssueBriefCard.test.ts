@@ -79,6 +79,11 @@ describe('IssueBriefCard 下载 Agent Skill（P24 FR-ISSUE-08）', () => {
     const text = await blob.text();
     expect(text).toContain('name: flexforge-plugin-dev');
     expect(text).toContain('plugin.json');
+    // 交叉审查 P1 防回退：技能文档契约键与实现校验器一致
+    expect(text).toContain('"pluginId"');
+    expect(text).toContain('["records"]');
+    expect(text).toContain('POST /api/v1/plugins/{versionId}/activate');
+    expect(text).toContain('"name": "room"');
     expect(clicked).toHaveBeenCalledTimes(1);
     expect((clicked.mock.instances[0] as HTMLAnchorElement).download).toBe(
       'flexforge-plugin-dev-SKILL.md',

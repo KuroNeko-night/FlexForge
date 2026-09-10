@@ -118,6 +118,11 @@ class UserBatchStatusApiTest {
         batch(400, "{\"userIds\":[" + someone + "," + adminId + "],\"status\":\"BLOCKED\"}");
         // 未知 id：404（与单人路径同口径），不产生部分成功
         batch(404, "{\"userIds\":[" + someone + ",999999],\"status\":\"BLOCKED\"}");
+        Integer auditForSomeone = jdbc.queryForObject(
+                "SELECT count(*) FROM sys_audit_event WHERE action = 'user.status.update'"
+                        + " AND object_id = ?",
+                Integer.class, Long.toString(someone));
+        assertThat(auditForSomeone).isZero();
         // 超上限与空集：400
         StringBuilder ids = new StringBuilder();
         for (int i = 0; i < 101; i++) {
