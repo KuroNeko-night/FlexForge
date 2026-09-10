@@ -1,13 +1,13 @@
 {
   "project": "FlexForge",
-  "updatedAt": "2026-09-09",
-  "currentStageId": "P23",
-  "currentStageName": "体验补全与文件工具插件",
-  "status": "completed",
+  "updatedAt": "2026-09-10",
+  "currentStageId": "P24",
+  "currentStageName": "管理面补全与体验打磨",
+  "status": "in_progress",
   "progressPercent": 100,
   "owner": "project-maintainer",
-  "nextAction": "【P00-P23 全阶段完成，项目维持 release_candidate】P23 出口 live 终验 2026-09-09（API 走查 14/14+用户工作台 5/5+文件工具页 5/5 视觉核验+XLSX 下载 PK 头实证）。后续=答辩准备（docs/14；演示亮点新增：用户端对话式需求工作台+三段简报、文件进文件出插件工具、XLSX 导出）与候选项排期（xlsx 运行时解析（处理器侧，需 openpyxl 供应链决策）/sweep 下载宽限期/ToolsView 换文件在途作废/USER 列表 status 过滤/预设名失败草稿回填等）。待用户关注：live 库 AI 供应商为 http（deepseek，2026-09-09 08:51 配置），走查时模型接口 404——建议核对 base_url 路径与模型名；走查期间曾临时切 fixture 已原样恢复该行",
-  "exitGate": "P23 出口证据（docs/09 P23 验收四项）：①XLSX 可用——实体页双导出按钮（CSV 保留），live 拦截下载文件名=采购订单-导出.xlsx、blob 为真 xlsx（PK 头，6807B）；exceljs MIT 单独提交，audit 仅 2 条 moderate 传递依赖（uuid，无修复版本，豁免记录）；②用户端对话闭环——live API：注册→创建 Issue→fixture v3 首轮三问→次轮规格+三段简报（colloquial 口语化确认完整）→确认推送 published_at 落库→幂等重入→USER 列表仅本人→评论自己的 Issue→未澄清直接 publish 400；浏览器视觉模型 5/5 全过（我的需求侧栏已发布/梳理中分组+新建表单+已发布徽标+AI 对话气泡+讨论区+无开发者信息面）；开发者三段分区与 agent 提示词复制由 IssueBriefCard.test 3 例覆盖（含剪贴板拒绝路径）；③文件处理器闭环——live API：example.filetools 导入激活（同版本不可变沿用既有 versionId）→清单两 file 模式处理器→invoke-file 清洗产物契约（kind=file/cleaned.csv）→下载内容逐行断言（去空行/去重/列名规范化）→坏扩展名 processor_input_invalid；浏览器 5/5（两卡片+accept 提示+上传执行+产物下载卡+无错误）；④权限与失败路径——ExampleFileToolsApiTest 6 例（越权 404 防枚举/过期 410/坏 manifest 拒/三重校验三向）+IssuePublishApiTest 4 例；门禁 21/1/0+后端 173/0/0+前端 190/190+CI 六项绿（repo-health 10m44s）。交叉审查（独立子代理，缺陷优先）：0 P1+3 P2+10 P3=8 修 5 记录（PR #48 评论逐条回应 84e4294）：P2 产物目录失败路径泄漏（discard 补齐）/前端测试声明失实（补 IssueBriefCard 3+Workbench 5 例并修正描述）/简报违约重试无单测（补）；P3 修 entity-invoke 对称拒绝/推送竞态守卫/描述上限/XLSX 失败呈现+useEntityExport 抽取/暂存残留删除；记录：sweep-下载窄窗竞态/USER status 过滤缺省/publish 双审计/会话空窗闪烁/ToolsView 在途结果。实施期坑：Windows Path.write_text 换行翻译叠加 csv",
+  "nextAction": "P24 实施中（2026-09-10 用户验收裁决六项，docs/09 P24）：①插件卡片陈旧\"最近激活失败\"降噪；②窄内容排版（动态表单/新需求表单/设置列/占位页）居中优化；③动态表单补取消按钮；④系统管理扩展——审计日志页（消费既有 P03 查询 API，FR-AUTH-04）+用户批量停启用（FR-AUTH-05，新批量端点）；⑤FlexForge 插件开发 Agent Skill（FR-ISSUE-08，工作台简报卡分发）；⑥Issue 工作台切换残留缺陷（IssueDetail 切换清空+讨论区草稿 :key 复位）",
+  "exitGate": "计划出口证据（docs/09 P24 验收标准）：①插件卡只呈现晚于最近成功激活的失败（或无激活时的最近失败），陈旧行不出现；②实体新建/编辑表单居中且有取消（新建→列表、编辑→详情），设置/占位/新需求表单不再贴左大留白；③审计日志页可过滤（操作者/动作/对象）分页浏览且仅 ADMIN 菜单可见；④批量停启用：勾选→确认→单请求批量变更+审计行+守卫（含自己 400/超 100 拒/未知 id 400/非 ADMIN 403 失败路径测试）；⑤简报卡可下载 Agent Skill（SKILL.md 单文件，覆盖清单/实体/视图/迁移/处理器/打包导入全链）；⑥切换 Issue（开发者详情与用户工作台）旧数据即时清空无残留（含讨论草稿）；门禁 21/1/0+前后端回归全绿+CI 六项；交叉审查独立子代理执行",
   "blockers": [],
   "stages": [
     {
@@ -129,6 +129,11 @@
       "id": "P23",
       "name": "体验补全与文件工具插件",
       "status": "completed"
+    },
+    {
+      "id": "P24",
+      "name": "管理面补全与体验打磨",
+      "status": "in_progress"
     }
   ]
 }

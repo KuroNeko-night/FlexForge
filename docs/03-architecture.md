@@ -182,6 +182,7 @@ AI 不直接获得数据库管理员权限、服务器命令权限或生产发�
 | `POST` | `/api/v1/system/users` | 创建用户（ADMIN，事务内绑定角色，审计） |
 | `GET` | `/api/v1/system/users` | 用户分页查询（ADMIN） |
 | `PUT` | `/api/v1/system/users/{id}/roles` | 变更用户角色（ADMIN，审计） |
+| `POST` | `/api/v1/system/users/batch-status` | 批量停用/启用账号（ADMIN；单事务逐用户审计，上限 100，不可含自己，FR-AUTH-05，P24） |
 | `GET` | `/api/v1/system/audit-events` | 审计事件查询（ADMIN，时间窗/actor/action/objectId 过滤） |
 | `POST` | `/api/v1/issues` | 创建 Issue |
 | `GET` | `/api/v1/issues` | Issue 分页列表 |
