@@ -3,11 +3,11 @@
   "updatedAt": "2026-09-09",
   "currentStageId": "P23",
   "currentStageName": "体验补全与文件工具插件",
-  "status": "in_progress",
+  "status": "completed",
   "progressPercent": 100,
   "owner": "project-maintainer",
-  "nextAction": "【P23 进行中（2026-09-09 用户验收 P22 后裁决新增），P00-P22 已完成，项目维持 release_candidate】验收发现 P0 缺陷\"新增记录无窗口弹出\"已独立修复（PR #47：mode 判定依赖 params.id 但静态段路由 data/:entity/new 不产出该参数——自 P06 潜伏、单测 mock 路由凭空注入 id=new 掩盖；改按 route.name 判定+补真实 createRouter 回归测试；live 全链验证表单弹出→创建→跳详情）。P23 三包：A=XLSX 导出（FR-META-06，exceljs 前端本地生成）；B=Issue 角色分置（FR-ISSUE-03B/07——用户端对话工作台+可折叠已发布需求侧栏（参考用户截图）、提示词 v3 三段产出（口语化确认/结构化规格/可行性+agent 提示词）、确认推送 publish 端点、USER 服务端范围收口）；C=文件进文件出处理器（FR-PLUGIN-14——inputMode=file 契约扩展、invoke-file/artifact 端点、processor_artifact TTL 产物、S6/ADR-0002 修订、/tools 工具页、example-filetools 插件；参考 fyt-data-mgs 上传/子进程桥/受控下载与 dsh 文件 seam 设计）。规划文档已落（docs/09 P23/02/03/07/13/登记册/ADR-0002）",
-  "exitGate": "P22 出口证据（docs/09 P22 验收四项）：①图表基建可用——ChartCanvas（FR-CHART-01）封装 chart.js 4.5.1（MIT，canvas 无外链 CSP 不变，docs/13 §3.9 说明+单独提交），真实构造回归测试（不 mock 模块仅桩 2d 上下文，bar/pie 双图型构造+卸载清理+aria 超 5 项收敛\"等 N 项\"）；调色板 --ff-chart-c1..c6 hex 实值（canvas/色彩运算兼容）经 getComputedStyle 读取（主题包覆盖即换肤）；reduced-motion 动画归零；饼图描边取 --ff-surface 实值；②处理器图表闭环——live Linux 容器 API 走查 6/6 PASS（注册→登录→导入 0.2.0→upgrade 自 live 0.1.0 升级切换→条形图处理器 categories=['2026-09'] values=[18600.0]→饼图 ['合格','让步接收'] [1,1]→表格处理器回归）；live 浏览器核验（P1-1 真实渲染实证）：条形图截图视觉模型 5/5 全过（Y 轴 0-20000 刻度+X 轴 2026-09+蓝紫 #6366f1 柱+标题\"采购月度金额合计\"+数据表+无错误），饼图 6/6 全过（双色扇区青绿/蓝紫+白色描边+图例合格/让步接收+标题\"检验结论占比\"+数据表合计行+无错误）；③契约边界可验证——ExamplePluginsP22Test 坏 chart 输出三向（缺 chartType/长度不齐/pie 负值，坏包 0.2.1/0.2.2/0.2.3）统一 processor_output_invalid；P20/P20Security 基线同步 0.2.0（五脚本+确定性激活助手）table/summary 回归不受影响；④门禁 21/1/0+后端 surefire 170/0/0+前端 173/173（lint/tsc/prettier 净）+CI 六项绿（gitleaks 含新依赖 chart.js）+npm audit 通过。交叉审查（独立子代理，缺陷优先）：1 P1+1 P2+6 P3 处置=6 修 1 记录（PR #46 评论逐条回应 5f3125d）：P1-1 chart.js v4 裸入口不自动注册控制器（真实浏览器必抛错，模块 mock 掩盖）→Chart.register 最小控制器集+真实构造回归；P2-1 饼图描边 CSS 变量字符串 canvas 不识别→读实值；P3-7（range ^4.5.0 语义正确）记录不修。实施期坑：处理器 key 含连字符被 KEY_PATTERN 拒（改下划线 chart_monthly/chart_share，docs/09 同步）；共享 TestContext 容器激活态跨类泄漏→三测试类统一\"停活跃→按清单 versionId 激活\"确定性助手。走查号 p22walk 用后封禁 BLOCKED。PR #46 合并 d92eef2",
+  "nextAction": "【P00-P23 全阶段完成，项目维持 release_candidate】P23 出口 live 终验 2026-09-09（API 走查 14/14+用户工作台 5/5+文件工具页 5/5 视觉核验+XLSX 下载 PK 头实证）。后续=答辩准备（docs/14；演示亮点新增：用户端对话式需求工作台+三段简报、文件进文件出插件工具、XLSX 导出）与候选项排期（xlsx 运行时解析（处理器侧，需 openpyxl 供应链决策）/sweep 下载宽限期/ToolsView 换文件在途作废/USER 列表 status 过滤/预设名失败草稿回填等）。待用户关注：live 库 AI 供应商为 http（deepseek，2026-09-09 08:51 配置），走查时模型接口 404——建议核对 base_url 路径与模型名；走查期间曾临时切 fixture 已原样恢复该行",
+  "exitGate": "P23 出口证据（docs/09 P23 验收四项）：①XLSX 可用——实体页双导出按钮（CSV 保留），live 拦截下载文件名=采购订单-导出.xlsx、blob 为真 xlsx（PK 头，6807B）；exceljs MIT 单独提交，audit 仅 2 条 moderate 传递依赖（uuid，无修复版本，豁免记录）；②用户端对话闭环——live API：注册→创建 Issue→fixture v3 首轮三问→次轮规格+三段简报（colloquial 口语化确认完整）→确认推送 published_at 落库→幂等重入→USER 列表仅本人→评论自己的 Issue→未澄清直接 publish 400；浏览器视觉模型 5/5 全过（我的需求侧栏已发布/梳理中分组+新建表单+已发布徽标+AI 对话气泡+讨论区+无开发者信息面）；开发者三段分区与 agent 提示词复制由 IssueBriefCard.test 3 例覆盖（含剪贴板拒绝路径）；③文件处理器闭环——live API：example.filetools 导入激活（同版本不可变沿用既有 versionId）→清单两 file 模式处理器→invoke-file 清洗产物契约（kind=file/cleaned.csv）→下载内容逐行断言（去空行/去重/列名规范化）→坏扩展名 processor_input_invalid；浏览器 5/5（两卡片+accept 提示+上传执行+产物下载卡+无错误）；④权限与失败路径——ExampleFileToolsApiTest 6 例（越权 404 防枚举/过期 410/坏 manifest 拒/三重校验三向）+IssuePublishApiTest 4 例；门禁 21/1/0+后端 173/0/0+前端 190/190+CI 六项绿（repo-health 10m44s）。交叉审查（独立子代理，缺陷优先）：0 P1+3 P2+10 P3=8 修 5 记录（PR #48 评论逐条回应 84e4294）：P2 产物目录失败路径泄漏（discard 补齐）/前端测试声明失实（补 IssueBriefCard 3+Workbench 5 例并修正描述）/简报违约重试无单测（补）；P3 修 entity-invoke 对称拒绝/推送竞态守卫/描述上限/XLSX 失败呈现+useEntityExport 抽取/暂存残留删除；记录：sweep-下载窄窗竞态/USER status 过滤缺省/publish 双审计/会话空窗闪烁/ToolsView 在途结果。实施期坑：Windows Path.write_text 换行翻译叠加 csv",
   "blockers": [],
   "stages": [
     {
@@ -128,7 +128,7 @@
     {
       "id": "P23",
       "name": "体验补全与文件工具插件",
-      "status": "in_progress"
+      "status": "completed"
     }
   ]
 }
