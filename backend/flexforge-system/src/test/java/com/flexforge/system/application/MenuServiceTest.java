@@ -24,10 +24,10 @@ class MenuServiceTest {
 
     @Test
     void threeRolesSeeDifferentMenus() {
-        // 扁平角色（无继承）：管理员=工作台+文件工具+系统管理；开发者=工作台+数据模型
-        // +文件工具；普通用户=工作台+文件工具（P23：/tools 执行与 invoke 同权 ADMIN/USER）
+        // 扁平角色（无继承）：管理员=工作台+文件工具+系统管理+审计日志（P24）；开发者=
+        // 工作台+数据模型+文件工具；普通用户=工作台+文件工具（P23：/tools 与 invoke 同权）
         assertThat(keys(menuService.menusFor(new AuthPrincipal(1L, List.of("ADMIN")))))
-                .containsExactly("workbench", "file-tools", "system-management");
+                .containsExactly("workbench", "file-tools", "system-management", "system-audit");
         assertThat(keys(menuService.menusFor(new AuthPrincipal(2L, List.of("DEVELOPER")))))
                 .containsExactly("workbench", "file-tools", "data-model");
         assertThat(keys(menuService.menusFor(new AuthPrincipal(3L, List.of("USER")))))
@@ -42,6 +42,11 @@ class MenuServiceTest {
                 .contains("system-management")).isFalse();
         assertThat(keys(menuService.menusFor(new AuthPrincipal(3L, List.of("DEVELOPER"))))
                 .contains("system-management")).isFalse();
+        // 审计日志（P24）同样仅管理员可见
+        assertThat(keys(menuService.menusFor(new AuthPrincipal(2L, List.of("USER"))))
+                .contains("system-audit")).isFalse();
+        assertThat(keys(menuService.menusFor(new AuthPrincipal(3L, List.of("DEVELOPER"))))
+                .contains("system-audit")).isFalse();
     }
 
     @Test

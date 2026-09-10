@@ -14,7 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -110,29 +112,81 @@ public class UserAdminService {
      * 已持有令牌在 TTL 内仍有效（无状态令牌，docs/13 记录）。
      */
     public UserAdminRecord updateStatus(long operatorId, long userId, String status) {
-        String normalized = switch (status == null ? "" : status.trim()) {
+        String normalized = normalizeStatus(status);
+        if (userId == operatorId) {
+            throw new IllegalArgumentException("不能变更自己的账号状态");
+        }
+        String actor = requireActiveActor(operatorId);
+        return applyStatus(actor, userId, normalized);
+    }
+
+    /** 批量停启用单请求上限（FR-AUTH-05：误选全量/滥用守卫，docs/09 P24）。 */
+    public static final int BATCH_LIMIT = 100;
+
+    /**
+     * 批量停启用（FR-AUTH-05，P24）：单事务逐用户变更，逐用户审计（词表与单人
+     * 路径一致 user.status.update）。守卫与单人路径同口径：状态白名单/去重/上限
+     * 100/不可包含自己/操作者须 ACTIVE/目标须全部存在（未知 id 整批拒绝，不做
+     * 部分成功）；同状态用户跳过写入（幂等）但仍进响应与审计。
+     */
+    @Transactional
+    public List<UserAdminRecord> batchUpdateStatus(long operatorId, List<Long> userIds,
+                                                   String status) {
+        String normalized = normalizeStatus(status);
+        List<Long> targets = normalizedBatchTargets(operatorId, userIds);
+        String actor = requireActiveActor(operatorId);
+        List<UserAdminRecord> updated = new ArrayList<>();
+        for (long userId : targets) {
+            updated.add(applyStatus(actor, userId, normalized));
+        }
+        return updated;
+    }
+
+    private static String normalizeStatus(String status) {
+        return switch (status == null ? "" : status.trim()) {
             case "ACTIVE" -> "ACTIVE";
             case "BLOCKED" -> "BLOCKED";
             default -> throw new IllegalArgumentException("status 仅允许 ACTIVE/BLOCKED");
         };
-        if (userId == operatorId) {
-            throw new IllegalArgumentException("不能变更自己的账号状态");
+    }
+
+    /** 批量入参守卫：非空、去重、上限、不可包含操作者自己。 */
+    private static List<Long> normalizedBatchTargets(long operatorId, List<Long> userIds) {
+        List<Long> distinct = userIds == null
+                ? List.of()
+                : userIds.stream().filter(Objects::nonNull).distinct().toList();
+        if (distinct.isEmpty()) {
+            throw new IllegalArgumentException("userIds 不能为空");
         }
-        // PR #33 审查 P3-15：操作者须为 ACTIVE——阻断 BLOCKED 管理员凭存量令牌互停
-        // （无状态 JWT 在 TTL 内仍通过过滤器，此为管理面纵深防御）
+        if (distinct.size() > BATCH_LIMIT) {
+            throw new IllegalArgumentException("单次批量上限 " + BATCH_LIMIT + " 个账号");
+        }
+        if (distinct.contains(operatorId)) {
+            throw new IllegalArgumentException("批量目标不能包含自己的账号");
+        }
+        return distinct;
+    }
+
+    /** 操作者须为 ACTIVE（PR #33 审查 P3-15：阻断 BLOCKED 管理员凭存量令牌互停）。 */
+    private String requireActiveActor(long operatorId) {
         boolean operatorActive = users.findById(operatorId)
                 .map(record -> "ACTIVE".equals(record.status()))
                 .orElse(false);
         if (!operatorActive) {
             throw new IllegalArgumentException("操作者账号非启用状态");
         }
+        return resolveActor(operatorId);
+    }
+
+    /** 单用户状态落库+审计（批量路径复用；同状态跳过写入保持幂等）。 */
+    private UserAdminRecord applyStatus(String actor, long userId, String normalized) {
         UserAdminRecord existing = users.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("user not found: " + userId));
         if (!existing.status().equals(normalized)) {
             users.updateStatus(userId, normalized);
         }
         // result 词表对齐全库 success/failure 口径（PR #33 审查 P3-8）；状态值经列表/API 可见
-        audit.record(AuditEvents.of(resolveActor(operatorId), "user.status.update",
+        audit.record(AuditEvents.of(actor, "user.status.update",
                 Long.toString(userId), "success", clock));
         return users.findById(userId).orElseThrow();
     }
