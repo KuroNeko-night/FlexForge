@@ -242,7 +242,7 @@ onMounted(() => {
 <template>
   <section class="plugins-view" data-testid="plugins-view">
     <header class="plugins-header">
-      <h2>{{ t('plugins.title', '插件管理') }}</h2>
+      <h2 class="ff-page-title">{{ t('plugins.title', '插件管理') }}</h2>
       <BaseButton @click="load">{{ t('common.refresh', '刷新') }}</BaseButton>
     </header>
 

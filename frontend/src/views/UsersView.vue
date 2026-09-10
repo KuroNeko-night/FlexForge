@@ -142,7 +142,7 @@ onMounted(load);
 <template>
   <section class="users-view" data-testid="users-view">
     <header class="users-header">
-      <h2>{{ t('users.title', '用户管理') }}</h2>
+      <h2 class="ff-page-title">{{ t('users.title', '用户管理') }}</h2>
       <BaseButton variant="primary" @click="drawerOpen = true">新建用户</BaseButton>
     </header>
     <StateView v-if="state !== 'ready'" :state="state" :message="error">

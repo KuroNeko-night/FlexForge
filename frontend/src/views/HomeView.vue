@@ -12,7 +12,7 @@ const DEFAULT_SLOTS = [{ name: 'main', widgetKeys: ['workbench.entities'] }];
 
 <template>
   <section class="home-view ff-animate-rise">
-    <h2>{{ t('home.title', '工作台') }}</h2>
+    <h2 class="ff-page-title">{{ t('home.title', '工作台') }}</h2>
     <LayoutRenderer target="workbench.main" :default-slots="DEFAULT_SLOTS" />
   </section>
 </template>

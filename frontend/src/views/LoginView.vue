@@ -120,12 +120,27 @@ function switchMode(target: 'login' | 'register'): void {
 </template>
 
 <style scoped>
-/* P18 现代极简：纯色底 + 发丝线卡片（品牌识别=平台基线 SVG；观感由令牌承载） */
+/* P18 极简基线 + P25 精修：灰阶纹理背景（结构与皮分离，彩色身份归主题令牌）、
+   display 字体品牌、渐变发丝描边与柔化阴影 */
 .login-scene {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background: var(--ff-bg);
+  background-color: var(--ff-bg);
+  background-image:
+    radial-gradient(
+      circle at 1px 1px,
+      color-mix(in srgb, var(--ff-text) 5%, transparent) 1px,
+      transparent 0
+    ),
+    radial-gradient(
+      60rem 40rem at 70% -10%,
+      color-mix(in srgb, var(--ff-surface-muted) 70%, transparent),
+      transparent
+    );
+  background-size:
+    24px 24px,
+    100% 100%;
 }
 .login-card {
   width: min(24rem, calc(100vw - 2rem));
@@ -133,7 +148,9 @@ function switchMode(target: 'login' | 'register'): void {
   background: var(--ff-surface);
   border: 1px solid var(--ff-border-soft);
   border-radius: var(--ff-radius-lg);
-  box-shadow: var(--ff-shadow-1);
+  box-shadow:
+    var(--ff-shadow-2),
+    0 0 0 4px color-mix(in srgb, var(--ff-primary) 6%, transparent);
 }
 .login-brand {
   display: flex;
@@ -145,8 +162,10 @@ function switchMode(target: 'login' | 'register'): void {
 }
 .login-brand h1 {
   margin: 0;
-  font-size: var(--ff-text-xl);
-  letter-spacing: 0.08em;
+  font-family: var(--ff-font-display);
+  font-size: var(--ff-text-2xl);
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 .login-tagline {
   margin: 0;
