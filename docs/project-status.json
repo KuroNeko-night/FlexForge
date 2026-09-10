@@ -3,11 +3,11 @@
   "updatedAt": "2026-09-10",
   "currentStageId": "P24",
   "currentStageName": "管理面补全与体验打磨",
-  "status": "in_progress",
+  "status": "completed",
   "progressPercent": 100,
   "owner": "project-maintainer",
-  "nextAction": "P24 实施中（2026-09-10 用户验收裁决六项，docs/09 P24）：①插件卡片陈旧\"最近激活失败\"降噪；②窄内容排版（动态表单/新需求表单/设置列/占位页）居中优化；③动态表单补取消按钮；④系统管理扩展——审计日志页（消费既有 P03 查询 API，FR-AUTH-04）+用户批量停启用（FR-AUTH-05，新批量端点）；⑤FlexForge 插件开发 Agent Skill（FR-ISSUE-08，工作台简报卡分发）；⑥Issue 工作台切换残留缺陷（IssueDetail 切换清空+讨论区草稿 :key 复位）",
-  "exitGate": "计划出口证据（docs/09 P24 验收标准）：①插件卡只呈现晚于最近成功激活的失败（或无激活时的最近失败），陈旧行不出现；②实体新建/编辑表单居中且有取消（新建→列表、编辑→详情），设置/占位/新需求表单不再贴左大留白；③审计日志页可过滤（操作者/动作/对象）分页浏览且仅 ADMIN 菜单可见；④批量停启用：勾选→确认→单请求批量变更+审计行+守卫（含自己 400/超 100 拒/未知 id 404/非 ADMIN 403 失败路径测试）；⑤简报卡可下载 Agent Skill（SKILL.md 单文件，覆盖清单/实体/视图/迁移/处理器/打包导入全链）；⑥切换 Issue（开发者详情与用户工作台）旧数据即时清空无残留（含讨论草稿）；门禁 21/1/0+前后端回归全绿+CI 六项；交叉审查独立子代理执行",
+  "nextAction": "【P00-P24 全阶段完成，项目维持 release_candidate】P24 出口 live 终验 2026-09-10（API 9/9+浏览器六项+Skill blob 实证）。后续=答辩准备（docs/14；演示亮点新增：审计日志过滤+批量停启用、Agent Skill 下载配套 agent 提示词）与候选项排期（Issue #51：审计端口事务内降级边角/用户列表分页；Issue #49 exceljs 豁免复查；既有候选：xlsx 运行时解析（openpyxl 供应链决策）/sweep 下载宽限期/USER 列表 status 过滤/预设名失败草稿回填/对话历史回放/审计时间窗 UI/批量改角色与删除）。待用户关注：live 库 AI 供应商仍为 http（deepseek，P23 走查时模型接口 404）——建议核对 base_url 路径与模型名",
+  "exitGate": "P24 出口证据（docs/09 P24 验收六项）：①插件卡降噪——live DOM 断言+视觉模型核验：example.quality 两条陈旧 MIGRATION 失败（早于 09:54 成功激活）不再显示，e2e.dep（从未激活）DEPENDENCY_CHECK 诊断保留；②排版居中——实体新建/编辑表单 34rem 居中（DOM 精确度量 formCenterX=920=内容区中心）+取消按钮；设置列 46rem/占位页/新需求表单同居中（920）；③表单取消——new→取消→列表、edit→取消→详情（rec-990f…URL 往返实证）；④系统管理——审计日志页（菜单 ADMIN 可见+359 条 18 页分页+actor=p24walk 过滤 10 条含批量审计行）消费既有 P03 API 零新端点；批量停启用 API 9/9（两用户 BLOCKED+逐用户审计/幂等/含自己 400/未知 id 404 整批拒绝无写入无审计残留/超 100 400/非 ADMIN 403）+UI 全链（勾选→危险确认→\"已停用 2 个账号\"通知独立呈现（审查 P3-3 修复后）+双行 BLOCKED+自己行复选禁用）；⑤Agent Skill——简报卡下载拦截实证：blob 9072B、文件名 flexforge-plugin-dev-SKILL.md、含四项审查纠偏契约键（\"pluginId\"/[\"records\"]/POST /api/v1/plugins/{versionId}/activate/\"name\": \"room\"）；⑥Issue 切换——开发者侧 A（评论+简报）→probe：评论区\"0 条/尚无评论\"零残留、简报卡隐藏，切回 A 双双恢复；用户端讨论草稿复位由 IssueChatWorkbench.test 实证。门禁 21/1/0+前端 203/203+后端 176/0/0+CI 六项绿。交叉审查（独立子代理，缺陷优先）：4 P1+5 P3=6 修 3 记录（PR #50 评论逐条回应 a641c73）——P1 全部为 SKILL.md 契约失实（stdin 应为 {\"records\":[…]} 对象/依赖字段 pluginId/table 列 name+行等宽数组/激活路径无 versions 段），修复+防回退断言；P3 修批量通知可见性/docs/09 口径（400→404）/404 审计无残留断言；记录 Issue #51（审计端口 REQUIRES_NEW 边角/用户列表分页）。走查号 p24walk 用后封禁 BLOCKED；p24batch1/2 停用留档。PR #50 合并 7b6fe11",
   "blockers": [],
   "stages": [
     {
@@ -133,7 +133,7 @@
     {
       "id": "P24",
       "name": "管理面补全与体验打磨",
-      "status": "in_progress"
+      "status": "completed"
     }
   ]
 }
