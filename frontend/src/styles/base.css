@@ -373,8 +373,10 @@ textarea:disabled {
   border-radius: var(--ff-radius-md);
 }
 .dynamic-form .form-fields {
+  /* auto-fit（审查 P2-1）：稀疏实体（少量字段）折叠空轨道，字段均分全宽——
+     auto-fill 会保留空轨道重现右侧大片空白 */
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
   gap: var(--ff-space-3) var(--ff-space-4);
 }
 .dynamic-form .form-field {

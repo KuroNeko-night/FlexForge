@@ -272,8 +272,11 @@ onMounted(load);
   display: flex;
   flex-direction: column;
   gap: var(--ff-space-1);
-  margin-bottom: var(--ff-space-3);
   font-size: var(--ff-text-sm);
+}
+/* 网格行距由 gap 提供（审查 P3-1：去 margin 叠加）；按钮不随网格列拉伸 */
+.new-form form .ff-btn {
+  justify-self: start;
 }
 .field input,
 .field textarea {

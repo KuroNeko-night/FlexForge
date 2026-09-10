@@ -13,6 +13,18 @@ const SECURITY_HEADERS: Record<string, string> = {
   'Referrer-Policy': 'no-referrer',
 };
 
+// P25 字体裁剪（交叉审查 P2-2）：剔除 @font-face src 中的 .woff 回退——现代浏览器
+// 均取 woff2，.woff 纯死重（noto-sans-sc 全量 299 个 ≈9.5MB）。内联 PostCSS
+// 插件零新依赖；只改字体 src 声明，不触碰其他值。
+const stripWoffFallback = {
+  postcssPlugin: 'flexforge-strip-woff-fallback',
+  Declaration(decl: { prop: string; value: string }) {
+    if (decl.prop === 'src' && decl.value.includes('.woff2')) {
+      decl.value = decl.value.replace(/,\s*url\([^)]*\.woff\)\s*format\('[^']*'\)/g, '');
+    }
+  },
+};
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_');
   // 同源代理是 CORS 基线（docs/13 §3.8）：禁止 allowedOrigins("*")，前后端均走 Vite dev proxy。
@@ -20,6 +32,11 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [vue()],
+    css: {
+      postcss: {
+        plugins: [stripWoffFallback],
+      },
+    },
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),

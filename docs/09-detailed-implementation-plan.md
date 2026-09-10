@@ -583,13 +583,14 @@
 > - 骨架背景只放灰阶 CSS 纹理基线（radial 网点+渐变，无彩色身份——结构与皮分离，色彩身份归主题包）；theme-default/theme-warm 升版 1.1.2 重绘背景（同版本不可变）；
 > - 文案零变更（P18 红线传承）；reduced-motion/对比度基线不破；主题机制（tokens 覆盖/热切换/撤销恢复）回归全绿；
 > - 数字排版：表格金额/计数 tabular-nums（font-feature-settings）。
+> **已知限制（记录）**：主题背景 cover 随长内容页放大（960×600 网格在 ~3000px 高页面放大 ~5 倍，观感为更疏的网格材质，可接受；复查触发=引入视口固定背景层时）。字体 CSS 增量 gzip ~155KB→剔除 woff 后回落（渲染阻塞一次，本地/演示部署可接受）。
 > **非目标**：不做暗色模式（登记候选）；不做可视化主题编辑器；不改 chart 调色板与侧栏结构；不做中文衬线标题（保持黑体家族，层级靠字重/字号/字距）。
 
 ### 实施内容
 
 - **A. 排版均匀分布**：`base.css` `.dynamic-form` 改全宽卡片（surface+border+padding+圆角）+ `.form-grid`（repeat(auto-fill, minmax(15rem,1fr))）+ 按钮组右置；`SettingsView` 卡片网格 repeat(auto-fit, minmax(24rem,1fr))；`IssueChatWorkbench` 新需求表单铺满+字段双列；`PlaceholderView` 结构化空态卡。
-- **B. 字体系统**：新依赖单独提交（space-grotesk+noto-sans-sc）；main.ts 引入分片 css；tokens 增 `--ff-font-display`/`--ff-text-2xl`/`--ff-text-lg`/`--ff-tracking-tight`；应用面=各视图 h2 页面标题、侧栏品牌、登录页 h1、卡片标题 text-lg、表格数字 tabular-nums。
-- **C. 背景与氛围**：骨架 `--ff-bg-texture`（CSS 渐变组合，workbench-main 与 login-scene 消费，灰阶极淡不破对比度）；theme-default 1.1.2 bg.svg 重绘（细网格+柔光晕，cover 拉伸安全）；theme-warm 1.1.2 同步（暖色晕）；登录卡升级（渐变发丝描边+柔化阴影）。
+- **B. 字体系统**：新依赖单独提交（space-grotesk 700+noto-sans-sc 400/500/700）；main.ts 引入分片 css；构建期内联 PostCSS 插件剔除 @font-face 的 .woff 回退（审查 P2-2：299 个 ≈9.5MB 死重，零新依赖）；tokens 增 `--ff-font-display`/`--ff-text-2xl`/`--ff-text-lg`/`--ff-tracking-tight`；应用面=各视图 h2 页面标题、侧栏品牌、登录页 h1、卡片标题 text-lg、表格数字 tabular-nums。
+- **C. 背景与氛围**：骨架灰阶纹理基线直接落在 `body`（base.css：网点+顶部洗色，fixed）与 `.login-scene` 自带纹理——主题激活时 `.workbench` 背景整层覆盖 body 纹理、撤销即恢复（审查 P3-2 修正机制描述：无独立 token，workbench-main 保持透明透出）；theme-default 1.1.2 bg.svg 重绘（细网格+柔光晕，cover 拉伸安全）；theme-warm 1.1.2 同步（暖色晕）；登录卡升级（渐变发丝描边+柔化阴影）。
 - **测试**：前端——既有 203 例回归（DOM 结构变化不破语义断言）+排版类新增断言（表单网格类/设置网格类存在性）；主题机制回归（themeRegistry 测试不动即绿）；对比度以令牌不变保证（纹理为背景层不影响前景对比）。
 
 ### 验收标准
