@@ -14,10 +14,15 @@ const props = defineProps<{
   view: ViewDefinition | null;
   initial?: Record<string, unknown> | null;
   submitLabel: string;
+  /** P24：提供即渲染取消按钮（type=button，仅上抛事件，返回导航由调用方决定）。 */
+  cancelLabel?: string;
   submitting: boolean;
 }>();
 
-const emit = defineEmits<{ submit: [values: Record<string, unknown>] }>();
+const emit = defineEmits<{
+  submit: [values: Record<string, unknown>];
+  cancel: [];
+}>();
 
 const formFields = computed<FieldDefinition[]>(() => {
   const ordered = [...props.definition.fields].sort((a, b) => a.position - b.position);
@@ -74,6 +79,11 @@ function submit(): void {
         :disabled="submitting"
       />
     </div>
-    <button type="submit" :disabled="submitting">{{ submitLabel }}</button>
+    <div class="form-actions">
+      <button type="submit" :disabled="submitting">{{ submitLabel }}</button>
+      <button v-if="cancelLabel" type="button" :disabled="submitting" @click="emit('cancel')">
+        {{ cancelLabel }}
+      </button>
+    </div>
   </form>
 </template>

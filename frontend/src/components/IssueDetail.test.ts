@@ -176,6 +176,37 @@ describe('IssueDetail 切换复位（PR #34 审查 P2）', () => {
   });
 });
 
+describe('IssueDetail 切换即时清空（P24）', () => {
+  beforeEach(() => {
+    resetMocks();
+    commentsMock.mockResolvedValue([]);
+    specMock.mockResolvedValue(null);
+  });
+
+  it('切换 Issue 即时清空旧评论（B 数据到达前不残留 A 内容）', async () => {
+    commentsMock.mockResolvedValue([
+      {
+        id: 'c1',
+        issueId: 'i1',
+        author: 'alice',
+        body: 'A 的评论内容',
+        createdAt: '2026-09-10T00:00:00Z',
+      },
+    ]);
+    specMock.mockResolvedValue(spec);
+    const wrapper = mountDetail('SUBMITTED');
+    await flushPromises();
+    expect(wrapper.text()).toContain('A 的评论内容');
+
+    // B 的详情请求挂起：切换瞬间旧 Issue 的评论必须已被清空（失败路径同理不回填）
+    commentsMock.mockReturnValue(new Promise(() => {}));
+    specMock.mockReturnValue(new Promise(() => {}));
+    await wrapper.setProps({ issue: { ...baseIssue, id: 'i2', title: 'B' } });
+    await flushPromises();
+    expect(wrapper.text()).not.toContain('A 的评论内容');
+  });
+});
+
 describe('IssueDetail 规格与生成（FR-ISSUE-04/05/06）', () => {
   beforeEach(() => {
     resetMocks();

@@ -8,6 +8,8 @@ import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseDrawer from '@/components/ui/BaseDrawer.vue';
 import BaseSwitch from '@/components/ui/BaseSwitch.vue';
 import StateView from '@/components/StateView.vue';
+import UserBatchBar from '@/components/UserBatchBar.vue';
+import { useUserBatch } from '@/composables/useUserBatch';
 import { t } from '@/registry/localeRegistry';
 
 /**
@@ -31,12 +33,17 @@ const formRoles = ref<string[]>(['USER']);
 const rolesDraft = ref<{ user: SystemUser; roles: string[] } | null>(null);
 const rolesError = ref<string | null>(null);
 
+/** 批量停启用（P24，FR-AUTH-05）：状态与单请求提交在 useUserBatch（load 为函数声明，可前置引用）。 */
+const batch = useUserBatch(load);
+
 async function load(): Promise<void> {
   state.value = 'loading';
   try {
     const page = await listUsers();
     users.value = page.items;
     state.value = page.items.length === 0 ? 'empty' : 'ready';
+    // 批量选择不跨快照残留（P24）：剔除已不存在的选择
+    batch.prune(page.items.map((user) => user.id));
   } catch (e) {
     if (e instanceof ApiError && e.status === 403) {
       state.value = 'denied';
@@ -45,6 +52,18 @@ async function load(): Promise<void> {
     state.value = 'error';
     error.value = apiErrorMessage(e, null);
   }
+}
+
+/** 本页可选账号（自己不可批量变更——与单人路径同守卫）。 */
+const selectableIds = computed(() =>
+  users.value.filter((u) => u.id !== selfId.value).map((u) => u.id),
+);
+const allSelected = computed(
+  () => selectableIds.value.length > 0 && selectableIds.value.every((id) => batch.isSelected(id)),
+);
+
+function toggleAll(): void {
+  batch.setSelection(allSelected.value ? [] : selectableIds.value);
 }
 
 function toggleDraftRole(role: string): void {
@@ -129,9 +148,27 @@ onMounted(load);
     <StateView v-if="state !== 'ready'" :state="state" :message="error">
       <p v-if="state === 'empty'">尚无用户</p>
     </StateView>
-    <table v-else class="users-table" data-testid="users-table">
+    <UserBatchBar
+      v-else
+      :count="batch.selectedIds.value.length"
+      :running="batch.running.value"
+      :error="batch.batchError.value"
+      :notice="batch.batchNotice.value"
+      @run="batch.run"
+      @clear="batch.clear"
+    />
+    <table v-if="state === 'ready'" class="users-table" data-testid="users-table">
       <thead>
         <tr>
+          <th scope="col" class="check-col">
+            <input
+              type="checkbox"
+              data-testid="select-all-users"
+              :checked="allSelected"
+              aria-label="全选本页"
+              @change="toggleAll"
+            />
+          </th>
           <th scope="col">用户名</th>
           <th scope="col">显示名</th>
           <th scope="col">角色</th>
@@ -141,6 +178,16 @@ onMounted(load);
       </thead>
       <tbody>
         <tr v-for="user in users" :key="user.id">
+          <td class="check-col">
+            <input
+              type="checkbox"
+              :data-testid="`select-user-${user.id}`"
+              :checked="batch.isSelected(user.id)"
+              :disabled="user.id === selfId"
+              :aria-label="`选择 ${user.username}`"
+              @change="batch.toggle(user.id)"
+            />
+          </td>
           <td>{{ user.username }}</td>
           <td>{{ user.displayName }}</td>
           <td>{{ user.roles.join('、') || '—' }}</td>
@@ -272,6 +319,9 @@ onMounted(load);
 }
 .users-table tbody tr:last-child td {
   border-bottom: none;
+}
+.check-col {
+  width: 2.5rem;
 }
 .user-form label,
 .role-option {

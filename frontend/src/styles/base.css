@@ -317,9 +317,18 @@ textarea:disabled {
   margin: 0;
 }
 
+/* P24 排版：动态表单收宽居中（窄列表单不再贴左留半屏空白），
+   字段宽度交由表单级上限统一约束 */
+.dynamic-form {
+  max-width: 34rem;
+  margin-inline: auto;
+}
 .dynamic-form .form-field {
   margin-bottom: 0.9rem;
-  max-width: 26rem;
+}
+.dynamic-form .form-actions {
+  display: flex;
+  gap: var(--ff-space-2);
 }
 .dynamic-form label {
   display: block;

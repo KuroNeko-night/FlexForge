@@ -542,3 +542,34 @@
 - 用户端对话闭环：USER 登录后 Issue 入口=对话工作台（可折叠已发布需求侧栏+对话+底部输入）；与 AI 澄清若干轮后产出三段（口语化确认可见于用户端）；点击确认→publish 成功→侧栏出现该需求（已发布标识）；用户端不可见开发者信息面（表格/状态机操作/agent 提示词）；DEV/ADMIN 端可见三段完整分区且 agentPrompt 可复制。
 - 文件处理器闭环：example-filetools 导入激活后 /tools 出现两处理器；上传 CSV 执行 clean → 下载产物（清洗后 CSV 内容后端断言）；profile → table 结果渲染；伪扩展名/超大文件被拒且错误码稳定；产物过期后下载 410。
 - 权限与失败路径：USER 越权（他人 issue publish/评论）403；无 valid 规格不可 publish；坏 manifest（accept 非法）导入被拒；门禁 0 fail+前后端回归全绿+新依赖审计通过；docs（02/03/07/08/09/13/登记册/ADR-0002/索引/STATUS/JSON）同步。
+
+## P24：管理面补全与体验打磨（2026-09-10 用户裁决新增）
+
+> 背景：P23 验收报告六项——①插件管理界面仍显示无关紧要的记录（例："最近激活失败于 xxx"——插件早已成功激活，陈旧失败行仍常驻卡片）；②部分界面贴左对齐导致右半大量空白（实体表单 26rem 窄列贴左最典型，新需求表单/设置列/占位页同型）；③插件示例实体点击"新增记录"后表单只有创建没有取消；④系统管理只有用户管理，功能不够全面且缺少批量操作；⑤Issue 工作台的 agent 提示词交给外部 AI 后并不能直接使用（AI 不知道 FlexForge 是什么），需制作配套 Skill 教 AI 制作 FlexForge 插件；⑥补充缺陷：Issue 工作台切换需求后不即时刷新，上一打开的需求部分内容残留（根因：开发者侧 `IssueDetail` watch 换 Issue 不清旧 comments/spec——B 数据到达前 A 残留、B 加载失败则永久残留；用户侧 `IssueDiscussion` 无 `:key`，评论草稿跨需求残留）。
+> **红线**：
+> - 插件卡降噪不改后端契约：inventory 载荷不变，前端只呈现"晚于最近成功激活的失败"（无激活时呈现最近失败）——诊断信息保留于审计与 inventory，不删数据；
+> - 排版优化只动表现层（base.css/组件样式），不改信息架构与文案基线；表单取消=纯前端路由返回（new→列表、edit→详情），不新增端点；
+> - 审计日志页消费**既有** P03 查询 API（GET /system/audit-events），无新后端；时间窗过滤 UI 不做（登记候选），前端提供 操作者/动作/对象 三过滤+分页；
+> - 批量停启用为新端点 `POST /system/users/batch-status`（ADMIN）：单事务、逐用户审计（`user.status.update` 同词表）、上限 100、含自己 400、未知 id 404（与单人路径同口径）、操作者须 ACTIVE（与单人路径同守卫）；不做批量删除/批量改角色（记候选）；
+> - Agent Skill=单文件 SKILL.md（YAML frontmatter+全链教学：包结构/plugin.json/实体/视图/迁移/处理器/打包校验/导入激活），随前端资产分发（Issue 简报卡下载按钮，blob 下载无新端点）；不修改 v3 提示词契约；内容只引用平台既有声明式能力与既有示例插件结构；
+> - Issue 切换残留修复：开发者详情切换即时清空评论/规格（空态呈现，数据到达后填充）；用户工作台讨论区随 `active.id` 重建（草稿复位）。
+> **非目标**：审计导出/实时流/时间窗 UI；批量删除用户（FK 与审计保留策略需独立设计）；工作台对话历史回放（IssueClarifyChat 无 transcript 持久化，登记候选）；skill 不做工作台内嵌渲染与多文件包。
+
+### 实施内容
+
+- **A. 插件卡降噪**：`PluginCard` lastFailure 只在"失败晚于当前 ACTIVE 激活"或"无任何成功激活"时呈现（清单按开始时间倒序，比较首个 FAILED 与 ACTIVE 下标）；回归测试覆盖 陈旧失败隐藏/新近失败保留/无激活呈现。
+- **B. 排版优化（NFR-UX）**：`.dynamic-form` 居中收宽（max-width 34rem+margin-inline auto）；`IssueChatWorkbench` 新需求表单居中；`SettingsView` 设置列收宽居中（max-width 46rem）；`PlaceholderView` 居中空态。
+- **C. 表单取消（NFR-UX-01）**：`DynamicForm` 增可选 `cancelLabel` 与 `cancel` 事件（按钮组布局）；`DynamicEntityView` 接线——new 返回列表路由、edit 返回该记录详情路由。
+- **D. 系统管理扩展（FR-AUTH-04/05）**：后端 `UserAdminService.batchUpdateStatus`（校验/守卫/逐用户审计）+ `SystemUserController` POST batch-status + 失败路径测试；前端 `AuditView`（过滤+表格+分页，消费既有 API）+ 路由 `/system/audit` + 菜单"审计日志"（ADMIN）；`UsersView` 批量操作（行复选+全选+批量条 `UserBatchBar`（内嵌确认对话）+`useUserBatch` composable（≤350 行约束拆分））。
+- **E. Agent Skill（FR-ISSUE-08）**：`frontend/src/assets/agent-skill/SKILL.md`（唯一事实源，`?raw` 导入）；`IssueBriefCard` agent 提示词区增"下载 Skill"按钮（blob text/markdown、RFC 文件名、revoke 延迟清理）。
+- **F. Issue 切换残留**：`IssueDetail` watch 即时清空 `comments`/`spec`；`IssueChatWorkbench` 的 `IssueDiscussion` 加 `:key="active.id"`；两侧回归测试。
+- **测试**：后端——batch-status 成功（两用户 BLOCKED+审计行+响应）/含自己 400/未知 id 404（整批拒绝无审计残留）/超 100 拒/非 ADMIN 403/幂等（同状态不写）；前端——PluginCard 降噪 3 例、DynamicForm 取消 1 例（正反断言）、IssueDetail 切换清空 1 例、Workbench 草稿复位 1 例、AuditView 3 例（列表/过滤/403）、UsersView 批量 3 例（选择+确认调用/自选禁用/成功清选）、IssueBriefCard 下载 1 例；MenuServiceTest 期望 +1 菜单项。
+
+### 验收标准
+
+- 插件卡：插件激活成功后，早于该成功的失败行不再显示；最近一次操作失败的诊断行保留；无激活插件显示最近失败。
+- 排版与取消：实体新建/编辑表单居中呈现且有"取消"（新建→返回列表、编辑→返回详情）；设置页/占位页/新需求表单不再贴左大留白（live 截图核验）。
+- 审计日志：ADMIN 菜单可见"审计日志"，列表分页可浏览，操作者/动作/对象过滤生效；非 ADMIN 无菜单且接口 403。
+- 批量停启用：勾选多个用户→确认→一次请求全部变更（审计逐用户落库）；选择含自己/未知 id/超 100/非管理员均有可诊断失败；执行后选择清空+列表刷新。
+- Agent Skill：开发者简报卡可下载 SKILL.md；内容覆盖包结构/清单/实体/视图/迁移/处理器（entity+file）/打包校验红线/导入激活流程，与平台校验器口径一致（键模式/白名单/不可变）。
+- Issue 切换：开发者侧切换 Issue 后评论/规格即时清空（新数据到达前无旧内容）；用户侧切换需求后讨论输入草稿复位；门禁 21/1/0+前后端回归全绿+CI 六项；docs（02/03/09/索引/STATUS/JSON）同步。

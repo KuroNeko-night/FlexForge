@@ -41,6 +41,10 @@ public class SystemUserController {
     public record UpdateStatusRequest(String status) {
     }
 
+    /** 批量停启用（P24，FR-AUTH-05）：单事务逐用户审计，上限 100，不可含自己。 */
+    public record BatchStatusRequest(List<Long> userIds, String status) {
+    }
+
     public record UserView(long id, String username, String displayName, String status,
                            List<String> roles) {
     }
@@ -75,6 +79,19 @@ public class SystemUserController {
         UserAdminRecord updated = userAdminService.updateStatus(principal.userId(), id,
                 request.status());
         return toView(updated);
+    }
+
+    /** 批量停启用（P24，FR-AUTH-05）：响应为逐用户终态（顺序与请求去重后一致）。 */
+    @PostMapping("/batch-status")
+    @RequireRole(Roles.ADMIN)
+    public List<UserView> batchUpdateStatus(
+            @RequestAttribute(JwtAuthFilter.PRINCIPAL_ATTRIBUTE) AuthPrincipal principal,
+            @RequestBody BatchStatusRequest request) {
+        return userAdminService.batchUpdateStatus(principal.userId(), request.userIds(),
+                        request.status())
+                .stream()
+                .map(SystemUserController::toView)
+                .toList();
     }
 
     @GetMapping

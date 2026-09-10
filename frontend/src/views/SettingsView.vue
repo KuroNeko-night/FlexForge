@@ -232,6 +232,9 @@ onMounted(load);
   display: flex;
   flex-direction: column;
   gap: var(--ff-space-4);
+  /* P24 排版：设置列收宽居中，避免宽屏贴左半屏空白 */
+  max-width: 46rem;
+  margin-inline: auto;
 }
 .settings-header {
   display: flex;

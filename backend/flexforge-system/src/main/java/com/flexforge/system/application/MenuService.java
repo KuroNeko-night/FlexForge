@@ -32,7 +32,10 @@ public class MenuService {
             new NavigationContribution("file-tools", "文件工具", "/tools", "sliders",
                     400, null),
             new NavigationContribution("system-management", "系统管理", "/system/users", "settings",
-                    900, "ADMIN"));
+                    900, "ADMIN"),
+            // 审计日志（P24，FR-AUTH-04）：消费 P03 审计查询 API 的管理页，仅管理员
+            new NavigationContribution("system-audit", "审计日志", "/system/audit", "database",
+                    910, "ADMIN"));
 
     private final InMemoryExtensionRegistry extensionRegistry;
 

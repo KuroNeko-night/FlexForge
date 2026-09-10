@@ -60,6 +60,11 @@ async function loadDetail(): Promise<void> {
 watch(
   () => props.issue.id,
   () => {
+    // P24：切换 Issue 即时清空旧子区——新数据到达前不残留上一 Issue 的评论/规格/
+    // 简报，加载失败亦保持空态（loadDetail 的 catch 不回填旧内容）
+    comments.value = [];
+    spec.value = null;
+    briefJson.value = null;
     void loadDetail();
   },
   { immediate: true },
