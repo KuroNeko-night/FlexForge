@@ -26,6 +26,11 @@ public class MenuService {
             // 使三类角色菜单互异（docs/09 P03 验收 1，复审 P1-2）
             new NavigationContribution("data-model", "数据模型", "/meta/entities", "database",
                     500, "DEVELOPER"),
+            // 文件工具页（P23，FR-PLUGIN-14）：平台能力页（空态=无 ACTIVE 文件处理器，
+            // NFR-SKEL-01 不破）。菜单=登录可见（单键 permissionKey 表达不了 ADMIN|USER
+            // 组合）；执行权限由服务端 @RequireRole({ADMIN,USER}) 收口（S2，菜单只是体验）
+            new NavigationContribution("file-tools", "文件工具", "/tools", "sliders",
+                    400, null),
             new NavigationContribution("system-management", "系统管理", "/system/users", "settings",
                     900, "ADMIN"));
 

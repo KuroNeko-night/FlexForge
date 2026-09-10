@@ -13,11 +13,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /** 澄清引擎（RB-AI：非法 JSON/Schema 违约重试与上限）。 */
 class ClarifyEngineTest {
 
+    /** v3 契约：规格轮输出须同轮携带三段简报 brief。 */
     private static final String VALID_SPEC = """
             {"spec":{"schemaVersion":1,"summary":"s","entities":[
             {"name":"a_item","displayName":"A","fields":[
             {"name":"name","displayName":"N","fieldType":"text","required":true}]}],
-            "acceptance":["可查询"]}}
+            "acceptance":["可查询"]},
+            "brief":{"colloquial":"c","feasibility":"f","agentPrompt":"a"}}
             """;
 
     @Test

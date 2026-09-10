@@ -63,17 +63,17 @@ public class ClarifyEngine {
                 currentPrompt = retryIllegal(prompt, "缺少 questions 或 spec 字段，请按格式重新输出。");
                 continue;
             }
+            List<String> errors = RequirementSchema.validate(spec);
+            if (!errors.isEmpty()) {
+                currentPrompt = retrySpecInvalid(prompt, errors);
+                continue;
+            }
             String briefError = briefErrorOf(parsed.get("brief"));
             if (briefError != null) {
                 currentPrompt = retryIllegal(prompt, briefError + "\n请修正后重新输出完整 spec 与 brief。");
                 continue;
             }
-            List<String> errors = RequirementSchema.validate(spec);
-            if (errors.isEmpty()) {
-                return new ClarifyResult(true, List.of(), spec, parsed.get("brief"),
-                        attempts, true);
-            }
-            currentPrompt = retrySpecInvalid(prompt, errors);
+            return new ClarifyResult(true, List.of(), spec, parsed.get("brief"), attempts, true);
         }
         throw new ModelOutputInvalidException(attempts);
     }

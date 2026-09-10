@@ -24,13 +24,14 @@ class MenuServiceTest {
 
     @Test
     void threeRolesSeeDifferentMenus() {
-        // 扁平角色（无继承）：管理员=工作台+系统管理；开发者=工作台+数据模型；普通用户=仅工作台（验收 1）
+        // 扁平角色（无继承）：管理员=工作台+文件工具+系统管理；开发者=工作台+数据模型
+        // +文件工具；普通用户=工作台+文件工具（P23：/tools 执行与 invoke 同权 ADMIN/USER）
         assertThat(keys(menuService.menusFor(new AuthPrincipal(1L, List.of("ADMIN")))))
-                .containsExactly("workbench", "system-management");
+                .containsExactly("workbench", "file-tools", "system-management");
         assertThat(keys(menuService.menusFor(new AuthPrincipal(2L, List.of("DEVELOPER")))))
-                .containsExactly("workbench", "data-model");
+                .containsExactly("workbench", "file-tools", "data-model");
         assertThat(keys(menuService.menusFor(new AuthPrincipal(3L, List.of("USER")))))
-                .containsExactly("workbench");
+                .containsExactly("workbench", "file-tools");
     }
 
     @Test
@@ -50,7 +51,7 @@ class MenuServiceTest {
         var registration = registry.register("extension.navigation", contribution, "act-test-001");
 
         assertThat(keys(menuService.menusFor(new AuthPrincipal(9L, List.of("USER")))))
-                .containsExactly("plugin-orders", "workbench");
+                .containsExactly("plugin-orders", "workbench", "file-tools");
         // 未持有所需角色的用户看不到贡献
         assertThat(keys(menuService.menusFor(new AuthPrincipal(9L, List.of("DEVELOPER")))))
                 .doesNotContain("plugin-orders");

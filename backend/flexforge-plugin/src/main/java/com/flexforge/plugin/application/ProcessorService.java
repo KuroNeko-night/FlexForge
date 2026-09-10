@@ -62,14 +62,16 @@ public class ProcessorService {
         this.clock = clock;
     }
 
-    /** 处理器清单（可选按目标实体过滤）。 */
+    /** 处理器清单（可选按目标实体过滤；inputMode=file 的处理器 entity 为空串）。 */
     public List<ProcessorView> listProcessors(String entity) {
         List<ProcessorView> result = new ArrayList<>();
         for (ActiveProcessorLocator.ActiveProcessor processor : locator.activeProcessors()) {
             if (entity == null || entity.isBlank()
                     || processor.spec().inputEntity().equals(entity)) {
                 result.add(new ProcessorView(processor.spec().key(), processor.spec().label(),
-                        processor.pluginId(), processor.spec().inputEntity()));
+                        processor.pluginId(), processor.spec().inputEntity(),
+                        processor.spec().inputMode(), processor.spec().accept(),
+                        processor.spec().maxInputMB()));
             }
         }
         return List.copyOf(result);
@@ -130,8 +132,9 @@ public class ProcessorService {
         return json;
     }
 
-    /** 清单视图（GET /plugins/processors 契约）。 */
-    public record ProcessorView(String key, String label, String pluginId, String inputEntity) {
+    /** 清单视图（GET /plugins/processors 契约；inputMode/accept/maxInputMB=P23 文件模式）。 */
+    public record ProcessorView(String key, String label, String pluginId, String inputEntity,
+                                String inputMode, List<String> accept, Integer maxInputMB) {
     }
 
     /** 输出契约校验（登记册 §2.2）：kind=table（columns/rows 定宽二维标量）、
@@ -143,6 +146,11 @@ public class ProcessorService {
         }
 
         static JsonNode validate(JsonNode output) {
+            return validate(output, false);
+        }
+
+        /** P23：allowFile=true（文件输入模式）时允许 kind=file（filename 由调用方深校验）。 */
+        static JsonNode validate(JsonNode output, boolean allowFile) {
             if (output == null || !output.isObject()) {
                 throw ProcessorExecutionException.outputInvalid("处理器输出必须是 JSON 对象");
             }
@@ -151,10 +159,25 @@ public class ProcessorService {
                 case "table" -> requireTable(output);
                 case "summary" -> requireSummary(output);
                 case "chart" -> requireChart(output);
+                case "file" -> {
+                    if (!allowFile) {
+                        throw ProcessorExecutionException.outputInvalid(
+                                "kind=file 仅文件输入处理器可输出");
+                    }
+                    requireFileName(output);
+                }
                 default -> throw ProcessorExecutionException.outputInvalid(
                         "输出 kind 必须是 table、summary 或 chart: " + kind);
             }
             return output;
+        }
+
+        /** 文件契约浅校验：filename 非空文本（字符集/目录边界深校验在 FileProcessorService）。 */
+        private static void requireFileName(JsonNode output) {
+            String filename = output.path("filename").asString("");
+            if (filename.isBlank()) {
+                throw ProcessorExecutionException.outputInvalid("file.filename 必须是非空文本");
+            }
         }
 
         private static void requireTable(JsonNode output) {

@@ -87,6 +87,87 @@ public class ProcessorRunner {
     private final java.util.concurrent.Semaphore executionSlot =
             new java.util.concurrent.Semaphore(1);
 
+    /** 文件输入的固定字面量名（P23：命令行零动态字符串，扩展名校验在声明/上传层）。 */
+    private static final String INPUT_FILE_LITERAL = "input.dat";
+
+    /** 文件输入执行结果：stdout + 已迁出临时区的产物目录（路径均平台生成）。 */
+    public record FileRun(String stdout, Path outputDir) {
+    }
+
+    /** 文件输入执行（P23，FR-PLUGIN-14）：argv[1] 固定字面量；env 指定输出目录；
+     * 成功后产物目录整体迁至 targetDir（workDir 必清理，产物归 ArtifactStore）。 */
+    public FileRun runFile(byte[] scriptBytes, byte[] payloadBytes, Path targetDir) {
+        acquireSlot();
+        Path workDir = null;
+        try {
+            workDir = Files.createTempDirectory("flexforge-processor-");
+            Files.write(workDir.resolve("processor.py"), scriptBytes);
+            Files.write(workDir.resolve(INPUT_FILE_LITERAL), payloadBytes);
+            Path outDir = workDir.resolve("out");
+            Files.createDirectories(outDir);
+
+            ProcessBuilder builder = pythonProcess(resolveBin(), INPUT_FILE_LITERAL);
+            builder.directory(workDir.toFile());
+            builder.redirectInput(ProcessBuilder.Redirect.INHERIT);
+            sanitizeEnvironment(builder);
+            builder.environment().put("FLEXFORGE_OUTPUT_DIR", outDir.toAbsolutePath().toString());
+
+            String stdout = execCollecting(builder);
+            Files.createDirectories(targetDir.getParent());
+            relocate(outDir, targetDir);
+            return new FileRun(stdout, targetDir);
+        } catch (IOException e) {
+            throw ProcessorExecutionException.failed("处理器进程启动失败");
+        } finally {
+            releaseSlot();
+            if (workDir != null) {
+                deleteRecursively(workDir);
+            }
+        }
+    }
+
+    /** 与 run() 同口径的执行骨架（采集→超时→退出码）。 */
+    private String execCollecting(ProcessBuilder builder) throws IOException {
+        try {
+            Process process = builder.start();
+            java.util.concurrent.atomic.AtomicReference<String> stdoutRef =
+                    new java.util.concurrent.atomic.AtomicReference<>();
+            java.util.concurrent.atomic.AtomicReference<RuntimeException> readError =
+                    new java.util.concurrent.atomic.AtomicReference<>();
+            Thread collectorThread = startCollector(process, stdoutRef, readError);
+            await(process);
+            joinCollector(collectorThread);
+            if (readError.get() != null) {
+                throw readError.get();
+            }
+            requireZeroExit(process);
+            return stdoutRef.get() == null ? "" : stdoutRef.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw ProcessorExecutionException.failed("处理器执行被中断");
+        }
+    }
+
+    /** 产物目录迁移：优先原子 move（同盘），跨盘退化为递归复制。 */
+    private static void relocate(Path source, Path target) {
+        try {
+            Files.move(source, target);
+        } catch (IOException crossDevice) {
+            try (var walk = Files.walk(source)) {
+                walk.forEach(path -> {
+                    try {
+                        Files.copy(path, target.resolve(source.relativize(path)));
+                    } catch (IOException ignored) {
+                        // 失败产物在读取校验阶段报错
+                    }
+                });
+            } catch (IOException ignored) {
+                // 同上
+            }
+            deleteRecursively(source);
+        }
+    }
+
     private void acquireSlot() {
         try {
             executionSlot.acquire();
@@ -159,6 +240,13 @@ public class ProcessorRunner {
             case PYTHON3 -> new ProcessBuilder("python3", "-I", "-X", "utf8", "processor.py");
             case PYTHON -> new ProcessBuilder("python", "-I", "-X", "utf8", "processor.py");
         };
+    }
+
+    /** P23 文件输入形态：固定命令后追加**字面量**参数（编译期常量，无动态字符串）。 */
+    private static ProcessBuilder pythonProcess(PythonBin bin, String literalTail) {
+        ProcessBuilder base = pythonProcess(bin);
+        base.command().add(literalTail);
+        return base;
     }
 
     /** 环境清空至最小集：仅保留解释器解析所必需的 PATH 与 Windows 系统键

@@ -13,5 +13,22 @@ public record ProcessorContribution(
         String label,
         String kind,
         String entry,
-        String inputEntity) {
+        String inputEntity,
+        String inputMode,
+        java.util.List<String> accept,
+        Integer maxInputMB) {
+
+    /** P23：兼容旧载荷新增字段缺省（entity 模式无 accept/上限）。 */
+    public ProcessorContribution {
+        if (inputMode == null || inputMode.isBlank()) {
+            inputMode = "entity";
+        }
+        if (accept == null) {
+            accept = java.util.List.of();
+        }
+    }
+
+    public boolean fileMode() {
+        return "file".equals(inputMode);
+    }
 }

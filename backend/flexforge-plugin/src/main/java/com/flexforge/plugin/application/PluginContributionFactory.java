@@ -164,7 +164,8 @@ final class PluginContributionFactory {
         return new ThemeAssetContribution(spec.key(), spec.kind(), spec.path(), spec.scope());
     }
 
-    /** processors 声明（P20，extension.data-processor；manifest JSON 解析）。 */
+    /** processors 声明（P20，extension.data-processor；manifest JSON 解析；
+     * P23 增 inputMode/accept/maxInputMB，旧包缺省 entity 模式）。 */
     static List<ProcessorSpec> processorsOf(PluginVersionRecord version) {
         JsonNode node = JSON.readTree(version.manifestJson())
                 .path("contributions").path("processors");
@@ -174,9 +175,21 @@ final class PluginContributionFactory {
         List<ProcessorSpec> result = new ArrayList<>();
         for (int i = 0; i < node.size(); i++) {
             JsonNode item = node.get(i);
+            List<String> accept = new ArrayList<>();
+            JsonNode acceptNode = item.path("accept");
+            if (acceptNode.isArray()) {
+                for (int j = 0; j < acceptNode.size(); j++) {
+                    accept.add(acceptNode.get(j).asString());
+                }
+            }
+            JsonNode maxMb = item.path("maxInputMB");
             result.add(new ProcessorSpec(item.path("key").asString(),
                     item.path("label").asString(), item.path("kind").asString(),
-                    item.path("entry").asString(), item.path("inputEntity").asString()));
+                    item.path("entry").asString(),
+                    item.path("inputEntity").asString(),
+                    item.path("inputMode").asString(ProcessorSpec.MODE_ENTITY),
+                    List.copyOf(accept),
+                    maxMb.isNumber() ? maxMb.asInt() : null));
         }
         return List.copyOf(result);
     }
@@ -185,7 +198,8 @@ final class PluginContributionFactory {
     static com.flexforge.common.contract.ProcessorContribution processorContribution(
             ProcessorSpec spec) {
         return new com.flexforge.common.contract.ProcessorContribution(
-                spec.key(), spec.label(), spec.kind(), spec.entry(), spec.inputEntity());
+                spec.key(), spec.label(), spec.kind(), spec.entry(), spec.inputEntity(),
+                spec.inputMode(), spec.accept(), spec.maxInputMB());
     }
 
     /** plugin_registration 持久化载荷（data-processor 契约完整字段）。 */
