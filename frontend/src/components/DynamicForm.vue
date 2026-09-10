@@ -67,17 +67,20 @@ function submit(): void {
 
 <template>
   <form class="dynamic-form" :data-entity="definition.name" @submit.prevent="submit">
-    <div v-for="field in formFields" :key="field.id" class="form-field" :data-field="field.name">
-      <label :for="`field-${field.name}`">
-        {{ field.displayName }}<span v-if="field.required" class="required-mark">*</span>
-      </label>
-      <component
-        :is="fieldRenderer(field)"
-        v-model="values[field.name]"
-        :field="field"
-        mode="input"
-        :disabled="submitting"
-      />
+    <!-- P25：字段网格容器（auto-fill 自适应列数，排版均匀分布） -->
+    <div class="form-fields">
+      <div v-for="field in formFields" :key="field.id" class="form-field" :data-field="field.name">
+        <label :for="`field-${field.name}`">
+          {{ field.displayName }}<span v-if="field.required" class="required-mark">*</span>
+        </label>
+        <component
+          :is="fieldRenderer(field)"
+          v-model="values[field.name]"
+          :field="field"
+          mode="input"
+          :disabled="submitting"
+        />
+      </div>
     </div>
     <div class="form-actions">
       <button type="submit" :disabled="submitting">{{ submitLabel }}</button>

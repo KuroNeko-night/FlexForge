@@ -98,6 +98,9 @@ describe('DynamicForm（默认值补齐 + 提交载荷清洗）', () => {
         submitting: false,
       },
     });
+    // P25：字段网格容器（auto-fill 自适应列数，均匀分布排版）
+    expect(wrapper.find('.form-fields').exists()).toBe(true);
+    expect(wrapper.findAll('.form-field')).toHaveLength(3);
     expect(wrapper.findAll('label').map((label) => label.text())).toEqual(['数量', 'SKU*', '状态']);
     expect(wrapper.find('input[type="number"]').element).toBeTruthy();
     expect((wrapper.find('select').element as HTMLSelectElement).value).toBe('in_stock');

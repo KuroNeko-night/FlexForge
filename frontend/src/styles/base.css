@@ -11,7 +11,24 @@
 
 body {
   margin: 0;
-  background: var(--ff-bg);
+  /* P25 骨架背景基线：灰阶极淡网点+顶部洗色（无彩色身份——结构与皮分离，
+     色彩归主题包）；主题激活时 .workbench 背景整层覆盖此纹理，撤销即恢复 */
+  background-color: var(--ff-bg);
+  background-image:
+    radial-gradient(
+      circle at 1px 1px,
+      color-mix(in srgb, var(--ff-text) 4%, transparent) 1px,
+      transparent 0
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--ff-surface-muted) 45%, transparent),
+      transparent 26rem
+    );
+  background-size:
+    24px 24px,
+    100% 100%;
+  background-attachment: fixed;
   color: var(--ff-text);
   -webkit-font-smoothing: antialiased;
 }
@@ -195,7 +212,9 @@ textarea:disabled {
   align-items: center;
   gap: var(--ff-space-2);
   margin: 0 0 var(--ff-space-2);
+  font-family: var(--ff-font-display);
   font-weight: 700;
+  font-size: var(--ff-text-lg);
   letter-spacing: 0.05em;
   color: var(--ff-side-ink-strong);
 }
@@ -317,18 +336,57 @@ textarea:disabled {
   margin: 0;
 }
 
-/* P24 排版：动态表单收宽居中（窄列表单不再贴左留半屏空白），
-   字段宽度交由表单级上限统一约束 */
+/* P25 字号层级：页面标题统一 display 字体 + 2xl + 紧凑字距（中西文混排，
+   西文/数字用 Space Grotesk，中文回落 Noto Sans SC 粗字重） */
+.ff-page-title {
+  font-family: var(--ff-font-display);
+  font-size: var(--ff-text-2xl);
+  font-weight: 700;
+  letter-spacing: var(--ff-tracking-tight);
+  line-height: 1.2;
+}
+
+/* P25：紧凑表单网格原语（auto-fit 自适应列数；.field--full 跨全宽） */
+.ff-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--ff-space-3);
+  align-items: start;
+}
+.ff-form-grid .field--full {
+  grid-column: 1 / -1;
+}
+
+/* P25：表格数字等宽对齐（金额/计数列） */
+.dynamic-table,
+.users-table,
+.audit-table {
+  font-variant-numeric: tabular-nums;
+}
+
+/* P25 排版：表单卡片化铺满内容区，字段以自适应网格均匀分布（用户裁决：
+   靠排版消化空白，而非窄列居中）；按钮组右置并以发丝线与字段区分隔 */
 .dynamic-form {
-  max-width: 34rem;
-  margin-inline: auto;
+  padding: var(--ff-space-4);
+  background: var(--ff-surface);
+  border: 1px solid var(--ff-border-soft);
+  border-radius: var(--ff-radius-md);
+}
+.dynamic-form .form-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--ff-space-3) var(--ff-space-4);
 }
 .dynamic-form .form-field {
-  margin-bottom: 0.9rem;
+  margin-bottom: 0;
 }
 .dynamic-form .form-actions {
   display: flex;
+  justify-content: flex-end;
   gap: var(--ff-space-2);
+  margin-top: var(--ff-space-3);
+  padding-top: var(--ff-space-3);
+  border-top: 1px solid var(--ff-border-soft);
 }
 .dynamic-form label {
   display: block;

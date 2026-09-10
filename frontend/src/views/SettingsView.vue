@@ -119,7 +119,7 @@ onMounted(load);
 <template>
   <section class="settings-view" data-testid="settings-view">
     <header class="settings-header">
-      <h2>{{ t('settings.title', '设置') }}</h2>
+      <h2 class="ff-page-title">{{ t('settings.title', '设置') }}</h2>
     </header>
 
     <ComponentCard
@@ -229,12 +229,14 @@ onMounted(load);
 
 <style scoped>
 .settings-view {
-  display: flex;
-  flex-direction: column;
+  /* P25 排版：卡片多列均匀分布（auto-fit 自适应），页头横跨全宽 */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr));
   gap: var(--ff-space-4);
-  /* P24 排版：设置列收宽居中，避免宽屏贴左半屏空白 */
-  max-width: 46rem;
-  margin-inline: auto;
+  align-items: start;
+}
+.settings-header {
+  grid-column: 1 / -1;
 }
 .settings-header {
   display: flex;

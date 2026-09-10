@@ -51,12 +51,17 @@
   --ff-side-active: color-mix(in srgb, var(--ff-side-ink) 12%, var(--ff-surface));
   --ff-side-accent: var(--ff-primary);
 
-  /* 排版（拉丁/数字自托管 Inter，中文系统栈；无运行时外链，CSP 兼容） */
-  --ff-font: 'Inter', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  /* 排版（P25 字体系统：西文正文=Inter、display=Space Grotesk、中文=Noto Sans SC，
+     均经 @fontsource 自托管；无运行时外链，CSP 兼容。--ff-font 为兼容别名） */
+  --ff-font: 'Inter', 'Noto Sans SC', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --ff-font-display: 'Space Grotesk', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --ff-font-mono: 'Cascadia Code', Consolas, monospace;
   --ff-text-sm: 0.8rem;
   --ff-text-md: 0.9rem;
+  --ff-text-lg: 1.125rem;
   --ff-text-xl: 1.5rem;
+  --ff-text-2xl: 1.875rem;
+  --ff-tracking-tight: -0.015em;
 
   /* 间距 / 圆角 / 阴影（P18：圆角与阴影取 Tailwind v4 默认刻度原值） */
   --ff-space-1: 0.25rem;
@@ -223,7 +228,10 @@
 }
 .ff-card__title {
   margin: 0;
-  font-size: 1rem;
+  /* P25 层级：卡片标题 lg + 半粗（与页面 2xl 标题拉开阶差） */
+  font-size: var(--ff-text-lg);
+  font-weight: 600;
+  letter-spacing: var(--ff-tracking-tight);
 }
 .ff-card__subtitle {
   margin: var(--ff-space-1) 0 0;
