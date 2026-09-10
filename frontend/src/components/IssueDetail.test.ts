@@ -108,12 +108,7 @@ describe('IssueDetail AI 对话（clarify，FR-ISSUE-03）', () => {
   });
 
   it('开始澄清：首轮无回答→AI 追问渲染为对话', async () => {
-    clarifyMock.mockResolvedValue({
-      specProduced: false,
-      questions: ['实体叫什么？'],
-      spec: null,
-      brief: null,
-    });
+    clarifyMock.mockResolvedValue(noSpecRound('实体叫什么？'));
     const wrapper = mountDetail();
     await flushPromises();
     await clickButton(wrapper, '开始 AI 澄清');

@@ -8,6 +8,7 @@ import LoginView from '@/views/LoginView.vue';
 import SettingsView from '@/views/SettingsView.vue';
 import PlaceholderView from '@/views/PlaceholderView.vue';
 import PluginsView from '@/views/PluginsView.vue';
+import ToolsView from '@/views/ToolsView.vue';
 import UsersView from '@/views/UsersView.vue';
 import WorkbenchView from '@/views/WorkbenchView.vue';
 
@@ -30,6 +31,7 @@ export const router = createRouter({
         { path: '', redirect: { name: 'home' } },
         { path: 'workbench', name: 'home', component: HomeView },
         { path: 'issues', name: 'issues', component: IssuesView },
+        { path: 'tools', name: 'file-tools', component: ToolsView },
         { path: 'data/:entity', name: 'entity-list', component: DynamicEntityView },
         { path: 'data/:entity/new', name: 'entity-new', component: DynamicEntityView },
         { path: 'data/:entity/:id', name: 'entity-detail', component: DynamicEntityView },
