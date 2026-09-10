@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 
+import agentSkillMarkdown from '@/assets/agent-skill/SKILL.md?raw';
 import { parseClarifyBrief } from '@/utils/clarifyBrief';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ComponentCard from '@/components/ui/ComponentCard.vue';
@@ -8,7 +9,9 @@ import ComponentCard from '@/components/ui/ComponentCard.vue';
 /**
  * 三段需求简报（P23，FR-ISSUE-03B，开发者/管理端展示）：口语化确认 /
  * 可行性 / agent 制作提示词——与规格版本一同落库的 briefJson 快照。
- * agentPrompt 提供一键复制（喂给实现 agent）。
+ * agentPrompt 提供一键复制（喂给实现 agent）；P24（FR-ISSUE-08）配套
+ * "下载 Skill"——单文件插件开发技能（SKILL.md，随前端资产分发），
+ * 复制提示词 + 下载 Skill 一起交给实现 AI 即可直接开工。
  */
 const props = defineProps<{ briefJson: string | null }>();
 
@@ -30,6 +33,17 @@ async function copyPrompt(): Promise<void> {
     /* 剪贴板不可用（非安全上下文等）：不误报成功 */
   }
 }
+
+/** 下载配套 Skill（P24）：构建期以 ?raw 内联单文件技能文本，本地 blob 无网络请求。 */
+function downloadSkill(): void {
+  const blob = new Blob([agentSkillMarkdown], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = 'flexforge-plugin-dev-SKILL.md';
+  anchor.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
 </script>
 
 <template>
@@ -50,9 +64,19 @@ async function copyPrompt(): Promise<void> {
     <div class="brief-section">
       <h4>
         agent 制作提示词<span class="audience">面向实现 agent</span>
-        <BaseButton class="copy-button" data-testid="copy-agent-prompt" @click="copyPrompt">
-          {{ copied ? '已复制' : '复制' }}
-        </BaseButton>
+        <span class="prompt-actions">
+          <BaseButton data-testid="download-agent-skill" size="sm" @click="downloadSkill">
+            下载 Skill
+          </BaseButton>
+          <BaseButton
+            class="copy-button"
+            data-testid="copy-agent-prompt"
+            size="sm"
+            @click="copyPrompt"
+          >
+            {{ copied ? '已复制' : '复制' }}
+          </BaseButton>
+        </span>
       </h4>
       <p class="brief-text prompt">{{ brief.agentPrompt }}</p>
     </div>
@@ -80,8 +104,12 @@ async function copyPrompt(): Promise<void> {
   color: var(--ff-text-muted);
   background: var(--ff-surface-muted);
 }
-.copy-button {
+.prompt-actions {
   margin-left: auto;
+  display: flex;
+  gap: var(--ff-space-2);
+}
+.copy-button {
   font-size: var(--ff-text-xs, 0.75rem);
 }
 .brief-text {

@@ -57,4 +57,24 @@ describe('IssueBriefCard 三段简报分区（P23 FR-ISSUE-03B）', () => {
     await flushPromises();
     expect(wrapper.text()).not.toContain('已复制');
   });
+
+  it('下载 Skill（P24 FR-ISSUE-08）：blob 为 markdown 且文件名/清理正确', async () => {
+    const createObjectURL = vi.fn(() => 'blob:skill');
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal('URL', Object.assign(URL, { createObjectURL, revokeObjectURL }));
+    const clicked = vi.fn();
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(clicked);
+    const wrapper = mountCard(briefJson);
+    await wrapper.find('[data-testid="download-agent-skill"]').trigger('click');
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    const blob = createObjectURL.mock.calls[0][0] as Blob;
+    expect(blob.type).toBe('text/markdown;charset=utf-8');
+    const text = await blob.text();
+    expect(text).toContain('name: flexforge-plugin-dev');
+    expect(text).toContain('plugin.json');
+    expect(clicked).toHaveBeenCalledTimes(1);
+    expect((clicked.mock.instances[0] as HTMLAnchorElement).download).toBe(
+      'flexforge-plugin-dev-SKILL.md',
+    );
+  });
 });
