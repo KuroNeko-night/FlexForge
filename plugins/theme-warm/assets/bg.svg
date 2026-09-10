@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600">
+  <!-- FlexForge 暖色主题背景（P25 精修 1.1.2 新增背景资产）：amber→zinc 对角淡洗
+       + 24px 细网格 + 暖橙柔光晕；与 theme.json 的 orange 主色阶同族。
+       单一 viewBox 在 cover 拉伸下不失真。 -->
+  <defs>
+    <linearGradient id="wash" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fffbeb"/>
+      <stop offset="1" stop-color="#fafafa"/>
+    </linearGradient>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#fde68a" stroke-width="0.5" opacity="0.4"/>
+    </pattern>
+    <radialGradient id="glowA" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fed7aa" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#fed7aa" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fef3c7" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#fef3c7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="960" height="600" fill="url(#wash)"/>
+  <rect width="960" height="600" fill="url(#grid)"/>
+  <ellipse cx="800" cy="110" rx="320" ry="210" fill="url(#glowA)"/>
+  <ellipse cx="150" cy="510" rx="300" ry="200" fill="url(#glowB)"/>
+</svg>
