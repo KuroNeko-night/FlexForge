@@ -59,9 +59,7 @@ describe('DynamicForm 非标量默认值守卫（P25 缺陷回归）', () => {
     registerBuiltins();
     const def = definition();
     // 模拟历史 '{}' 缺省值（插件注册缺陷的 API 形态）
-    def.fields = [
-      { ...def.fields[0], defaultValue: {} as unknown as null },
-    ];
+    def.fields = [{ ...def.fields[0], defaultValue: {} as unknown as null }];
     const wrapper = mount(DynamicForm, {
       props: {
         definition: def,
