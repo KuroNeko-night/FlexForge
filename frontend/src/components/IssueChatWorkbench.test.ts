@@ -122,6 +122,21 @@ describe('IssueChatWorkbench 用户端对话工作台（P23 FR-ISSUE-07）', () 
     expect(wrapper.find('[data-testid="published-badge"]').exists()).toBe(true);
     expect(wrapper.text()).toContain('已发布');
   });
+
+  it('切换需求后讨论输入草稿复位（P24：不残留上一需求的评论草稿）', async () => {
+    listMock.mockResolvedValue([issue(), issue({ id: 'i2', title: '第二条需求' })]);
+    detailMock.mockImplementation((id: string) => Promise.resolve(issue({ id })));
+    const wrapper = mountWorkbench();
+    await flushPromises();
+    await wrapper.find('[data-testid="issue-entry-i1"]').trigger('click');
+    await flushPromises();
+    await wrapper.find('[data-testid="comment-input"]').setValue('上一条需求的草稿');
+    await wrapper.find('[data-testid="issue-entry-i2"]').trigger('click');
+    await flushPromises();
+    expect((wrapper.find('[data-testid="comment-input"]').element as HTMLInputElement).value).toBe(
+      '',
+    );
+  });
 });
 
 describe('IssueChatWorkbench 推送失败路径（P23 续）', () => {

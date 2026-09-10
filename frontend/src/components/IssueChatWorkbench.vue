@@ -229,7 +229,13 @@ onMounted(load);
           需求已确认推送 · 开发者可见（{{ ISSUE_STATUS_LABELS[active.status] }}）
         </p>
 
-        <IssueDiscussion :issue-id="active.id" :comments="comments" @reloaded="comments = $event" />
+        <!-- :key 随需求重建（P24）：切换需求时输入草稿复位，不残留上一需求的评论草稿 -->
+        <IssueDiscussion
+          :key="active.id"
+          :issue-id="active.id"
+          :comments="comments"
+          @reloaded="comments = $event"
+        />
       </template>
     </div>
   </section>
@@ -251,6 +257,9 @@ onMounted(load);
 }
 .new-form {
   max-width: 34rem;
+  /* P24 排版：窄表单居中，避免贴左半屏空白 */
+  margin-inline: auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: var(--ff-space-2);
