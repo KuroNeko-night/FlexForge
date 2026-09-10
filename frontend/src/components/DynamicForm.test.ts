@@ -54,6 +54,26 @@ function definition(): EntityDetail {
   };
 }
 
+describe('DynamicForm 非标量默认值守卫（P25 缺陷回归）', () => {
+  it('defaultValue 为空对象时按无默认处理（不渲染 "[object Object]"）', () => {
+    registerBuiltins();
+    const def = definition();
+    // 模拟历史 '{}' 缺省值（插件注册缺陷的 API 形态）
+    def.fields = [{ ...def.fields[0], defaultValue: {} as unknown as null }];
+    const wrapper = mount(DynamicForm, {
+      props: {
+        definition: def,
+        view: null,
+        initial: null,
+        submitLabel: '创建',
+        submitting: false,
+      },
+    });
+    const input = wrapper.find('input[type="text"]').element as HTMLInputElement;
+    expect(input.value).toBe('');
+  });
+});
+
 describe('DynamicForm 取消按钮（P24）', () => {
   it('提供 cancelLabel 时渲染取消并上抛 cancel（不触发提交），缺省不渲染', async () => {
     registerBuiltins();
@@ -98,6 +118,9 @@ describe('DynamicForm（默认值补齐 + 提交载荷清洗）', () => {
         submitting: false,
       },
     });
+    // P25：字段网格容器（auto-fill 自适应列数，均匀分布排版）
+    expect(wrapper.find('.form-fields').exists()).toBe(true);
+    expect(wrapper.findAll('.form-field')).toHaveLength(3);
     expect(wrapper.findAll('label').map((label) => label.text())).toEqual(['数量', 'SKU*', '状态']);
     expect(wrapper.find('input[type="number"]').element).toBeTruthy();
     expect((wrapper.find('select').element as HTMLSelectElement).value).toBe('in_stock');

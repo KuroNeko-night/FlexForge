@@ -91,7 +91,7 @@ onMounted(load);
 <template>
   <section class="tools-view" data-testid="tools-view">
     <header class="tools-header">
-      <h2>文件工具</h2>
+      <h2 class="ff-page-title">文件工具</h2>
       <p class="tools-subtitle">上传表格文件，交给插件处理——清洗、转换或分析后下载结果</p>
     </header>
     <StateView v-if="state !== 'ready'" :state="state" :message="error">

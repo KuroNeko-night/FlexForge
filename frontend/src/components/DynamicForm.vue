@@ -44,7 +44,12 @@ function initialValue(): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const field of props.definition.fields) {
     const fromRecord = props.initial?.[field.name];
-    result[field.name] = fromRecord !== undefined ? fromRecord : (field.defaultValue ?? null);
+    // 非标量默认值守卫（P25 缺陷修复）：历史 {} 缺省值曾以对象预填渲染为
+    // "[object Object]"——对象/数组默认值按无默认处理
+    const fallback = field.defaultValue;
+    const safeFallback =
+      fallback !== null && typeof fallback === 'object' ? null : (fallback ?? null);
+    result[field.name] = fromRecord !== undefined ? fromRecord : safeFallback;
   }
   return result;
 }
@@ -67,17 +72,20 @@ function submit(): void {
 
 <template>
   <form class="dynamic-form" :data-entity="definition.name" @submit.prevent="submit">
-    <div v-for="field in formFields" :key="field.id" class="form-field" :data-field="field.name">
-      <label :for="`field-${field.name}`">
-        {{ field.displayName }}<span v-if="field.required" class="required-mark">*</span>
-      </label>
-      <component
-        :is="fieldRenderer(field)"
-        v-model="values[field.name]"
-        :field="field"
-        mode="input"
-        :disabled="submitting"
-      />
+    <!-- P25：字段网格容器（auto-fill 自适应列数，排版均匀分布） -->
+    <div class="form-fields">
+      <div v-for="field in formFields" :key="field.id" class="form-field" :data-field="field.name">
+        <label :for="`field-${field.name}`">
+          {{ field.displayName }}<span v-if="field.required" class="required-mark">*</span>
+        </label>
+        <component
+          :is="fieldRenderer(field)"
+          v-model="values[field.name]"
+          :field="field"
+          mode="input"
+          :disabled="submitting"
+        />
+      </div>
     </div>
     <div class="form-actions">
       <button type="submit" :disabled="submitting">{{ submitLabel }}</button>

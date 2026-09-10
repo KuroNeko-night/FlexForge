@@ -238,7 +238,7 @@ onMounted(refresh);
 <template>
   <article class="entity-view" :data-entity="entityName" :data-mode="mode">
     <header>
-      <h2>{{ definition?.displayName ?? entityName }}</h2>
+      <h2 class="ff-page-title">{{ definition?.displayName ?? entityName }}</h2>
       <div v-if="state === 'ready' && mode === 'list'" class="header-actions">
         <ViewToggle v-if="kanbanView" :presentation="presentation" @change="switchPresentation" />
         <BaseButton v-if="hasProcessors" data-testid="open-analysis" @click="analysisOpen = true">

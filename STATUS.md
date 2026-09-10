@@ -3,14 +3,14 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P24
-CURRENT_STAGE_NAME: 管理面补全与体验打磨
-STAGE_STATUS: completed
+CURRENT_STAGE_ID: P25
+CURRENT_STAGE_NAME: 前端排版分布与视觉精修
+STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 100%
 LAST_UPDATED: 2026-09-10
 OWNER: project-maintainer
-NEXT_ACTION: 【P00-P24 全阶段完成，项目维持 release_candidate】P24 出口 live 终验 2026-09-10（API 9/9+浏览器六项+Skill blob 实证）。后续=答辩准备（docs/14；演示亮点新增：审计日志过滤+批量停启用、Agent Skill 下载配套 agent 提示词）与候选项排期（Issue #51：审计端口事务内降级边角/用户列表分页；Issue #49 exceljs 豁免复查；既有候选：xlsx 运行时解析（openpyxl 供应链决策）/sweep 下载宽限期/USER 列表 status 过滤/预设名失败草稿回填/对话历史回放/审计时间窗 UI/批量改角色与删除）。待用户关注：live 库 AI 供应商仍为 http（deepseek，P23 走查时模型接口 404）——建议核对 base_url 路径与模型名
-EXIT_GATE: P24 出口证据（docs/09 P24 验收六项）：①插件卡降噪——live DOM 断言+视觉模型核验：example.quality 两条陈旧 MIGRATION 失败（早于 09:54 成功激活）不再显示，e2e.dep（从未激活）DEPENDENCY_CHECK 诊断保留；②排版居中——实体新建/编辑表单 34rem 居中（DOM 精确度量 formCenterX=920=内容区中心）+取消按钮；设置列 46rem/占位页/新需求表单同居中（920）；③表单取消——new→取消→列表、edit→取消→详情（rec-990f…URL 往返实证）；④系统管理——审计日志页（菜单 ADMIN 可见+359 条 18 页分页+actor=p24walk 过滤 10 条含批量审计行）消费既有 P03 API 零新端点；批量停启用 API 9/9（两用户 BLOCKED+逐用户审计/幂等/含自己 400/未知 id 404 整批拒绝无写入无审计残留/超 100 400/非 ADMIN 403）+UI 全链（勾选→危险确认→"已停用 2 个账号"通知独立呈现（审查 P3-3 修复后）+双行 BLOCKED+自己行复选禁用）；⑤Agent Skill——简报卡下载拦截实证：blob 9072B、文件名 flexforge-plugin-dev-SKILL.md、含四项审查纠偏契约键（"pluginId"/["records"]/POST /api/v1/plugins/{versionId}/activate/"name": "room"）；⑥Issue 切换——开发者侧 A（评论+简报）→probe：评论区"0 条/尚无评论"零残留、简报卡隐藏，切回 A 双双恢复；用户端讨论草稿复位由 IssueChatWorkbench.test 实证。门禁 21/1/0+前端 203/203+后端 176/0/0+CI 六项绿。交叉审查（独立子代理，缺陷优先）：4 P1+5 P3=6 修 3 记录（PR #50 评论逐条回应 a641c73）——P1 全部为 SKILL.md 契约失实（stdin 应为 {"records":[…]} 对象/依赖字段 pluginId/table 列 name+行等宽数组/激活路径无 versions 段），修复+防回退断言；P3 修批量通知可见性/docs/09 口径（400→404）/404 审计无残留断言；记录 Issue #51（审计端口 REQUIRES_NEW 边角/用户列表分页）。走查号 p24walk 用后封禁 BLOCKED；p24batch1/2 停用留档。PR #50 合并 7b6fe11
+NEXT_ACTION: P25 实施中（2026-09-10 用户验收裁决两项，docs/09 P25）：①排版均匀分布——撤销 P24"窄列居中"方案，动态表单改全宽卡片+字段网格铺满、设置页卡片多列分布、用户端新需求表单铺满、占位页结构化空态；②视觉精修——字体系统（Space Grotesk display+Noto Sans SC 中文正文+Inter 西文正文，@fontsource 自托管无外链）、字号层级（页面标题 2xl/卡片标题 lg/数字 tabular-nums）、背景图（骨架 CSS 纹理基线+theme-default/warm 1.1.2 背景重绘）
+EXIT_GATE: 计划出口证据（docs/09 P25 验收标准）：①实体表单字段以网格均匀铺满内容区（无右侧大片空白、非窄列居中），设置页卡片多列分布；②页面标题/品牌使用 display 字体且层级分明（中西文混排协调），正文中文用 Noto Sans SC、数字表格 tabular-nums；③工作台主区与登录页呈现背景纹理（无主题时灰阶基线不破对比度），theme-default/warm 1.1.2 背景激活可换装且停用恢复基线；④文案零变更+reduced-motion/CSP 不破+主题机制回归全绿；门禁 21/1/0+前后端回归全绿+CI 六项；新字体依赖经 npm audit 且 docs/13 §3.9 登记；交叉审查独立子代理执行
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -43,7 +43,8 @@ BLOCKERS: none
 | P21 | 插件管理操作逻辑与 Issue 工作台对话体验 | completed | 验收五项（docs/09 P21）：当前版本卡片+开关启停/预设闭环（FR-PLUGIN-12）/对话现代化+IME 守卫/提示词 v2（FR-ISSUE-03A）落账 v2/门禁 21/1/0+CI 六项绿（live 终验见 EXIT_GATE） |
 | P22 | 图表渲染基建与处理器图表输出 | completed | 验收四项（docs/09 P22）：图表基建（FR-CHART-01 令牌化调色板/reduced-motion/aria+数据表）/处理器 chart 契约闭环（FR-PLUGIN-13）/example-analytics 0.2.0 双图处理器/门禁 21/1/0+CI 六项绿（live 终验见 EXIT_GATE） |
 | P23 | 体验补全与文件工具插件 | completed | 验收四项（docs/09 P23）：XLSX 导出（FR-META-06）/用户端对话闭环+提示词 v3 三段产出（FR-ISSUE-03B/07）/文件处理器闭环（FR-PLUGIN-14）/权限失败路径+门禁 21/1/0+CI 六绿（live 终验见 EXIT_GATE） |
-| P24 | 管理面补全与体验打磨 | completed | 验收六项（docs/09 P24）：插件卡降噪/排版居中+表单取消/审计日志页（FR-AUTH-04）+批量停启用（FR-AUTH-05）/Agent Skill 分发（FR-ISSUE-08）/Issue 切换残留修复/门禁 21/1/0+CI 六绿（live 终验见 EXIT_GATE） |
+| P24 | 管理面补全与体验打磨 | completed |
+| P25 | 前端排版分布与视觉精修 | in_progress | 验收四项（docs/09 P25）：排版均匀分布（表单网格/设置多列）/字体系统与字号层级/背景纹理基线+主题 1.1.2 换装/文案零变更+机制回归+门禁 21/1/0 | 验收六项（docs/09 P24）：插件卡降噪/排版居中+表单取消/审计日志页（FR-AUTH-04）+批量停启用（FR-AUTH-05）/Agent Skill 分发（FR-ISSUE-08）/Issue 切换残留修复/门禁 21/1/0+CI 六绿（live 终验见 EXIT_GATE） |
 
 ## 更新规则
 
@@ -192,6 +193,7 @@ BLOCKERS: none
 | 2026-09-10 | P24 | 迭代完成（分支 feat/p24-admin-polish，8 提交）：A 卡片降噪（失败诊断只在晚于最近成功激活/从未激活时呈现+3 例专测）；B 排版（动态表单 34rem 居中+按钮组/设置列 46rem/占位页/新需求表单居中）；C DynamicForm cancelLabel 契约+取消返回（new→列表/edit→详情）；D 后端 batch-status（单事务逐用户审计+守卫：空/去重/上限 100/含自己 400/未知 404/操作者 ACTIVE）+菜单 system-audit、前端 AuditView（三过滤+分页）+useUserBatch/UserBatchBar/复选列；E SKILL.md（包结构/清单/实体/视图/迁移/处理器 entity+file/打包红线/导入激活，逐常量对照校验器）+简报卡 ?raw+blob 下载；F IssueDetail 切换即时清空+IssueDiscussion :key。前端 203/203（+13）、后端 176/0/0（+3 UserBatchStatusApiTest）、门禁 21/1/0 | PR #50 |
 | 2026-09-10 | P24 | 交叉审查（独立子代理，缺陷优先）：**4 P1 + 5 P3，6 修 3 记录**（PR #50 评论逐条回应 a641c73）。P1 全部为 SKILL.md 契约失实（会教错外部 AI）：stdin 应为 {"records":[…]} 对象而非裸数组/依赖字段为 pluginId 非 id/table 列需 name+label 且行为等宽数组/激活路径无 versions 段——修复+IssueBriefCard 测试补四项内容断言防回退；P3 修：批量成功通知被 v-if=count 吞掉（通知独立呈现+按钮随选择收起）/docs/09 两处口径（400→404、取消 1 例）/404 整批拒绝补审计无残留断言；P3 记录 Issue #51：审计端口在 @Transactional 内 aborted 降级边角（P03 起既有）+用户列表无分页使全选上限 20。审查同时确认：批量事务原子性与守卫完备/降噪排序契约真实/切换清空双向收敛/AuditView 编码与分页/下载双通道/测试无空转/无新攻击面 | PR #50 评论、Issue #51 |
 | 2026-09-10 | P24 | **P24 出口复核通过置 completed；P00-P24 全阶段完成，进度 100%，项目维持 release_candidate**。live Linux 容器终验（镜像重建）：API 9/9（菜单含 system-audit/审计过滤/批量 BLOCKED+幂等/含自己 400/未知 404 无部分成功/超限 400）+浏览器六项：插件卡降噪（quality 陈旧行隐藏+dep 保留，视觉模型核验）/表单居中（920=内容区中心）与取消往返/审计页 359 条过滤/批量 UI（危险确认→通知独立呈现→双行 BLOCKED+自己行禁用）/简报卡 Skill 下载（blob 9072B 四契约键）/Issue 切换零残留（probe 评论区 0 条）切回恢复。门禁 21/1/0+前端 203/203+后端 176/0/0+CI 六项绿。走查号 p24walk 用后封禁 BLOCKED。PR #50 合并 7b6fe11 | EXIT_GATE、本条目 |
+| 2026-09-10 | P25 | 用户验收 P24 排版与视觉并裁决新增（两项）：①"不要简单对内容进行居中设置，通过调整排版来让内容均匀分布"——P24 的窄列居中方案被否，改为表单全宽卡片+字段网格铺满/设置卡片多列分布；②"前端设计还可以再精致一点，使用不同的字体，字体大小，背景图等"——引入 display 字体（Space Grotesk）+中文正文（Noto Sans SC）字号层级（2xl/lg/tabular-nums）+背景纹理（骨架 CSS 基线+主题包 1.1.2 重绘）。docs/09 P25 节已登记（红线+实施+验收） | docs/09 P25、本条目 |
 | 2026-09-10 | P24 | 用户验收 P23 并裁决新增（六项）：①插件管理界面显示无关紧要记录（如"最近激活失败于 xxx"）；②部分界面贴左对齐右半大量空白；③实体新增记录表单只有创建没有取消；④系统管理只有用户管理、缺批量操作；⑤issue 工作台 agent 提示词对外部 agent 不可直接使用（需配套 Skill 教 AI 制作 FlexForge 插件）；⑥补充缺陷：Issue 工作台切换需求后上一需求内容残留。根因初判：①=PluginCard lastFailure 不区分失败是否早于当前成功激活；⑥=IssueDetail watch 换 Issue 不清旧 comments/spec（B 数据到达前 A 残留、B 失败永久残留）+用户工作台 IssueDiscussion 无 :key（评论草稿残留）。docs/09 P24 节已登记（红线+实施+验收），docs/02 增 FR-AUTH-04/05、FR-ISSUE-08 | docs/09 P24、本条目 |
 | 2026-09-09 | P23 | 用户验收 P22 并裁决新增：①验收发现缺陷"所有功能页面点击新增记录无窗口弹出"；②CSV 之外补 XLSX 导出；③Issue 工作台按角色分置（用户端=对话界面+可折叠已发布需求侧栏，参考用户提供的对话式界面截图；AI 三段产出：口语化确认→用户、结构化规格+可行性+agent 制作提示词→开发者；确认后推送后台）；④插件功能多样化——"输入一个表格文件，输出一个处理好的表格文件"（参考 fyt-data-mgs 与 dsh/deepseek-harness 代码）。**缺陷先行处置（P0 级）**：复现=点击后 hash 变 /new 但 data-mode 停留 list、表单零渲染；根因=mode 判定依赖 `route.params.id==='new'` 而静态段路由 `data/:entity/new` 不产出 params.id（vue-router 仅参数段进 params），自 P06（e63e45b）潜伏，单测整套 mock vue-router 凭空注入 id=new 掩盖；修复=改按 `route.name==='entity-new'` 判定+新增 DynamicEntityView.route.test.ts 真实 createRouter 匹配回归（修复前必红）；本地 174/174+四件套净；live 重建前端容器全链验证（表单弹出 7 字段→填表提交→创建成功跳详情 rec-a7844587）；PR #47 独立合并 8fd65c1 | PR #47、本条目 |
 | 2026-09-09 | P23 | 规划落档：docs/09 P23 节（红线+实施+验收）；docs/02 增 FR-META-06/FR-PLUGIN-14/FR-ISSUE-03B/07；docs/03 §8 增 processors invoke/invoke-file/artifact 下载与 issue publish 端点行；docs/07 增 processor_artifact 表；docs/13 §3.5-5 处理器文件输入边界+S6 修订（文件 IO 面）+§3.9 exceljs 登记+攻击面表两行；登记册 data-processor 行 additive 扩展+变更记录；ADR-0002 Level 2 边界表增"文件输入输出"行；STATUS/JSON 同步。参考仓调研结论：fyt-data-mgs=句柄化上传（原始 body+安全文件名+配额）→白名单动作任务→每任务子进程 stdin/stdout JSON 桥→env 驱动输出目录隔离→结果清单去绝对路径→归属校验下载+TTL 清理；dsh=文件 seam+输出超限落盘预览+多层字节预算+注册可逆。P23 采纳：UUID per-invoke 目录、argv/env 传路径、产物登记表+TTL、三重上传校验 | docs/09 P23、docs/02/03/07/13、登记册、ADR-0002 |

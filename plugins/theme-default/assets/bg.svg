@@ -1,11 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480">
-  <!-- FlexForge 默认主题背景（P18 现代极简）：indigo-50 → zinc-50 对角淡洗；
-       渐变在 cover 拉伸下不失真，仅提供微弱材质 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600">
+  <!-- FlexForge 默认主题背景（P25 精修 1.1.2）：indigo→zinc 对角淡洗 + 24px 细网格
+       + 双柔光晕（indigo-100/200 低透明）。单一 viewBox 在 cover 拉伸下不失真；
+       网格用 pattern 随 viewBox 等比缩放。 -->
   <defs>
     <linearGradient id="wash" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#eef2ff"/>
       <stop offset="1" stop-color="#fafafa"/>
     </linearGradient>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#c7d2fe" stroke-width="0.5" opacity="0.35"/>
+    </pattern>
+    <radialGradient id="glowA" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#c7d2fe" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#c7d2fe" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#e0e7ff" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#e0e7ff" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect width="480" height="480" fill="url(#wash)"/>
+  <rect width="960" height="600" fill="url(#wash)"/>
+  <rect width="960" height="600" fill="url(#grid)"/>
+  <ellipse cx="790" cy="90" rx="330" ry="220" fill="url(#glowA)"/>
+  <ellipse cx="140" cy="520" rx="300" ry="200" fill="url(#glowB)"/>
 </svg>

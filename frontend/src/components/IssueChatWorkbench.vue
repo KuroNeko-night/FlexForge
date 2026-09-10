@@ -153,7 +153,7 @@ onMounted(load);
       <section v-if="!active" class="new-form" data-testid="new-requirement-form">
         <h3>描述你的需求</h3>
         <p class="new-hint">和 AI 一轮轮聊清楚，确认后推送给我方开发</p>
-        <form @submit.prevent="submitCreate">
+        <form class="ff-form-grid" @submit.prevent="submitCreate">
           <label class="field">
             标题
             <input
@@ -163,7 +163,7 @@ onMounted(load);
               required
             />
           </label>
-          <label class="field">
+          <label class="field field--full">
             想要什么
             <textarea
               v-model="form.description"
@@ -256,10 +256,6 @@ onMounted(load);
   gap: var(--ff-space-3);
 }
 .new-form {
-  max-width: 34rem;
-  /* P24 排版：窄表单居中，避免贴左半屏空白 */
-  margin-inline: auto;
-  width: 100%;
   display: flex;
   flex-direction: column;
   gap: var(--ff-space-2);
@@ -276,8 +272,11 @@ onMounted(load);
   display: flex;
   flex-direction: column;
   gap: var(--ff-space-1);
-  margin-bottom: var(--ff-space-3);
   font-size: var(--ff-text-sm);
+}
+/* 网格行距由 gap 提供（审查 P3-1：去 margin 叠加）；按钮不随网格列拉伸 */
+.new-form form .ff-btn {
+  justify-self: start;
 }
 .field input,
 .field textarea {
@@ -325,11 +324,11 @@ onMounted(load);
   border-radius: var(--ff-radius-md);
   background: var(--ff-primary-soft);
 }
-.confirm-card h4 {
+.confirm-card h4,
+.confirm-card p {
   margin: 0;
 }
 .confirm-card p {
-  margin: 0;
   white-space: pre-wrap;
 }
 .confirm-actions {

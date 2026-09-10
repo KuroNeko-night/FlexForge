@@ -75,7 +75,7 @@ onMounted(load);
 <template>
   <section class="audit-view" data-testid="audit-view">
     <header class="audit-header">
-      <h2>{{ t('audit.title', '审计日志') }}</h2>
+      <h2 class="ff-page-title">{{ t('audit.title', '审计日志') }}</h2>
       <BaseButton @click="load">{{ t('common.refresh', '刷新') }}</BaseButton>
     </header>
 

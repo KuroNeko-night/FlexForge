@@ -119,111 +119,118 @@ onMounted(load);
 <template>
   <section class="settings-view" data-testid="settings-view">
     <header class="settings-header">
-      <h2>{{ t('settings.title', '设置') }}</h2>
+      <h2 class="ff-page-title">{{ t('settings.title', '设置') }}</h2>
     </header>
 
-    <ComponentCard
-      :title="t('settings.language', '界面语言')"
-      :subtitle="t('settings.languageHint', '语言内容由 locale 插件分发，停用即回退中文基线')"
-    >
-      <p class="language-row">
-        {{ t('settings.currentLanguage', '当前语言') }} · {{ currentLabel }}
-      </p>
-      <div class="language-options" data-testid="language-options">
-        <BaseButton
-          v-for="option in languageOptions"
-          :key="option.value"
-          :variant="option.value === language ? 'primary' : undefined"
-          size="sm"
-          :data-lang="option.value"
-          @click="setLanguage(option.value)"
-        >
-          {{ option.label }}
-        </BaseButton>
-      </div>
-      <p class="hint">
-        {{
-          languageOptions.length > 1
-            ? t('settings.languageAvailable', '可选语言来自已激活的语言插件')
-            : t('settings.languagePluginMissing', '仅平台中文基线——安装语言插件后此处出现更多选项')
-        }}
-      </p>
-    </ComponentCard>
-
-    <p v-if="!isAdmin" class="hint">
-      {{ t('settings.aiContactAdmin', 'AI 模型配置请联系管理员。') }}
-    </p>
-    <StateView v-else-if="state !== 'ready'" :state="state" :message="error">
-      <p v-if="state === 'empty'">{{ t('settings.empty', '暂无可配置项') }}</p>
-    </StateView>
-    <ComponentCard
-      v-else
-      :title="t('settings.ai', 'AI 模型')"
-      :subtitle="t('settings.aiHint', 'Issue 澄清与规格生成的模型通道')"
-    >
-      <form class="ai-form" data-testid="ai-config-form" @submit.prevent="submit">
-        <label>
-          提供方
-          <select v-model="provider" data-testid="provider-select">
-            <option value="fixture">{{ t('settings.providerFixture', '离线演示') }}</option>
-            <option value="http">{{ t('settings.providerHttp', 'OpenAI 兼容接口') }}</option>
-          </select>
-        </label>
-        <template v-if="provider === 'http'">
-          <label>
-            Base URL
-            <input
-              v-model="baseUrl"
-              name="baseUrl"
-              placeholder="https://api.example.com/v1/chat/completions"
-              maxlength="500"
-              required
-            />
-          </label>
-          <label>
-            模型
-            <input
-              v-model="model"
-              name="model"
-              placeholder="gpt-4o-mini"
-              maxlength="100"
-              required
-            />
-          </label>
-        </template>
-        <label>
-          API Key
-          <input
-            v-model="apiKey"
-            name="apiKey"
-            type="password"
-            autocomplete="new-password"
-            maxlength="4096"
-            :disabled="clearKey"
-            :placeholder="keyPlaceholder"
-          />
-        </label>
-        <label v-if="config?.apiKeyConfigured" class="inline-option">
-          <input
-            v-model="clearKey"
-            type="checkbox"
-            data-testid="clear-key"
-            @change="onClearToggle"
-          />
-          {{ t('settings.clearKey', '清除已保存的密钥') }}
-        </label>
-        <p v-if="config?.apiKeyStale" class="form-error" role="alert">
-          {{ t('settings.keyStale', '已保存的密钥无法解密，请重新录入。') }}
+    <!-- P25：网格下沉到独立包装层——页头若跨全列（1/-1）会使 auto-fit 无法折叠
+         空轨道（跨全列项使所有轨道视为已用），卡片将无法均分全宽 -->
+    <div class="settings-grid">
+      <ComponentCard
+        :title="t('settings.language', '界面语言')"
+        :subtitle="t('settings.languageHint', '语言内容由 locale 插件分发，停用即回退中文基线')"
+      >
+        <p class="language-row">
+          {{ t('settings.currentLanguage', '当前语言') }} · {{ currentLabel }}
         </p>
-        <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
-        <p v-if="notice" class="op-notice" role="status">{{ notice }}</p>
-        <div class="drawer-actions">
-          <BaseButton type="submit" variant="primary" :disabled="saving">
-            {{ saving ? '保存中…' : '保存' }}
+        <div class="language-options" data-testid="language-options">
+          <BaseButton
+            v-for="option in languageOptions"
+            :key="option.value"
+            :variant="option.value === language ? 'primary' : undefined"
+            size="sm"
+            :data-lang="option.value"
+            @click="setLanguage(option.value)"
+          >
+            {{ option.label }}
           </BaseButton>
         </div>
-      </form>
-    </ComponentCard>
+        <p class="hint">
+          {{
+            languageOptions.length > 1
+              ? t('settings.languageAvailable', '可选语言来自已激活的语言插件')
+              : t(
+                  'settings.languagePluginMissing',
+                  '仅平台中文基线——安装语言插件后此处出现更多选项',
+                )
+          }}
+        </p>
+      </ComponentCard>
+
+      <p v-if="!isAdmin" class="hint">
+        {{ t('settings.aiContactAdmin', 'AI 模型配置请联系管理员。') }}
+      </p>
+      <StateView v-else-if="state !== 'ready'" :state="state" :message="error">
+        <p v-if="state === 'empty'">{{ t('settings.empty', '暂无可配置项') }}</p>
+      </StateView>
+      <ComponentCard
+        v-else
+        :title="t('settings.ai', 'AI 模型')"
+        :subtitle="t('settings.aiHint', 'Issue 澄清与规格生成的模型通道')"
+      >
+        <form class="ai-form" data-testid="ai-config-form" @submit.prevent="submit">
+          <label>
+            提供方
+            <select v-model="provider" data-testid="provider-select">
+              <option value="fixture">{{ t('settings.providerFixture', '离线演示') }}</option>
+              <option value="http">{{ t('settings.providerHttp', 'OpenAI 兼容接口') }}</option>
+            </select>
+          </label>
+          <template v-if="provider === 'http'">
+            <label>
+              Base URL
+              <input
+                v-model="baseUrl"
+                name="baseUrl"
+                placeholder="https://api.example.com/v1/chat/completions"
+                maxlength="500"
+                required
+              />
+            </label>
+            <label>
+              模型
+              <input
+                v-model="model"
+                name="model"
+                placeholder="gpt-4o-mini"
+                maxlength="100"
+                required
+              />
+            </label>
+          </template>
+          <label>
+            API Key
+            <input
+              v-model="apiKey"
+              name="apiKey"
+              type="password"
+              autocomplete="new-password"
+              maxlength="4096"
+              :disabled="clearKey"
+              :placeholder="keyPlaceholder"
+            />
+          </label>
+          <label v-if="config?.apiKeyConfigured" class="inline-option">
+            <input
+              v-model="clearKey"
+              type="checkbox"
+              data-testid="clear-key"
+              @change="onClearToggle"
+            />
+            {{ t('settings.clearKey', '清除已保存的密钥') }}
+          </label>
+          <p v-if="config?.apiKeyStale" class="form-error" role="alert">
+            {{ t('settings.keyStale', '已保存的密钥无法解密，请重新录入。') }}
+          </p>
+          <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
+          <p v-if="notice" class="op-notice" role="status">{{ notice }}</p>
+          <div class="drawer-actions">
+            <BaseButton type="submit" variant="primary" :disabled="saving">
+              {{ saving ? '保存中…' : '保存' }}
+            </BaseButton>
+          </div>
+        </form>
+      </ComponentCard>
+    </div>
   </section>
 </template>
 
@@ -232,9 +239,14 @@ onMounted(load);
   display: flex;
   flex-direction: column;
   gap: var(--ff-space-4);
-  /* P24 排版：设置列收宽居中，避免宽屏贴左半屏空白 */
-  max-width: 46rem;
-  margin-inline: auto;
+}
+.settings-grid {
+  /* P25 排版：卡片多列均匀分布（auto-fit 折叠空轨道；页头留在网格外，
+     跨全列项会阻止轨道折叠——审查复验发现） */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr));
+  gap: var(--ff-space-4);
+  align-items: start;
 }
 .settings-header {
   display: flex;

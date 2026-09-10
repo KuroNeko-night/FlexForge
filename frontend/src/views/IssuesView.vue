@@ -105,7 +105,7 @@ onMounted(load);
     <IssueChatWorkbench v-if="userOnly" />
     <template v-else>
       <header class="issues-header">
-        <h2>{{ t('issues.title', 'Issue 工作台') }}</h2>
+        <h2 class="ff-page-title">{{ t('issues.title', 'Issue 工作台') }}</h2>
         <div class="issues-actions">
           <label class="filter-label">
             状态

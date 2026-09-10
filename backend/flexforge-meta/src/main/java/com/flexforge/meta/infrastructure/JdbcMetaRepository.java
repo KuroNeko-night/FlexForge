@@ -211,7 +211,17 @@ public class JdbcMetaRepository implements MetaRepository {
     }
 
     private static JsonNode parse(String raw) {
-        return raw == null ? null : JSON.readTree(raw);
+        if (raw == null) {
+            return null;
+        }
+        JsonNode node = JSON.readTree(raw);
+        // 空对象归一为 null（P25 缺陷修复）：历史插件注册曾把缺省值/校验写成 '{}'，
+        // 缺省值 {} 会以对象进入表单预填渲染为 "[object Object]"；空对象与 null
+        // 语义等价（无规则/无默认），读侧归一兼容存量行（V017 另行清理数据）
+        if (node.isObject() && node.isEmpty()) {
+            return null;
+        }
+        return node;
     }
 
     private static String jsonOf(JsonNode node) {
