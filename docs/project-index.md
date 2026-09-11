@@ -12,8 +12,8 @@
 
 ```text
 FlexForge/
-├── README.md                  项目入口（英文主文档）：能力/快速启动/架构/质量
-├── README.zh-CN.md            README 中文副本（与英文同构）
+├── README.md                  项目入口（英文主文档，常规开源项目式：徽章墙/特性/快速开始/技术栈/架构/路线图）
+├── README.zh-CN.md            README 中文副本（与英文同构，居中徽章墙+锚点导航）
 ├── STATUS.md                  进度唯一锚点（当前阶段/下一步/阻塞）
 ├── AGENTS.md                  Agent 每轮注入入口（文档路由 + 持久约束）
 ├── CONTRIBUTING.md            人的开发流程

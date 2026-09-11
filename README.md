@@ -1,105 +1,147 @@
+<div align="center">
+
 # FlexForge
 
+**A metadata-driven, plugin-extensible data management platform.**
+
+Define your data model once — get CRUD pages, workflows and dashboards for free.
+Extend everything with plugins: entities, views, themes, languages, data processors.
+
 [![CI](https://github.com/KuroNeko-night/FlexForge/actions/workflows/ci.yml/badge.svg)](https://github.com/KuroNeko-night/FlexForge/actions/workflows/ci.yml)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
+[![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+[![Spring Boot](https://img.shields.io/badge/Spring_0Boot-3-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Java 17](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)](https://openjdk.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Flyway](https://img.shields.io/badge/Flyway-CC0200?logo=flyway&logoColor=white)](https://flywaydb.org/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Vitest](https://img.shields.io/badge/Vitest-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Testcontainers](https://img.shields.io/badge/Testcontainers-1EC66F?logo=testcontainers&logoColor=white)](https://testcontainers.com/)
+
+[Getting Started](#getting-started) · [Features](#features) · [Screenshots](#screenshots) · [Tech Stack](#tech-stack) · [Architecture](#architecture) · [Documentation](#documentation)
 
 **English** | [简体中文](./README.zh-CN.md)
 
-FlexForge is a **metadata-driven, plugin-extensible data management platform**: describe a business entity once, and the platform generates its full CRUD surface at runtime; package metadata, views, themes, locales and data processors as declarative plugins; turn raw requirements into installable plugin skeletons through an AI-assisted clarification pipeline.
+</div>
 
-Born as a graduation design project, it is built with production-shaped engineering discipline — a 21-check repository health gate, contract tests on every extension point, and failure-path tests on every permission, migration and plugin operation.
+---
 
-![Workbench](docs/assets/screenshot-workbench.png)
+## What is FlexForge?
 
-## Highlights
+FlexForge lets a small team run business data without hand-writing pages:
 
-- **Metadata-driven dynamic CRUD** — define entities and fields in the Data Model page (or ship them with a plugin); list / create / edit / detail pages, table & kanban views, validation, CSV/XLSX export are generated at runtime. No page code per entity.
-- **Declarative plugin runtime** — Level 1 packages declare resources only (navigation, entities, views, migrations, themes, locales, presets); Level 2 packages may additionally ship sandboxed Python data processors (table → table / chart / file artifacts). Same-version immutability, dependency-checked activation, reversible uninstall.
-- **Issue → AI → plugin pipeline** — users describe a need in a chat workspace; the AI (offline fixture by default, or any OpenAI-compatible API such as DeepSeek) clarifies it into a structured, schema-validated spec; developers review, preview and generate an installable plugin skeleton.
-- **Themes & languages are plugins too** — the skeleton stays neutral; a default and a warm theme ship as Level 1 packages, and the UI ships with a Chinese baseline plus English / Japanese / French / Spanish language packs (352 keys each). Disabling a pack falls back to the baseline.
-- **Admin plane** — role-based access (ADMIN / DEVELOPER / USER), user management with batch block/unblock, a filterable audit log, plugin presets (save & restore activation sets), inline charts and file tools.
+- **Admins** define entities and fields in the Data Model page — list / create / edit / detail pages, table & kanban views, validation and CSV/XLSX export are generated at runtime.
+- **Developers** package metadata, views, themes, language packs and Python data processors as versioned plugins, activated with dependency checks and reversible uninstall.
+- **Users** describe needs in a chat workspace; an AI assistant (offline fixture, or any OpenAI-compatible API such as DeepSeek) shapes them into validated specs, from which a reviewable plugin skeleton is generated.
 
-![Plugins](docs/assets/screenshot-plugins.png)
+The platform itself stays neutral: themes and languages ship as plugins too, and every UI language of the interface (English, Japanese, French, Spanish on top of the Chinese baseline) is just another package you can toggle.
 
-## Quick Start (Docker)
+## Screenshots
 
-Prerequisites: Docker Desktop (with Compose). Ports default to `8088` (API) and `5173` (UI), bound to `127.0.0.1` only.
+| Workbench | Plugin Management |
+|:---:|:---:|
+| ![Workbench](docs/assets/screenshot-workbench.png) | ![Plugins](docs/assets/screenshot-plugins.png) |
+
+## Features
+
+- 🧩 **Declarative plugins** — Level 1 packages declare resources only (navigation, entities, views, migrations, themes, locales, presets); Level 2 packages add sandboxed Python data processors (table → table / chart / file artifacts).
+- 🗂 **Metadata-driven CRUD** — runtime-generated pages for every entity, no per-entity page code; table and kanban presentations; paged queries over JSONB with parameterized, whitelisted SQL.
+- 🤖 **AI requirement pipeline** — chat-based clarification → schema-validated structured spec → plugin skeleton preview & generation; manual review before activation by design.
+- 🎨 **Themes & i18n as plugins** — default and warm themes; four language packs (352 keys each) over a Chinese baseline, falling back automatically when disabled.
+- 🔐 **Security-first** — JWT + role-based access (ADMIN / DEVELOPER / USER), full audit log, batch user operations, plugin packages fully validated at import, processors sandboxed with stripped env / byte caps / hard timeouts.
+- 🩺 **Upstream-aware AI config** — model endpoints are probed (`GET {base}/models`) before saving; outbound URLs are guarded against loopback/private/reserved addresses.
+- 📊 **Charts & file tools** — token-palette Chart.js rendering and file in/file out processors exposed on dedicated tool pages.
+
+## Getting Started
+
+### Run with Docker
 
 ```bash
 cp .env.example .env          # set AUTH_JWT_SECRET and a bootstrap admin password
 docker compose up -d --build  # PostgreSQL 17 + backend + frontend
 
 curl http://127.0.0.1:8088/actuator/health   # expect {"status":"UP"}
-# open http://127.0.0.1:5173
 ```
 
-Import the demo plugins (business examples, themes, language packs) from the [`plugins/`](./plugins) directory by dragging the zipped package (or the directory contents zipped) onto the upload area of the **Plugins** page, then toggle them on. Switch the interface language in **Settings**.
+Then open **http://127.0.0.1:5173**, sign in with the bootstrap admin, and drag plugin packages from the [`plugins/`](./plugins) directory into the **Plugins** page to import the demo apps, themes and language packs.
 
-Without Docker: `cd backend && ./mvnw -pl flexforge-app -am spring-boot:run` and `cd frontend && VITE_PROXY_TARGET=http://127.0.0.1:8088 npm run dev`.
+### Run locally
+
+```bash
+# backend (Spring Boot, port 8080 by default)
+cd backend && ./mvnw -pl flexforge-app -am spring-boot:run
+
+# frontend (Vite dev server, proxies to the backend)
+cd frontend && npm ci
+VITE_PROXY_TARGET=http://127.0.0.1:8080 npm run dev
+```
+
+### Tests & checks
+
+```bash
+cd backend && ./mvnw verify                 # unit + Testcontainers integration tests
+cd frontend && npm run test                # Vitest component/unit tests
+node scripts/check-repo-health.mjs          # full local gate, same as CI
+```
+
+## Tech Stack
+
+| Layer | Choices |
+| --- | --- |
+| Frontend | Vue 3.5 · TypeScript 5.9 · Vite 8 · Vue Router · Chart.js 4 · self-hosted fonts (no CDN) |
+| Backend | Java 17 · Spring Boot 3 · Spring Security (JWT) · JdbcTemplate · Flyway |
+| Database | PostgreSQL 17 (JSONB dynamic record storage) |
+| Plugin runtime | Declarative JSON manifests · zip packages · Python 3 subprocess sandbox (Level 2) |
+| Quality | Vitest · JUnit 5 · Testcontainers · ESLint/Prettier · Checkstyle · GitHub Actions CI |
+| Delivery | Docker Compose · GitHub Actions image build |
 
 ## Architecture
 
-Modular monolith: one deployable Spring Boot app, one Vue 3 SPA, one database — with strict internal module boundaries and dependency-direction rules (docs/10).
+Modular monolith — one deployable Spring Boot app, one Vue 3 SPA, one database, with strict internal module boundaries:
 
 ```
 backend/
-  flexforge-common    # cross-cutting API (audit port, PublicApi marker, errors)
-  flexforge-auth      # JWT auth, roles, user management, batch ops
-  flexforge-meta      # metadata entities/fields/views + dynamic record storage
-  flexforge-data      # record query/write over JSONB, parameterized & whitelisted
-  flexforge-plugin    # package import/validation, activation lifecycle, presets
-  flexforge-runtime   # frontend-facing asset registry (signed URLs, themes, locales)
-  flexforge-issue     # issue workflow, AI clarification, spec revisions, publish
-  flexforge-ai        # model ports (fixture/http), prompts, spec schema, generator
-  flexforge-app       # assembly: controllers, filters, exception mapping, tests
+  flexforge-common    cross-cutting API (audit port, errors)
+  flexforge-auth      JWT auth, roles, user management, batch ops
+  flexforge-meta      metadata entities/fields/views
+  flexforge-data      record query/write over JSONB (parameterized, whitelisted)
+  flexforge-plugin    package import/validation, activation lifecycle, presets
+  flexforge-runtime   frontend-facing asset registry (signed URLs, themes, locales)
+  flexforge-issue     issue workflow, AI clarification, spec revisions
+  flexforge-ai        model ports (fixture/http), prompts, spec schema, generator
+  flexforge-app       assembly: controllers, filters, exception mapping
+
 frontend/
-  src/registry/       # menu / renderer / theme / locale / layout / record-action registries
-  src/components/     # renderers, workbench, issue workspace, plugin & admin UI
-  src/views/          # route views (workbench, data model, plugins, users, audit, tools…)
-plugins/              # Level 1/2 packages: example business apps, themes, locales
-database/migrations/  # Flyway baseline (V001…) — plugins carry their own migrations
+  src/registry/       menu / renderer / theme / locale / layout / record-action registries
+  src/components/     renderers, workbench, issue workspace, plugin & admin UI
+  src/views/          route views (workbench, data model, plugins, users, audit, tools…)
+
+plugins/              example business apps, themes, language packs (Level 1/2)
+database/migrations/  Flyway baseline — plugins carry their own migrations
 ```
 
-Every extension surface (navigation, entity, view, renderer, theme asset, locale, record action, data processor) is registered in [docs/extension-points.md](./docs/extension-points.md) and validated at import; unknown contributions are rejected.
-
-## Security & Quality
-
-- Security baseline [docs/13](./docs/13-security-baseline.md): input validation everywhere, parameterized dynamic SQL with whitelist-only identifiers, plugin packages fully validated (schema/path/size/kind), Level 2 processors run in a locked-down subprocess (env stripped, byte caps, hard timeouts), secrets only via environment / encrypted storage, audit on every privileged operation.
-- AI configuration is saved only after the upstream passes a reachability probe (`GET {base}/models`); outbound URLs are guarded against loopback/private/reserved addresses.
-- One command runs the full local gate (format, lint, type-check, unit & integration tests, build, governance rules) — the same entry point CI uses:
-
-```bash
-node scripts/check-repo-health.mjs   # 21 checks
-```
-
-- CI (GitHub Actions): secret scan, repo health, backend build+tests (Testcontainers), frontend build+tests, dependency audit, Docker image build.
-- Backend tests run against a real PostgreSQL via Testcontainers — including every plugin lifecycle failure path.
+All extension surfaces are registered in the [extension-point registry](./docs/extension-points.md) and validated at import; unknown contributions are rejected.
 
 ## Status
 
-All 27 planned stages (P00–P26) are complete; the project is in `release_candidate` maintenance. Stage history and the current anchor live in [STATUS.md](./STATUS.md); the per-stage acceptance criteria in [docs/09](./docs/09-detailed-implementation-plan.md).
+Initial development complete (`v0.1.0`) — all planned features delivered and covered by tests, under maintenance. See the [docs](#documentation) for design details and [STATUS.md](./STATUS.md) for the development log.
+
+## Roadmap
+
+- Dark theme and theme editor
+- Open plugin package format documentation for third-party authors
+- More language packs and community translations
+- Deployment hardening guide (TLS, external PostgreSQL)
 
 ## Documentation
 
-| Doc | Contents |
-| --- | --- |
-| [STATUS.md](./STATUS.md) | Current stage anchor & progress log |
-| [docs/00](./docs/00-feasibility-review.md) · [01](./docs/01-project-plan.md) · [09](./docs/09-detailed-implementation-plan.md) | Feasibility review, project plan, staged implementation plan |
-| [docs/02](./docs/02-requirements.md) · [03](./docs/03-architecture.md) · [04](./docs/04-test-strategy.md) | Requirements (FR/NFR), architecture, test strategy |
-| [docs/07](./docs/07-plugin-runtime-data-model.md) · [docs/extension-points.md](./docs/extension-points.md) | Plugin runtime data model & extension-point registry |
-| [docs/10](./docs/10-engineering-governance.md) · [docs/13](./docs/13-security-baseline.md) | Engineering governance & security baseline |
-| [docs/11](./docs/11-regression-test-plan.md) · [docs/12](./docs/12-thesis-experiment-plan.md) | Regression plan, thesis experiment plan |
-| [docs/project-index.md](./docs/project-index.md) · [docs/05](./docs/05-documentation-guide.md) · [docs/repository-maintenance.md](./docs/repository-maintenance.md) · [docs/coding-standards.md](./docs/coding-standards.md) | File-level index, doc guide, repo rules, coding standards |
-| [ADR 0001–0005](./docs/adr/0001-mvp-architecture.md) | Architecture decision records |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | How to contribute |
+- [Requirements](./docs/02-requirements.md) · [Architecture](./docs/03-architecture.md) · [Test strategy](./docs/04-test-strategy.md)
+- [Plugin runtime data model](./docs/07-plugin-runtime-data-model.md) · [Extension points](./docs/extension-points.md)
+- [Security baseline](./docs/13-security-baseline.md) · [Engineering governance](./docs/10-engineering-governance.md)
+- [Project plan](./docs/01-project-plan.md) · [Implementation stages](./docs/09-detailed-implementation-plan.md) · [Development log](./STATUS.md)
+- [Contributing](./CONTRIBUTING.md)
 
-## MVP in One Sentence
+---
 
-An administrator defines a business entity and its fields, and the system generates working CRUD pages; a developer packages metadata and configuration as a plugin; a user files a requirement as an Issue, which the AI shapes into a structured spec and an installable plugin skeleton — reviewed by a human before activation.
-
-## Non-Goals
-
-No full ERP, no general-purpose BPMN, no open plugin marketplace, no multi-tenant SaaS, no arbitrary JS/Java sandbox, no unattended production releases — deliberately out of scope for this project, kept as future directions.
+<p align="center">Built with Vue · Spring Boot · PostgreSQL</p>
