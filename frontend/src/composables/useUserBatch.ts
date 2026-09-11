@@ -105,7 +105,7 @@ async function runBatch(
   ctx.batchNotice.value = null;
   try {
     const updated = await batchUpdateStatus([...ctx.selectedIds.value], status);
-    ctx.batchNotice.value = `${t('common.donePrefix', '已')}${status === 'BLOCKED' ? t('plugins.stopAction', '停用') : t('plugins.enableAction', '启用')} ${updated.length} 个账号`;
+    ctx.batchNotice.value = `${t('common.donePrefix', '已')}${status === 'BLOCKED' ? t('plugins.stopAction', '停用') : t('plugins.enableAction', '启用')} ${updated.length} ${t('users.batchDoneUnit', '个账号')}`;
     ctx.clear();
     await ctx.reload();
   } catch (e) {

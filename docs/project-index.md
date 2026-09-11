@@ -87,7 +87,7 @@ FlexForge/
 │   ├── example-purchase/           采购订单示例包（P19：decimal 金额字段形态+幂等种子）
 │   ├── example-safety/             安全隐患示例包（P19：整改闭环状态看板+幂等种子）
 │   ├── example-analytics/          表格分析处理器包（P20：capabilityLevel=2，三个 Python 数据处理器——月度透视/合格率/负载汇总，纯标准库）
-│   ├── locale-en/                  英文语言包（P15 起；P26 升 1.1.0 全键集 344 键——系统 chrome 全覆盖，剔插件内容键）
+│   ├── locale-en/                  英文语言包（P15 起；P26 升版全键集——系统 chrome 全覆盖，剔插件内容键）
 │   ├── locale-ja/                  日文语言包（P26：与 en 同键集，FR-SETUP-02）
 │   ├── locale-fr/                  法文语言包（P26：与 en 同键集）
 │   ├── locale-es/                  西班牙文语言包（P26：与 en 同键集）

@@ -58,6 +58,14 @@ const blockedCount = computed(() => users.value.filter((u) => u.status === 'BLOC
 const visibleUsers = computed(() =>
   showBlocked.value ? users.value : users.value.filter((u) => u.status !== 'BLOCKED'),
 );
+/** 开关收起时同步裁剪隐藏行的存量勾选（审查 P3-8）。 */
+function toggleBlocked(): void {
+  showBlocked.value = !showBlocked.value;
+  if (!showBlocked.value) {
+    batch.prune(visibleUsers.value.map((user) => user.id));
+  }
+}
+
 const selectableIds = computed(() =>
   visibleUsers.value.filter((u) => u.id !== selfId.value).map((u) => u.id),
 );
@@ -148,11 +156,7 @@ onMounted(load);
     <header class="users-header">
       <h2 class="ff-page-title">{{ t('users.title', '用户管理') }}</h2>
       <div class="users-header-actions">
-        <BaseButton
-          v-if="blockedCount > 0"
-          data-testid="toggle-blocked"
-          @click="showBlocked = !showBlocked"
-        >
+        <BaseButton v-if="blockedCount > 0" data-testid="toggle-blocked" @click="toggleBlocked">
           {{
             showBlocked
               ? t('users.hideBlocked', '收起已封禁')

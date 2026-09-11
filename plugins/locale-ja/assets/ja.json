@@ -347,6 +347,11 @@
     "issues.transition.CLOSED": "クローズ",
     "action.record.detail": "詳細",
     "action.record.edit": "編集",
-    "action.record.delete": "削除"
+    "action.record.delete": "削除",
+    "issues.generateConfirmBody": "現在の仕様からプラグイン雛形を生成し、自動で有効化してテスト環境に入ります。",
+    "issues.transitionConfirmPrefix": "",
+    "issues.transitionConfirmSuffix": "の状態を",
+    "users.batchDoneUnit": "件のアカウント",
+    "common.creating": "作成中…"
   }
 }

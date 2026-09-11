@@ -616,8 +616,8 @@
 
 - **A. 界面净化**：`PluginsView` 列表默认只显示启用中插件+"显示已停用"切换（停用数角标）；`UsersView` 默认隐藏 BLOCKED+"显示已封禁"切换；live 清理（终验执行）：gen.*/e2e.* 插件停用或卸载、demo 双账号封禁、demo_material_* 实体禁用、demo issues 关闭归档。
 - **B. 系统多语言**：全系统视图文案接 `t()`（Workbench 侧栏平台菜单键映射/Issue 双端/Plugins/Users/Audit/Tools/DynamicEntity+Form/Placeholder/UserBatchBar/通知）；`localeRegistry` LANGUAGE_LABELS 扩 ja/fr/es；locale-en 1.0.3→1.1.0（全键集+剔除 menu.example.* 插件内容键）；新增 locale-ja/locale-fr/locale-es 1.0.0 语言包插件。
-- **C. AI 上游探活**：`ModelUrlGuard`（保存路径 URL 守卫）+`ModelHealthProbe`/`HttpModelHealthProbe`（GET /models，10s 超时，模型在列校验，2xx 非法 JSON 视为可达）；`AiConfigService.update` 编排（守卫→探活→落库，失败审计 ai.config/failure）；`HttpModelPort` 端点规范化（根地址拼 /chat/completions，旧端点值兼容）；设置页 hint 更新官方口径示例。
-- **测试**：后端——ModelUrlGuardTest（拒绝族）、HttpModelHealthProbeTest（本地 HttpServer：列表含/不含模型、401、超时）、AiConfigServiceTest（探活失败不落库+审计失败、守卫拒绝、成功路径）、AiConfigApiTest（app 级 400 失败路径）；前端——默认过滤/切换开关用例、语言包键集一致性校验（en/ja/fr/es 同键、不含 menu.example.*）、平台菜单键映射用例；既有 204 例回归（zh 基线 fallback 不破断言）。
+- **C. AI 上游探活**：`ModelUrlGuard`（保存路径 URL 守卫）+`ModelConfigGate`/`HttpModelConfigGate`（GET /models，10s 超时，模型在列校验，2xx 非法 JSON 视为可达）；`AiConfigService.update` 编排（守卫→探活→落库，失败审计 ai.config/failure）；`HttpModelPort` 端点规范化（根地址拼 /chat/completions，旧端点值兼容）；设置页 hint 更新官方口径示例。
+- **测试**：后端——ModelUrlGuardTest（拒绝族）、HttpModelConfigGateTest（本地 HttpServer：列表含/不含模型、401、超时）、AiConfigServiceTest（探活失败不落库+审计失败、守卫拒绝、成功路径）、AiConfigProbeApiTest（app 级 400 失败路径）；前端——默认过滤/切换开关用例、语言包键集一致性校验（en/ja/fr/es 同键、不含 menu.example.*）、平台菜单键映射用例；既有 204 例回归（zh 基线 fallback 不破断言）。
 
 ### 验收标准
 

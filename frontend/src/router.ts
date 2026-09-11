@@ -41,7 +41,7 @@ export const router = createRouter({
           path: 'meta/entities',
           name: 'meta-placeholder',
           component: PlaceholderView,
-          props: { title: '数据模型' },
+          props: { title: '数据模型', titleKey: 'menu.data-model' },
         },
         {
           path: 'plugins',

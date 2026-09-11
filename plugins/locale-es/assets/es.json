@@ -347,6 +347,11 @@
     "issues.transition.CLOSED": "Cerrar",
     "action.record.detail": "Detalles",
     "action.record.edit": "Editar",
-    "action.record.delete": "Eliminar"
+    "action.record.delete": "Eliminar",
+    "issues.generateConfirmBody": "El esqueleto del plugin se generará según la especificación actual y se activará automáticamente en pruebas.",
+    "issues.transitionConfirmPrefix": "",
+    "issues.transitionConfirmSuffix": ": cambiar el estado a ",
+    "users.batchDoneUnit": "cuentas",
+    "common.creating": "Creando…"
   }
 }

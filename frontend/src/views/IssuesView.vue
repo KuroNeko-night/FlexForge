@@ -183,7 +183,7 @@ onMounted(load);
           <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
           <div class="drawer-actions">
             <BaseButton type="submit" variant="primary" :disabled="creating">
-              {{ creating ? t('users.creating', '创建中…') : t('common.create', '创建') }}
+              {{ creating ? t('common.creating', '创建中…') : t('common.create', '创建') }}
             </BaseButton>
             <BaseButton variant="ghost" @click="drawerOpen = false">{{
               t('common.cancel', '取消')

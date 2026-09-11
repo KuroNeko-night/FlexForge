@@ -58,8 +58,10 @@ public final class ModelUrlGuard {
                 ? host.substring(1, host.length() - 1) : host;
     }
 
+    /** IP 字面量形态：IPv4 点分/纯数字（十进制 32 位整数——JVM 同样解析为字面量，审查 P1）/IPv6 含冒号。 */
     private static boolean isIpLiteral(String host) {
-        return host.contains(":") || host.matches("\\d{1,3}(\\.\\d{1,3}){3}");
+        return host.contains(":") || host.matches("\\d{1,3}(\\.\\d{1,3}){3}")
+                || host.matches("^\\d+$");
     }
 
     /** IP 字面量必须可解析且非环回/私有/链路本地/任意本地/多播/保留段。 */

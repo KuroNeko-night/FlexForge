@@ -347,6 +347,11 @@
     "issues.transition.CLOSED": "Close",
     "action.record.detail": "Details",
     "action.record.edit": "Edit",
-    "action.record.delete": "Delete"
+    "action.record.delete": "Delete",
+    "issues.generateConfirmBody": "The plugin skeleton will be generated from the current spec and activated into testing.",
+    "issues.transitionConfirmPrefix": "Transition",
+    "issues.transitionConfirmSuffix": "to status",
+    "users.batchDoneUnit": "accounts",
+    "common.creating": "Creating…"
   }
 }

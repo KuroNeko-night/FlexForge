@@ -175,7 +175,7 @@ async function submitGenerate(): Promise<void> {
     <ConfirmDialog
       :open="pendingTarget !== null"
       :title="pendingTarget ? transitionLabel(pendingTarget) : ''"
-      :message="`将 ${issue.title} 的状态迁移为${pendingTarget ? transitionLabel(pendingTarget) : ''}？`"
+      :message="`${t('issues.transitionConfirmPrefix', '将')} ${issue.title} ${t('issues.transitionConfirmSuffix', '的状态迁移为')}${pendingTarget ? transitionLabel(pendingTarget) : ''}？`"
       :confirm-label="pendingTarget ? transitionLabel(pendingTarget) : t('common.confirm', '确认')"
       require-reason
       :reason-label="t('issues.reason', '原因')"
@@ -186,9 +186,11 @@ async function submitGenerate(): Promise<void> {
     />
     <ConfirmDialog
       :open="confirmingGenerate"
-      title="生成并激活"
-      message="将按当前规格生成插件骨架，并自动激活进入测试环境。"
-      confirm-label="生成并激活"
+      :title="t('issues.generateActivate', '生成并激活')"
+      :message="
+        t('issues.generateConfirmBody', '将按当前规格生成插件骨架，并自动激活进入测试环境。')
+      "
+      :confirm-label="t('issues.generateActivate', '生成并激活')"
       :busy="generating"
       @confirm="submitGenerate"
       @cancel="confirmingGenerate = false"

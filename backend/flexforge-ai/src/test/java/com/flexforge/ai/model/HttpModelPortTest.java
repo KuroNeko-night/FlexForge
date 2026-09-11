@@ -33,12 +33,18 @@ class HttpModelPortTest {
 
     @Test
     void okResponseParsedToReply() throws IOException {
-        startServer(exchange -> respond(exchange, 200, "{\"choices\":[{\"message\":"
-                + "{\"content\":\"{\\\"questions\\\":[\\\"q1\\\"]}\"}}]}"));
-        HttpModelPort port = new HttpModelPort("http://localhost:" + port(), "test-model",
+        // 审查 P3-11：根地址 baseUrl 必须实际拼出 /chat/completions（桩断言请求路径）
+        java.util.concurrent.atomic.AtomicReference<String> seenPath = new java.util.concurrent.atomic.AtomicReference<>();
+        startServer(exchange -> {
+            seenPath.set(exchange.getRequestURI().getPath());
+            respond(exchange, 200, "{\"choices\":[{\"message\":"
+                    + "{\"content\":\"{\\\"questions\\\":[\\\"q1\\\"]}\"}}]}");
+        });
+        HttpModelPort port = new HttpModelPort("http://localhost:" + port() + "/v1", "test-model",
                 "test-key");
         ModelPort.ModelReply reply = port.complete(new ModelPort.ModelRequest("v1", "p"));
         assertThat(reply.text()).isEqualTo("{\"questions\":[\"q1\"]}");
+        assertThat(seenPath.get()).isEqualTo("/v1/chat/completions");
     }
 
     @Test

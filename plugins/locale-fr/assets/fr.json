@@ -347,6 +347,11 @@
     "issues.transition.CLOSED": "Fermer",
     "action.record.detail": "Détails",
     "action.record.edit": "Modifier",
-    "action.record.delete": "Supprimer"
+    "action.record.delete": "Supprimer",
+    "issues.generateConfirmBody": "Le squelette du plugin sera généré selon la spécification actuelle, puis activé automatiquement en test.",
+    "issues.transitionConfirmPrefix": "",
+    "issues.transitionConfirmSuffix": "— faire passer le statut à ",
+    "users.batchDoneUnit": "comptes",
+    "common.creating": "Création…"
   }
 }

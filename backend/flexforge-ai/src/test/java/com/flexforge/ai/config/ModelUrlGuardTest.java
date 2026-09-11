@@ -56,6 +56,18 @@ class ModelUrlGuardTest {
     }
 
     @Test
+    void rejectsDecimalIpLiteralEncodings() {
+        // 审查 P1：纯数字 32 位整数主机被 JVM 解析为 IP 字面量（2130706433=127.0.0.1，
+        // 3232235521=192.168.0.1）——不得按主机名放行交 DNS
+        assertThatThrownBy(() -> ModelUrlGuard.requireFetchable("http://2130706433"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("环回");
+        assertThatThrownBy(() -> ModelUrlGuard.requireFetchable("http://3232235521:9"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("私有");
+    }
+
+    @Test
     void rejectsBadSchemeAndMalformedInput() {
         assertThatThrownBy(() -> ModelUrlGuard.requireFetchable("ftp://api.example.com"))
                 .isInstanceOf(IllegalArgumentException.class)
