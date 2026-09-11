@@ -3,11 +3,11 @@
   "updatedAt": "2026-09-11",
   "currentStageId": "P26",
   "currentStageName": "界面净化、系统多语言与 AI 上游探活",
-  "status": "in_progress",
+  "status": "completed",
   "progressPercent": 100,
   "owner": "project-maintainer",
-  "nextAction": "P26 实施中（2026-09-11 用户验收裁决三项，docs/09 P26）：①界面净化——用户管理默认隐藏 BLOCKED+插件管理默认折叠已停用（带开关，纯前端过滤）+live 清理演示/调试残留（gen.*/e2e.* 插件、demo 账号/issues/实体）；②系统多语言——系统文案全面接 t()（P15 后增量扫尾）、locale-en 1.1.0（剔插件内容键）、新增 ja/fr/es 语言包插件（只翻译系统 chrome，插件内容不翻译）；③AI 上游探活——PUT /ai/config 保存时 GET {base}/models 探活（DeepSeek 官方口径：根地址拼 /chat/completions），不可用 400 报错上抛不落库+URL 守卫（拒环回/私有/保留）",
-  "exitGate": "计划出口证据（docs/09 P26 验收标准）：①插件页默认无停用卡片/用户页默认无 BLOCKED（开关可见）、live 清理后侧栏无 fixture 菜单+工作台无 demo 实体；②切 en/ja/fr/es 系统 chrome 全量换语言无大片回退、插件内容保持原文、停用回退基线；③http 保存探活失败 400 含上游原因且配置未变、fixture 直接过、DeepSeek 口径可通过、旧端点存量兼容；S1-S9 不破+失败路径测试；前端回归全绿+门禁 21/1/0+CI 六项；docs（02/03/09/13/索引/STATUS/JSON）同步；交叉审查独立子代理执行",
+  "nextAction": "P00-P26 全阶段完成（进度 100%，release_candidate 维护期）：待用户验收 P26 三项（界面净化/系统多语言/AI 上游探活）或裁决新增阶段",
+  "exitGate": "P26 出口复核通过（2026-09-11）：①界面净化——插件页默认无 e2e.*/gen.* 卡片（\"显示已停用（5）\"开关）、用户页默认无 BLOCKED（17 隐藏仅 3 活跃，\"显示已封禁\"开关）、侧栏无\"fixture 澄清规格\"、工作台无 demo_material；live 清理执行（gen.i7f3 停用/e2e×2 卸载/demo-developer+demo-user+p23bug 封禁/demo_material 实体禁用/demo issues 5 CLOSED+7 RETURNED——无规格者不能批准达终态，按 RETURNED 归档为已知限制）；临时号 p26walk/p26iss×3 用后封禁。②系统多语言——352 键×四包（locale-en 1.1.2/ja·fr·es 1.0.2），切 en/ja/fr/es 平台 chrome 全量换语言（导航/表头/按钮/空态/记录动作/状态机），插件菜单/实体字段/数据值保持原文，停用回退中文基线；键集与代码实际使用精确对账（提取器+模板键族契约锁）。③探活——环回 400（环回/私有/保留地址）/真实 DeepSeek 探活通过 200 落库（存量密钥+api.deepseek.com+deepseek-flash）/错模型 400 附可用模型列表且配置不变；守卫拒十进制 IP 字面量编码（审查 P1 堵住）；fixture 不探活。④质量门——flexforge-ai 55/0+app AI 10/0+前端 210/210+门禁 21/1/0+CI 六项绿；交叉审查独立子代理 P1×1/P2×4/P3×7 全处置（PR #53 评论）；S1-S9 不破（密钥不落日志/审计/异常消息，守卫+探活失败路径全测）。docs（02/03/09/13/索引/STATUS/JSON）同步；PR #53 合并 74fd0cc",
   "blockers": [],
   "stages": [
     {
@@ -143,7 +143,7 @@
     {
       "id": "P26",
       "name": "界面净化、系统多语言与 AI 上游探活",
-      "status": "in_progress"
+      "status": "completed"
     }
   ]
 }
