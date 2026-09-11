@@ -1,18 +1,30 @@
 {
   "schemaVersion": 1,
   "id": "example.workorder",
-  "name": "生产工单示例",
-  "version": "0.1.1",
+  "name": "生产工单",
+  "version": "0.1.2",
   "capabilityLevel": 1,
   "minPlatformVersion": "0.1.0",
   "dependencies": [],
-  "permissions": ["workorder.read", "workorder.write"],
+  "permissions": [
+    "workorder.read",
+    "workorder.write"
+  ],
   "contributions": {
-    "navigation": ["example.workorder.orders"],
-    "renderers": ["text.default", "integer.default", "date.default", "enum.default"]
+    "navigation": [
+      "example.workorder.orders"
+    ],
+    "renderers": [
+      "text.default",
+      "integer.default",
+      "date.default",
+      "enum.default"
+    ]
   },
   "resources": {
-    "entities": ["metadata/entities/production-order.json"],
+    "entities": [
+      "metadata/entities/production-order.json"
+    ],
     "views": [
       "metadata/views/production-order.list.json",
       "metadata/views/production-order.form.json",

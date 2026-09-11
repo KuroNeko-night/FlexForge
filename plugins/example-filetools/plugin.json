@@ -1,12 +1,14 @@
 {
   "schemaVersion": 1,
   "id": "example.filetools",
-  "name": "表格文件工具示例",
-  "version": "0.1.0",
+  "name": "表格文件工具",
+  "version": "0.1.1",
   "capabilityLevel": 2,
   "minPlatformVersion": "0.1.0",
   "dependencies": [],
-  "permissions": ["filetools.read"],
+  "permissions": [
+    "filetools.read"
+  ],
   "contributions": {
     "processors": [
       {
@@ -15,7 +17,10 @@
         "kind": "python",
         "entry": "scripts/csv-clean.py",
         "inputMode": "file",
-        "accept": ["csv", "txt"],
+        "accept": [
+          "csv",
+          "txt"
+        ],
         "maxInputMB": 5
       },
       {
@@ -24,7 +29,10 @@
         "kind": "python",
         "entry": "scripts/csv-profile.py",
         "inputMode": "file",
-        "accept": ["csv", "txt"],
+        "accept": [
+          "csv",
+          "txt"
+        ],
         "maxInputMB": 5
       }
     ]

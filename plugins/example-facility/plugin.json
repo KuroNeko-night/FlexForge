@@ -1,18 +1,31 @@
 {
   "schemaVersion": 1,
   "id": "example.facility",
-  "name": "设备巡检示例",
-  "version": "0.1.0",
+  "name": "设备巡检",
+  "version": "0.1.1",
   "capabilityLevel": 1,
   "minPlatformVersion": "0.1.0",
   "dependencies": [],
-  "permissions": ["facility.read", "facility.write"],
+  "permissions": [
+    "facility.read",
+    "facility.write"
+  ],
   "contributions": {
-    "navigation": ["example.facility.checks"],
-    "renderers": ["text.default", "integer.default", "boolean.default", "date.default", "enum.default"]
+    "navigation": [
+      "example.facility.checks"
+    ],
+    "renderers": [
+      "text.default",
+      "integer.default",
+      "boolean.default",
+      "date.default",
+      "enum.default"
+    ]
   },
   "resources": {
-    "entities": ["metadata/entities/facility-check.json"],
+    "entities": [
+      "metadata/entities/facility-check.json"
+    ],
     "views": [
       "metadata/views/facility-check.list.json",
       "metadata/views/facility-check.form.json"

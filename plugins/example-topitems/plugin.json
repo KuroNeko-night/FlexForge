@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "example.topitems",
+  "name": "热门物料榜",
+  "version": "0.1.0",
+  "capabilityLevel": 2,
+  "minPlatformVersion": "0.1.0",
+  "dependencies": [],
+  "permissions": ["topitems.read"],
+  "contributions": {
+    "processors": [
+      {
+        "key": "topitems.purchase.material",
+        "label": "物料采购频次 Top10",
+        "kind": "python",
+        "entry": "scripts/purchase-top-materials.py",
+        "inputEntity": "purchase_order"
+      }
+    ]
+  },
+  "resources": {}
+}

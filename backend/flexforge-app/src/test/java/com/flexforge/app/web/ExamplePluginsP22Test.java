@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * P22 图表处理器验收（docs/09 P22，FR-CHART-01/FR-PLUGIN-13）：example-analytics
- * 0.2.0 两图处理器对真实实体数据计算正确（bar 月度金额/pie 结论占比），坏 chart
+ * 0.2.4 两图处理器对真实实体数据计算正确（bar 月度金额/pie 结论占比），坏 chart
  * 输出三向（缺 chartType/values 不等长/pie 负值）统一 processor_output_invalid。
  * 宿主需有 python3/python。
  */
@@ -66,8 +66,8 @@ class ExamplePluginsP22Test {
         ensureActivated(Path.of("..", "..", "plugins", "example-purchase"), "example.purchase");
         ensureActivated(Path.of("..", "..", "plugins", "example-quality"), "example.quality");
         seedEntityRecords();
-        // 共享库类序/方法序不保证：先停旧或坏版本，再回到 0.2.0 基线
-        ensureVersionActivated("example.analytics", "0.2.0");
+        // 共享库类序/方法序不保证：先停旧或坏版本，再回到 0.2.4 基线
+        ensureVersionActivated("example.analytics", "0.2.4");
 
         // 清单：两图处理器按目标实体过滤可见
         String filtered = getJson("/api/v1/plugins/processors?entity=purchase_order", userBearer);

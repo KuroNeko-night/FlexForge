@@ -195,7 +195,7 @@ class ExamplePluginsP20SecurityTest {
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
     }
 
-    /** 回到 0.2.0 基线：先停占用，再激活清单中既有 versionId（字节不可变契约下
+    /** 回到 0.2.4 基线：先停占用，再激活清单中既有 versionId（字节不可变契约下
      * 重打包导入必 400；导入仅在该版本从未存在时发生——共享库类序不保证）。 */
     private void reactivateAnalyticsBase() throws Exception {
         stopActive("example.analytics");
@@ -214,13 +214,13 @@ class ExamplePluginsP20SecurityTest {
                 .andExpect(status().isOk());
     }
 
-    /** 从清单展开 0.2.0 版本号（Java 侧筛选，避免嵌套 JsonPath 过滤兼容性）。 */
+    /** 从清单展开 0.2.4 版本号（Java 侧筛选，避免嵌套 JsonPath 过滤兼容性）。 */
     private static String versionIdOf(String inventory) {
         java.util.List<java.util.Map<String, Object>> versions =
                 com.jayway.jsonpath.JsonPath.read(inventory,
                         "$[?(@.pluginId == 'example.analytics')].versions[*]");
         for (java.util.Map<String, Object> entry : versions) {
-            if ("0.2.0".equals(entry.get("version"))) {
+            if ("0.2.4".equals(entry.get("version"))) {
                 return String.valueOf(entry.get("versionId"));
             }
         }
@@ -264,7 +264,7 @@ class ExamplePluginsP20SecurityTest {
     private static byte[] scriptPackage(String scriptContent, String version) throws Exception {
         byte[] manifest = Files.readAllBytes(ANALYTICS_DIR.resolve("plugin.json"));
         byte[] mutated = new String(manifest, StandardCharsets.UTF_8)
-                .replace("\"version\": \"0.2.0\"", "\"version\": \"" + version + "\"")
+                .replace("\"version\": \"0.2.4\"", "\"version\": \"" + version + "\"")
                 .getBytes(StandardCharsets.UTF_8);
         return zipOf(new Entry("plugin.json", mutated),
                 new Entry("scripts/purchase-monthly.py", scriptContent.getBytes(StandardCharsets.UTF_8)),

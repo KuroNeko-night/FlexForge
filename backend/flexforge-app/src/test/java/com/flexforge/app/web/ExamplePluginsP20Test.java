@@ -126,12 +126,12 @@ class ExamplePluginsP20Test {
         ensureActivated(Path.of("..", "..", "plugins", "example-workorder"), "example.workorder");
     }
 
-    /** 回到 0.2.0 基线：先停占用，再激活清单中既有 versionId——重打包字节漂移
+    /** 回到 0.2.4 基线：先停占用，再激活清单中既有 versionId——重打包字节漂移
      * 会撞同版本不可变契约，导入仅在该版本从未存在时发生（共享库类序不保证）。 */
     private void reactivateAnalyticsBase() throws Exception {
         stopActive("example.analytics");
         String inventory = getJson("/api/v1/plugins/inventory", adminBearer);
-        String versionId = versionIdOf(inventory, "0.2.0");
+        String versionId = versionIdOf(inventory, "0.2.4");
         if (versionId == null) {
             importAndActivate(analyticsZip);
             return;
@@ -280,7 +280,7 @@ class ExamplePluginsP20Test {
     private static byte[] scriptPackage(String scriptContent, String version) throws Exception {
         byte[] manifest = Files.readAllBytes(ANALYTICS_DIR.resolve("plugin.json"));
         byte[] mutated = new String(manifest, StandardCharsets.UTF_8)
-                .replace("\"version\": \"0.2.0\"", "\"version\": \"" + version + "\"")
+                .replace("\"version\": \"0.2.4\"", "\"version\": \"" + version + "\"")
                 .getBytes(StandardCharsets.UTF_8);
         // P22 起 manifest 声明五个脚本（含双图处理器）：坏包须带全声明脚本（导入双向核对）
         return zipOf(new Entry("plugin.json", mutated),

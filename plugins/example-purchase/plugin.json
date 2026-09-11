@@ -1,18 +1,31 @@
 {
   "schemaVersion": 1,
   "id": "example.purchase",
-  "name": "采购订单示例",
-  "version": "0.1.0",
+  "name": "采购订单",
+  "version": "0.1.1",
   "capabilityLevel": 1,
   "minPlatformVersion": "0.1.0",
   "dependencies": [],
-  "permissions": ["purchase.read", "purchase.write"],
+  "permissions": [
+    "purchase.read",
+    "purchase.write"
+  ],
   "contributions": {
-    "navigation": ["example.purchase.orders"],
-    "renderers": ["text.default", "integer.default", "decimal.default", "date.default", "enum.default"]
+    "navigation": [
+      "example.purchase.orders"
+    ],
+    "renderers": [
+      "text.default",
+      "integer.default",
+      "decimal.default",
+      "date.default",
+      "enum.default"
+    ]
   },
   "resources": {
-    "entities": ["metadata/entities/purchase-order.json"],
+    "entities": [
+      "metadata/entities/purchase-order.json"
+    ],
     "views": [
       "metadata/views/purchase-order.list.json",
       "metadata/views/purchase-order.form.json"

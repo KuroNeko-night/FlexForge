@@ -88,6 +88,9 @@ FlexForge/
 │   ├── example-purchase/           采购订单示例包（P19：decimal 金额字段形态+幂等种子）
 │   ├── example-safety/             安全隐患示例包（P19：整改闭环状态看板+幂等种子）
 │   ├── example-analytics/          表格分析处理器包（P20：capabilityLevel=2，三个 Python 数据处理器——月度透视/合格率/负载汇总，纯标准库）
+│   ├── example-crosstab/          工单交叉矩阵包（P27：Level 2，产品×状态计数矩阵处理器）
+│   ├── example-histogram/         采购金额分布包（P27：Level 2，金额分箱直方图处理器）
+│   ├── example-topitems/          热门物料榜包（P27：Level 2，物料频次 Top10 处理器）
 │   ├── locale-en/                  英文语言包（P15 起；P26 升版全键集——系统 chrome 全覆盖，剔插件内容键）
 │   ├── locale-ja/                  日文语言包（P26：与 en 同键集，FR-SETUP-02）
 │   ├── locale-fr/                  法文语言包（P26：与 en 同键集）
@@ -270,3 +273,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-09-10 | §1 树更新：frontend 依赖 +@fontsource/space-grotesk+@fontsource/noto-sans-sc（P25 字体系统）；styles tokens/base 增 display 字体/字号阶/ff-form-grid/ff-page-title/骨架纹理基线；views 八处 h2 接 ff-page-title；plugins theme-default 升 1.1.2（bg 重绘）、theme-warm 升 1.1.2（+assets/bg.svg） | P25：前端排版分布与视觉精修（用户裁决新增；排版均匀分布+字体层级+背景纹理，文案零变更） |
 | 2026-09-11 | §1 树更新：plugins +locale-ja/locale-fr/locale-es（1.0.0）、locale-en 升 1.1.0（344 键全键集）；frontend +localePacks.test/pluginsViewFixtures、components +UserCreateDrawer/UserRolesDrawer/IssueSpecSection/IssueNewRequirementForm、utils +pluginConfirm、api/issues +issueStatusLabel/transitionLabel、registry LANGUAGE_LABELS 扩三语；backend flexforge-ai +ModelUrlGuard/ModelConfigGate/HttpModelConfigGate/ModelEndpoints/AiConfigKernel/AiConfigWiring、app 测试 +AiConfigProbeApiTest | P26：界面净化、系统多语言与 AI 上游探活（用户裁决新增；FR-AUTH-06/FR-PLUGIN-15/FR-SETUP-01/02 增补） |
 | 2026-09-11 | §1 树更新：根 +README.zh-CN.md（中文副本，README.md 重写为英文主文档+徽章+截图+文档表）、docs +assets/（工作台/插件页截图）；§3 文档地图同步 | 用户裁决：远端仓库门面完整化——README 英文为主+中文副本+仓库简介/topics（P26 后续） |
+| 2026-09-11 | §1 树更新：plugins +example-crosstab/example-histogram/example-topitems（Level 2 多样化处理器，P27）；9 包升版改名去"示例"（analytics 0.2.4/kanban 0.1.3 避测试变体版本位）；app 测试 +ExampleProcessorsP27Test、P17/P20/P20Security/P22/FileTools 版本字面量与 manifest 格式适配 | P27：演示就绪整备（用户裁决四项——账号清理/去示例字样/多样化 L2 替代/Issue 精选） |

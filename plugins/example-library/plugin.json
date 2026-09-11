@@ -1,18 +1,31 @@
 {
   "schemaVersion": 1,
   "id": "example.library",
-  "name": "图书借阅示例",
-  "version": "0.1.0",
+  "name": "图书借阅",
+  "version": "0.1.1",
   "capabilityLevel": 1,
   "minPlatformVersion": "0.1.0",
   "dependencies": [],
-  "permissions": ["library.read", "library.write"],
+  "permissions": [
+    "library.read",
+    "library.write"
+  ],
   "contributions": {
-    "navigation": ["example.library.books"],
-    "renderers": ["text.default", "decimal.default", "boolean.default", "date.default", "enum.default"]
+    "navigation": [
+      "example.library.books"
+    ],
+    "renderers": [
+      "text.default",
+      "decimal.default",
+      "boolean.default",
+      "date.default",
+      "enum.default"
+    ]
   },
   "resources": {
-    "entities": ["metadata/entities/library-book.json"],
+    "entities": [
+      "metadata/entities/library-book.json"
+    ],
     "views": [
       "metadata/views/library-book.list.json",
       "metadata/views/library-book.form.json"

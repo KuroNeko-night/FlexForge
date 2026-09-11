@@ -162,8 +162,8 @@ class ExampleFileToolsApiTest {
         byte[] zip = zipPackage(FILETOOLS_DIR,
                 Map.of("plugin.json", new String(Files.readAllBytes(
                                 FILETOOLS_DIR.resolve("plugin.json")), StandardCharsets.UTF_8)
-                        .replace("\"accept\": [\"csv\", \"txt\"]", "\"accept\": [\"exe\"]")
-                        .replace("\"0.1.0\"", "\"0.1.1\"")),
+                        .replace("\"txt\"", "\"exe\"")
+                        .replace("\"version\": \"0.1.1\"", "\"version\": \"0.1.2\"")),
                         null);
         mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/plugins/import")
                         .file(new MockMultipartFile("file", "pkg.zip", "application/zip", zip))
