@@ -56,4 +56,29 @@ describe('语言包资产契约（P26 多语言）', () => {
       expect(LANGUAGE_LABELS[p.lang]).toBeTruthy();
     }
   });
+
+  it('模板字面量键族齐全（记录动作/状态机/菜单——代码侧无法静态提取，契约锁定）', () => {
+    const required: string[] = [
+      'action.record.detail',
+      'action.record.edit',
+      'action.record.delete',
+      'menu.workbench',
+      'menu.data-model',
+      'menu.file-tools',
+      'menu.system-management',
+      'menu.system-audit',
+      'menu.platform.issues',
+      'menu.platform.plugins',
+      'menu.platform.settings',
+      ...['SUBMITTED', 'APPROVED', 'RETURNED', 'IN_TESTING', 'DEV_FAILED', 'TESTED', 'FEEDBACK', 'DONE', 'CLOSED'].flatMap(
+        (s) => [`issues.status.${s}`, `issues.transition.${s}`],
+      ),
+    ];
+    for (const p of PACKS) {
+      const keys = new Set(Object.keys(loadPack(p.dir, p.lang)));
+      for (const key of required) {
+        expect(keys.has(key), `${p.lang} 缺 ${key}`).toBe(true);
+      }
+    }
+  });
 });

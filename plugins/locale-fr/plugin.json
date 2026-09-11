@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "locale.fr",
   "name": "Pack de langue français",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "capabilityLevel": 1,
   "minPlatformVersion": "0.1.0",
   "dependencies": [],

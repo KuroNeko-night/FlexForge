@@ -344,6 +344,9 @@
     "issues.transition.TESTED": "テスト通過にする",
     "issues.transition.FEEDBACK": "修正対応",
     "issues.transition.DONE": "完了にする",
-    "issues.transition.CLOSED": "クローズ"
+    "issues.transition.CLOSED": "クローズ",
+    "action.record.detail": "詳細",
+    "action.record.edit": "編集",
+    "action.record.delete": "削除"
   }
 }

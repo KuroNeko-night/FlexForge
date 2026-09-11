@@ -344,6 +344,9 @@
     "issues.transition.TESTED": "Marcar probado",
     "issues.transition.FEEDBACK": "Corrección",
     "issues.transition.DONE": "Marcar terminado",
-    "issues.transition.CLOSED": "Cerrar"
+    "issues.transition.CLOSED": "Cerrar",
+    "action.record.detail": "Detalles",
+    "action.record.edit": "Editar",
+    "action.record.delete": "Eliminar"
   }
 }

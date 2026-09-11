@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "locale.es",
   "name": "Paquete de idioma español",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "capabilityLevel": 1,
   "minPlatformVersion": "0.1.0",
   "dependencies": [],
