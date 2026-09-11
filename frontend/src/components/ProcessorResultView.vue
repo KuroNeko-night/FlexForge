@@ -6,6 +6,7 @@ import { downloadProcessorArtifact } from '@/api/processors';
 import { apiErrorMessage } from '@/api/client';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ChartCanvas from '@/components/ui/ChartCanvas.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 处理器结果渲染（P20 建/P23 抽公用）：table 结构表 / summary 指标卡 /
@@ -21,7 +22,7 @@ async function download(artifactId: string, filename: string): Promise<void> {
     downloadError.value = null;
     await downloadProcessorArtifact(artifactId, filename);
   } catch (e) {
-    downloadError.value = apiErrorMessage(e, '产物下载失败，请稍后重试');
+    downloadError.value = apiErrorMessage(e, t('tools.downloadFailed', '产物下载失败，请稍后重试'));
   }
 }
 </script>
@@ -63,14 +64,15 @@ async function download(artifactId: string, filename: string): Promise<void> {
   <div v-else class="artifact-card" data-testid="result-file">
     <p class="artifact-name">{{ result.filename }}</p>
     <p class="artifact-meta">
-      {{ Math.max(1, Math.round(result.sizeBytes / 1024)) }} KB · 产物 10 分钟内可重复下载
+      {{ Math.max(1, Math.round(result.sizeBytes / 1024)) }} KB ·
+      {{ t('tools.artifactHint', '产物 10 分钟内可重复下载') }}
     </p>
     <BaseButton
       variant="primary"
       :data-testid="`download-${result.artifactId}`"
       @click="download(result.artifactId, result.filename)"
     >
-      下载产物
+      {{ t('tools.downloadArtifact', '下载产物') }}
     </BaseButton>
     <p v-if="downloadError" class="form-error" role="alert">{{ downloadError }}</p>
   </div>

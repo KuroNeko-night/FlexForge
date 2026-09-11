@@ -5,6 +5,7 @@ import type { PluginInventoryEntry } from '@/api/plugins';
 import BaseSwitch from '@/components/ui/BaseSwitch.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ComponentCard from '@/components/ui/ComponentCard.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 插件卡片（P21 操作逻辑重构）：只呈现当前版本与启停开关——开=激活当前版本，
@@ -50,7 +51,7 @@ const lastFailure = computed(() => {
   }
   const failed = activations[failedIdx];
   const code = failed.errorCode ? ` · ${failed.errorCode}` : '';
-  return `最近激活失败于 ${failed.stage ?? '?'}${code}`;
+  return `${t('plugins.lastFailure', '最近激活失败于')} ${failed.stage ?? '?'}${code}`;
 });
 const extraVersions = computed(() =>
   props.plugin.versions.filter((v) => v.versionId !== currentVersion.value?.versionId),
@@ -67,16 +68,16 @@ const extraVersions = computed(() =>
     </template>
     <div class="plugin-row" data-testid="plugin-toggle-row">
       <span class="version-badge" data-testid="plugin-current-version">
-        {{ currentVersion ? `v${currentVersion.version}` : '无版本' }}
+        {{ currentVersion ? `v${currentVersion.version}` : t('plugins.noVersion', '无版本') }}
       </span>
       <span class="state-label" :data-state="hasActive ? 'on' : 'off'">
-        {{ hasActive ? '已启用' : '已停用' }}
+        {{ hasActive ? t('plugins.enabled', '已启用') : t('plugins.disabled', '已停用') }}
       </span>
       <BaseSwitch
         class="plugin-switch"
         :model-value="hasActive"
         :disabled="pending || plugin.versions.length === 0"
-        label="启用插件"
+        :label="t('plugins.toggleLabel', '启用插件')"
         data-testid="plugin-toggle"
         @update:model-value="emit('toggle', $event)"
       />
@@ -86,7 +87,11 @@ const extraVersions = computed(() =>
     </p>
     <div v-if="plugin.versions.length > 1" class="plugin-versions-toggle">
       <button type="button" class="versions-link" @click="versionsOpen = !versionsOpen">
-        {{ versionsOpen ? '收起版本' : `另有 ${extraVersions.length} 个版本` }}
+        {{
+          versionsOpen
+            ? t('plugins.collapseVersions', '收起版本')
+            : `${t('plugins.moreVersionsPrefix', '另有')} ${extraVersions.length} ${t('plugins.moreVersionsSuffix', '个版本')}`
+        }}
       </button>
     </div>
     <ul v-if="versionsOpen" class="version-list" data-testid="plugin-versions">
@@ -97,13 +102,13 @@ const extraVersions = computed(() =>
           :disabled="pending"
           @click="emit('switchVersion', v.versionId, v.version)"
         >
-          切换到此版本
+          {{ t('plugins.switchVersion', '切换到此版本') }}
         </BaseButton>
       </li>
     </ul>
     <div class="plugin-ops">
       <BaseButton size="sm" variant="danger" :disabled="pending" @click="emit('uninstall')">
-        卸载
+        {{ t('plugins.uninstallBtn', '卸载') }}
       </BaseButton>
     </div>
   </ComponentCard>

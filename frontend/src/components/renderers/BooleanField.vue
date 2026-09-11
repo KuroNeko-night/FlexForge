@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FieldDefinition } from '@/api/types';
+import { t } from '@/registry/localeRegistry';
 
 defineProps<{
   field: FieldDefinition;
@@ -13,7 +14,7 @@ const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>();
 
 <template>
   <span v-if="mode === 'display'" class="renderer-boolean" :data-value="modelValue ?? ''">{{
-    modelValue === null ? '—' : modelValue ? '是' : '否'
+    modelValue === null ? '—' : modelValue ? t('common.yes', '是') : t('common.no', '否')
   }}</span>
   <input
     v-else

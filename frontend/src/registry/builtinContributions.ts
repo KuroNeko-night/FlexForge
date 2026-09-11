@@ -3,6 +3,7 @@ import EntityCards from '@/components/EntityCards.vue';
 import { registerMenu } from '@/registry/menuRegistry';
 import { registerRecordAction, type ActionContext } from '@/registry/recordActionRegistry';
 import { registerWidget } from '@/registry/layoutRegistry';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 平台内置贡献注册（应用启动装配一次）：内置部件、内置记录动作与本地菜单。
@@ -53,11 +54,14 @@ function registerBuiltinRecordActions(): void {
     key: 'record.delete',
     label: '删除',
     handler: async (record, context: ActionContext) => {
-      const ok = await context.confirm('删除后不可恢复，确认删除该记录？', {
-        title: '删除记录',
-        confirmLabel: '删除',
-        danger: true,
-      });
+      const ok = await context.confirm(
+        t('action.record.deleteConfirmBody', '删除后不可恢复，确认删除该记录？'),
+        {
+          title: t('action.record.deleteConfirmTitle', '删除记录'),
+          confirmLabel: t('common.delete', '删除'),
+          danger: true,
+        },
+      );
       if (!ok) {
         return;
       }

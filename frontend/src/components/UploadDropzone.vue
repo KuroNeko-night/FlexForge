@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 
 import BaseButton from '@/components/ui/BaseButton.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 插件包上传区（P16 从 PluginsView 拆出）：拖拽/点击选择 zip，选中即自动
@@ -63,7 +64,7 @@ function onKeyActivate(event: KeyboardEvent): void {
     :class="{ 'dropzone--over': dragOver, 'dropzone--passed': check === 'passed' }"
     role="button"
     tabindex="0"
-    aria-label="选择插件包"
+    :aria-label="t('plugins.pickPackage', '选择插件包')"
     data-testid="install-bar"
     @click="openPicker"
     @keydown="onKeyActivate"
@@ -82,19 +83,21 @@ function onKeyActivate(event: KeyboardEvent): void {
       @change="onFileChange"
     />
     <template v-if="!file">
-      <p class="dropzone-title">拖拽插件包到此处，或点击选择文件</p>
-      <p class="dropzone-hint">支持 zip 格式 · 选择后自动校验</p>
+      <p class="dropzone-title">
+        {{ t('plugins.dropzoneTitle', '拖拽插件包到此处，或点击选择文件') }}
+      </p>
+      <p class="dropzone-hint">{{ t('plugins.dropzoneHint', '支持 zip 格式 · 选择后自动校验') }}</p>
     </template>
     <template v-else>
       <p class="dropzone-file">{{ file.name }}</p>
       <p class="dropzone-status" :data-state="check">
         {{
           check === 'checking'
-            ? '校验中…'
+            ? t('plugins.checking', '校验中…')
             : check === 'passed'
-              ? '校验通过，可导入'
+              ? t('plugins.checkPassed', '校验通过，可导入')
               : check === 'failed'
-                ? '校验未通过，请更换文件'
+                ? t('plugins.checkFailed', '校验未通过，请更换文件')
                 : ''
         }}
       </p>
@@ -108,9 +111,11 @@ function onKeyActivate(event: KeyboardEvent): void {
           data-testid="import-button"
           @click.stop="emit('import')"
         >
-          {{ importing ? '导入中…' : '导入' }}
+          {{ importing ? t('plugins.importing', '导入中…') : t('plugins.importBtn', '导入') }}
         </BaseButton>
-        <BaseButton variant="ghost" @click.stop="emit('clear')">移除文件</BaseButton>
+        <BaseButton variant="ghost" @click.stop="emit('clear')">{{
+          t('plugins.removeFile', '移除文件')
+        }}</BaseButton>
       </div>
     </template>
   </div>

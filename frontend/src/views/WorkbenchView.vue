@@ -202,7 +202,7 @@ watch(
         <span>FlexForge</span>
       </p>
       <StateView v-if="state !== 'ready'" :state="state" :message="error" />
-      <nav v-else aria-label="主导航">
+      <nav v-else :aria-label="t('shell.mainNav', '主导航')">
         <section v-for="group in groupedMenus" :key="group.key">
           <p class="side-group-title">{{ group.title }}</p>
           <ul>

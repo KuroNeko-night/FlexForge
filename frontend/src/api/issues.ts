@@ -1,4 +1,5 @@
 import { apiFetch } from '@/api/client';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * Issue/AI 契约（docs/03 §8 /issues，后端 IssueController）。
@@ -160,6 +161,15 @@ export function transitionRequiresReason(target: IssueStatusName): boolean {
  * 迁移动作动词（P16 交互规范）：迁移入口按目标状态给按钮，标签用动作而非
  * 状态名——"批准"优于"已批准"；仅驱动 UI，后端仍按状态机校验。
  */
+/** 渲染期状态/迁移动作标签（语言包覆盖，缺省=中文基线；P26 多语言）。 */
+export function issueStatusLabel(status: IssueStatusName): string {
+  return t(`issues.status.${status}`, ISSUE_STATUS_LABELS[status] ?? status);
+}
+
+export function transitionLabel(target: IssueStatusName): string {
+  return t(`issues.transition.${target}`, TRANSITION_LABELS[target] ?? target);
+}
+
 export const TRANSITION_LABELS: Record<IssueStatusName, string> = {
   SUBMITTED: '重新提交',
   APPROVED: '批准',

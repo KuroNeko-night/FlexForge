@@ -3,6 +3,7 @@ import { ref } from 'vue';
 
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 批量操作条（P24，FR-AUTH-05）：有选择时呈现；批量停用走危险确认（影响多个
@@ -41,14 +42,17 @@ function request(status: 'ACTIVE' | 'BLOCKED'): void {
     data-testid="user-batch-bar"
   >
     <template v-if="count > 0">
-      <span class="batch-count">已选 {{ count }} 项</span>
+      <span class="batch-count"
+        >{{ t('users.batchSelectedPrefix', '已选') }} {{ count }}
+        {{ t('users.batchSelectedSuffix', '项') }}</span
+      >
       <BaseButton
         size="sm"
         :disabled="running"
         data-testid="batch-block"
         @click="request('BLOCKED')"
       >
-        批量停用
+        {{ t('users.batchDisable', '批量停用') }}
       </BaseButton>
       <BaseButton
         size="sm"
@@ -56,10 +60,10 @@ function request(status: 'ACTIVE' | 'BLOCKED'): void {
         data-testid="batch-activate"
         @click="request('ACTIVE')"
       >
-        批量启用
+        {{ t('users.batchEnable', '批量启用') }}
       </BaseButton>
       <BaseButton size="sm" variant="ghost" :disabled="running" @click="emit('clear')">
-        清除选择
+        {{ t('users.batchClear', '清除选择') }}
       </BaseButton>
     </template>
     <span v-if="notice" class="batch-notice" role="status">{{ notice }}</span>
@@ -67,9 +71,9 @@ function request(status: 'ACTIVE' | 'BLOCKED'): void {
   </div>
   <ConfirmDialog
     :open="confirming !== null"
-    title="批量停用账号"
-    :message="`将停用选中的 ${count} 个账号，停用后这些账号无法登录新会话。`"
-    confirm-label="停用"
+    :title="t('users.batchConfirmTitle', '批量停用账号')"
+    :message="`${t('users.batchConfirmBody', '将停用选中的')} ${count} ${t('users.batchConfirmTail', '个账号，停用后这些账号无法登录新会话。')}`"
+    :confirm-label="t('users.batchDisableLabel', '停用')"
     :danger="true"
     :busy="running"
     @confirm="

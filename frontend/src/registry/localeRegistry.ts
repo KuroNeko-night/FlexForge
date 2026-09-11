@@ -111,4 +111,7 @@ export function t(key: string, fallback: string): string {
 export const LANGUAGE_LABELS: Record<string, string> = {
   'zh-CN': '简体中文',
   en: 'English',
+  ja: '日本語',
+  fr: 'Français',
+  es: 'Español',
 };

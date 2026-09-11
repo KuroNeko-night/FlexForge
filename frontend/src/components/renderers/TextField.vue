@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 
 import type { FieldDefinition } from '@/api/types';
+import { t } from '@/registry/localeRegistry';
 
 const props = defineProps<{
   field: FieldDefinition;
@@ -21,10 +22,14 @@ function numberRule(key: string): number | undefined {
 const hint = computed(() => {
   const parts: string[] = [];
   if (numberRule('minLength') !== undefined) {
-    parts.push(`至少 ${numberRule('minLength')} 字`);
+    parts.push(
+      `${t('field.minLength', '至少')} ${numberRule('minLength')} ${t('field.charUnit', '字')}`,
+    );
   }
   if (numberRule('maxLength') !== undefined) {
-    parts.push(`至多 ${numberRule('maxLength')} 字`);
+    parts.push(
+      `${t('field.maxLength', '至多')} ${numberRule('maxLength')} ${t('field.charUnit', '字')}`,
+    );
   }
   return parts.join('，');
 });

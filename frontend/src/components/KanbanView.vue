@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 
 import type { EntityDetail, FieldDefinition, RecordView, ViewDefinition } from '@/api/types';
 import { resolveRenderer } from '@/registry/rendererRegistry';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 看板视图（P17，viewType=kanban 平台内置渲染器）：groupBy enum 字段选项为列
@@ -53,7 +54,12 @@ const columns = computed<KanbanColumn[]>(() => {
     droppable: true,
   }));
   const byKey = new Map(defined.map((column) => [column.key, column]));
-  const unset: KanbanColumn = { key: UNSET, label: '未设置', records: [], droppable: false };
+  const unset: KanbanColumn = {
+    key: UNSET,
+    label: t('kanban.unset', '未设置'),
+    records: [],
+    droppable: false,
+  };
   for (const record of props.records) {
     const value = record.data[props.view.groupBy ?? ''];
     const column = typeof value === 'string' && value !== '' ? byKey.get(value) : null;
@@ -181,13 +187,18 @@ function recordColumnKey(record: RecordView): string {
             />
           </button>
         </li>
-        <li v-if="column.records.length === 0" class="kanban-empty">暂无记录</li>
+        <li v-if="column.records.length === 0" class="kanban-empty">
+          {{ t('kanban.emptyColumn', '暂无记录') }}
+        </li>
       </ul>
     </section>
-    <p v-if="columns.length === 0" class="kanban-empty">分列字段缺少枚举选项</p>
+    <p v-if="columns.length === 0" class="kanban-empty">
+      {{ t('kanban.noColumns', '分列字段缺少枚举选项') }}
+    </p>
   </div>
   <p v-if="total !== undefined && records.length < total" class="kanban-note">
-    已加载 {{ records.length }} / {{ total }} 条 · 列计数基于已加载记录，切回表格可查看全部
+    {{ t('kanban.loadedPrefix', '已加载') }} {{ records.length }} / {{ total }}
+    {{ t('kanban.loadedTail', '条 · 列计数基于已加载记录，切回表格可查看全部') }}
   </p>
 </template>
 

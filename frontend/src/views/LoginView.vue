@@ -46,7 +46,7 @@ async function submit(): Promise<void> {
     saveSession(result.token, result.user);
     await router.push({ path: '/' });
   } catch (e) {
-    error.value = e instanceof ApiError ? e.message : '操作失败，请稍后重试';
+    error.value = e instanceof ApiError ? e.message : t('common.opFailed', '操作失败，请稍后重试');
   } finally {
     submitting.value = false;
   }
@@ -76,7 +76,7 @@ function switchMode(target: 'login' | 'register'): void {
             name="username"
             autocomplete="username"
             :pattern="mode === 'register' ? '[a-z0-9_-]{3,32}' : undefined"
-            title="3-32 位小写字母/数字/下划线/连字符"
+            :title="t('login.usernameHint', '3-32 位小写字母/数字/下划线/连字符')"
             required
           />
         </label>

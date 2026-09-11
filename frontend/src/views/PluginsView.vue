@@ -11,7 +11,6 @@ import {
   upgradeVersion,
   validatePackage,
   type PluginInventoryEntry,
-  type PluginPreset,
 } from '@/api/plugins';
 import PluginCard from '@/components/PluginCard.vue';
 import PluginPresetBar from '@/components/PluginPresetBar.vue';
@@ -19,6 +18,7 @@ import StateView from '@/components/StateView.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import UploadDropzone from '@/components/UploadDropzone.vue';
+import { pluginConfirmSpec, type PluginConfirmTarget } from '@/utils/pluginConfirm';
 import { usePluginPresets } from '@/composables/usePluginPresets';
 import { t } from '@/registry/localeRegistry';
 
@@ -44,43 +44,24 @@ const pendingKey = ref<string | null>(null);
 
 const presetOps = usePluginPresets(refresh);
 
-/** 统一确认对话：卸载/应用预设/删除预设共用（P16 统一确认口径）。 */
-type ConfirmTarget =
-  | { kind: 'uninstall'; plugin: PluginInventoryEntry }
-  | { kind: 'apply'; preset: PluginPreset }
-  | { kind: 'remove'; preset: PluginPreset };
+/** 统一确认对话目标（规格映射在 utils/pluginConfirm，P26 拆出）。 */
+type ConfirmTarget = PluginConfirmTarget;
 const confirmTarget = ref<ConfirmTarget | null>(null);
 
-const confirmSpec = computed(() => {
-  const target = confirmTarget.value;
-  if (target?.kind === 'uninstall') {
-    return {
-      title: '卸载插件',
-      message: `将卸载 ${target.plugin.name} · ${target.plugin.pluginId}，注册与实体将一并撤销，审计记录保留。`,
-      confirmLabel: '卸载',
-      danger: true,
-    };
-  }
-  if (target?.kind === 'apply') {
-    return {
-      title: '应用预设',
-      message: `将把插件状态恢复为预设「${target.preset.name}」：启用其中 ${target.preset.entries.length} 个插件，并停用其余启用中的插件。`,
-      confirmLabel: '应用',
-      danger: false,
-    };
-  }
-  if (target?.kind === 'remove') {
-    return {
-      title: '删除预设',
-      message: `将删除预设「${target.preset.name}」，不影响当前插件状态。`,
-      confirmLabel: '删除',
-      danger: true,
-    };
-  }
-  return { title: '', message: '', confirmLabel: '', danger: false };
-});
+const confirmSpec = computed(() => pluginConfirmSpec(confirmTarget.value));
 
 const canImport = computed(() => pendingFile.value !== null && check.value === 'passed');
+
+/** P26 界面净化（FR-PLUGIN-15）：已停用插件默认折叠，开关仅会话内记忆。 */
+const showInactive = ref(false);
+const inactivePlugins = computed(() =>
+  plugins.value.filter((p) => !p.activations.some((a) => a.status === 'ACTIVE')),
+);
+const visiblePlugins = computed(() =>
+  showInactive.value
+    ? plugins.value
+    : plugins.value.filter((p) => p.activations.some((a) => a.status === 'ACTIVE')),
+);
 
 async function load(): Promise<void> {
   state.value = 'loading';
@@ -138,7 +119,10 @@ async function autoValidate(file: File, seq: number): Promise<void> {
       return;
     }
     check.value = 'failed';
-    findings.value = [apiErrorMessage(e, '校验失败，请稍后重试') ?? '校验失败'];
+    findings.value = [
+      apiErrorMessage(e, t('plugins.validateFailed', '校验失败，请稍后重试')) ??
+        t('plugins.validateFailedShort', '校验失败'),
+    ];
   }
 }
 
@@ -153,12 +137,12 @@ async function submitImport(): Promise<void> {
   try {
     const preview = await importPackage(pendingFile.value);
     opNotice.value = preview.isNew
-      ? `已导入 ${preview.pluginId} ${preview.version}`
-      : `该版本此前已导入，已直接引用 ${preview.pluginId} ${preview.version}`;
+      ? `${t('plugins.imported', '已导入')} ${preview.pluginId} ${preview.version}`
+      : `${t('plugins.reused', '该版本此前已导入，已直接引用')} ${preview.pluginId} ${preview.version}`;
     onClear();
     await load();
   } catch (e) {
-    opError.value = apiErrorMessage(e, '导入失败，请稍后重试');
+    opError.value = apiErrorMessage(e, t('plugins.importFailed', '导入失败，请稍后重试'));
   } finally {
     importing.value = false;
     pendingKey.value = null;
@@ -178,7 +162,7 @@ async function run(key: string, action: () => Promise<unknown>, notice: string):
     opNotice.value = notice;
     await load();
   } catch (e) {
-    opError.value = apiErrorMessage(e, '操作失败，请稍后重试');
+    opError.value = apiErrorMessage(e, t('common.opFailed', '操作失败，请稍后重试'));
   } finally {
     pendingKey.value = null;
   }
@@ -194,13 +178,17 @@ function onToggle(plugin: PluginInventoryEntry, next: boolean): void {
     void run(
       `activate:${version.versionId}`,
       () => activateVersion(version.versionId),
-      `已启用 ${plugin.name} ${version.version}`,
+      `${t('plugins.enabled', '已启用')} ${plugin.name} ${version.version}`,
     );
     return;
   }
   const activation = plugin.activations.find((item) => item.status === 'ACTIVE');
   if (activation) {
-    void run(`stop:${activation.id}`, () => stopActivation(activation.id), `已停用 ${plugin.name}`);
+    void run(
+      `stop:${activation.id}`,
+      () => stopActivation(activation.id),
+      `${t('plugins.disabled', '已停用')} ${plugin.name}`,
+    );
   }
 }
 
@@ -209,7 +197,11 @@ function onToggle(plugin: PluginInventoryEntry, next: boolean): void {
 function onSwitchVersion(plugin: PluginInventoryEntry, versionId: string, version: string): void {
   const active = plugin.activations.find((item) => item.status === 'ACTIVE');
   const action = () => (active ? upgradeVersion(versionId) : activateVersion(versionId));
-  void run(`switch:${versionId}`, action, `已切换 ${plugin.name} 到 ${version}`);
+  void run(
+    `switch:${versionId}`,
+    action,
+    `${t('plugins.switched', '已切换')} ${plugin.name} → ${version}`,
+  );
 }
 
 async function submitConfirm(): Promise<void> {
@@ -222,7 +214,7 @@ async function submitConfirm(): Promise<void> {
     await run(
       `uninstall:${target.plugin.pluginId}`,
       () => uninstallPlugin(target.plugin.pluginId),
-      `已卸载 ${target.plugin.name}`,
+      `${t('plugins.uninstalled', '已卸载')} ${target.plugin.name}`,
     );
   } else if (target.kind === 'apply') {
     presetOps.apply(target.preset);
@@ -243,7 +235,20 @@ onMounted(() => {
   <section class="plugins-view" data-testid="plugins-view">
     <header class="plugins-header">
       <h2 class="ff-page-title">{{ t('plugins.title', '插件管理') }}</h2>
-      <BaseButton @click="load">{{ t('common.refresh', '刷新') }}</BaseButton>
+      <div class="plugins-header-actions">
+        <BaseButton
+          v-if="inactivePlugins.length > 0"
+          data-testid="toggle-inactive"
+          @click="showInactive = !showInactive"
+        >
+          {{
+            showInactive
+              ? t('plugins.hideInactive', '收起已停用')
+              : `${t('plugins.showInactive', '显示已停用')}（${inactivePlugins.length}）`
+          }}
+        </BaseButton>
+        <BaseButton @click="load">{{ t('common.refresh', '刷新') }}</BaseButton>
+      </div>
     </header>
 
     <UploadDropzone
@@ -261,6 +266,7 @@ onMounted(() => {
     <PluginPresetBar
       :presets="presetOps.presets.value"
       :busy="presetOps.busy.value"
+      :failures="presetOps.failures.value"
       @save="presetOps.save"
       @apply="confirmTarget = { kind: 'apply', preset: $event }"
       @remove="confirmTarget = { kind: 'remove', preset: $event }"
@@ -271,19 +277,14 @@ onMounted(() => {
     <p v-if="presetOps.error.value" class="form-error" role="alert">
       {{ presetOps.error.value }}
     </p>
-    <ul v-if="presetOps.failures.value.length > 0" class="preset-failures" role="alert">
-      <li v-for="failure in presetOps.failures.value" :key="failure.pluginId">
-        {{ failure.pluginId }} {{ failure.action === 'stop' ? '停用' : '启用' }}失败：{{
-          failure.message
-        }}
-      </li>
-    </ul>
-
     <StateView v-if="state !== 'ready'" :state="state" :message="error">
-      <p v-if="state === 'empty'">尚无插件，请在上方导入插件包</p>
+      <p v-if="state === 'empty'">{{ t('plugins.empty', '尚无插件，请在上方导入插件包') }}</p>
     </StateView>
+    <p v-else-if="visiblePlugins.length === 0" class="op-notice" data-testid="inactive-only-hint">
+      {{ t('plugins.allInactiveHint', '当前仅停用插件，点击"显示已停用"查看') }}
+    </p>
     <ul v-else class="plugin-list">
-      <li v-for="plugin in plugins" :key="plugin.pluginId">
+      <li v-for="plugin in visiblePlugins" :key="plugin.pluginId">
         <PluginCard
           :plugin="plugin"
           :pending="pendingKey !== null || presetOps.busy.value"
@@ -313,18 +314,13 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
 }
+.plugins-header-actions {
+  display: flex;
+  gap: var(--ff-space-2);
+}
 .op-notice {
   margin: var(--ff-space-2) 0 0;
   color: var(--ff-primary);
-  font-size: var(--ff-text-sm);
-}
-.preset-failures {
-  list-style: none;
-  margin: var(--ff-space-2) 0 0;
-  padding: var(--ff-space-2);
-  border-radius: var(--ff-radius-md);
-  background: var(--ff-danger-bg);
-  color: var(--ff-danger);
   font-size: var(--ff-text-sm);
 }
 .plugin-list {

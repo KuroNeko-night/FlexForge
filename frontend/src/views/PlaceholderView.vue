@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { t } from '@/registry/localeRegistry';
 /** 平台管理页占位（数据模型等菜单的目标页；具体管理界面属后续阶段）。 */
 defineProps<{ title: string }>();
 </script>
@@ -8,7 +9,9 @@ defineProps<{ title: string }>();
     <div class="placeholder-box">
       <span class="placeholder-mark" aria-hidden="true"></span>
       <h2>{{ title }}</h2>
-      <p>该模块的管理界面将在后续阶段提供；动态实体页面见工作台入口。</p>
+      <p>
+        {{ t('placeholder.hint', '该模块的管理界面将在后续阶段提供；动态实体页面见工作台入口。') }}
+      </p>
     </div>
   </section>
 </template>

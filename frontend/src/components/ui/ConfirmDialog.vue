@@ -2,6 +2,7 @@
 import { nextTick, onUnmounted, ref, watch } from 'vue';
 
 import BaseButton from '@/components/ui/BaseButton.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 统一确认对话框（P16 交互规范）：替代原生 window.confirm——破坏性操作
@@ -22,11 +23,11 @@ const props = withDefaults(
     busy?: boolean;
   }>(),
   {
-    confirmLabel: '确认',
-    cancelLabel: '取消',
+    confirmLabel: t('common.confirm', '确认'),
+    cancelLabel: t('common.cancel', '取消'),
     danger: false,
     requireReason: false,
-    reasonLabel: '原因',
+    reasonLabel: t('issues.reason', '原因'),
     reasonPlaceholder: '',
     busy: false,
   },
@@ -156,7 +157,7 @@ function onReasonEnter(event: KeyboardEvent): void {
               data-testid="confirm-submit"
               @click="submit"
             >
-              {{ busy ? '处理中…' : confirmLabel }}
+              {{ busy ? t('common.processing', '处理中…') : confirmLabel }}
             </BaseButton>
           </div>
         </div>

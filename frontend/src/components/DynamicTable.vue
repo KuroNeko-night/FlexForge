@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 
 import type { EntityDetail, FieldDefinition, RecordView, ViewDefinition } from '@/api/types';
+import { t } from '@/registry/localeRegistry';
 import { resolveRenderer } from '@/registry/rendererRegistry';
 import { visibleColumns } from '@/utils/viewColumns';
 
@@ -33,7 +34,7 @@ function cellRenderer(field: FieldDefinition) {
     <thead>
       <tr>
         <th v-for="column in columns" :key="column.id" scope="col">{{ column.displayName }}</th>
-        <th scope="col">操作</th>
+        <th scope="col">{{ t('common.actions', '操作') }}</th>
       </tr>
     </thead>
     <tbody>

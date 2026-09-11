@@ -3,6 +3,7 @@
  * 无网络请求、无新端点。转义遵循 RFC 4180（含逗号/引号/换行的字段加引号
  * 包裹、内部引号翻倍；行尾 CRLF）；下载层补 UTF-8 BOM 保 Excel 中文兼容。
  */
+import { t } from '@/registry/localeRegistry';
 
 /** 单元格口径：null/undefined→空串；boolean→是/否（与 BooleanField display 一致）；其余 String()。 */
 function cell(value: unknown): string {
@@ -10,7 +11,7 @@ function cell(value: unknown): string {
     return '';
   }
   if (typeof value === 'boolean') {
-    return value ? '是' : '否';
+    return value ? t('common.yes', '是') : t('common.no', '否');
   }
   return String(value);
 }

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-import { ISSUE_STATUS_LABELS, type IssueRecord } from '@/api/issues';
+import { issueStatusLabel, type IssueRecord } from '@/api/issues';
 import AppIcon from '@/components/AppIcon.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 用户端工作台侧栏（P23 FR-ISSUE-07）：我的需求列表——已发布分组置顶，
@@ -25,12 +26,16 @@ const drafts = computed(() => props.issues.filter((issue) => !issue.publishedAt)
 <template>
   <aside class="sidebar" :class="{ collapsed }">
     <div class="sidebar-head">
-      <h3 v-if="!collapsed">我的需求</h3>
+      <h3 v-if="!collapsed">{{ t('issues.myIssues', '我的需求') }}</h3>
       <button
         type="button"
         class="collapse-toggle"
         :data-testid="collapsed ? 'expand-sidebar' : 'collapse-sidebar'"
-        :aria-label="collapsed ? '展开侧栏' : '折叠侧栏'"
+        :aria-label="
+          collapsed
+            ? t('issues.expandSidebar', '展开侧栏')
+            : t('issues.collapseSidebar', '折叠侧栏')
+        "
         @click="$emit('toggle')"
       >
         <AppIcon :name="collapsed ? 'chevron-right' : 'chevron-left'" :size="16" />
@@ -43,12 +48,12 @@ const drafts = computed(() => props.issues.filter((issue) => !issue.publishedAt)
         data-testid="new-requirement"
         @click="$emit('create')"
       >
-        新建需求
+        {{ t('issues.newIssue', '新建需求') }}
       </BaseButton>
-      <div v-if="loading" class="sidebar-hint">加载中…</div>
+      <div v-if="loading" class="sidebar-hint">{{ t('common.loading', '加载中…') }}</div>
       <div v-else-if="error" class="sidebar-hint">{{ error }}</div>
       <nav v-else class="sidebar-list" data-testid="my-issues">
-        <p v-if="published.length > 0" class="group-label">已发布</p>
+        <p v-if="published.length > 0" class="group-label">{{ t('issues.published', '已发布') }}</p>
         <button
           v-for="issue in published"
           :key="issue.id"
@@ -59,9 +64,9 @@ const drafts = computed(() => props.issues.filter((issue) => !issue.publishedAt)
           @click="$emit('select', issue)"
         >
           <span class="entry-title">{{ issue.title }}</span>
-          <span class="entry-meta">{{ ISSUE_STATUS_LABELS[issue.status] }}</span>
+          <span class="entry-meta">{{ issueStatusLabel(issue.status) }}</span>
         </button>
-        <p v-if="drafts.length > 0" class="group-label">梳理中</p>
+        <p v-if="drafts.length > 0" class="group-label">{{ t('issues.inProgress', '梳理中') }}</p>
         <button
           v-for="issue in drafts"
           :key="issue.id"
@@ -72,9 +77,11 @@ const drafts = computed(() => props.issues.filter((issue) => !issue.publishedAt)
           @click="$emit('select', issue)"
         >
           <span class="entry-title">{{ issue.title }}</span>
-          <span class="entry-meta">{{ ISSUE_STATUS_LABELS[issue.status] }}</span>
+          <span class="entry-meta">{{ issueStatusLabel(issue.status) }}</span>
         </button>
-        <p v-if="issues.length === 0" class="sidebar-hint">还没有需求，先新建一个</p>
+        <p v-if="issues.length === 0" class="sidebar-hint">
+          {{ t('issues.emptySidebar', '还没有需求，先新建一个') }}
+        </p>
       </nav>
     </template>
   </aside>

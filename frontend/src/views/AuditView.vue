@@ -81,34 +81,36 @@ onMounted(load);
 
     <form class="audit-filters" data-testid="audit-filters" @submit.prevent="applyFilters">
       <label>
-        操作者
+        {{ t('audit.operator', '操作者') }}
         <input v-model="filters.actor" name="actor" data-testid="audit-filter-actor" />
       </label>
       <label>
-        动作
+        {{ t('audit.action', '动作') }}
         <input v-model="filters.action" name="action" data-testid="audit-filter-action" />
       </label>
       <label>
-        对象
+        {{ t('audit.object', '对象') }}
         <input v-model="filters.objectId" name="objectId" data-testid="audit-filter-object" />
       </label>
       <div class="filter-actions">
         <BaseButton type="submit" variant="primary">{{ t('common.search', '查询') }}</BaseButton>
-        <BaseButton variant="ghost" @click="resetFilters">重置</BaseButton>
+        <BaseButton variant="ghost" @click="resetFilters">{{
+          t('common.reset', '重置')
+        }}</BaseButton>
       </div>
     </form>
 
     <StateView v-if="state !== 'ready'" :state="state" :message="error">
-      <p v-if="state === 'empty'">当前条件下没有审计记录</p>
+      <p v-if="state === 'empty'">{{ t('audit.empty', '当前条件下没有审计记录') }}</p>
     </StateView>
     <table v-else class="audit-table" data-testid="audit-table">
       <thead>
         <tr>
-          <th scope="col">时间</th>
-          <th scope="col">操作者</th>
-          <th scope="col">动作</th>
-          <th scope="col">对象</th>
-          <th scope="col">结果</th>
+          <th scope="col">{{ t('audit.colTime', '时间') }}</th>
+          <th scope="col">{{ t('audit.operator', '操作者') }}</th>
+          <th scope="col">{{ t('audit.action', '动作') }}</th>
+          <th scope="col">{{ t('audit.object', '对象') }}</th>
+          <th scope="col">{{ t('audit.colResult', '结果') }}</th>
         </tr>
       </thead>
       <tbody>

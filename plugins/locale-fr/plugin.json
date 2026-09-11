@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "locale.fr",
+  "name": "Pack de langue français",
+  "version": "1.0.0",
+  "capabilityLevel": 1,
+  "minPlatformVersion": "0.1.0",
+  "dependencies": [],
+  "contributions": {
+    "navigation": [],
+    "renderers": [],
+    "themeAssets": [
+      {
+        "key": "locale.fr.pack",
+        "kind": "locale",
+        "path": "assets/fr.json"
+      }
+    ]
+  },
+  "resources": {
+    "entities": [],
+    "views": [],
+    "migrations": []
+  }
+}

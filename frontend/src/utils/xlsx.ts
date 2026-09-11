@@ -4,6 +4,7 @@
  * 单元格口径与 utils/csv 一致（boolean→是/否，null→空串）。
  */
 import ExcelJS from 'exceljs';
+import { t } from '@/registry/localeRegistry';
 
 /** 单元格口径：与 csv.cell 一致（null/undefined→空串；boolean→是/否；其余 String()）。 */
 function cell(value: unknown): string {
@@ -11,7 +12,7 @@ function cell(value: unknown): string {
     return '';
   }
   if (typeof value === 'boolean') {
-    return value ? '是' : '否';
+    return value ? t('common.yes', '是') : t('common.no', '否');
   }
   return String(value);
 }
@@ -22,7 +23,7 @@ export function xlsxSafeSheetName(name: string): string {
     .replace(/[[\]:*?/\\]/g, '-')
     .trim()
     .slice(0, 31);
-  return cleaned === '' ? '导出' : cleaned;
+  return cleaned === '' ? t('export.suffix', '导出') : cleaned;
 }
 
 /** 组装 XLSX 工作簿二进制（首行表头；表头行加粗便于阅读）。 */

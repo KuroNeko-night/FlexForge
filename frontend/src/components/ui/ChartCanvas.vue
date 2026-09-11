@@ -11,6 +11,7 @@ import {
   PieController,
   Tooltip,
 } from 'chart.js';
+import { t } from '@/registry/localeRegistry';
 
 // chart.js v4 裸入口不自动注册控制器（审查 P1-1）：条形/饼所需最小集显式注册
 Chart.register(
@@ -117,7 +118,10 @@ function ariaSummary(): string {
   const head = props.categories
     .slice(0, 5)
     .map((category, index) => `${category} ${displayValue(props.values[index])}`);
-  const suffix = props.categories.length > head.length ? ` 等 ${props.categories.length} 项` : '';
+  const suffix =
+    props.categories.length > head.length
+      ? ` ${t('chart.moreSuffix', '等')} ${props.categories.length} ${t('chart.itemUnit', '项')}`
+      : '';
   return `${props.title}：${head.join('、')}${suffix}`;
 }
 </script>
@@ -133,12 +137,14 @@ function ariaSummary(): string {
         {{
           title
         }}
-        数据表
+        {{
+          t('chart.dataTable', '数据表')
+        }}
       </caption>
       <thead>
         <tr>
-          <th scope="col">类别</th>
-          <th scope="col">数值</th>
+          <th scope="col">{{ t('chart.category', '类别') }}</th>
+          <th scope="col">{{ t('chart.value', '数值') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -149,7 +155,7 @@ function ariaSummary(): string {
       </tbody>
       <tfoot>
         <tr>
-          <td>合计</td>
+          <td>{{ t('chart.total', '合计') }}</td>
           <td>{{ totalText() }}</td>
         </tr>
       </tfoot>

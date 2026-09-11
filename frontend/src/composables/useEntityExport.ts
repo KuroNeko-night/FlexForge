@@ -4,6 +4,7 @@ import type { EntityDetail, RecordView, ViewDefinition } from '@/api/types';
 import { buildCsv, csvSafeFilename, downloadCsv } from '@/utils/csv';
 import { buildXlsx, downloadXlsx } from '@/utils/xlsx';
 import { visibleColumns } from '@/utils/viewColumns';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 实体列表导出（P19 CSV / P23 XLSX）：同一口径——可见列 + 当前已加载记录，
@@ -34,7 +35,10 @@ export function useEntityExport(options: {
   function exportCsv(): void {
     const data = exportRows();
     if (data) {
-      downloadCsv(`${data.name}-导出.csv`, buildCsv(data.headers, data.rows));
+      downloadCsv(
+        `${data.name}-${t('export.suffix', '导出')}.csv`,
+        buildCsv(data.headers, data.rows),
+      );
     }
   }
 
@@ -45,9 +49,9 @@ export function useEntityExport(options: {
     }
     try {
       const workbook = await buildXlsx(data.name, data.headers, data.rows);
-      await downloadXlsx(`${data.name}-导出.xlsx`, workbook);
+      await downloadXlsx(`${data.name}-${t('export.suffix', '导出')}.xlsx`, workbook);
     } catch {
-      exportError.value = '导出失败，请稍后重试';
+      exportError.value = t('export.failed', '导出失败，请稍后重试');
     }
   }
 

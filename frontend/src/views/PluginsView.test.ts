@@ -3,8 +3,8 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiError } from '@/api/client';
-import type { PluginInventoryEntry } from '@/api/plugins';
 import PluginsView from '@/views/PluginsView.vue';
+import { activeActivation, inventory } from './pluginsViewFixtures';
 
 vi.mock('@/api/plugins', () => ({
   fetchPluginInventory: vi.fn(),
@@ -43,55 +43,6 @@ const upgradeMock = vi.mocked(upgradeVersion);
 const fetchPresetsMock = vi.mocked(fetchPresets);
 const savePresetMock = vi.mocked(savePreset);
 const applyPresetMock = vi.mocked(applyPreset);
-
-function inventory(): PluginInventoryEntry[] {
-  return [
-    {
-      pluginId: 'gen.iabc123',
-      name: '物料库存规格',
-      instanceStatus: 'ACTIVE',
-      versions: [
-        { versionId: 'v1', version: '0.1.2', createdAt: '2026-08-29T02:00:00Z' },
-        { versionId: 'v0', version: '0.1.1', createdAt: '2026-08-28T02:00:00Z' },
-      ],
-      activations: [
-        {
-          id: 'a2',
-          pluginId: 'gen.iabc123',
-          pluginVersionId: 'v1',
-          operation: 'ACTIVATE',
-          status: 'ACTIVE',
-          stage: 'REGISTERED',
-          errorCode: null,
-          requestedBy: 'test-developer',
-          startedAt: '2026-08-29T02:00:01Z',
-          finishedAt: null,
-        },
-        {
-          id: 'a1',
-          pluginId: 'gen.iabc123',
-          pluginVersionId: 'v0',
-          operation: 'ACTIVATE',
-          status: 'FAILED',
-          stage: 'DEPENDENCY_CHECK',
-          errorCode: 'dependency_missing',
-          requestedBy: 'test-admin',
-          startedAt: '2026-08-28T02:00:01Z',
-          finishedAt: '2026-08-28T02:00:02Z',
-        },
-      ],
-    },
-    {
-      pluginId: 'gen.older',
-      name: '已停用插件',
-      instanceStatus: 'imported',
-      versions: [{ versionId: 'v9', version: '0.2.0', createdAt: '2026-09-01T02:00:00Z' }],
-      activations: [],
-    },
-  ];
-}
-
-const activeActivation = () => inventory()[0].activations[0];
 
 function resetMocks(): void {
   fetchMock.mockReset().mockResolvedValue(inventory());
@@ -143,6 +94,19 @@ describe('PluginsView 插件清单（P21 当前版本卡片）', () => {
     expect(text).not.toContain('test-developer');
   });
 
+  it('P26 已停用插件默认折叠，开关展开（FR-PLUGIN-15）', async () => {
+    const wrapper = await mountView();
+    expect(wrapper.text()).not.toContain('gen.older');
+    expect(wrapper.text()).toContain('显示已停用（1）');
+    await wrapper.find('[data-testid="toggle-inactive"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.findAll('[data-testid="plugin-toggle"]').length).toBe(2);
+    expect(wrapper.find('[data-testid="toggle-inactive"]').text()).toContain('收起已停用');
+    await wrapper.find('[data-testid="toggle-inactive"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.findAll('[data-testid="plugin-toggle"]').length).toBe(1);
+  });
+
   it('空清单显示空态', async () => {
     fetchMock.mockResolvedValue([]);
     const wrapper = await mountView();
@@ -161,6 +125,7 @@ describe('PluginsView 开关启停与版本切换（P21）', () => {
 
   it('开关开=激活当前版本，关=停用当前激活', async () => {
     const wrapper = await mountView();
+    await wrapper.find('[data-testid="toggle-inactive"]').trigger('click');
     await wrapper.findAll('[data-testid="plugin-toggle"]')[1].trigger('click');
     await flushPromises();
     expect(activateMock).toHaveBeenCalledWith('v9');
@@ -180,6 +145,7 @@ describe('PluginsView 开关启停与版本切换（P21）', () => {
   it('开关操作失败显示页面级错误', async () => {
     activateMock.mockRejectedValue(new ApiError('dependency_missing', '依赖缺失', 400, 'req-2'));
     const wrapper = await mountView();
+    await wrapper.find('[data-testid="toggle-inactive"]').trigger('click');
     await wrapper.findAll('[data-testid="plugin-toggle"]')[1].trigger('click');
     await flushPromises();
     expect(wrapper.text()).toContain('依赖缺失');
