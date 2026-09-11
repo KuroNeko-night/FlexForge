@@ -3,14 +3,14 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P26
-CURRENT_STAGE_NAME: 界面净化、系统多语言与 AI 上游探活
-STAGE_STATUS: completed
+CURRENT_STAGE_ID: P27
+CURRENT_STAGE_NAME: 演示就绪整备
+STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 100%
 LAST_UPDATED: 2026-09-11
 OWNER: project-maintainer
-NEXT_ACTION: P00-P26 全阶段完成（进度 100%，release_candidate 维护期）：待用户验收 P26 三项（界面净化/系统多语言/AI 上游探活）或裁决新增阶段
-EXIT_GATE: P26 出口复核通过（2026-09-11）：①界面净化——插件页默认无 e2e.*/gen.* 卡片（"显示已停用（5）"开关）、用户页默认无 BLOCKED（17 隐藏仅 3 活跃，"显示已封禁"开关）、侧栏无"fixture 澄清规格"、工作台无 demo_material；live 清理执行（gen.i7f3 停用/e2e×2 卸载/demo-developer+demo-user+p23bug 封禁/demo_material 实体禁用/demo issues 5 CLOSED+7 RETURNED——无规格者不能批准达终态，按 RETURNED 归档为已知限制）；临时号 p26walk/p26iss×3 用后封禁。②系统多语言——352 键×四包（locale-en 1.1.2/ja·fr·es 1.0.2），切 en/ja/fr/es 平台 chrome 全量换语言（导航/表头/按钮/空态/记录动作/状态机），插件菜单/实体字段/数据值保持原文，停用回退中文基线；键集与代码实际使用精确对账（提取器+模板键族契约锁）。③探活——环回 400（环回/私有/保留地址）/真实 DeepSeek 探活通过 200 落库（存量密钥+api.deepseek.com+deepseek-flash）/错模型 400 附可用模型列表且配置不变；守卫拒十进制 IP 字面量编码（审查 P1 堵住）；fixture 不探活。④质量门——flexforge-ai 55/0+app AI 10/0+前端 210/210+门禁 21/1/0+CI 六项绿；交叉审查独立子代理 P1×1/P2×4/P3×7 全处置（PR #53 评论）；S1-S9 不破（密钥不落日志/审计/异常消息，守卫+探活失败路径全测）。docs（02/03/09/13/索引/STATUS/JSON）同步；PR #53 合并 74fd0cc
+NEXT_ACTION: P27 实施中（2026-09-11 用户裁决四项，docs/09 P27）：①清除开发测试账号（live_check_user 封禁，走查号维持 BLOCKED 隐藏）②插件去"示例"字样（9 包升版改名）③同质 CRUD 以多样化 L2 替代（live 卸载 inventory/safety，新增 crosstab/histogram/topitems 三代码插件）④Issue 工作台精选（demo 账号视角 3 演示用例，fixture 澄清造数）
+EXIT_GATE: 计划出口证据（docs/09 P27 验收标准）：live 插件页无"示例"字样且无 inventory/safety/新增三代码插件在列；用户管理无开发测试活跃账号；demo 视角 Issue 工作台仅 3 演示用例；AI=fixture；门禁 21/1/0+CI 六绿+新包测试。｜历史：P26 出口复核通过（2026-09-11）：①界面净化——插件页默认无 e2e.*/gen.* 卡片（"显示已停用（5）"开关）、用户页默认无 BLOCKED（17 隐藏仅 3 活跃，"显示已封禁"开关）、侧栏无"fixture 澄清规格"、工作台无 demo_material；live 清理执行（gen.i7f3 停用/e2e×2 卸载/demo-developer+demo-user+p23bug 封禁/demo_material 实体禁用/demo issues 5 CLOSED+7 RETURNED——无规格者不能批准达终态，按 RETURNED 归档为已知限制）；临时号 p26walk/p26iss×3 用后封禁。②系统多语言——352 键×四包（locale-en 1.1.2/ja·fr·es 1.0.2），切 en/ja/fr/es 平台 chrome 全量换语言（导航/表头/按钮/空态/记录动作/状态机），插件菜单/实体字段/数据值保持原文，停用回退中文基线；键集与代码实际使用精确对账（提取器+模板键族契约锁）。③探活——环回 400（环回/私有/保留地址）/真实 DeepSeek 探活通过 200 落库（存量密钥+api.deepseek.com+deepseek-flash）/错模型 400 附可用模型列表且配置不变；守卫拒十进制 IP 字面量编码（审查 P1 堵住）；fixture 不探活。④质量门——flexforge-ai 55/0+app AI 10/0+前端 210/210+门禁 21/1/0+CI 六项绿；交叉审查独立子代理 P1×1/P2×4/P3×7 全处置（PR #53 评论）；S1-S9 不破（密钥不落日志/审计/异常消息，守卫+探活失败路径全测）。docs（02/03/09/13/索引/STATUS/JSON）同步；PR #53 合并 74fd0cc
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -46,6 +46,7 @@ BLOCKERS: none
 | P24 | 管理面补全与体验打磨 | completed | 验收六项（docs/09 P24）：插件卡降噪/排版居中+表单取消/审计日志页（FR-AUTH-04）+批量停启用（FR-AUTH-05）/Agent Skill 分发（FR-ISSUE-08）/Issue 切换残留修复/门禁 21/1/0+CI 六绿（live 终验见 EXIT_GATE） |
 | P25 | 前端排版分布与视觉精修 | completed | 验收四项全过（docs/09 P25）：排版网格均布+设置多列（页头出网格）/字体系统与层级（自托管无外链+woff 剔除）/背景灰阶基线+主题 1.1.2 双向换装/文案零变更+机制回归+门禁 21/1/0；审查 2P2+5P3 全处置，live 终验见 EXIT_GATE |
 | P26 | 界面净化、系统多语言与 AI 上游探活 | completed | 验收四项全过（docs/09 P26）：净化默认过滤+live 清理（issues 归档受规格门约束为已知限制）/系统文案 352 键×四语言包（插件内容不翻译）/探活 400 上抛+URL 守卫（含十进制 IP 堵漏）/门禁 21/1/0+CI 六绿+审查 P1×1/P2×4/P3×7 全处置；live 终验见 EXIT_GATE |
+| P27 | 演示就绪整备 | in_progress | 验收四项（docs/09 P27）：插件去示例名/多样化 L2 替代/账号清理/Issue 精选+fixture 演示态/门禁+新包测试 |
 
 ## 更新规则
 
@@ -199,6 +200,7 @@ BLOCKERS: none
 | 2026-09-11 | P26 | 迭代完成（分支 feat/p26-cleanse-i18n-aicheck，PR #53 六提交）：A=界面净化——PluginsView 默认折叠已停用+UsersView 默认隐藏 BLOCKED（开关会话内记忆，后端契约零变更）；B=系统多语言——全系统文案接 t()（352 键，StateView/记录动作/状态机标签渲染期解析），locale-en 1.1.0→1.1.2（剔 menu.example.* 插件内容键）+新增 locale-ja/fr/es（352 键同集），QG-4 拆 UserCreateDrawer/UserRolesDrawer/IssueSpecSection/IssueNewRequirementForm/pluginConfirm；C=AI 探活——ModelUrlGuard（scheme+拒环回/私有/保留 IP 字面量）+ModelConfigGate/HttpModelConfigGate（GET {base}/models）+ModelEndpoints（根地址拼 /chat/completions 官方口径），AiConfigKernel 聚合装配；live 走查自抓自修：记录动作模板字面量键漏网（四包+3 键）、索引树版本号致 R-GOV-05b（本地 CRLF 假过/CI 真挂） | 本分支提交 |
 | 2026-09-11 | P26 | 交叉审查（独立子代理，缺陷优先）：**P1×1 + P2×4 + P3×7，全处置**（PR #53 评论）。P1：十进制 IP 字面量（2130706433=127.0.0.1）绕过守卫——isIpLiteral 增纯数字形态+双用例；P2：语言包缺记录动作三键（先行修复 ed70d98+契约锁）/DevPanel 双确认对话接 t()/批量通知单位键化/FR-PLUGIN-15 补登记；P3 修 6：docs·09 命名对齐、收起封禁裁剪勾选、占位页标题跟键、端口测试断言 /chat/completions 路径、IssuesView 键归 common、索引树修复；P3 记 2：分段键 CJK 标点（候选）、ConfirmDialog 默认标签求值时机（对话框短生命周期可接受） | PR #53 评论 |
 | 2026-09-11 | P26 | **P26 出口复核通过置 completed；P00-P26 全阶段完成，进度 100%，项目维持 release_candidate**。live 终验（镜像重建）：净化——插件页默认无 e2e/gen 卡+显示已停用（5）开关、用户页默认 3 活跃账号+显示已封禁（17）、侧栏无 fixture 菜单、工作台无 demo 实体；清理执行——gen.i7f3 停用/e2e×2 卸载/demo 三账号封禁/demo_material 禁用/issues 5 CLOSED+7 RETURNED（无规格不能批准，已知限制）；多语言——四包终版 live 导入（en 1.1.2/ja·fr·es 1.0.2），切 en/ja/fr/es 导航全译、插件菜单原文、回退中文正常、en 实体页 Details/Edit/Delete；探活——环回 400/真实 DeepSeek（存量密钥）探活 200 落库/错模型 400 附可用列表且配置不变。flexforge-ai 55/0+app AI 10/0+前端 210/210+门禁 21/1/0+CI 六项绿。临时号 p26walk/p26iss×3 封禁。PR #53 合并 74fd0cc | EXIT_GATE、本条目 |
+| 2026-09-11 | P27 | 用户裁决演示就绪整备（四项）：①清除开发测试账号；②插件名去"示例"字样；③功能相似插件以更多样化受信代码插件替代；④Issue 工作台只保留几个演示用例。约束：inventory/safety 为 E2e/FR-DEMO 验收夹具仓库保留、仅 live 卸载；改名走升版。docs/09 P27 节登记 | docs/09 P27、本条目 |
 | 2026-09-11 | — | 用户裁决 README 换风格：按"初步开发完成的正常项目"口吻重写（去毕设/治理内部话术与阶段 ID，居中头图式徽章墙+锚点导航+What is/Screenshots/Features/Getting Started/Tech Stack/Architecture/Status/Roadmap/Documentation 常规章节；技术栈徽章按实际版本核实 Java17/PG17/Vite8/TS5.9），中英同构 | README.md、README.zh-CN.md、本条目 |
 | 2026-09-11 | — | 用户裁决：远端仓库门面完整化——README 重写为英文主文档（徽章/能力/快速启动/架构/安全质量/状态/文档表/双截图）+README.zh-CN.md 中文副本+仓库简介与 topics 更新；截图采集自 live 英文界面入库 docs/assets | README.md、README.zh-CN.md、本条目 |
 | 2026-09-11 | P26 | 用户验收 P25 并裁决新增（三项）：①"前端目前还有很多 debug 字样，把这些内容都隐藏掉"——live 库走查/演示残留外显（e2e.dep×2/fixture 澄清规格×2（gen.*，其一激活贡献侧栏菜单）/demo-developer+demo-user/demo issues/demo_material_*），产品级=默认过滤（BLOCKED 账号、已停用插件）+live 清理；②"更新英文插件，同时试着加入更多常用语言，注意只翻译系统，不翻译插件内容"——P15 后系统界面未接 t()，需全面扫尾+locale-en 1.1.0（剔 menu.example.* 插件内容键）+新增 ja/fr/es；③"ai 配置保存后要检查上游模型是否可用，如不可用报错上抛"（附 DeepSeek 官方文档）——保存时探活 GET {base}/models，不可用 400 上抛；base-url 语义对齐官方教程（根地址拼 /chat/completions）。docs/09 P26 节已登记（红线+实施+验收） | docs/09 P26、本条目 |

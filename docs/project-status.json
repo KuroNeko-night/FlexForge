@@ -1,13 +1,13 @@
 {
   "project": "FlexForge",
   "updatedAt": "2026-09-11",
-  "currentStageId": "P26",
-  "currentStageName": "界面净化、系统多语言与 AI 上游探活",
-  "status": "completed",
+  "currentStageId": "P27",
+  "currentStageName": "演示就绪整备",
+  "status": "in_progress",
   "progressPercent": 100,
   "owner": "project-maintainer",
-  "nextAction": "P00-P26 全阶段完成（进度 100%，release_candidate 维护期）：待用户验收 P26 三项（界面净化/系统多语言/AI 上游探活）或裁决新增阶段",
-  "exitGate": "P26 出口复核通过（2026-09-11）：①界面净化——插件页默认无 e2e.*/gen.* 卡片（\"显示已停用（5）\"开关）、用户页默认无 BLOCKED（17 隐藏仅 3 活跃，\"显示已封禁\"开关）、侧栏无\"fixture 澄清规格\"、工作台无 demo_material；live 清理执行（gen.i7f3 停用/e2e×2 卸载/demo-developer+demo-user+p23bug 封禁/demo_material 实体禁用/demo issues 5 CLOSED+7 RETURNED——无规格者不能批准达终态，按 RETURNED 归档为已知限制）；临时号 p26walk/p26iss×3 用后封禁。②系统多语言——352 键×四包（locale-en 1.1.2/ja·fr·es 1.0.2），切 en/ja/fr/es 平台 chrome 全量换语言（导航/表头/按钮/空态/记录动作/状态机），插件菜单/实体字段/数据值保持原文，停用回退中文基线；键集与代码实际使用精确对账（提取器+模板键族契约锁）。③探活——环回 400（环回/私有/保留地址）/真实 DeepSeek 探活通过 200 落库（存量密钥+api.deepseek.com+deepseek-flash）/错模型 400 附可用模型列表且配置不变；守卫拒十进制 IP 字面量编码（审查 P1 堵住）；fixture 不探活。④质量门——flexforge-ai 55/0+app AI 10/0+前端 210/210+门禁 21/1/0+CI 六项绿；交叉审查独立子代理 P1×1/P2×4/P3×7 全处置（PR #53 评论）；S1-S9 不破（密钥不落日志/审计/异常消息，守卫+探活失败路径全测）。docs（02/03/09/13/索引/STATUS/JSON）同步；PR #53 合并 74fd0cc",
+  "nextAction": "P27 实施中（2026-09-11 用户裁决四项，docs/09 P27）：①清除开发测试账号（live_check_user 封禁，走查号维持 BLOCKED 隐藏）②插件去\"示例\"字样（9 包升版改名）③同质 CRUD 以多样化 L2 替代（live 卸载 inventory/safety，新增 crosstab/histogram/topitems 三代码插件）④Issue 工作台精选（demo 账号视角 3 演示用例，fixture 澄清造数）",
+  "exitGate": "计划出口证据（docs/09 P27 验收标准）：live 插件页无\"示例\"字样且无 inventory/safety/新增三代码插件在列；用户管理无开发测试活跃账号；demo 视角 Issue 工作台仅 3 演示用例；AI=fixture；门禁 21/1/0+CI 六绿+新包测试。｜历史：P26 出口复核通过（2026-09-11）：①界面净化——插件页默认无 e2e.*/gen.* 卡片（\"显示已停用（5）\"开关）、用户页默认无 BLOCKED（17 隐藏仅 3 活跃，\"显示已封禁\"开关）、侧栏无\"fixture 澄清规格\"、工作台无 demo_material；live 清理执行（gen.i7f3 停用/e2e×2 卸载/demo-developer+demo-user+p23bug 封禁/demo_material 实体禁用/demo issues 5 CLOSED+7 RETURNED——无规格者不能批准达终态，按 RETURNED 归档为已知限制）；临时号 p26walk/p26iss×3 用后封禁。②系统多语言——352 键×四包（locale-en 1.1.2/ja·fr·es 1.0.2），切 en/ja/fr/es 平台 chrome 全量换语言（导航/表头/按钮/空态/记录动作/状态机），插件菜单/实体字段/数据值保持原文，停用回退中文基线；键集与代码实际使用精确对账（提取器+模板键族契约锁）。③探活——环回 400（环回/私有/保留地址）/真实 DeepSeek 探活通过 200 落库（存量密钥+api.deepseek.com+deepseek-flash）/错模型 400 附可用模型列表且配置不变；守卫拒十进制 IP 字面量编码（审查 P1 堵住）；fixture 不探活。④质量门——flexforge-ai 55/0+app AI 10/0+前端 210/210+门禁 21/1/0+CI 六项绿；交叉审查独立子代理 P1×1/P2×4/P3×7 全处置（PR #53 评论）；S1-S9 不破（密钥不落日志/审计/异常消息，守卫+探活失败路径全测）。docs（02/03/09/13/索引/STATUS/JSON）同步；PR #53 合并 74fd0cc",
   "blockers": [],
   "stages": [
     {
@@ -144,6 +144,11 @@
       "id": "P26",
       "name": "界面净化、系统多语言与 AI 上游探活",
       "status": "completed"
+    },
+    {
+      "id": "P27",
+      "name": "演示就绪整备",
+      "status": "in_progress"
     }
   ]
 }

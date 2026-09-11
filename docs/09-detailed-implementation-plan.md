@@ -625,3 +625,27 @@
 - 多语言：切 en/ja/fr/es 后系统 chrome（导航/标题/按钮/表头/空态）全量换语言、无大片中文回退；插件贡献内容（示例插件名/菜单/实体字段）保持原文；停用语言包即回退中文基线；en 1.1.0 无 menu.example.* 键。
 - 探活：http 配置保存时上游不可达/401/模型不在列表 → 400 含上游原因且配置未变；fixture 保存即成功；DeepSeek 官方口径 base-url（https://api.deepseek.com）+ deepseek-flash 可通过探活（live 实证或文档口径测试桩）；旧完整端点存量配置运行不受影响。
 - 质量门：S1-S9 不破（守卫+密钥不落日志+失败路径测试）；前端回归全绿+门禁 21/1/0+CI 六项；docs（02/03/09/13/索引/STATUS/JSON）同步；交叉审查独立子代理执行。
+
+## P27：演示就绪整备（2026-09-11 用户裁决新增）
+
+> 背景：项目进入待演示状态，用户裁决四项——①清除开发测试账号；②插件名去"示例"字样；③同质 CRUD 插件以更多样化的受信代码（Level 2）插件替代；④Issue 工作台清理，仅保留数个演示用例。
+> **红线**：
+> - 插件改名走升版（同版本不可变）：保留包 0.1.x/0.2.x patch +1（analytics→0.2.4、kanban→0.1.3 跳位避开 P22/P17 测试变体版本位 0.2.1-0.2.3 / 0.1.1-0.1.2）；example-inventory/safety 仓库保持原样（E2eDemoScript/FR-DEMO-03 与 P19 验收夹具依赖），仅 live 卸载；
+> - 新增 Level 2 包延续 S6：纯 Python 标准库、stdin {records} 契约、输出 table/chart 走 Schema 校验、空数据合法占位、失败路径测试；
+> - 演示账号凭据只入 .env（不进仓不回显）；AI 演示态=fixture（设置页可切回 http，探活守卫在场）；
+> - live 整备全部走管理端点（卸载/停用/封禁/切换），可逆、留审计。
+> **非目标**：不新增删除类端点（用户/Issue 无删除是设计口径——演示视角用专用演示账号的"我的需求"视图呈现干净工作台）。
+
+### 实施内容
+
+- **A. 插件去"示例"**：9 包改名升版（设备巡检/任务管线看板/图书借阅/采购订单/来料检验/生产工单/表格分析处理器/表格文件工具/暖色主题）。
+- **B. 多样化 L2 新增**：example-crosstab（产品×状态交叉矩阵（数据源=生产工单），table）/ example-histogram（采购金额分箱直方图，bar chart）/ example-topitems（热门物料频次榜，bar chart）——输出形态覆盖矩阵表/分布图/频次榜，与既有透视/占比/负载/文件清洗画像互补。
+- **C. live 整备**：卸载 example.inventory/example.safety、升版改名包、导入激活 3 新包、删除过期预设（走查场景A）、封禁 live_check_user、AI 切 fixture、建演示账号（demo/demo-dev，凭据入 .env）、以 demo 身份经 fixture 澄清造 3 个演示 Issue（发布中/开发中/已关闭各一）。
+- **测试**：ExampleProcessorsP27Test（三新包激活+插入样本+invoke 断言输出形态与数值）。
+
+### 验收标准
+
+- live 插件页无"示例"字样、无 inventory/safety 卡片；业务应用导航 6 项去示例名；处理器入口新增三个多样化代码插件。
+- 用户管理无开发测试活跃账号（live_check_user 封禁；走查号既有 BLOCKED 隐藏）；demo/demo-dev 可登录演示。
+- Issue 工作台以 demo 登录仅见 3 个演示用例（含一个已发布带规格）；AI 配置为 fixture。
+- 门禁 21/1/0+前后端回归全绿+CI 六项；新包有激活与输出断言测试。

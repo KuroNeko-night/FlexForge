@@ -197,7 +197,7 @@ class ExamplePluginsP17Test {
                 }
                 if (version != null && entry.endsWith("plugin.json")) {
                     String manifest = new String(bytes, StandardCharsets.UTF_8)
-                            .replace("\"version\": \"0.1.0\"", "\"version\": \"" + version + "\"");
+                            .replace("\"version\": \"0.1.3\"", "\"version\": \"" + version + "\"");
                     bytes = manifest.getBytes(StandardCharsets.UTF_8);
                 }
                 zos.write(bytes);
