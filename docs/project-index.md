@@ -12,7 +12,8 @@
 
 ```text
 FlexForge/
-├── README.md                  项目入口、快速启动与状态摘要
+├── README.md                  项目入口（英文主文档）：能力/快速启动/架构/质量
+├── README.zh-CN.md            README 中文副本（与英文同构）
 ├── STATUS.md                  进度唯一锚点（当前阶段/下一步/阻塞）
 ├── AGENTS.md                  Agent 每轮注入入口（文档路由 + 持久约束）
 ├── CONTRIBUTING.md            人的开发流程
@@ -156,7 +157,8 @@ scripts/                check-repo-health 等可重复脚本
 
 | 文件 | 作用 | 何时读 |
 | --- | --- | --- |
-| `README.md` | 项目入口、当前状态、非目标 | 首次进入项目 |
+| `README.md` | 项目入口（英文主文档） | 首次进入项目 |
+| `README.zh-CN.md` | README 中文副本 | 首次进入项目（中文） |
 | `STATUS.md` | 进度唯一锚点 | 每轮开始（锚点块） |
 | `AGENTS.md` | Agent 路由与每轮约束 | 已注入；按 § 查规则 |
 | `docs/02-requirements.md` | FR/NFR 编号 | 任何实现/测试/文档变更前找编号 |
@@ -267,3 +269,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-09-10 | §1 树更新：frontend +assets/agent-skill/SKILL.md（Agent Skill 唯一事实源）、views +AuditView、composables +useUserBatch、components +UserBatchBar；IssueBriefCard +下载 Skill；DynamicForm +cancelLabel；flexforge-system +batch-status 端点+菜单 system-audit；app 测试 +UserBatchStatusApiTest、前端 +PluginCard/AuditView 测试 | P24：管理面补全与体验打磨（用户裁决新增阶段；FR-AUTH-04/05/FR-ISSUE-08；插件卡降噪/排版居中/表单取消/Issue 切换清空） |
 | 2026-09-10 | §1 树更新：frontend 依赖 +@fontsource/space-grotesk+@fontsource/noto-sans-sc（P25 字体系统）；styles tokens/base 增 display 字体/字号阶/ff-form-grid/ff-page-title/骨架纹理基线；views 八处 h2 接 ff-page-title；plugins theme-default 升 1.1.2（bg 重绘）、theme-warm 升 1.1.2（+assets/bg.svg） | P25：前端排版分布与视觉精修（用户裁决新增；排版均匀分布+字体层级+背景纹理，文案零变更） |
 | 2026-09-11 | §1 树更新：plugins +locale-ja/locale-fr/locale-es（1.0.0）、locale-en 升 1.1.0（344 键全键集）；frontend +localePacks.test/pluginsViewFixtures、components +UserCreateDrawer/UserRolesDrawer/IssueSpecSection/IssueNewRequirementForm、utils +pluginConfirm、api/issues +issueStatusLabel/transitionLabel、registry LANGUAGE_LABELS 扩三语；backend flexforge-ai +ModelUrlGuard/ModelConfigGate/HttpModelConfigGate/ModelEndpoints/AiConfigKernel/AiConfigWiring、app 测试 +AiConfigProbeApiTest | P26：界面净化、系统多语言与 AI 上游探活（用户裁决新增；FR-AUTH-06/FR-PLUGIN-15/FR-SETUP-01/02 增补） |
+| 2026-09-11 | §1 树更新：根 +README.zh-CN.md（中文副本，README.md 重写为英文主文档+徽章+截图+文档表）、docs +assets/（工作台/插件页截图）；§3 文档地图同步 | 用户裁决：远端仓库门面完整化——README 英文为主+中文副本+仓库简介/topics（P26 后续） |
