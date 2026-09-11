@@ -63,7 +63,9 @@ class ExampleProcessorsP27Test {
 
     @Test
     void diverseProcessorsComputeRealEntityData() throws Exception {
-        activatePluginsAndSeed();
+        activatePlugins();
+        assertEmptyDataPlaceholders();
+        seedEntityRecords();
         assertProcessorListVisibility();
 
         // ① 交叉矩阵：行=产品、列=状态、值=计数
@@ -75,6 +77,28 @@ class ExampleProcessorsP27Test {
         // ③ 热门物料榜：bar chart，频次降序
         String top = invokeOk("topitems.purchase.material", "purchase_order", userBearer);
         assertTopShape(top);
+    }
+
+    /** 空数据合法占位（P27 红线；审查 P2-1）：chart 出"暂无数据"占位、矩阵出单列空表。 */
+    private void assertEmptyDataPlaceholders() throws Exception {
+        String histogram = invokeOk("histogram.purchase.amount", "purchase_order", userBearer);
+        assertThat((List<String>) JsonPath.read(histogram, "$.categories"))
+                .containsExactly("暂无数据");
+        assertThat((List<Integer>) JsonPath.read(histogram, "$.values")).containsExactly(0);
+        String top = invokeOk("topitems.purchase.material", "purchase_order", userBearer);
+        assertThat((List<String>) JsonPath.read(top, "$.categories")).containsExactly("暂无数据");
+        String matrix = invokeOk("crosstab.workorder.matrix", "production_order", userBearer);
+        assertThat((List<String>) JsonPath.read(matrix, "$.columns[*].name"))
+                .containsExactly("product");
+        assertThat((List<?>) JsonPath.read(matrix, "$.rows")).isEmpty();
+    }
+
+    private void activatePlugins() throws Exception {
+        ensureActivatedByDir(PURCHASE_DIR, "example.purchase");
+        ensureActivatedByDir(WORKORDER_DIR, "example.workorder");
+        ensureActivatedByDir(CROSSTAB_DIR, "example.crosstab");
+        ensureActivatedByDir(HISTOGRAM_DIR, "example.histogram");
+        ensureActivatedByDir(TOPITEMS_DIR, "example.topitems");
     }
 
     private void assertProcessorListVisibility() throws Exception {
@@ -109,12 +133,7 @@ class ExampleProcessorsP27Test {
         assertThat(values).isSortedAccordingTo(Comparator.reverseOrder());
     }
 
-    private void activatePluginsAndSeed() throws Exception {
-        ensureActivatedByDir(PURCHASE_DIR, "example.purchase");
-        ensureActivatedByDir(WORKORDER_DIR, "example.workorder");
-        ensureActivatedByDir(CROSSTAB_DIR, "example.crosstab");
-        ensureActivatedByDir(HISTOGRAM_DIR, "example.histogram");
-        ensureActivatedByDir(TOPITEMS_DIR, "example.topitems");
+    private void seedEntityRecords() throws Exception {
         postJson("/api/v1/data/purchase_order",
                 "{\"code\":\"PO-P27-1\",\"supplier\":\"演示供应商\",\"material\":\"轴承 6204\","
                         + "\"qty\":100,\"amount\":500.00,\"status\":\"已下单\","

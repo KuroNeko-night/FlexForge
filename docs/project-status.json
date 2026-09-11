@@ -141,14 +141,14 @@
       "status": "completed"
     },
     {
-      "id": "P27",
-      "name": "演示就绪整备",
-      "status": "in_progress"
-    },
-    {
       "id": "P26",
       "name": "界面净化、系统多语言与 AI 上游探活",
       "status": "completed"
+    },
+    {
+      "id": "P27",
+      "name": "演示就绪整备",
+      "status": "in_progress"
     }
   ]
 }

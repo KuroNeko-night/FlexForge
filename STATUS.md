@@ -45,8 +45,8 @@ BLOCKERS: none
 | P23 | 体验补全与文件工具插件 | completed | 验收四项（docs/09 P23）：XLSX 导出（FR-META-06）/用户端对话闭环+提示词 v3 三段产出（FR-ISSUE-03B/07）/文件处理器闭环（FR-PLUGIN-14）/权限失败路径+门禁 21/1/0+CI 六绿（live 终验见 EXIT_GATE） |
 | P24 | 管理面补全与体验打磨 | completed | 验收六项（docs/09 P24）：插件卡降噪/排版居中+表单取消/审计日志页（FR-AUTH-04）+批量停启用（FR-AUTH-05）/Agent Skill 分发（FR-ISSUE-08）/Issue 切换残留修复/门禁 21/1/0+CI 六绿（live 终验见 EXIT_GATE） |
 | P25 | 前端排版分布与视觉精修 | completed | 验收四项全过（docs/09 P25）：排版网格均布+设置多列（页头出网格）/字体系统与层级（自托管无外链+woff 剔除）/背景灰阶基线+主题 1.1.2 双向换装/文案零变更+机制回归+门禁 21/1/0；审查 2P2+5P3 全处置，live 终验见 EXIT_GATE |
-| P27 | 演示就绪整备 | in_progress | 验收四项（docs/09 P27）：插件去示例名/多样化 L2 替代/账号清理/Issue 精选+fixture 演示态/门禁+新包测试 |
 | P26 | 界面净化、系统多语言与 AI 上游探活 | completed | 验收四项全过（docs/09 P26）：净化默认过滤+live 清理（issues 归档受规格门约束为已知限制）/系统文案 352 键×四语言包（插件内容不翻译）/探活 400 上抛+URL 守卫（含十进制 IP 堵漏）/门禁 21/1/0+CI 六绿+审查 P1×1/P2×4/P3×7 全处置；live 终验见 EXIT_GATE |
+| P27 | 演示就绪整备 | in_progress | 验收四项（docs/09 P27）：插件去示例名/多样化 L2 替代/账号清理/Issue 精选+fixture 演示态/门禁+新包测试 |
 
 ## 更新规则
 
