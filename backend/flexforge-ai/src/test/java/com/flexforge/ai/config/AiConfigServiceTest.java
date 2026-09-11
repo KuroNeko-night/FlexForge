@@ -23,9 +23,15 @@ class AiConfigServiceTest {
     private final AiConfigRepository repository = mock(AiConfigRepository.class);
     private final AuditEventPort audit = mock(AuditEventPort.class);
     private final SecretCipher cipher = new SecretCipher(SECRET);
+    private final ModelConfigGate gate = mock(ModelConfigGate.class);
 
     private AiConfigService service(AiEnv env) {
-        return new AiConfigService(repository, env, audit, Clock.systemUTC(), cipher);
+        return service(env, gate);
+    }
+
+    private AiConfigService service(AiEnv env, ModelConfigGate gate) {
+        return new AiConfigService(repository, new AiConfigKernel(env, cipher, gate),
+                audit, Clock.systemUTC());
     }
 
     private AiEnv env(String provider, String baseUrl, String model) {
@@ -121,5 +127,64 @@ class AiConfigServiceTest {
         verify(repository).upsert(cleared.capture(), org.mockito.ArgumentMatchers.eq("op2"));
         assertThat(cleared.getValue().apiKeyCipher()).isNull();
         assertThat(cleared.getValue().apiKeyHint()).isNull();
+    }
+
+    @Test
+    void updateHttpProbesWithEffectiveKeyBeforePersist() {
+        AiConfigService svc = service(env("fixture", "", ""));
+        svc.update("op", new AiConfigService.UpdateCommand(
+                "http", "https://api.deepseek.com", "deepseek-flash", "sk-new-987654", null));
+        org.mockito.Mockito.verify(gate).checkOnSave(
+                "https://api.deepseek.com", "deepseek-flash", "sk-new-987654");
+        verify(repository).upsert(any(AiConfigRepository.StoredAiConfig.class),
+                org.mockito.ArgumentMatchers.eq("op"));
+    }
+
+    @Test
+    void updateHttpProbesWithKeptKeyWhenNoNewKey() {
+        when(repository.find()).thenReturn(Optional.of(new AiConfigRepository.StoredAiConfig(
+                "http", "https://api.example", "m", cipher.encrypt("sk-kept-1234"), "…1234")));
+        AiConfigService svc = service(env("fixture", "", ""));
+        svc.update("op", new AiConfigService.UpdateCommand(
+                "http", "https://api.deepseek.com", "deepseek-flash", null, null));
+        org.mockito.Mockito.verify(gate).checkOnSave(
+                "https://api.deepseek.com", "deepseek-flash", "sk-kept-1234");
+    }
+
+    @Test
+    void updateHttpRejectsWhenNoKeyAtAll() {
+        AiConfigService svc = service(env("fixture", "", ""));
+        assertThatThrownBy(() -> svc.update("op", new AiConfigService.UpdateCommand(
+                "http", "https://api.example", "m", " ", null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("API Key");
+        org.mockito.Mockito.verifyNoInteractions(gate);
+        verify(repository, org.mockito.Mockito.never()).upsert(
+                any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void updateHttpProbeFailureRejectsPersistAndAuditsFailure() {
+        org.mockito.Mockito.doThrow(new IllegalArgumentException("上游密钥无效（HTTP 401）"))
+                .when(gate).checkOnSave("https://api.example", "m", "sk-x-987654");
+        AiConfigService svc = service(env("fixture", "", ""));
+        assertThatThrownBy(() -> svc.update("op", new AiConfigService.UpdateCommand(
+                "http", "https://api.example", "m", "sk-x-987654", null)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("401");
+        verify(repository, org.mockito.Mockito.never()).upsert(
+                any(), org.mockito.ArgumentMatchers.any());
+        ArgumentCaptor<AuditEvent> event = ArgumentCaptor.forClass(AuditEvent.class);
+        verify(audit).record(event.capture());
+        assertThat(event.getValue().result()).isEqualTo("failure");
+    }
+
+    @Test
+    void updateFixtureSkipsProbeGate() {
+        AiConfigService svc = service(env("fixture", "", ""));
+        svc.update("op", new AiConfigService.UpdateCommand("fixture", null, null, null, null));
+        org.mockito.Mockito.verifyNoInteractions(gate);
+        verify(repository).upsert(any(AiConfigRepository.StoredAiConfig.class),
+                org.mockito.ArgumentMatchers.eq("op"));
     }
 }
