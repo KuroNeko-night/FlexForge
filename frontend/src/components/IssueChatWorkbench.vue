@@ -7,7 +7,7 @@ import {
   fetchComments,
   fetchIssue,
   fetchSpec,
-  ISSUE_STATUS_LABELS,
+  issueStatusLabel,
   listIssues,
   publishIssue,
   type ClarifyBrief,
@@ -15,11 +15,13 @@ import {
   type IssueRecord,
   type SpecRevision,
 } from '@/api/issues';
+import IssueNewRequirementForm from '@/components/IssueNewRequirementForm.vue';
 import IssueClarifyChat from '@/components/IssueClarifyChat.vue';
 import { parseClarifyBrief } from '@/utils/clarifyBrief';
 import IssueDiscussion from '@/components/IssueDiscussion.vue';
 import IssueWorkbenchSidebar from '@/components/IssueWorkbenchSidebar.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 用户端需求对话工作台（P23，FR-ISSUE-07）：纯 USER 视角——对话与自己的需求。
@@ -38,7 +40,6 @@ const comments = ref<IssueComment[]>([]);
 
 const creating = ref(false);
 const createError = ref<string | null>(null);
-const form = ref({ title: '', description: '' });
 const publishing = ref(false);
 const publishError = ref<string | null>(null);
 
@@ -48,7 +49,7 @@ async function load(): Promise<void> {
     issues.value = (await listIssues()) ?? [];
     loadError.value = null;
   } catch (e) {
-    loadError.value = apiErrorMessage(e, '加载失败');
+    loadError.value = apiErrorMessage(e, t('common.loadFailed', '加载失败'));
   } finally {
     loading.value = false;
   }
@@ -105,28 +106,28 @@ async function confirmPublish(): Promise<void> {
       active.value = next;
     }
   } catch (e) {
-    publishError.value = apiErrorMessage(e, '确认推送失败，请稍后重试');
+    publishError.value = apiErrorMessage(e, t('issues.publishFailed', '确认推送失败，请稍后重试'));
   } finally {
     publishing.value = false;
   }
 }
 
-async function submitCreate(): Promise<void> {
-  if (creating.value || !form.value.title.trim() || !form.value.description.trim()) {
+/** 创建提交（表单状态在 IssueNewRequirementForm，P26 拆出）。 */
+async function submitCreate(payload: { title: string; description: string }): Promise<void> {
+  if (creating.value || !payload.title.trim() || !payload.description.trim()) {
     return;
   }
   creating.value = true;
   createError.value = null;
   try {
     const created = await createIssue({
-      title: form.value.title.trim(),
-      description: form.value.description.trim(),
+      title: payload.title.trim(),
+      description: payload.description.trim(),
     });
     issues.value = [created, ...issues.value];
-    form.value = { title: '', description: '' };
     await open(created);
   } catch (e) {
-    createError.value = apiErrorMessage(e, '创建失败，请稍后重试');
+    createError.value = apiErrorMessage(e, t('common.createFailed', '创建失败，请稍后重试'));
   } finally {
     creating.value = false;
   }
@@ -149,41 +150,12 @@ onMounted(load);
     />
 
     <div class="main">
-      <!-- 新建需求表单（对话开始前的入口） -->
-      <section v-if="!active" class="new-form" data-testid="new-requirement-form">
-        <h3>描述你的需求</h3>
-        <p class="new-hint">和 AI 一轮轮聊清楚，确认后推送给我方开发</p>
-        <form class="ff-form-grid" @submit.prevent="submitCreate">
-          <label class="field">
-            标题
-            <input
-              v-model="form.title"
-              data-testid="new-requirement-title"
-              maxlength="120"
-              required
-            />
-          </label>
-          <label class="field field--full">
-            想要什么
-            <textarea
-              v-model="form.description"
-              data-testid="new-requirement-description"
-              rows="4"
-              maxlength="4000"
-              required
-            />
-          </label>
-          <BaseButton
-            variant="primary"
-            type="submit"
-            :disabled="creating"
-            data-testid="start-clarify"
-          >
-            {{ creating ? '创建中…' : '开始与 AI 梳理' }}
-          </BaseButton>
-        </form>
-        <p v-if="createError" class="form-error" role="alert">{{ createError }}</p>
-      </section>
+      <IssueNewRequirementForm
+        v-if="!active"
+        :creating="creating"
+        :create-error="createError"
+        @create="submitCreate"
+      />
 
       <!-- 对话视图：标题栏 + 澄清对话 + 确认卡 + 讨论 -->
       <template v-else>
@@ -191,9 +163,9 @@ onMounted(load);
           <div class="chat-head-title">
             <h3>{{ active.title }}</h3>
             <span v-if="active.publishedAt" class="published-badge" data-testid="published-badge">
-              已发布
+              {{ t('issues.published', '已发布') }}
             </span>
-            <span class="status-chip">{{ ISSUE_STATUS_LABELS[active.status] }}</span>
+            <span class="status-chip">{{ issueStatusLabel(active.status) }}</span>
           </div>
           <p class="chat-head-desc">{{ active.description }}</p>
         </header>
@@ -210,7 +182,7 @@ onMounted(load);
           class="confirm-card"
           data-testid="confirm-card"
         >
-          <h4>需求确认</h4>
+          <h4>{{ t('issues.confirmHeading', '需求确认') }}</h4>
           <p>{{ activeBrief.colloquial }}</p>
           <div class="confirm-actions">
             <BaseButton
@@ -219,14 +191,22 @@ onMounted(load);
               data-testid="confirm-publish"
               @click="confirmPublish"
             >
-              {{ publishing ? '推送中…' : '确认并推送' }}
+              {{
+                publishing
+                  ? t('issues.publishing', '推送中…')
+                  : t('issues.confirmPublish', '确认并推送')
+              }}
             </BaseButton>
-            <span class="confirm-hint">推送后进入开发者需求队列，可继续在讨论区补充</span>
+            <span class="confirm-hint">{{
+              t('issues.confirmHint', '推送后进入开发者需求队列，可继续在讨论区补充')
+            }}</span>
           </div>
           <p v-if="publishError" class="form-error" role="alert">{{ publishError }}</p>
         </div>
         <p v-else-if="active.publishedAt" class="published-note">
-          需求已确认推送 · 开发者可见（{{ ISSUE_STATUS_LABELS[active.status] }}）
+          {{ t('issues.publishedNote', '需求已确认推送 · 开发者可见') }}（{{
+            issueStatusLabel(active.status)
+          }}）
         </p>
 
         <!-- :key 随需求重建（P24）：切换需求时输入草稿复位，不残留上一需求的评论草稿 -->

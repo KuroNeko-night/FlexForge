@@ -4,6 +4,7 @@ import { ref } from 'vue';
 import { apiErrorMessage } from '@/api/client';
 import { addComment, fetchComments, type IssueComment } from '@/api/issues';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 用户端讨论区（P23 FR-ISSUE-07）：已发布/梳理中需求的评论区——查看与
@@ -32,7 +33,7 @@ async function submit(): Promise<void> {
       emit('reloaded', next);
     }
   } catch (e) {
-    error.value = apiErrorMessage(e, '评论失败，请稍后重试');
+    error.value = apiErrorMessage(e, t('issues.commentFailed', '评论失败，请稍后重试'));
   } finally {
     sending.value = false;
   }
@@ -41,22 +42,24 @@ async function submit(): Promise<void> {
 
 <template>
   <section class="discussion" data-testid="issue-discussion">
-    <h4>讨论</h4>
+    <h4>{{ t('issues.discussion', '讨论') }}</h4>
     <ul v-if="comments.length > 0">
       <li v-for="comment in comments" :key="comment.id">
         <span class="comment-author">{{ comment.author }}</span>
         <p>{{ comment.body }}</p>
       </li>
     </ul>
-    <p v-else class="empty-hint">还没有讨论</p>
+    <p v-else class="empty-hint">{{ t('issues.noDiscussion', '还没有讨论') }}</p>
     <form class="comment-form" @submit.prevent="submit">
       <input
         v-model="draft"
         data-testid="comment-input"
-        placeholder="补充说明或参与讨论…"
+        :placeholder="t('issues.discussionPlaceholder', '补充说明或参与讨论…')"
         maxlength="2000"
       />
-      <BaseButton type="submit" :disabled="sending || draft.trim() === ''">发送</BaseButton>
+      <BaseButton type="submit" :disabled="sending || draft.trim() === ''">{{
+        t('common.send', '发送')
+      }}</BaseButton>
     </form>
     <p v-if="error" class="form-error" role="alert">{{ error }}</p>
   </section>

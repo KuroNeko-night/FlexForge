@@ -107,7 +107,7 @@ async function submit(): Promise<void> {
     clearKey.value = false;
     notice.value = t('settings.savedNotice', '已保存，下次模型调用即生效');
   } catch (e) {
-    formError.value = apiErrorMessage(e, '保存失败，请稍后重试');
+    formError.value = apiErrorMessage(e, t('common.saveFailed', '保存失败，请稍后重试'));
   } finally {
     saving.value = false;
   }
@@ -169,7 +169,7 @@ onMounted(load);
       >
         <form class="ai-form" data-testid="ai-config-form" @submit.prevent="submit">
           <label>
-            提供方
+            {{ t('settings.provider', '提供方') }}
             <select v-model="provider" data-testid="provider-select">
               <option value="fixture">{{ t('settings.providerFixture', '离线演示') }}</option>
               <option value="http">{{ t('settings.providerHttp', 'OpenAI 兼容接口') }}</option>
@@ -177,28 +177,28 @@ onMounted(load);
           </label>
           <template v-if="provider === 'http'">
             <label>
-              Base URL
+              {{ t('settings.baseUrl', 'Base URL') }}
               <input
                 v-model="baseUrl"
                 name="baseUrl"
-                placeholder="https://api.example.com/v1/chat/completions"
+                :placeholder="t('settings.baseUrlPlaceholder', 'https://api.deepseek.com')"
                 maxlength="500"
                 required
               />
             </label>
             <label>
-              模型
+              {{ t('settings.model', '模型') }}
               <input
                 v-model="model"
                 name="model"
-                placeholder="gpt-4o-mini"
+                :placeholder="t('settings.modelPlaceholder', 'deepseek-flash')"
                 maxlength="100"
                 required
               />
             </label>
           </template>
           <label>
-            API Key
+            {{ t('settings.apiKey', 'API Key') }}
             <input
               v-model="apiKey"
               name="apiKey"
@@ -225,7 +225,7 @@ onMounted(load);
           <p v-if="notice" class="op-notice" role="status">{{ notice }}</p>
           <div class="drawer-actions">
             <BaseButton type="submit" variant="primary" :disabled="saving">
-              {{ saving ? '保存中…' : '保存' }}
+              {{ saving ? t('common.saving', '保存中…') : t('common.save', '保存') }}
             </BaseButton>
           </div>
         </form>

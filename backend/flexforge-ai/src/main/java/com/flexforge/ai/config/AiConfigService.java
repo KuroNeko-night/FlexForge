@@ -10,9 +10,10 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * AI 模型运行时配置（FR-SETUP-01，docs/13 §3.6-5）：读取合并（DB 行 &gt; 环境缺省
- * &gt; fixture 默认）与管理员更新（校验+加密+审计）。密钥明文只存在于加密前调用栈
- * 与模型请求头；任何读路径只回"已配置"位与尾 4 位掩码（S4/S8）。
+ * AI 模型运行时配置（FR-SETUP-01，docs/13 §3.6-5/6）：读取合并（DB 行 &gt; 环境缺省
+ * &gt; fixture 默认）与管理员更新（校验+探活+加密+审计；P26 起 http 保存先过
+ * {@link ModelConfigGate} 守卫+探活，不可用报错上抛且不落库）。密钥明文只存在于
+ * 加密前调用栈与模型请求头；任何读路径只回"已配置"位与尾 4 位掩码（S4/S8）。
  * 并发口径：update 为单行全量替换（最后写胜）——MVP 单管理员场景，
  * 需字段级合并时再引入版本号（PR #35 审查 P3 登记）。
  */
@@ -44,14 +45,16 @@ public class AiConfigService {
     private final AuditEventPort audit;
     private final Clock clock;
     private final SecretCipher cipher;
+    private final ModelConfigGate gate;
 
-    public AiConfigService(AiConfigRepository repository, AiEnv env,
-                           AuditEventPort audit, Clock clock, SecretCipher cipher) {
+    public AiConfigService(AiConfigRepository repository, AiConfigKernel kernel,
+                           AuditEventPort audit, Clock clock) {
         this.repository = repository;
-        this.env = env;
+        this.env = kernel.env();
         this.audit = audit;
         this.clock = clock;
-        this.cipher = cipher;
+        this.cipher = kernel.cipher();
+        this.gate = kernel.gate();
     }
 
     public EffectiveModelConfig effective() {
@@ -90,6 +93,19 @@ public class AiConfigService {
 
         AiConfigRepository.StoredAiConfig current = repository.find().orElse(null);
         KeyMaterial key = resolveKey(command, current);
+        // P26：http 保存先过守卫+探活（FR-SETUP-01），不可用报错上抛且不落库
+        if ("http".equals(provider)) {
+            if (key.plain() == null) {
+                throw new IllegalArgumentException("provider=http 需要先配置模型 API Key");
+            }
+            try {
+                gate.checkOnSave(baseUrl, model, key.plain());
+            } catch (IllegalArgumentException e) {
+                audit.record(AuditEvents.of(operator, "ai.config", "ai-provider-config",
+                        "failure", clock));
+                throw e;
+            }
+        }
         AiConfigRepository.StoredAiConfig next = new AiConfigRepository.StoredAiConfig(
                 provider, baseUrl, model, key.cipher(), key.hint());
         repository.upsert(next, operator);
@@ -131,25 +147,27 @@ public class AiConfigService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    private record KeyMaterial(String cipher, String hint) {
+    /** cipher/hint 落库；plain 仅存活于本次调用（探活用，不落任何存储）。 */
+    private record KeyMaterial(String cipher, String hint, String plain) {
     }
 
     /** 密钥语义：clearApiKey=true 清除；非空白=重设（加密+尾 4 位掩码）；否则保持。 */
     private KeyMaterial resolveKey(UpdateCommand command,
                                    AiConfigRepository.StoredAiConfig current) {
         if (Boolean.TRUE.equals(command.clearApiKey())) {
-            return new KeyMaterial(null, null);
+            return new KeyMaterial(null, null, null);
         }
         String raw = command.apiKey();
         if (raw == null || raw.strip().isEmpty()) {
-            return new KeyMaterial(current == null ? null : current.apiKeyCipher(),
-                    current == null ? null : current.apiKeyHint());
+            String kept = current == null ? null : current.apiKeyCipher();
+            String plain = kept == null ? null : cipher.decrypt(kept);
+            return new KeyMaterial(kept, current == null ? null : current.apiKeyHint(), plain);
         }
         if (raw.length() > 4096) {
             throw new IllegalArgumentException("API Key 超长（上限 4096 字符）");
         }
         String trimmed = raw.strip();
-        return new KeyMaterial(cipher.encrypt(trimmed), maskOf(trimmed));
+        return new KeyMaterial(cipher.encrypt(trimmed), maskOf(trimmed), trimmed);
     }
 
     private static String maskOf(String key) {

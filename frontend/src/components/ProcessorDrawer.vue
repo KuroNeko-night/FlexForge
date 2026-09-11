@@ -11,6 +11,7 @@ import { apiErrorMessage } from '@/api/client';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseDrawer from '@/components/ui/BaseDrawer.vue';
 import ChartCanvas from '@/components/ui/ChartCanvas.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 数据处理器抽屉（P20，extension.data-processor 消费面）：该实体声明的处理器
@@ -34,7 +35,7 @@ async function load(): Promise<void> {
   try {
     processors.value = await fetchProcessors(props.entity);
   } catch (e) {
-    error.value = apiErrorMessage(e, '处理器清单加载失败');
+    error.value = apiErrorMessage(e, t('tools.loadFailed', '处理器清单加载失败'));
   } finally {
     loading.value = false;
   }
@@ -47,7 +48,7 @@ async function run(entry: ProcessorEntry): Promise<void> {
   try {
     result.value = await invokeProcessor(entry.key, props.entity);
   } catch (e) {
-    error.value = apiErrorMessage(e, '处理器执行失败');
+    error.value = apiErrorMessage(e, t('tools.runFailed', '处理器执行失败'));
   } finally {
     runningKey.value = null;
   }
@@ -66,13 +67,15 @@ watch(
 </script>
 
 <template>
-  <BaseDrawer :open="open" title="数据分析" @close="emit('close')">
+  <BaseDrawer :open="open" :title="t('entity.analysis', '数据分析')" @close="emit('close')">
     <div class="processor-panel" data-testid="processor-panel">
-      <p v-if="loading" class="processor-hint">加载处理器清单…</p>
+      <p v-if="loading" class="processor-hint">{{ t('tools.loadingList', '加载处理器清单…') }}</p>
       <p v-else-if="error && processors.length === 0" class="form-error" role="alert">
         {{ error }}
       </p>
-      <p v-else-if="processors.length === 0" class="processor-hint">该实体暂无可用的数据处理器</p>
+      <p v-else-if="processors.length === 0" class="processor-hint">
+        {{ t('tools.noProcessorsEntity', '该实体暂无可用的数据处理器') }}
+      </p>
       <template v-else>
         <div class="processor-list" role="list">
           <div v-for="entry in processors" :key="entry.key" class="processor-item" role="listitem">
@@ -86,7 +89,9 @@ watch(
               :disabled="runningKey !== null"
               @click="run(entry)"
             >
-              {{ runningKey === entry.key ? '计算中…' : '执行' }}
+              {{
+                runningKey === entry.key ? t('tools.computing', '计算中…') : t('common.run', '执行')
+              }}
             </BaseButton>
           </div>
         </div>
@@ -94,7 +99,7 @@ watch(
         <p v-if="error" class="form-error" role="alert">{{ error }}</p>
 
         <section v-if="result" class="processor-result" data-testid="processor-result">
-          <h3>处理结果</h3>
+          <h3>{{ t('tools.result', '处理结果') }}</h3>
           <div v-if="result.kind === 'table'" class="processor-table-wrap">
             <table class="dynamic-table">
               <thead>

@@ -5,13 +5,14 @@ import agentSkillMarkdown from '@/assets/agent-skill/SKILL.md?raw';
 import { parseClarifyBrief } from '@/utils/clarifyBrief';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ComponentCard from '@/components/ui/ComponentCard.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 三段需求简报（P23，FR-ISSUE-03B，开发者/管理端展示）：口语化确认 /
  * 可行性 / agent 制作提示词——与规格版本一同落库的 briefJson 快照。
  * agentPrompt 提供一键复制（喂给实现 agent）；P24（FR-ISSUE-08）配套
- * "下载 Skill"——单文件插件开发技能（SKILL.md，随前端资产分发），
- * 复制提示词 + 下载 Skill 一起交给实现 AI 即可直接开工。
+ * "{{ t('issues.downloadSkill', '下载 Skill') }}"——单文件插件开发技能（SKILL.md，随前端资产分发），
+ * 复制提示词 + {{ t('issues.downloadSkill', '下载 Skill') }} 一起交给实现 AI 即可直接开工。
  */
 const props = defineProps<{ briefJson: string | null }>();
 
@@ -49,24 +50,31 @@ function downloadSkill(): void {
 <template>
   <ComponentCard
     v-if="brief"
-    title="三段需求简报"
-    subtitle="口语化确认（用户）· 可行性与制作提示词（开发者）"
+    :title="t('issues.briefTitle', '三段需求简报')"
+    :subtitle="t('issues.briefSubtitle', '口语化确认（用户）· 可行性与制作提示词（开发者）')"
     data-testid="issue-brief"
   >
     <div class="brief-section">
-      <h4>口语化需求确认<span class="audience">面向用户</span></h4>
+      <h4>
+        {{ t('issues.briefConfirm', '口语化需求确认')
+        }}<span class="audience">{{ t('issues.audienceUser', '面向用户') }}</span>
+      </h4>
       <p class="brief-text">{{ brief.colloquial }}</p>
     </div>
     <div class="brief-section">
-      <h4>可行性说明<span class="audience">面向开发者</span></h4>
+      <h4>
+        {{ t('issues.briefFeasibility', '可行性说明')
+        }}<span class="audience">{{ t('issues.audienceDev', '面向开发者') }}</span>
+      </h4>
       <p class="brief-text">{{ brief.feasibility }}</p>
     </div>
     <div class="brief-section">
       <h4>
-        agent 制作提示词<span class="audience">面向实现 agent</span>
+        {{ t('issues.briefPrompt', 'agent 制作提示词')
+        }}<span class="audience">{{ t('issues.audienceAgent', '面向实现 agent') }}</span>
         <span class="prompt-actions">
           <BaseButton data-testid="download-agent-skill" size="sm" @click="downloadSkill">
-            下载 Skill
+            {{ t('issues.downloadSkill', '下载 Skill') }}
           </BaseButton>
           <BaseButton
             class="copy-button"
@@ -74,7 +82,7 @@ function downloadSkill(): void {
             size="sm"
             @click="copyPrompt"
           >
-            {{ copied ? '已复制' : '复制' }}
+            {{ copied ? t('issues.copied', '已复制') : t('common.copy', '复制') }}
           </BaseButton>
         </span>
       </h4>

@@ -2,6 +2,7 @@ import { computed, ref, type Ref } from 'vue';
 
 import { ApiError } from '@/api/client';
 import { batchUpdateStatus } from '@/api/system';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 用户批量停启用状态与执行（P24，FR-AUTH-05）：选择集管理与单请求批量提交；
@@ -104,11 +105,12 @@ async function runBatch(
   ctx.batchNotice.value = null;
   try {
     const updated = await batchUpdateStatus([...ctx.selectedIds.value], status);
-    ctx.batchNotice.value = `已${status === 'BLOCKED' ? '停用' : '启用'} ${updated.length} 个账号`;
+    ctx.batchNotice.value = `${t('common.donePrefix', '已')}${status === 'BLOCKED' ? t('plugins.stopAction', '停用') : t('plugins.enableAction', '启用')} ${updated.length} ${t('users.batchDoneUnit', '个账号')}`;
     ctx.clear();
     await ctx.reload();
   } catch (e) {
-    ctx.batchError.value = e instanceof ApiError ? e.message : '批量操作失败，请稍后重试';
+    ctx.batchError.value =
+      e instanceof ApiError ? e.message : t('users.batchFailed', '批量操作失败，请稍后重试');
   } finally {
     ctx.running.value = false;
   }

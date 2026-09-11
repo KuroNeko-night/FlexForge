@@ -4,7 +4,7 @@ import { computed, onMounted, ref } from 'vue';
 import { ApiError, apiErrorMessage } from '@/api/client';
 import {
   createIssue,
-  ISSUE_STATUS_LABELS,
+  issueStatusLabel,
   listIssues,
   type IssueRecord,
   type IssueStatusName,
@@ -91,7 +91,7 @@ async function submitCreate(): Promise<void> {
     await load();
     selected.value = created;
   } catch (e) {
-    formError.value = apiErrorMessage(e, '创建失败，请稍后重试');
+    formError.value = apiErrorMessage(e, t('common.createFailed', '创建失败，请稍后重试'));
   } finally {
     creating.value = false;
   }
@@ -108,11 +108,11 @@ onMounted(load);
         <h2 class="ff-page-title">{{ t('issues.title', 'Issue 工作台') }}</h2>
         <div class="issues-actions">
           <label class="filter-label">
-            状态
+            {{ t('issues.statusLabel', '状态') }}
             <select v-model="statusFilter" data-testid="status-filter" @change="load">
               <option value="">{{ t('common.all', '全部') }}</option>
               <option v-for="status in STATUS_OPTIONS" :key="status" :value="status">
-                {{ ISSUE_STATUS_LABELS[status] }}
+                {{ issueStatusLabel(status) }}
               </option>
             </select>
           </label>
@@ -123,7 +123,7 @@ onMounted(load);
         </div>
       </header>
       <StateView v-if="state !== 'ready'" :state="state" :message="error">
-        <p v-if="state === 'empty'">尚无 Issue，点击右上角新建</p>
+        <p v-if="state === 'empty'">{{ t('issues.empty', '尚无 Issue，点击右上角新建') }}</p>
       </StateView>
       <div v-else class="issues-layout">
         <ul class="issue-list" data-testid="issue-list">
@@ -138,7 +138,7 @@ onMounted(load);
               <span class="issue-item-title">{{ issue.title }}</span>
               <span class="issue-item-meta">
                 <span class="status-badge" :data-status="issue.status">
-                  {{ ISSUE_STATUS_LABELS[issue.status] }}
+                  {{ issueStatusLabel(issue.status) }}
                 </span>
                 <span>{{ issue.createdBy }}</span>
               </span>
@@ -146,17 +146,23 @@ onMounted(load);
           </li>
         </ul>
         <IssueDetail v-if="selected" :issue="selected" @updated="syncIssue" />
-        <p v-else class="issue-empty-hint">选择左侧 Issue 查看详情与 AI 对话</p>
+        <p v-else class="issue-empty-hint">
+          {{ t('issues.selectHint', '选择左侧 Issue 查看详情与 AI 对话') }}
+        </p>
       </div>
 
-      <BaseDrawer :open="drawerOpen" title="新建 Issue" @close="drawerOpen = false">
+      <BaseDrawer
+        :open="drawerOpen"
+        :title="t('issues.create', '新建 Issue')"
+        @close="drawerOpen = false"
+      >
         <form class="issue-form" @submit.prevent="submitCreate">
           <label>
-            标题
+            {{ t('issues.titleLabel', '标题') }}
             <input v-model="form.title" name="title" maxlength="120" required />
           </label>
           <label>
-            需求描述
+            {{ t('issues.descriptionLabel', '需求描述') }}
             <textarea
               v-model="form.description"
               name="description"
@@ -166,20 +172,22 @@ onMounted(load);
             />
           </label>
           <label>
-            标签
+            {{ t('issues.labelsLabel', '标签') }}
             <input
               v-model="form.labels"
               name="labels"
               maxlength="200"
-              placeholder="用逗号或空格分隔，可不填"
+              :placeholder="t('issues.labelsPlaceholder', '用逗号或空格分隔，可不填')"
             />
           </label>
           <p v-if="formError" class="form-error" role="alert">{{ formError }}</p>
           <div class="drawer-actions">
             <BaseButton type="submit" variant="primary" :disabled="creating">
-              {{ creating ? '创建中…' : '创建' }}
+              {{ creating ? t('common.creating', '创建中…') : t('common.create', '创建') }}
             </BaseButton>
-            <BaseButton variant="ghost" @click="drawerOpen = false">取消</BaseButton>
+            <BaseButton variant="ghost" @click="drawerOpen = false">{{
+              t('common.cancel', '取消')
+            }}</BaseButton>
           </div>
         </form>
       </BaseDrawer>

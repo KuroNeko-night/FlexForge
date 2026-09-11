@@ -1,13 +1,17 @@
 package com.flexforge.app.web;
 
+import com.flexforge.ai.config.ModelConfigGate;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
@@ -25,11 +29,24 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * P15 设置页 API 级验收（FR-SETUP-01，docs/13 §3.6-5）：读视图只回掩码（明文
  * 零回显）、校验失败可诊断 400、非管理员 403、密钥清除语义、审计行，以及
  * 运行时路由端到端（http 配置→clarify 走本地桩、回退 fixture）。
+ * P26：探活闸以直通桩替换（守卫/探活语义见 {@link AiConfigProbeApiTest}，
+ * 本类聚焦既有契约与路由）。
  */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
 class AiConfigApiTest {
+
+    /** 直通闸：本类的 http 保存（本地桩地址）不触发守卫/网络。 */
+    @TestConfiguration
+    static class PassGateConfig {
+        @Bean
+        @Primary
+        ModelConfigGate passGate() {
+            return (baseUrl, model, apiKey) -> {
+            };
+        }
+    }
 
     @Container
     @ServiceConnection
@@ -92,8 +109,8 @@ class AiConfigApiTest {
 
     @Test
     void updateEncryptsKeyAndReadNeverReturnsPlaintext() throws Exception {
-        String response = mockMvc.perform(putConfig("{\"provider\":\"http\","
-                        + "\"baseUrl\":\"https://api.example/v1\",\"model\":\"demo-model\","
+        // P26：http 保存触发探活（本类直通闸），密钥加密/掩码语义与 provider 无关——改走 fixture
+        String response = mockMvc.perform(putConfig("{\"provider\":\"fixture\","
                         + "\"apiKey\":\"sk-live-plaintext-9876\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.apiKeyConfigured").value(true))

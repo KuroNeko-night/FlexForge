@@ -10,6 +10,7 @@ import {
 } from '@/api/issues';
 import AppIcon from '@/components/AppIcon.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 需求澄清对话（P15 建面，P21 现代化重构）：clarify 多轮问答（FR-ISSUE-03，
@@ -59,14 +60,17 @@ function applyOutcome(text: string | null, outcome: ClarifyOutcome): void {
     }
     chat.value = [
       ...chat.value,
-      { role: 'ai', text: '已按当前回答生成规格草稿，可在下方规格区查看与继续迭代。' },
+      {
+        role: 'ai',
+        text: t('issues.draftNotice', '已按当前回答生成规格草稿，可在下方规格区查看与继续迭代。'),
+      },
     ];
     return;
   }
   const replies =
     outcome.questions.length > 0
       ? outcome.questions
-      : ['模型未返回追问，可重试或让开发者手工编写规格。'];
+      : [t('issues.noFollowUp', '模型未返回追问，可重试或让开发者手工编写规格。')];
   for (const reply of replies) {
     chat.value = [...chat.value, { role: 'ai', text: reply }];
   }
@@ -83,7 +87,7 @@ async function sendClarify(text: string | null): Promise<void> {
     }
   } catch (e) {
     if (props.issueId === issueId) {
-      chatError.value = apiErrorMessage(e, 'AI 调用失败，请稍后重试');
+      chatError.value = apiErrorMessage(e, t('issues.aiFailed', 'AI 调用失败，请稍后重试'));
     }
   } finally {
     clarifying.value = false;
@@ -115,16 +119,16 @@ function onAnswerKeydown(event: KeyboardEvent): void {
         <AppIcon name="chat" :size="15" />
       </span>
       <div class="clarify-title">
-        <strong>需求澄清</strong>
-        <span>AI 助手逐步提问，补齐规格草稿</span>
+        <strong>{{ t('issues.clarifyTitle', '需求澄清') }}</strong>
+        <span>{{ t('issues.clarifySub', 'AI 助手逐步提问，补齐规格草稿') }}</span>
       </div>
     </header>
 
     <template v-if="canClarify">
       <div v-if="chat.length === 0 && !clarifying" class="chat-empty">
-        <p>回答 AI 的追问，规格草稿会随对话逐步成形</p>
+        <p>{{ t('issues.clarifyHint', '回答 AI 的追问，规格草稿会随对话逐步成形') }}</p>
         <BaseButton variant="primary" data-testid="clarify-start" @click="sendClarify(null)">
-          开始 AI 澄清
+          {{ t('issues.startClarifyBtn', '开始 AI 澄清') }}
         </BaseButton>
       </div>
       <div v-else ref="chatLog" class="chat-log" data-testid="clarify-log">
@@ -136,16 +140,18 @@ function onAnswerKeydown(event: KeyboardEvent): void {
         >
           <span class="avatar" :class="message.role === 'ai' ? 'avatar-ai' : 'avatar-user'">
             <AppIcon v-if="message.role === 'ai'" name="chat" :size="13" />
-            <template v-else>我</template>
+            <template v-else>{{ t('issues.me', '我') }}</template>
           </span>
           <div class="bubble">
-            <span class="role-label">{{ message.role === 'ai' ? 'AI' : '我' }}</span>
+            <span class="role-label">{{
+              message.role === 'ai' ? 'AI' : t('issues.me', '我')
+            }}</span>
             <p>{{ message.text }}</p>
           </div>
         </div>
         <div v-if="clarifying" class="message" data-role="ai" data-testid="clarify-typing">
           <span class="avatar avatar-ai"><AppIcon name="chat" :size="13" /></span>
-          <div class="bubble bubble-typing" aria-label="AI 正在思考">
+          <div class="bubble bubble-typing" :aria-label="t('issues.aiThinking', 'AI 正在思考')">
             <span class="dot" />
             <span class="dot" />
             <span class="dot" />
@@ -156,14 +162,14 @@ function onAnswerKeydown(event: KeyboardEvent): void {
         <textarea
           v-model="answer"
           rows="2"
-          placeholder="回答 AI 的追问…"
+          :placeholder="t('issues.answerPlaceholder', '回答 AI 的追问…')"
           data-testid="clarify-input"
           :disabled="clarifying"
           @keydown.enter="onAnswerKeydown"
         />
         <BaseButton
           variant="primary"
-          aria-label="发送"
+          :aria-label="t('common.send', '发送')"
           :disabled="clarifying || answer.trim() === ''"
           data-testid="clarify-send"
           @click="submitAnswer"
@@ -171,10 +177,12 @@ function onAnswerKeydown(event: KeyboardEvent): void {
           <AppIcon name="send" :size="16" />
         </BaseButton>
       </div>
-      <p class="composer-hint">Enter 发送，Shift + Enter 换行</p>
+      <p class="composer-hint">{{ t('issues.composerHint', 'Enter 发送，Shift + Enter 换行') }}</p>
       <p v-if="chatError" class="form-error" role="alert">{{ chatError }}</p>
     </template>
-    <p v-else class="chat-hint">AI 澄清由 Issue 作者或开发者发起。</p>
+    <p v-else class="chat-hint">
+      {{ t('issues.clarifyPermission', 'AI 澄清由 Issue 作者或开发者发起。') }}
+    </p>
   </div>
 </template>
 

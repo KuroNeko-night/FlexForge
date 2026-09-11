@@ -1,24 +1,23 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 
-import { ApiError, apiErrorMessage } from '@/api/client';
+import { apiErrorMessage } from '@/api/client';
 import {
-  fetchPreview,
   generatePlugin,
   ISSUE_TRANSITIONS,
-  saveSpec,
   transitionIssue,
   transitionRequiresReason,
-  TRANSITION_LABELS,
+  transitionLabel,
   type GenerateOutcome,
   type IssueRecord,
   type IssueStatusName,
-  type SpecPreview,
   type SpecRevision,
 } from '@/api/issues';
+import IssueSpecSection from '@/components/IssueSpecSection.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ComponentCard from '@/components/ui/ComponentCard.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 开发者面板（P15，DEVELOPER；服务端 @RequireRole 为安全边界）：
@@ -52,25 +51,11 @@ const reason = ref('');
 const transitioning = ref(false);
 const transitionError = ref<string | null>(null);
 
-const specDraft = ref('');
-const savingSpec = ref(false);
-const specError = ref<string | null>(null);
-const preview = ref<SpecPreview | null>(null);
-const previewing = ref(false);
-
 const confirmingGenerate = ref(false);
 const generating = ref(false);
 const generateError = ref<string | null>(null);
 const generated = ref<GenerateOutcome | null>(null);
 
-watch(
-  () => props.spec,
-  (next) => {
-    specDraft.value = next?.specJson ?? '';
-    preview.value = null;
-  },
-  { immediate: true },
-);
 watch(
   () => props.issue.id,
   () => {
@@ -79,13 +64,8 @@ watch(
     pendingTarget.value = null;
     confirmingGenerate.value = false;
     transitionError.value = null;
-    specError.value = null;
     generateError.value = null;
     generated.value = null;
-    // PR #34 审查 P2：specDraft 不依赖 props.spec 引用变化（null→null 不触发），
-    // 切换 Issue 必须显式复位，否则 A 的草稿可被保存到 B
-    specDraft.value = props.spec?.specJson ?? '';
-    preview.value = null;
   },
   { immediate: true },
 );
@@ -112,51 +92,12 @@ async function runTransition(target: IssueStatusName, why: string): Promise<void
   } catch (e) {
     // 失败关闭对话框：错误显示在页面迁移区（遮罩之下看不到，审查 P2-5）
     pendingTarget.value = null;
-    transitionError.value = apiErrorMessage(e, '迁移失败，请稍后重试');
+    transitionError.value = apiErrorMessage(
+      e,
+      t('issues.transitionFailed', '迁移失败，请稍后重试'),
+    );
   } finally {
     transitioning.value = false;
-  }
-}
-
-async function submitSpec(): Promise<void> {
-  if (savingSpec.value || specDraft.value.trim() === '') {
-    return;
-  }
-  savingSpec.value = true;
-  specError.value = null;
-  try {
-    const saved = await saveSpec(props.issue.id, specDraft.value.trim());
-    specDraft.value = saved.specJson;
-    emit('specSaved', saved);
-  } catch (e) {
-    specError.value = apiErrorMessage(e, '保存失败：内容须为合法 JSON 规格');
-  } finally {
-    savingSpec.value = false;
-  }
-}
-
-async function loadPreview(): Promise<void> {
-  if (previewing.value) {
-    return;
-  }
-  const issueId = props.issue.id;
-  previewing.value = true;
-  try {
-    const result = await fetchPreview(issueId);
-    if (props.issue.id === issueId) {
-      preview.value = result;
-    }
-  } catch (e) {
-    if (props.issue.id !== issueId) {
-      return;
-    }
-    preview.value = {
-      valid: false,
-      resources: {},
-      errors: [e instanceof ApiError ? e.message : '预览失败'],
-    };
-  } finally {
-    previewing.value = false;
   }
 }
 
@@ -173,7 +114,7 @@ async function submitGenerate(): Promise<void> {
   } catch (e) {
     // 失败关闭对话框：错误显示在页面生成区（审查 P2-5）
     confirmingGenerate.value = false;
-    generateError.value = apiErrorMessage(e, '生成失败，请稍后重试');
+    generateError.value = apiErrorMessage(e, t('issues.generateFailed', '生成失败，请稍后重试'));
   } finally {
     generating.value = false;
   }
@@ -181,9 +122,12 @@ async function submitGenerate(): Promise<void> {
 </script>
 
 <template>
-  <ComponentCard title="开发者面板" subtitle="状态迁移 / 规格 / 预览 / 生成">
+  <ComponentCard
+    :title="t('issues.devPanel', '开发者面板')"
+    :subtitle="t('issues.devPanelSub', '状态迁移 / 规格 / 预览 / 生成')"
+  >
     <div class="dev-section" data-testid="transition-section">
-      <h4>状态迁移</h4>
+      <h4>{{ t('issues.transitionSection', '状态迁移') }}</h4>
       <div v-if="targets.length > 0" class="transition-actions">
         <BaseButton
           v-for="item in targets"
@@ -194,78 +138,59 @@ async function submitGenerate(): Promise<void> {
           :data-testid="`transition-${item.target}`"
           @click="requestTransition(item.target)"
         >
-          {{ TRANSITION_LABELS[item.target] }}
+          {{ transitionLabel(item.target) }}
         </BaseButton>
       </div>
-      <p v-else class="hint">当前为终态。</p>
-      <p v-if="transitioning" class="hint">迁移执行中…</p>
+      <p v-else class="hint">{{ t('issues.finalState', '当前为终态。') }}</p>
+      <p v-if="transitioning" class="hint">{{ t('issues.transitioning', '迁移执行中…') }}</p>
       <p v-if="transitionError" class="form-error" role="alert">{{ transitionError }}</p>
     </div>
 
-    <div class="dev-section" data-testid="spec-section">
-      <h4>
-        规格
-        <span v-if="spec" class="hint">
-          修订 {{ spec.revision }} ·
-          {{ spec.valid ? '校验通过' : `校验未通过：${spec.validationErrors}` }}
-        </span>
-      </h4>
-      <textarea
-        v-model="specDraft"
-        class="spec-editor"
-        rows="10"
-        spellcheck="false"
-        placeholder="可由 AI 澄清生成，也可在此手工编写"
-      />
-      <div class="inline-form">
-        <BaseButton variant="primary" :disabled="savingSpec" @click="submitSpec">
-          {{ savingSpec ? '保存中…' : '保存规格' }}
-        </BaseButton>
-        <BaseButton :disabled="previewing" @click="loadPreview">
-          {{ previewing ? '预览中…' : '预览插件资源' }}
-        </BaseButton>
-      </div>
-      <p v-if="specError" class="form-error" role="alert">{{ specError }}</p>
-      <div v-if="preview" class="preview" data-testid="spec-preview">
-        <p v-if="preview.valid">将生成 {{ Object.keys(preview.resources).length }} 个资源文件：</p>
-        <ul>
-          <li v-for="(content, path) in preview.resources" :key="path">
-            <code>{{ path }}</code> · {{ content.length }} 字符
-          </li>
-        </ul>
-        <p v-if="!preview.valid" class="form-error">规格不合法：{{ preview.errors.join('；') }}</p>
-      </div>
-    </div>
+    <IssueSpecSection :issue="issue" :spec="spec" @spec-saved="emit('specSaved', $event)" />
 
     <div class="dev-section" data-testid="generate-section">
-      <h4>生成插件骨架</h4>
-      <p class="hint">需先批准 Issue 并保存校验通过的规格；生成后自动激活进入待测试。</p>
+      <h4>{{ t('issues.generateSkeleton', '生成插件骨架') }}</h4>
+      <p class="hint">
+        {{
+          t(
+            'issues.generateHint',
+            '需先批准 Issue 并保存校验通过的规格；生成后自动激活进入待测试。',
+          )
+        }}
+      </p>
       <BaseButton variant="primary" :disabled="generating" @click="confirmingGenerate = true">
-        {{ generating ? '生成中…' : '生成并激活' }}
+        {{
+          generating
+            ? t('issues.generating', '生成中…')
+            : t('issues.generateActivate', '生成并激活')
+        }}
       </BaseButton>
       <p v-if="generateError" class="form-error" role="alert">{{ generateError }}</p>
       <p v-if="generated" class="generated" data-testid="generate-outcome">
-        插件 {{ generated.pluginId }} {{ generated.version }} 已生成并进入测试，可在插件管理查看。
+        {{ t('issues.generatedNote', '插件') }} {{ generated.pluginId }} {{ generated.version }}
+        {{ t('issues.generatedTail', '已生成并进入测试，可在插件管理查看。') }}
       </p>
     </div>
 
     <ConfirmDialog
       :open="pendingTarget !== null"
-      :title="pendingTarget ? TRANSITION_LABELS[pendingTarget] : ''"
-      :message="`将 ${issue.title} 的状态迁移为${pendingTarget ? TRANSITION_LABELS[pendingTarget] : ''}？`"
-      :confirm-label="pendingTarget ? TRANSITION_LABELS[pendingTarget] : '确认'"
+      :title="pendingTarget ? transitionLabel(pendingTarget) : ''"
+      :message="`${t('issues.transitionConfirmPrefix', '将')} ${issue.title} ${t('issues.transitionConfirmSuffix', '的状态迁移为')}${pendingTarget ? transitionLabel(pendingTarget) : ''}？`"
+      :confirm-label="pendingTarget ? transitionLabel(pendingTarget) : t('common.confirm', '确认')"
       require-reason
-      reason-label="原因"
-      reason-placeholder="填写迁移原因"
+      :reason-label="t('issues.reason', '原因')"
+      :reason-placeholder="t('issues.reasonPlaceholder', '填写迁移原因')"
       :busy="transitioning"
       @confirm="(why) => pendingTarget && runTransition(pendingTarget, why)"
       @cancel="pendingTarget = null"
     />
     <ConfirmDialog
       :open="confirmingGenerate"
-      title="生成并激活"
-      message="将按当前规格生成插件骨架，并自动激活进入测试环境。"
-      confirm-label="生成并激活"
+      :title="t('issues.generateActivate', '生成并激活')"
+      :message="
+        t('issues.generateConfirmBody', '将按当前规格生成插件骨架，并自动激活进入测试环境。')
+      "
+      :confirm-label="t('issues.generateActivate', '生成并激活')"
       :busy="generating"
       @confirm="submitGenerate"
       @cancel="confirmingGenerate = false"

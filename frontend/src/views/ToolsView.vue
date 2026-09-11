@@ -12,6 +12,7 @@ import ProcessorResultView from '@/components/ProcessorResultView.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ComponentCard from '@/components/ui/ComponentCard.vue';
 import StateView from '@/components/StateView.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 文件工具页（P23，FR-PLUGIN-14 消费面）：ACTIVE 的文件输入处理器卡片——
@@ -76,7 +77,10 @@ async function run(entry: ProcessorEntry): Promise<void> {
     const result = await invokeFileProcessor(entry.key, tool.file);
     patch(entry, { running: false, result });
   } catch (e) {
-    patch(entry, { running: false, runError: apiErrorMessage(e, '处理器执行失败，请稍后重试') });
+    patch(entry, {
+      running: false,
+      runError: apiErrorMessage(e, t('tools.runFailedFull', '处理器执行失败，请稍后重试')),
+    });
   }
 }
 
@@ -91,12 +95,14 @@ onMounted(load);
 <template>
   <section class="tools-view" data-testid="tools-view">
     <header class="tools-header">
-      <h2 class="ff-page-title">文件工具</h2>
-      <p class="tools-subtitle">上传表格文件，交给插件处理——清洗、转换或分析后下载结果</p>
+      <h2 class="ff-page-title">{{ t('tools.title', '文件工具') }}</h2>
+      <p class="tools-subtitle">
+        {{ t('tools.subtitle', '上传表格文件，交给插件处理——清洗、转换或分析后下载结果') }}
+      </p>
     </header>
     <StateView v-if="state !== 'ready'" :state="state" :message="error">
       <p v-if="state === 'empty'">
-        暂无文件处理器，安装提供文件处理能力的插件后此处可用的工具会出现
+        {{ t('tools.empty', '暂无文件处理器，安装提供文件处理能力的插件后此处可用的工具会出现') }}
       </p>
     </StateView>
     <div v-else class="tools-grid">
@@ -122,7 +128,9 @@ onMounted(load);
               :disabled="toolOf(entry).running || !toolOf(entry).file"
               @click="run(entry)"
             >
-              {{ toolOf(entry).running ? '处理中…' : '执行' }}
+              {{
+                toolOf(entry).running ? t('tools.processing', '处理中…') : t('common.run', '执行')
+              }}
             </BaseButton>
             <span v-if="toolOf(entry).file" class="file-name">{{ toolOf(entry).file?.name }}</span>
           </div>

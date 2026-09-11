@@ -1,4 +1,5 @@
 import { session } from '@/auth/token';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 统一 API 客户端：/api/v1 前缀、Bearer 注入、错误规范化（NFR-UX-01 的 error 反馈源）。
@@ -49,7 +50,7 @@ async function toApiError(response: Response): Promise<ApiError> {
   const payload = (await response.json().catch(() => ({}))) as ErrorPayload;
   return new ApiError(
     payload.code ?? 'internal_error',
-    payload.message ?? `请求失败 · HTTP ${response.status}`,
+    payload.message ?? `${t('api.requestFailed', '请求失败')} · HTTP ${response.status}`,
     response.status,
     payload.requestId ?? null,
   );
@@ -60,7 +61,7 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   try {
     response = await fetch(`/api/v1${path}`, { ...init, headers: buildHeaders(init) });
   } catch {
-    throw new ApiError('network_error', '网络异常，请稍后重试', 0, null);
+    throw new ApiError('network_error', t('api.networkError', '网络异常，请稍后重试'), 0, null);
   }
 
   if (response.status === 401) {
@@ -84,7 +85,7 @@ export async function apiFetchBlob(path: string): Promise<Blob> {
   try {
     response = await fetch(`/api/v1${path}`, { headers: buildHeaders() });
   } catch {
-    throw new ApiError('network_error', '网络异常，请稍后重试', 0, null);
+    throw new ApiError('network_error', t('api.networkError', '网络异常，请稍后重试'), 0, null);
   }
   if (response.status === 401) {
     unauthorizedHandler?.();
@@ -101,7 +102,7 @@ export async function apiFetchBlob(path: string): Promise<Blob> {
  */
 export function apiErrorMessage(
   e: unknown,
-  fallback: string | null = '操作失败，请稍后重试',
+  fallback: string | null = t('common.opFailed', '操作失败，请稍后重试'),
 ): string | null {
   if (e instanceof ApiError) {
     return e.requestId ? `${e.message} · 追踪码 ${e.requestId}` : e.message;

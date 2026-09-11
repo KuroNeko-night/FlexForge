@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RecordView } from '@/api/types';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 记录动作栏（P19 从 DynamicEntityView 拆出）：渲染 registry 贡献+内置动作，
@@ -17,6 +18,6 @@ const emit = defineEmits<{ run: [actionKey: string, record: RecordView] }>();
     :data-action="action.key"
     @click.stop="emit('run', action.key, record)"
   >
-    {{ action.label }}
+    {{ t(`action.${action.key}`, action.label) }}
   </button>
 </template>

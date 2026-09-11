@@ -6,6 +6,7 @@ import { ApiError, apiErrorMessage } from '@/api/client';
 import type { EntitySummary } from '@/api/types';
 import AppIcon from '@/components/AppIcon.vue';
 import StateView from '@/components/StateView.vue';
+import { t } from '@/registry/localeRegistry';
 
 /** 内置部件 workbench.entities：已启用实体入口卡片（元数据驱动）。 */
 const entities = ref<EntitySummary[]>([]);
@@ -33,8 +34,14 @@ onMounted(async () => {
 <template>
   <section class="entity-cards-widget" data-widget="workbench.entities">
     <StateView v-if="state !== 'ready'" :state="state" :message="error" />
-    <StateView v-else-if="entities.length === 0" :state="'empty'" message="暂无已启用实体">
-      <p class="empty-hint">实体由开发者在"数据模型"中定义后启用</p>
+    <StateView
+      v-else-if="entities.length === 0"
+      :state="'empty'"
+      :message="t('workbench.noEntities', '暂无已启用实体')"
+    >
+      <p class="empty-hint">
+        {{ t('workbench.entityHint', '实体由开发者在"数据模型"中定义后启用') }}
+      </p>
     </StateView>
     <ul v-else class="entity-cards">
       <li v-for="entity in entities" :key="entity.id">

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "locale.ja",
+  "name": "日本語言語パック",
+  "version": "1.0.2",
+  "capabilityLevel": 1,
+  "minPlatformVersion": "0.1.0",
+  "dependencies": [],
+  "contributions": {
+    "navigation": [],
+    "renderers": [],
+    "themeAssets": [
+      {
+        "key": "locale.ja.pack",
+        "kind": "locale",
+        "path": "assets/ja.json"
+      }
+    ]
+  },
+  "resources": {
+    "entities": [],
+    "views": [],
+    "migrations": []
+  }
+}

@@ -92,7 +92,9 @@ public class HttpModelPort implements ModelPort {
                 .put("temperature", 0.2);
         bodyNode.set("messages", messages);
         try {
-            return HttpRequest.newBuilder(URI.create(config.baseUrl()))
+            // P26：base-url 为根地址（OpenAI/DeepSeek 官方口径），端点自动拼装；
+            // 旧"完整端点"存量值（/chat/completions 结尾）原样兼容（ModelEndpoints）
+            return HttpRequest.newBuilder(URI.create(ModelEndpoints.chatOf(config.baseUrl())))
                     .timeout(Duration.ofSeconds(60))
                     .header("Authorization", "Bearer " + config.apiKey())
                     .header("Content-Type", "application/json")

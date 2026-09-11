@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 
 import type { FieldDefinition } from '@/api/types';
+import { t } from '@/registry/localeRegistry';
 
 const props = defineProps<{
   field: FieldDefinition;
@@ -30,7 +31,7 @@ const options = computed<string[]>(() => {
     :aria-label="field.displayName"
     @change="emit('update:modelValue', ($event.target as HTMLSelectElement).value || null)"
   >
-    <option value="">请选择</option>
+    <option value="">{{ t('field.select', '请选择') }}</option>
     <option v-for="option in options" :key="option" :value="option">{{ option }}</option>
   </select>
 </template>

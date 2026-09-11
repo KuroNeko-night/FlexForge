@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { deleteRecord } from '@/api/data';
 import type { EntityDetail, RecordView } from '@/api/types';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 实体详情段（P17 从 DynamicEntityView 拆出）：字段键值列表 + 编辑/删除/返回
@@ -46,17 +47,19 @@ async function remove(): Promise<void> {
       <dd :data-field="field.name">{{ record?.data[field.name] ?? '—' }}</dd>
     </template>
     <div class="detail-actions">
-      <router-link :to="`/data/${entityId}/${record?.id}/edit`">编辑</router-link>
-      <button type="button" @click="confirmDelete = true">删除</button>
-      <router-link :to="`/data/${entityId}`">返回列表</router-link>
+      <router-link :to="`/data/${entityId}/${record?.id}/edit`">{{
+        t('common.edit', '编辑')
+      }}</router-link>
+      <button type="button" @click="confirmDelete = true">{{ t('common.delete', '删除') }}</button>
+      <router-link :to="`/data/${entityId}`">{{ t('entity.backToList', '返回列表') }}</router-link>
     </div>
   </dl>
 
   <ConfirmDialog
     :open="confirmDelete"
-    title="删除记录"
-    message="删除后不可恢复，确认删除该记录？"
-    confirm-label="删除"
+    :title="t('action.record.deleteConfirmTitle', '删除记录')"
+    :message="t('action.record.deleteConfirmBody', '删除后不可恢复，确认删除该记录？')"
+    :confirm-label="t('common.delete', '删除')"
     danger
     :busy="deleting"
     @confirm="remove"

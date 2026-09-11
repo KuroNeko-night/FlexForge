@@ -599,3 +599,29 @@
 - 字体层级：页面标题/品牌用 display 字体（中西文混排协调、层级 2xl/lg/md/sm 分明）；中文正文 Noto Sans SC 渲染；表格数字等宽对齐。
 - 背景呈现：工作台主区与登录页有可感知的背景纹理（基线灰阶）；theme-default 1.1.2 激活后背景换装、停用恢复基线；theme-warm 1.1.2 同理。
 - 质量门：文案零变更；reduced-motion/CSP/对比度不破；前端回归全绿+门禁 21/1/0+CI 六项；新依赖 npm audit（high+ 0）+docs/13 §3.9 登记；docs（09/13/索引/STATUS/JSON）同步；交叉审查独立子代理执行。
+
+## P26：界面净化、系统多语言与 AI 上游探活（2026-09-11 用户裁决新增）
+
+> 背景：P25 验收反馈三项——①"前端目前还有很多 debug 字样，把这些内容都隐藏掉"（live 库长年走查/演示残留外显：e2e.dep×2 测试插件卡、fixture 澄清规格×2 生成插件（其一激活贡献侧栏菜单）、demo-developer/demo-user 账号、demo issues、demo_material_* 实体）；②"更新英文插件，同时试着加入更多常用语言，注意只翻译系统，不翻译插件内容"（P15 后新增系统界面未接 t()，切英文后大片回退中文；且现 en.json 含 menu.example.* 插件内容键违例）；③"ai 配置保存后要检查上游模型是否可用，如不可用报错上抛"（DeepSeek 官方文档口径：base_url=https://api.deepseek.com、端点 {base}/chat/completions、模型 deepseek-flash）。
+> **红线**：
+> - ①净化不删数据：产品级=用户管理默认隐藏 BLOCKED 账号（FR-AUTH-06）+插件管理默认折叠已停用插件（FR-PLUGIN-15），均带切换开关且纯前端过滤（后端契约零变更）；live 清理走既有管理端点（停用/封禁/禁用/卸载，可逆，不 DELETE 业务行）；
+> - ②结构与皮分离传承：系统文案键=平台界面 chrome（标题/按钮/表头/空态/提示），插件内容（插件名/菜单 label/实体名/字段名/数据值）不进语言包、不翻译；zh-CN 基线仍是源码中文字面量（权威），语言包仅覆盖；新语言包 ja/fr/es 与 en 同键集（缺失键回退基线）；
+> - ③探活只在保存路径（PUT /ai/config，provider=http）：GET {base}/models（OpenAI 兼容标准，DeepSeek 支持）带 Bearer——不可达/非 2xx/超时/密钥无效/模型不在列表 → 400 报错上抛（含上游原因），不落库；fixture 不探活；密钥明文不进日志/审计（S8 传承）；
+> - ③出站 URL 守卫（docs/13 §3.6 增补）：scheme 仅 http/https；host 拒绝 localhost/环回/私有/链路本地/保留地址（IP 字面量静态判定，不做运行时 DNS——不可解析交探活报错）；守卫作用于保存路径（管理员 UI 可控面），环境变量配置（运维信任根）不受限；
+> - ③base-url 语义对齐官方教程：根地址自动拼 /chat/completions（DeepSeek/OpenAI 口径），旧"完整端点"存量值向后兼容（已 /chat/completions 结尾则原样使用）；
+> - 文案红线调整（用户明示）：本阶段系统文案接入 t() 属既定目标，中文基线文案不变（fallback=现值），插件内容零翻译。
+> **非目标**：不做后端错误消息翻译（API 错误文案仍中文）；不做 RTL 语言；不做语言包缺键告警面；不迁移审计历史（demo 账号的既有审计行是历史事实，保留）。
+
+### 实施内容
+
+- **A. 界面净化**：`PluginsView` 列表默认只显示启用中插件+"显示已停用"切换（停用数角标）；`UsersView` 默认隐藏 BLOCKED+"显示已封禁"切换；live 清理（终验执行）：gen.*/e2e.* 插件停用或卸载、demo 双账号封禁、demo_material_* 实体禁用、demo issues 关闭归档。
+- **B. 系统多语言**：全系统视图文案接 `t()`（Workbench 侧栏平台菜单键映射/Issue 双端/Plugins/Users/Audit/Tools/DynamicEntity+Form/Placeholder/UserBatchBar/通知）；`localeRegistry` LANGUAGE_LABELS 扩 ja/fr/es；locale-en 1.0.3→1.1.0（全键集+剔除 menu.example.* 插件内容键）；新增 locale-ja/locale-fr/locale-es 1.0.0 语言包插件。
+- **C. AI 上游探活**：`ModelUrlGuard`（保存路径 URL 守卫）+`ModelConfigGate`/`HttpModelConfigGate`（GET /models，10s 超时，模型在列校验，2xx 非法 JSON 视为可达）；`AiConfigService.update` 编排（守卫→探活→落库，失败审计 ai.config/failure）；`HttpModelPort` 端点规范化（根地址拼 /chat/completions，旧端点值兼容）；设置页 hint 更新官方口径示例。
+- **测试**：后端——ModelUrlGuardTest（拒绝族）、HttpModelConfigGateTest（本地 HttpServer：列表含/不含模型、401、超时）、AiConfigServiceTest（探活失败不落库+审计失败、守卫拒绝、成功路径）、AiConfigProbeApiTest（app 级 400 失败路径）；前端——默认过滤/切换开关用例、语言包键集一致性校验（en/ja/fr/es 同键、不含 menu.example.*）、平台菜单键映射用例；既有 204 例回归（zh 基线 fallback 不破断言）。
+
+### 验收标准
+
+- 净化效果：插件管理默认无 e2e.*/停用 gen.* 卡片（开关可见）、用户管理默认无 demo-*/封禁账号（开关可见）、侧栏无"fixture 澄清规格"菜单、工作台无 demo_material 链接（live 清理后）；两处开关状态不持久化（会话内记忆即可）。
+- 多语言：切 en/ja/fr/es 后系统 chrome（导航/标题/按钮/表头/空态）全量换语言、无大片中文回退；插件贡献内容（示例插件名/菜单/实体字段）保持原文；停用语言包即回退中文基线；en 1.1.0 无 menu.example.* 键。
+- 探活：http 配置保存时上游不可达/401/模型不在列表 → 400 含上游原因且配置未变；fixture 保存即成功；DeepSeek 官方口径 base-url（https://api.deepseek.com）+ deepseek-flash 可通过探活（live 实证或文档口径测试桩）；旧完整端点存量配置运行不受影响。
+- 质量门：S1-S9 不破（守卫+密钥不落日志+失败路径测试）；前端回归全绿+门禁 21/1/0+CI 六项；docs（02/03/09/13/索引/STATUS/JSON）同步；交叉审查独立子代理执行。

@@ -5,6 +5,7 @@ import { apiErrorMessage } from '@/api/client';
 import { addComment, fetchComments, type IssueComment } from '@/api/issues';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ComponentCard from '@/components/ui/ComponentCard.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * Issue 评论区（P16 从 IssueDetail 拆出）：列表 + 发表；评论是登录用户能力，
@@ -29,7 +30,7 @@ async function submit(): Promise<void> {
     body.value = '';
     emit('reloaded', await fetchComments(props.issueId));
   } catch (e) {
-    error.value = apiErrorMessage(e, '评论失败，请稍后重试');
+    error.value = apiErrorMessage(e, t('issues.commentFailed', '评论失败，请稍后重试'));
   } finally {
     commenting.value = false;
   }
@@ -37,18 +38,28 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <ComponentCard title="评论" :subtitle="`${comments.length} 条`">
+  <ComponentCard
+    :title="t('issues.comments', '评论')"
+    :subtitle="`${comments.length} ${t('issues.countUnit', '条')}`"
+  >
     <ul class="comment-list">
       <li v-for="comment in comments" :key="comment.id">
         <span class="comment-author">{{ comment.author }}</span>
         <span class="comment-body">{{ comment.body }}</span>
       </li>
-      <li v-if="comments.length === 0" class="comment-empty">尚无评论</li>
+      <li v-if="comments.length === 0" class="comment-empty">
+        {{ t('issues.noComments', '尚无评论') }}
+      </li>
     </ul>
     <div class="comment-input">
-      <textarea v-model="body" rows="2" placeholder="发表评论…" :disabled="commenting" />
+      <textarea
+        v-model="body"
+        rows="2"
+        :placeholder="t('issues.commentPlaceholder', '发表评论…')"
+        :disabled="commenting"
+      />
       <BaseButton :disabled="commenting || body.trim() === ''" @click="submit">
-        {{ commenting ? '发表中…' : '发表' }}
+        {{ commenting ? t('issues.commenting', '发表中…') : t('issues.commentSubmit', '发表') }}
       </BaseButton>
     </div>
     <p v-if="error" class="form-error" role="alert">{{ error }}</p>

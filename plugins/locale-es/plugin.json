@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "locale.es",
+  "name": "Paquete de idioma español",
+  "version": "1.0.2",
+  "capabilityLevel": 1,
+  "minPlatformVersion": "0.1.0",
+  "dependencies": [],
+  "contributions": {
+    "navigation": [],
+    "renderers": [],
+    "themeAssets": [
+      {
+        "key": "locale.es.pack",
+        "kind": "locale",
+        "path": "assets/es.json"
+      }
+    ]
+  },
+  "resources": {
+    "entities": [],
+    "views": [],
+    "migrations": []
+  }
+}

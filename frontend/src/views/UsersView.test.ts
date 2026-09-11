@@ -140,7 +140,12 @@ describe('UsersView 停启用（P13）', () => {
     switches[1].vm.$emit('update:modelValue', false);
     await flushPromises();
     expect(statusMock).toHaveBeenCalledWith(2, 'BLOCKED');
-    expect(wrapper.text()).toContain('停用');
+    // P26 界面净化：BLOCKED 默认隐藏——行消失、角标计数+1，展开后可见
+    expect(wrapper.text()).toContain('显示已封禁（1）');
+    expect(wrapper.text()).not.toContain('demo-user');
+    await wrapper.find('[data-testid="toggle-blocked"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.findAllComponents({ name: 'BaseSwitch' }).length).toBe(2);
     // 失败路径：行级错误提示，表格仍在
     statusMock.mockReset();
     statusMock.mockRejectedValue(
@@ -150,6 +155,26 @@ describe('UsersView 停启用（P13）', () => {
     await flushPromises();
     expect(wrapper.find('[data-testid="users-table"]').exists()).toBe(true);
     expect(wrapper.text()).toContain('不能变更自己的账号状态');
+  });
+});
+
+describe('UsersView 封禁默认隐藏（P26，FR-AUTH-06）', () => {
+  beforeEach(() => {
+    listMock.mockReset();
+    statusMock.mockReset();
+  });
+
+  it('BLOCKED 账号默认不出现在列表，开关按需展开', async () => {
+    const blocked = { ...user(3, 'p-walk', ['USER']), status: 'BLOCKED' as const };
+    listMock.mockResolvedValue(page([user(1, 'admin', ['ADMIN']), blocked]));
+    const wrapper = mount(UsersView, { global: { stubs } });
+    await flushPromises();
+    expect(wrapper.text()).not.toContain('p-walk');
+    expect(wrapper.text()).toContain('显示已封禁（1）');
+    await wrapper.find('[data-testid="toggle-blocked"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.text()).toContain('p-walk');
+    expect(wrapper.find('[data-testid="toggle-blocked"]').text()).toContain('收起已封禁');
   });
 });
 

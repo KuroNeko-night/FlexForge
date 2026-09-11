@@ -4,7 +4,7 @@ import { computed, ref, watch } from 'vue';
 import {
   fetchComments,
   fetchSpec,
-  ISSUE_STATUS_LABELS,
+  issueStatusLabel,
   type IssueComment,
   type IssueRecord,
   type SpecRevision,
@@ -15,6 +15,7 @@ import IssueClarifyChat from '@/components/IssueClarifyChat.vue';
 import IssueComments from '@/components/IssueComments.vue';
 import IssueDevPanel from '@/components/IssueDevPanel.vue';
 import ComponentCard from '@/components/ui/ComponentCard.vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * Issue 详情（P15，P21 对话拆分）：AI 对话（clarify 多轮问答，FR-ISSUE-03/03A）
@@ -83,19 +84,23 @@ function onSpecSaved(next: SpecRevision): void {
     <header class="detail-head">
       <h3>{{ issue.title }}</h3>
       <span v-if="issue.publishedAt" class="published-badge" data-testid="detail-published-badge">
-        已发布
+        {{ t('issues.published', '已发布') }}
       </span>
       <span class="status-badge" :data-status="issue.status">
-        {{ ISSUE_STATUS_LABELS[issue.status] }}
+        {{ issueStatusLabel(issue.status) }}
       </span>
     </header>
     <p class="detail-meta">
-      {{ issue.createdBy }} 创建 · 指派：{{ issue.assignedTo ?? '—' }} ·
-      {{ issue.labels.length > 0 ? issue.labels.join('、') : '无标签' }}
+      {{ issue.createdBy }} {{ t('issues.createdBy', '创建') }} ·
+      {{ t('issues.assignedTo', '指派') }}：{{ issue.assignedTo ?? '—' }} ·
+      {{ issue.labels.length > 0 ? issue.labels.join('、') : t('issues.noLabels', '无标签') }}
     </p>
     <p class="detail-desc">{{ issue.description }}</p>
 
-    <ComponentCard title="需求澄清对话" subtitle="回答 AI 追问，逐步生成规格草稿">
+    <ComponentCard
+      :title="t('issues.clarifyCardTitle', '需求澄清对话')"
+      :subtitle="t('issues.clarifyCardSub', '回答 AI 追问，逐步生成规格草稿')"
+    >
       <IssueClarifyChat
         :key="issue.id"
         :issue-id="issue.id"
@@ -114,7 +119,9 @@ function onSpecSaved(next: SpecRevision): void {
       @spec-saved="onSpecSaved"
     />
     <p v-else-if="spec" class="spec-summary">
-      规格草稿：修订 {{ spec.revision }}，{{ spec.valid ? '校验通过' : '校验未通过' }}
+      {{ t('issues.specDraft', '规格草稿：修订') }} {{ spec.revision }}，{{
+        spec.valid ? t('issues.specValid', '校验通过') : t('issues.specInvalid', '校验未通过')
+      }}
     </p>
 
     <!-- :key 防 Issue 复用时 A 的评论草稿落到 B（审查 P2-4，specDraft 同型） -->

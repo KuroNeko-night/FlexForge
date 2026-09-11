@@ -9,6 +9,7 @@ import {
   type PluginPreset,
   type PresetApplyResult,
 } from '@/api/plugins';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 插件预设状态与操作（P21，FR-PLUGIN-12）：保存/应用/删除 + 结果逐项呈现。
@@ -51,7 +52,7 @@ function presetOperations(state: PresetState, reloadInventory: () => Promise<unk
       state.notice.value = await action();
       await Promise.all([load(), reloadInventory()]);
     } catch (e) {
-      state.error.value = apiErrorMessage(e, '预设操作失败，请稍后重试');
+      state.error.value = apiErrorMessage(e, t('plugins.presetFailed', '预设操作失败，请稍后重试'));
     } finally {
       state.busy.value = false;
     }
@@ -60,7 +61,7 @@ function presetOperations(state: PresetState, reloadInventory: () => Promise<unk
   function save(name: string): void {
     void run(async () => {
       await savePreset(name);
-      return `已保存预设 ${name}`;
+      return `${t('plugins.presetSaved', '已保存预设')} ${name}`;
     });
   }
 
@@ -75,7 +76,7 @@ function presetOperations(state: PresetState, reloadInventory: () => Promise<unk
   function remove(preset: PluginPreset): void {
     void run(async () => {
       await deletePreset(preset.id);
-      return `已删除预设 ${preset.name}`;
+      return `${t('plugins.presetRemoved', '已删除预设')} ${preset.name}`;
     });
   }
 
@@ -86,11 +87,11 @@ function presetOperations(state: PresetState, reloadInventory: () => Promise<unk
 function applySummary(preset: PluginPreset, result: PresetApplyResult): string {
   const parts: string[] = [];
   if (result.activated.length > 0) {
-    parts.push(`启用 ${result.activated.join('、')}`);
+    parts.push(`${t('plugins.enableAction', '启用')} ${result.activated.join('、')}`);
   }
   if (result.stopped.length > 0) {
-    parts.push(`停用 ${result.stopped.join('、')}`);
+    parts.push(`${t('plugins.stopAction', '停用')} ${result.stopped.join('、')}`);
   }
   const detail = parts.length > 0 ? `：${parts.join('；')}` : '';
-  return `已应用预设 ${preset.name}${detail}`;
+  return `${t('plugins.presetApplied', '已应用预设')} ${preset.name}${detail}`;
 }

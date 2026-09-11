@@ -4,6 +4,7 @@ import type { Ref } from 'vue';
 import { updateRecord } from '@/api/data';
 import { apiErrorMessage } from '@/api/client';
 import type { RecordView, ViewDefinition } from '@/api/types';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 看板拖拽换列编排（P19，P20 抽 composable）：乐观移动 → PATCH 分组字段（补丁
@@ -36,7 +37,9 @@ export function useKanbanMove(
     } catch (e) {
       record.data[groupBy] = previous;
       const detail = apiErrorMessage(e, null);
-      moveError.value = detail ? `移动失败，已还原到原列：${detail}` : '移动失败，已还原到原列';
+      moveError.value = detail
+        ? `${t('kanban.moveFailed', '移动失败，已还原到原列')}：${detail}`
+        : t('kanban.moveFailed', '移动失败，已还原到原列');
     } finally {
       movingIds.delete(record.id);
     }

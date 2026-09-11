@@ -3,14 +3,14 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P25
-CURRENT_STAGE_NAME: 前端排版分布与视觉精修
-STAGE_STATUS: completed
+CURRENT_STAGE_ID: P26
+CURRENT_STAGE_NAME: 界面净化、系统多语言与 AI 上游探活
+STAGE_STATUS: in_progress
 PROJECT_PROGRESS: 100%
-LAST_UPDATED: 2026-09-10
+LAST_UPDATED: 2026-09-11
 OWNER: project-maintainer
-NEXT_ACTION: P00-P25 全阶段完成（进度 100%，release_candidate 维护期）：待用户验收 P25 两项（排版均匀分布/视觉精修）或裁决新增阶段
-EXIT_GATE: P25 出口复核通过（2026-09-10）：①排版分布——动态表单 7 字段 auto-fit 网格 4×300px 均布铺满 1296px 内容区（视觉模型 4/4），设置页卡片 638+638px 双列均分（跨全列页头移出网格后空轨道正常折叠，838a138）；②字体系统——Space Grotesk（display）+Noto Sans SC（中文正文）+Inter 西文，document.fonts 实证加载、computed 栈正确，页面标题 2xl/700 与卡片标题 lg 层级分明、表格 tabular-nums；@fontsource 自托管无外链（CSP 不破），构建期内联 PostCSS 剔除 .woff 后备（dist 17.2→9.5MB/CSS 403→351KB/299 文件，零新依赖）；③背景——body 骨架灰阶点阵纹理+登录页独立纹理（灰阶基线不破对比度），theme-default 1.1.2 背景重绘与 theme-warm 1.1.2 新增暖色背景均激活换装/停用恢复双向走查（视觉模型各 3/3）；④文案零变更+reduced-motion 保留+主题机制回归全绿：前端 204/204+后端 176/0/0+门禁 21/1/0+CI 六项绿；新字体依赖 audit high+ 0 且 docs/13 §3.9 登记；交叉审查独立子代理 0P0/0P1+2P2+5P3 全处置（PR #52）。live 走查另抓出 P08 潜伏 P1 缺陷（插件字段缺省 '{}' 以对象预填表单渲染 [object Object]）——写侧 default_value 存 NULL+读侧 parse 空对象归一+V017 存量清理+前端非标量守卫四层修复，复验 7 字段全空；V017 的 validation 置 NULL 语句在 live 库撞 JSONB NOT NULL（干净测试库 0 行不暴露）已移除（d2df5bf）。走查号 p25walk 封禁 BLOCKED；PR #52 合并 b99bb1b
+NEXT_ACTION: P26 实施中（2026-09-11 用户验收裁决三项，docs/09 P26）：①界面净化——用户管理默认隐藏 BLOCKED+插件管理默认折叠已停用（带开关，纯前端过滤）+live 清理演示/调试残留（gen.*/e2e.* 插件、demo 账号/issues/实体）；②系统多语言——系统文案全面接 t()（P15 后增量扫尾）、locale-en 1.1.0（剔插件内容键）、新增 ja/fr/es 语言包插件（只翻译系统 chrome，插件内容不翻译）；③AI 上游探活——PUT /ai/config 保存时 GET {base}/models 探活（DeepSeek 官方口径：根地址拼 /chat/completions），不可用 400 报错上抛不落库+URL 守卫（拒环回/私有/保留）
+EXIT_GATE: 计划出口证据（docs/09 P26 验收标准）：①插件页默认无停用卡片/用户页默认无 BLOCKED（开关可见）、live 清理后侧栏无 fixture 菜单+工作台无 demo 实体；②切 en/ja/fr/es 系统 chrome 全量换语言无大片回退、插件内容保持原文、停用回退基线；③http 保存探活失败 400 含上游原因且配置未变、fixture 直接过、DeepSeek 口径可通过、旧端点存量兼容；S1-S9 不破+失败路径测试；前端回归全绿+门禁 21/1/0+CI 六项；docs（02/03/09/13/索引/STATUS/JSON）同步；交叉审查独立子代理执行
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
 
@@ -45,6 +45,7 @@ BLOCKERS: none
 | P23 | 体验补全与文件工具插件 | completed | 验收四项（docs/09 P23）：XLSX 导出（FR-META-06）/用户端对话闭环+提示词 v3 三段产出（FR-ISSUE-03B/07）/文件处理器闭环（FR-PLUGIN-14）/权限失败路径+门禁 21/1/0+CI 六绿（live 终验见 EXIT_GATE） |
 | P24 | 管理面补全与体验打磨 | completed | 验收六项（docs/09 P24）：插件卡降噪/排版居中+表单取消/审计日志页（FR-AUTH-04）+批量停启用（FR-AUTH-05）/Agent Skill 分发（FR-ISSUE-08）/Issue 切换残留修复/门禁 21/1/0+CI 六绿（live 终验见 EXIT_GATE） |
 | P25 | 前端排版分布与视觉精修 | completed | 验收四项全过（docs/09 P25）：排版网格均布+设置多列（页头出网格）/字体系统与层级（自托管无外链+woff 剔除）/背景灰阶基线+主题 1.1.2 双向换装/文案零变更+机制回归+门禁 21/1/0；审查 2P2+5P3 全处置，live 终验见 EXIT_GATE |
+| P26 | 界面净化、系统多语言与 AI 上游探活 | in_progress | 验收四项（docs/09 P26）：净化默认过滤+live 清理/系统文案全量多语言（en 1.1.0+ja/fr/es，插件内容不翻译）/AI 保存探活 400 上抛+URL 守卫/门禁 21/1/0+CI 六绿+失败路径测试 |
 
 ## 更新规则
 
@@ -195,6 +196,7 @@ BLOCKERS: none
 | 2026-09-10 | P24 | **P24 出口复核通过置 completed；P00-P24 全阶段完成，进度 100%，项目维持 release_candidate**。live Linux 容器终验（镜像重建）：API 9/9（菜单含 system-audit/审计过滤/批量 BLOCKED+幂等/含自己 400/未知 404 无部分成功/超限 400）+浏览器六项：插件卡降噪（quality 陈旧行隐藏+dep 保留，视觉模型核验）/表单居中（920=内容区中心）与取消往返/审计页 359 条过滤/批量 UI（危险确认→通知独立呈现→双行 BLOCKED+自己行禁用）/简报卡 Skill 下载（blob 9072B 四契约键）/Issue 切换零残留（probe 评论区 0 条）切回恢复。门禁 21/1/0+前端 203/203+后端 176/0/0+CI 六项绿。走查号 p24walk 用后封禁 BLOCKED。PR #50 合并 7b6fe11 | EXIT_GATE、本条目 |
 | 2026-09-10 | P25 | 迭代完成（分支 feat/p25-layout-typography，11 提交，PR #52）：A=排版均匀分布——表单卡片化+字段 auto-fit 网格铺满（撤销 P24 窄列居中）/设置页卡片多列（minmax(24rem,1fr)）/新需求表单 ff-form-grid 原语/占位页结构化空态；B=字体系统——@fontsource 自托管 Space Grotesk display+Noto Sans SC 中文（unicode-range 分片按需）+Inter 西文，页面标题 2xl/卡片标题 lg/表格 tabular-nums；C=背景——body 骨架灰阶点阵纹理+登录页纹理+theme-default 1.1.2 背景重绘+theme-warm 1.1.2 新增暖色背景（同版本不可变升版）；D=构建优化——内联 PostCSS 剔除 @font-face 的 .woff 后备（dist 17.2→9.5MB，零新依赖）。live 复验修复：跨全列页头阻止 auto-fit 折叠→设置页网格下沉独立包装层（838a138） | 本分支提交 |
 | 2026-09-10 | P25 | 交叉审查（独立子代理，缺陷优先）：**0 P0/0 P1 + 2 P2 + 5 P3，全处置**（PR #52 评论）——P2：表单网格 auto-fill→auto-fit（稀疏实体空轨道保留右侧空白）、@fontsource 双格式死重 9.5MB→构建期剔除（36a235a）；P3：新需求表单行距/按钮自适应、死导入、docs 机制与已知限制修正等。live 视觉核验另抓出 **P08 潜伏 P1**：JdbcLifecycleRepository orEmpty(null)→'{}' 使插件字段缺省以对象预填表单渲染 "[object Object]"——写侧 default_value 存 NULL+读侧 parse 空对象归一+V017 存量清理+前端非标量守卫四层修复（11e9b1f），复验 7 字段全空；V017 的 validation 置 NULL 语句在 live 库撞 JSONB NOT NULL（干净测试库迁移先于 fixture、0 行命中不暴露）已移除改读侧归一承担（d2df5bf），live 应用版与分支版经补提交对齐 | PR #52 评论、本条目 |
+| 2026-09-11 | P26 | 用户验收 P25 并裁决新增（三项）：①"前端目前还有很多 debug 字样，把这些内容都隐藏掉"——live 库走查/演示残留外显（e2e.dep×2/fixture 澄清规格×2（gen.*，其一激活贡献侧栏菜单）/demo-developer+demo-user/demo issues/demo_material_*），产品级=默认过滤（BLOCKED 账号、已停用插件）+live 清理；②"更新英文插件，同时试着加入更多常用语言，注意只翻译系统，不翻译插件内容"——P15 后系统界面未接 t()，需全面扫尾+locale-en 1.1.0（剔 menu.example.* 插件内容键）+新增 ja/fr/es；③"ai 配置保存后要检查上游模型是否可用，如不可用报错上抛"（附 DeepSeek 官方文档）——保存时探活 GET {base}/models，不可用 400 上抛；base-url 语义对齐官方教程（根地址拼 /chat/completions）。docs/09 P26 节已登记（红线+实施+验收） | docs/09 P26、本条目 |
 | 2026-09-10 | P25 | **P25 出口复核通过置 completed；P00-P25 全阶段完成，进度 100%，项目维持 release_candidate**。live 终验（镜像重建后）：表单网格 7 字段 4×300px 均布（DOM+视觉模型 4/4）/设置页 638+638px 双列折叠空轨道/字体 document.fonts 实证加载+computed 栈正确/背景双向换装——theme-default 1.1.2 与 theme-warm 1.1.2 激活截图视觉核验各 3/3、停用恢复基线/缺陷复验 7 字段全空。前端 204/204+后端 176/0/0+门禁 21/1/0+CI 六项绿（d2df5bf）。走查号 p25walk 用后封禁 BLOCKED。PR #52 合并 b99bb1b | EXIT_GATE、本条目 |
 | 2026-09-10 | P25 | 用户验收 P24 排版与视觉并裁决新增（两项）：①"不要简单对内容进行居中设置，通过调整排版来让内容均匀分布"——P24 的窄列居中方案被否，改为表单全宽卡片+字段网格铺满/设置卡片多列分布；②"前端设计还可以再精致一点，使用不同的字体，字体大小，背景图等"——引入 display 字体（Space Grotesk）+中文正文（Noto Sans SC）字号层级（2xl/lg/tabular-nums）+背景纹理（骨架 CSS 基线+主题包 1.1.2 重绘）。docs/09 P25 节已登记（红线+实施+验收） | docs/09 P25、本条目 |
 | 2026-09-10 | P24 | 用户验收 P23 并裁决新增（六项）：①插件管理界面显示无关紧要记录（如"最近激活失败于 xxx"）；②部分界面贴左对齐右半大量空白；③实体新增记录表单只有创建没有取消；④系统管理只有用户管理、缺批量操作；⑤issue 工作台 agent 提示词对外部 agent 不可直接使用（需配套 Skill 教 AI 制作 FlexForge 插件）；⑥补充缺陷：Issue 工作台切换需求后上一需求内容残留。根因初判：①=PluginCard lastFailure 不区分失败是否早于当前成功激活；⑥=IssueDetail watch 换 Issue 不清旧 comments/spec（B 数据到达前 A 残留、B 失败永久残留）+用户工作台 IssueDiscussion 无 :key（评论草稿残留）。docs/09 P24 节已登记（红线+实施+验收），docs/02 增 FR-AUTH-04/05、FR-ISSUE-08 | docs/09 P24、本条目 |

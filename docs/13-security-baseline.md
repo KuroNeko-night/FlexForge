@@ -87,6 +87,7 @@
 3. 模型密钥只在后端 `ModelPort` 实现内使用，永不经 API 出参或前端往返（对齐 `docs/09` P11）。
 4. 模型响应必须通过 Schema 校验与资源白名单（`FR-ISSUE-04`）；校验失败的输出不得生成任何可安装产物。
 5. **模型运行时配置（P15 设置页，用户裁决）**：`GET/PUT /ai/config`（ADMIN）持久化 provider=fixture|http、base-url、model 与 API Key；密钥经 `SecretCipher`（AES-256-GCM，密钥=HMAC-SHA256(`AUTH_JWT_SECRET`, 域分隔标签) 派生）加密后落 `ai_provider_config` 单行表——密钥材料仍以环境变量为根，数据库泄露不直接泄露 API Key；任何读路径只回 `apiKeyConfigured` 布尔与尾 4 位掩码，明文仅存在于加密前内存与 `Authorization` 头（S8：不进日志/任务记录，`ai_task_log` 口径不变）；`AUTH_JWT_SECRET` 轮换后旧密文不可解，按"未配置"降级并提示重新录入（不静默用旧值）；有效配置解析顺序=DB 行 > 环境变量（`FLEXFORGE_AI_*`）> 默认 fixture；审计 `ai.config` 记操作者与结果（不含密钥材料）。
+6. **保存路径上游探活与出站 URL 守卫（P26，FR-SETUP-01）**：provider=http 的保存先过 `ModelUrlGuard`（scheme 仅 http/https；host 为 IP 字面量时拒绝环回/私有/链路本地/保留段，"localhost" 显式拒绝；非字面量主机名不做运行时 DNS——不可解析交探活报错）再探活（GET {base}/models 带 Bearer，10s 超时）：不可达/非 2xx/超时/密钥无效/模型不在列表 → 400 报错上抛（含上游状态码/原因，不含密钥材料）且不落库，审计记 `ai.config` failure。守卫与探活作用于管理员 UI 保存路径（远端可控面）；环境变量配置（`FLEXFORGE_AI_*`，运维信任根）不经守卫。运行时调用端点=根地址自动拼 /chat/completions（OpenAI/DeepSeek 官方口径），旧"完整端点"存量值原样兼容。
 
 ### 3.7 密钥与敏感数据
 

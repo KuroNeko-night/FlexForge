@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onUnmounted, watch } from 'vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 基建抽屉（docs/09 P12.5）：Teleport 到 body + 遮罩/面板分离过渡
@@ -43,7 +44,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
           <header class="ff-drawer__head">
             <h3>{{ title }}</h3>
             <button type="button" class="ff-btn ff-btn--ghost ff-btn--sm" @click="emit('close')">
-              关闭
+              {{ t('common.close', '关闭') }}
             </button>
           </header>
           <slot />

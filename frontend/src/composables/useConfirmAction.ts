@@ -1,4 +1,5 @@
 import { ref } from 'vue';
+import { t } from '@/registry/localeRegistry';
 
 /**
  * 统一确认动作（P16 模式，P19 抽为 composable）：registry record-action 的
@@ -27,9 +28,9 @@ export function useConfirmAction() {
     confirmResolver?.(false);
     confirmState.value = {
       open: true,
-      title: options?.title ?? '确认操作',
+      title: options?.title ?? t('common.confirmAction', '确认操作'),
       message,
-      confirmLabel: options?.confirmLabel ?? '确认',
+      confirmLabel: options?.confirmLabel ?? t('common.confirm', '确认'),
       danger: options?.danger ?? false,
     };
     return new Promise((resolve) => {

@@ -14,6 +14,7 @@ import ProcessorDrawer from '@/components/ProcessorDrawer.vue';
 import RecordActionsBar from '@/components/RecordActionsBar.vue';
 import ViewToggle from '@/components/ViewToggle.vue';
 import StateView from '@/components/StateView.vue';
+import { t } from '@/registry/localeRegistry';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import { useEntityExport } from '@/composables/useEntityExport';
@@ -161,7 +162,8 @@ async function onSubmit(values: Record<string, unknown>): Promise<void> {
       await refresh();
     }
   } catch (e) {
-    formError.value = e instanceof ApiError ? e.message : '提交失败，请稍后重试';
+    formError.value =
+      e instanceof ApiError ? e.message : t('common.submitFailed', '提交失败，请稍后重试');
   } finally {
     submitting.value = false;
   }
@@ -188,13 +190,12 @@ async function switchPresentation(next: 'table' | 'kanban'): Promise<void> {
 const { moveError, onCardMove } = useKanbanMove(entityName, kanbanView, records);
 const { available: hasProcessors, drawerOpen: analysisOpen } = useEntityProcessors(entityName);
 
-/** 导出 CSV（P19）：当前已加载记录与可见列的本地生成（无网络请求）。 */
+/** 行内编辑入口（表格动作栏消费）。 */
 async function editRecord(id: string): Promise<void> {
   await router.push({ name: 'entity-edit', params: { entity: entityName.value, id } });
 }
 
-// 表格动作栏 = 内置动作 + registry 贡献（extension.record-action 消费面）
-const recordActions = visibleRecordActions();
+const recordActions = visibleRecordActions(); // 表格动作栏 = 内置动作 + registry 贡献
 const actionContext = computed<ActionContext>(() => ({
   entity: entityName.value,
   openDetail,
@@ -241,24 +242,28 @@ onMounted(refresh);
       <h2 class="ff-page-title">{{ definition?.displayName ?? entityName }}</h2>
       <div v-if="state === 'ready' && mode === 'list'" class="header-actions">
         <ViewToggle v-if="kanbanView" :presentation="presentation" @change="switchPresentation" />
-        <BaseButton v-if="hasProcessors" data-testid="open-analysis" @click="analysisOpen = true">
-          数据分析
-        </BaseButton>
-        <BaseButton data-testid="export-csv" @click="exportCsv">导出 CSV</BaseButton>
-        <BaseButton data-testid="export-xlsx" @click="exportXlsx">导出 XLSX</BaseButton>
+        <BaseButton v-if="hasProcessors" data-testid="open-analysis" @click="analysisOpen = true">{{
+          t('entity.analysis', '数据分析')
+        }}</BaseButton>
+        <BaseButton data-testid="export-csv" @click="exportCsv">{{
+          t('entity.exportCsv', '导出 CSV')
+        }}</BaseButton>
+        <BaseButton data-testid="export-xlsx" @click="exportXlsx">{{
+          t('entity.exportXlsx', '导出 XLSX')
+        }}</BaseButton>
         <BaseButton variant="primary" @click="router.push(`/data/${entityName}/new`)">
-          新增记录
+          {{ t('entity.newRecord', '新增记录') }}
         </BaseButton>
       </div>
       <p v-if="exportErr" class="form-error" role="alert">{{ exportErr }}</p>
       <p v-if="state === 'ready' && versionChanged" class="stale-note">
-        元数据已更新，数据已按新版本重新加载
+        {{ t('entity.staleNote', '元数据已更新，数据已按新版本重新加载') }}
       </p>
     </header>
 
     <StateView v-if="state === 'loading' || state === 'denied'" :state="state" />
     <StateView v-else-if="state === 'error'" :state="'error'" :detail="errorDetail">
-      <button type="button" @click="refresh">重试</button>
+      <button type="button" @click="refresh">{{ t('common.retry', '重试') }}</button>
     </StateView>
 
     <!-- P19 呈现切换过渡：表格↔看板 out-in 轻位移；模式分支保持 v-else-if 链 -->
@@ -277,7 +282,7 @@ onMounted(refresh);
       <div v-else key="table" class="presentation-block">
         <StateView v-if="records.length === 0" :state="'empty'">
           <BaseButton variant="primary" @click="router.push(`/data/${entityName}/new`)">
-            新增记录
+            {{ t('entity.newRecord', '新增记录') }}
           </BaseButton>
         </StateView>
         <DynamicTable
@@ -322,8 +327,8 @@ onMounted(refresh);
       :definition="definition!"
       :view="formView"
       :initial="mode === 'edit' ? currentRecord?.data : null"
-      :submit-label="mode === 'new' ? '创建' : '保存'"
-      cancel-label="取消"
+      :submit-label="mode === 'new' ? t('common.create', '创建') : t('common.save', '保存')"
+      :cancel-label="t('common.cancel', '取消')"
       :submitting="submitting"
       @submit="onSubmit"
       @cancel="cancelForm"
@@ -334,7 +339,7 @@ onMounted(refresh);
       :open="confirmState?.open ?? false"
       :title="confirmState?.title ?? ''"
       :message="confirmState?.message ?? ''"
-      :confirm-label="confirmState?.confirmLabel ?? '确认'"
+      :confirm-label="confirmState?.confirmLabel ?? t('common.confirm', '确认')"
       :danger="confirmState?.danger ?? false"
       @confirm="settleConfirm(true)"
       @cancel="settleConfirm(false)"
