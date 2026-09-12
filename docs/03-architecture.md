@@ -122,6 +122,7 @@ AI 服务只负责：
 1. 根据对话生成结构化需求草稿。
 2. 根据已确认规格生成声明式插件骨架。
 3. 解释校验错误并建议修复。
+4. 基于知识库检索结果的问答（P28 AI 助手：知识条目与提问以数据段嵌入提示词，回答附引用条目；不新增系统权限）。
 
 AI 不直接获得数据库管理员权限、服务器命令权限或生产发布权限。所有输出经过 JSON Schema、资源白名单、插件能力等级和人工确认；模型不可用时使用手工规格和固定 fixture。生成器输出的是 Level 1 声明式插件包，不是可执行后端项目。
 
@@ -199,6 +200,13 @@ AI 不直接获得数据库管理员权限、服务器命令权限或生产发�
 | `POST` | `/api/v1/issues/{id}/publish` | 用户确认并推送需求（本人；门=最新规格 valid 且简报三段齐备；幂等，FR-ISSUE-07，P23） |
 | `GET` | `/api/v1/ai/config` | AI 模型运行时配置（ADMIN；只回 provider/base-url/model 与密钥掩码位，P15） |
 | `PUT` | `/api/v1/ai/config` | 更新 AI 运行时配置（ADMIN；API Key AES-GCM 加密落库，审计，P15；http 保存时探活上游 GET {base}/models——不可用 400 报错上抛不落库，URL 守卫拒环回/私有/保留地址，P26） |
+| `GET` | `/api/v1/kb/entries` | 知识库条目列表（登录可读，全量倒序，上限 200，P28） |
+| `POST` | `/api/v1/kb/entries` | 创建知识条目（ADMIN；尺寸校验，审计，P28） |
+| `PUT` | `/api/v1/kb/entries/{id}` | 编辑知识条目（ADMIN；审计，P28） |
+| `DELETE` | `/api/v1/kb/entries/{id}` | 删除知识条目（ADMIN；审计，P28） |
+| `GET` | `/api/v1/kb/messages` | 本人助手会话消息（登录；按用户隔离，P28） |
+| `POST` | `/api/v1/kb/ask` | 助手提问（登录；检索注入 Top-K→ModelPort→回复+引用条目，用户与助手消息同事务落库，P28） |
+| `DELETE` | `/api/v1/kb/messages` | 清空本人会话（登录，P28） |
 
 ## 9. 可观测性与失败处理
 

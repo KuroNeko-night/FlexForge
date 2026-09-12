@@ -3,13 +3,13 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P27
-CURRENT_STAGE_NAME: 演示就绪整备
-STAGE_STATUS: completed
-PROJECT_PROGRESS: 100%
-LAST_UPDATED: 2026-09-11
+CURRENT_STAGE_ID: P28
+CURRENT_STAGE_NAME: 知识库与 AI 助手
+STAGE_STATUS: in_progress
+PROJECT_PROGRESS: 30%
+LAST_UPDATED: 2026-09-12
 OWNER: project-maintainer
-NEXT_ACTION: P00-P27 全阶段完成（进度 100%，待演示状态）：演示入口=admin（.env 引导口令）/demo（FLEXFORGE_DEMO_*）/demo-dev（FLEXFORGE_DEMO_DEV_*）；演示态=AI fixture（设置页可切回 http，探活守卫在场）；待用户验收 P27 或裁决新增
+NEXT_ACTION: P28 实施中（用户 2026-09-12 裁决新增）：①知识库条目管理（ADMIN 维护/登录可读/随时增删改）②AI 助手页（登录可问、会话按用户、回答注入知识库检索结果，类 AI 客服；模型走 ModelPort 唯一通道，fixture 可演示）③V018 迁移+flexforge-kb 模块+前端两页+四语言包升版；先文档立项（docs/09 P28/02 FR-KB/03 §6§8/13 §3.6-7/索引）再编码
 EXIT_GATE: P27 出口复核通过（2026-09-11）：①插件页全无"示例"字样（DOM 断言）、无 inventory/safety 卡片、三新代码包在列（工单交叉矩阵/采购金额分布/热门物料榜）、显示已停用（6）折叠；业务导航=设备巡检/任务管线看板/图书借阅/采购订单/来料检验/生产工单。②用户管理=admin+用户本人+demo+demo-dev 四活跃（live_check_user 封禁，18 BLOCKED 默认隐藏）。③demo 登录 Issue 工作台恰 3 演示用例（会议室预订管理=已发布带规格、盘点记录常用筛选=已发布已关闭全生命周期、盘点页移动端适配=梳理中）。④AI=fixture（存量 http 密钥保留可切回）；过期预设"走查场景A"已删。仓库侧 9 包升版改名（analytics 0.2.4/kanban 0.1.3 跳位避测试变体版本位）+3 新 Level 2 包（纯标准库+空数据占位）；ExampleProcessorsP27Test 1/1（含空数据占位分支）；后端 188/0+门禁 21/1/0+CI 六绿；审查 P1×0/P2×1/P3×4 全处置（PR #54 评论）；PR #54 合并 5287f93。演示凭据只在 .env（FLEXFORGE_DEMO_*），不入仓不回显。｜历史：P26 出口复核通过（2026-09-11）：①界面净化——插件页默认无 e2e.*/gen.* 卡片（"显示已停用（5）"开关）、用户页默认无 BLOCKED（17 隐藏仅 3 活跃，"显示已封禁"开关）、侧栏无"fixture 澄清规格"、工作台无 demo_material；live 清理执行（gen.i7f3 停用/e2e×2 卸载/demo-developer+demo-user+p23bug 封禁/demo_material 实体禁用/demo issues 5 CLOSED+7 RETURNED——无规格者不能批准达终态，按 RETURNED 归档为已知限制）；临时号 p26walk/p26iss×3 用后封禁。②系统多语言——352 键×四包（locale-en 1.1.2/ja·fr·es 1.0.2），切 en/ja/fr/es 平台 chrome 全量换语言（导航/表头/按钮/空态/记录动作/状态机），插件菜单/实体字段/数据值保持原文，停用回退中文基线；键集与代码实际使用精确对账（提取器+模板键族契约锁）。③探活——环回 400（环回/私有/保留地址）/真实 DeepSeek 探活通过 200 落库（存量密钥+api.deepseek.com+deepseek-flash）/错模型 400 附可用模型列表且配置不变；守卫拒十进制 IP 字面量编码（审查 P1 堵住）；fixture 不探活。④质量门——flexforge-ai 55/0+app AI 10/0+前端 210/210+门禁 21/1/0+CI 六项绿；交叉审查独立子代理 P1×1/P2×4/P3×7 全处置（PR #53 评论）；S1-S9 不破（密钥不落日志/审计/异常消息，守卫+探活失败路径全测）。docs（02/03/09/13/索引/STATUS/JSON）同步；PR #53 合并 74fd0cc
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -47,6 +47,7 @@ BLOCKERS: none
 | P25 | 前端排版分布与视觉精修 | completed | 验收四项全过（docs/09 P25）：排版网格均布+设置多列（页头出网格）/字体系统与层级（自托管无外链+woff 剔除）/背景灰阶基线+主题 1.1.2 双向换装/文案零变更+机制回归+门禁 21/1/0；审查 2P2+5P3 全处置，live 终验见 EXIT_GATE |
 | P26 | 界面净化、系统多语言与 AI 上游探活 | completed | 验收四项全过（docs/09 P26）：净化默认过滤+live 清理（issues 归档受规格门约束为已知限制）/系统文案 352 键×四语言包（插件内容不翻译）/探活 400 上抛+URL 守卫（含十进制 IP 堵漏）/门禁 21/1/0+CI 六绿+审查 P1×1/P2×4/P3×7 全处置；live 终验见 EXIT_GATE |
 | P27 | 演示就绪整备 | completed | 验收四项全过（docs/09 P27）：去示例名+多样化 L2（3 新代码包）/账号清理（demo+demo-dev 演示态）/Issue 精选（demo 视角 3 用例）/门禁 21/1/0+CI 六绿+空数据占位测试；审查 P2×1+P3×4 全处置，live 终验见 EXIT_GATE |
+| P28 | 知识库与 AI 助手 | in_progress | 验收四项（docs/09 P28）：知识库 CRUD（ADMIN 维护/登录可读）/检索注入问答（Top-K 引用可见）/会话按用户可清空+fixture 可演示/失败路径（403/400/503）+门禁 21/1/0+CI 六绿 |
 
 ## 更新规则
 
@@ -214,3 +215,4 @@ BLOCKERS: none
 | 2026-09-09 | P23 | 迭代完成（分支 feat/p23-experience-and-filetools，7 提交）：A=XLSX 导出——exceljs（单独提交，audit 仅 2 moderate 传递依赖 uuid 豁免记录）+utils/xlsx（表头加粗/单元格口径同 CSV/sheet 名清洗）+实体页双导出按钮；B=Issue 分置——提示词 v3（brief 三段：colloquial/feasibility/agentPrompt ≤4000 校验+规格先简报后的重试顺序）、V015（brief_json+published_at）、publish 端点（作者/门条件/幂等/审计）、USER 服务端收口（列表 mine/他人详情评论 spec 403）、前端 IssueChatWorkbench（可折叠我的需求侧栏/对话复用 IssueClarifyChat（口语化确认入流）/确认推送卡/讨论区）+IssueBriefCard 三段分区（agent 提示词复制）+已发布徽标；C=文件处理器——V016+TTL 清理、inputMode=file 声明（accept 白名单/上限/与 entity 字段互斥）、invoke-file 三重校验+产物登记下载（404 防枚举/410 过期/RFC5987/no-store）、Runner.runFile（固定字面量命令+OUTPUT_DIR+产物迁移）、/tools 工具页+ProcessorResultView、example-filetools 0.1.0（清洗/画像）。后端 173/0/0（+IssuePublish 4/FileTools 6 新例）、前端 182/182、门禁 21/1/0。实施期坑：Windows Path.write_text 换行翻译叠加 csv \r\n 产 \r\r\n（write_bytes 修复）；heredoc 反斜杠再现（Edit 工具绕行） | 本分支提交 |
 | 2026-09-09 | P23 | 交叉审查（独立子代理，缺陷优先）：**0 P1 + 3 P2 + 10 P3，8 修 5 记录**（PR #48 评论逐条回应 84e4294）。P2：产物目录失败路径泄漏（runFile 后校验/登记失败原不清理，sweep 只扫有行目录→显式 discard）/前端测试声明与实际不符（补 IssueBriefCard 3 例+IssueChatWorkbench 5 例，前端 179→190，并修正提交描述）/简报违约重试无单测（ClarifyEngineTest 补）；P3 修 5：entity invoke 对 file 模式对称拒绝/confirmPublish 陈旧守卫/描述 maxlength=XLSX 导出失败呈现+useEntityExport 抽取（QG-4，DynamicEntityView 327 行）/暂存走查脚本删除；P3 记录 5：sweep 与在途下载窄窗竞态/USER 列表 status 过滤缺省/publish 并发双审计/session 空窗视图闪烁/ToolsView 换文件在途结果。审查同时确认：产物三层路径防护/404 防枚举先于 410/RFC5987 无注入/S6 命令字面量/契约三端一致/测试无空转 | PR #48 评论 |
 | 2026-09-09 | P23 | **P23 出口复核通过置 completed；P00-P23 全阶段完成，进度 100%，release_candidate**。live Linux 容器终验（镜像重建）：API 走查 14/14 PASS（文件处理器闭环：导入激活（同版本不可变沿用 versionId）→两 file 模式清单→清洗产物契约→下载内容逐行断言（去空行/去重/列名规范化）→坏扩展名 400；用户闭环：创建→v3 首轮三问→次轮三段简报（口语化确认完整）→publish→幂等→列表仅本人→评论→无规格 400）；浏览器视觉核验：用户工作台 5/5（侧栏分组/已发布徽标/AI 对话/讨论区/无开发者面）、文件工具页 5/5（两卡+accept 提示+上传执行+产物下载卡）；XLSX live 实证（拦截下载：采购订单-导出.xlsx，blob PK 头 6807B，CSV 按钮保留）。处置后复验：后端 173/0/0+前端 190/190+门禁 21/1/0+CI 六绿。live AI 配置（http deepseek，走查时模型接口 404）临时切 fixture 走查后原样恢复；走查号 p23walk/p23user 封禁 BLOCKED；走查脚本已删 | EXIT_GATE、本条目 |
+| 2026-09-12 | P28 | 用户裁决新增 P28 知识库与 AI 助手（原文：企业信息存知识库可随时增删 + AI 助手页引用知识库回答企业/使用问题，类 AI 客服）。规划落档：docs/09 P28 节（红线+实施+验收）；docs/02 新增「知识库与 AI 助手」FR-KB-01..04；docs/03 §6 边界补助手口径+§8 增 /kb/* 端点行；docs/13 §3.6-7 知识注入安全条目（数据段嵌入不解释指令+条目尺寸与注入上限+失败路径）；索引/STATUS/JSON 同步。技术基线：新 Maven 模块 flexforge-kb（依赖 common/auth/ai，ArchUnit 自动覆盖）、V018 两表（kb_entry/kb_chat_message）、模型调用唯一经 ModelPort（fixture 路由内建确定性引用式回答）、提示词文件化 kb-assistant-v1、菜单 platform.assistant（全员）/platform.knowledge（ADMIN）+语言包四包升版（en 1.1.3/ja·fr·es 1.0.3） | docs/09 P28、docs/02/03/13、索引 |

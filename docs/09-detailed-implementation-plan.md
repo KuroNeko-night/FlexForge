@@ -649,3 +649,29 @@
 - 用户管理无开发测试活跃账号（live_check_user 封禁；走查号既有 BLOCKED 隐藏）；demo/demo-dev 可登录演示。
 - Issue 工作台以 demo 登录仅见 3 个演示用例（含一个已发布带规格）；AI 配置为 fixture。
 - 门禁 21/1/0+前后端回归全绿+CI 六项；新包有激活与输出断言测试。
+
+## P28：知识库与 AI 助手（2026-09-12 用户裁决新增）
+
+> 背景：AI 能力（P11/P15/P26）已接入，用户裁决再进一步——①知识库存放企业全部信息、可随时添加和删除；②新增 AI 助手页，AI 可获取知识库内容回答提问（企业相关问题、应用使用教程），实现类 AI 客服。
+> **红线**：
+> - 模型调用唯一经 `ModelPort`（RoutingModelPort fixture/http 路由复用，QG-4）；助手提示词文件化 `kb-assistant-v1`（模块资源，不散落字符串）；
+> - 知识内容与用户提问一律以**数据段**嵌入提示词（docs/13 §3.6-7：不做指令解释，模型侧约束"仅依据知识库回答"）；条目与注入尺寸上限硬约束（见 FR-KB-01/02）；
+> - KB 写操作仅 ADMIN（S2：前端 permissionKey 只是显隐）；读条目/提问为登录用户能力；会话数据按用户隔离（仅本人可见、仅本人可清空）；
+> - 不引入向量检索/embedding 新依赖（MVP 非目标）：关键词分词评分 Top-K 检索为 canonical 路径，升级向量检索留待后续裁决；
+> - 语言包四包升版（en 1.1.2→1.1.3、ja/fr/es 1.0.2→1.0.3，同版本不可变）；新键族 menu.platform.assistant/knowledge 入 REQUIRED_TEMPLATE_KEYS 契约。
+> **非目标**：不做全文搜索引擎/pgvector、不做流式输出、不做跨用户共享会话、不做知识条目附件/富文本（纯文本条目）。
+
+### 实施内容
+
+- **A. 数据与模块**：V018 迁移（`kb_entry`：id/title/category/content/created_by/时间戳+尺寸 CHECK；`kb_chat_message`：id/user_id/role/content/references_json/时间戳+索引）；新 Maven 模块 `flexforge-kb`（api/application/domain/infrastructure 四层，依赖 common/auth/ai——ArchUnit 模块规则自动覆盖）。
+- **B. 条目管理**：`GET /kb/entries`（登录可读，全量倒序，上限 200）+`POST/PUT/DELETE /kb/entries[...]`（ADMIN，尺寸校验 400、删除确认前端统一对话）；审计 kb.entry.create/update/delete。
+- **C. 检索与助手编排**：KbRetrieval（问题分词→标题×2/正文×1 评分→Top-K≤5，单条注入≤1500 字符、总注入≤6000 字符，无命中不注入）；KbAssistantService（会话近 8 条≤4000 字符入上下文→模板 kb-assistant-v1 渲染→ModelPort→回复+引用条目落库）；fixture 确定性回答（解析提示词知识段标记，引用式应答，演示零外部依赖）；模型不可用 503 上抛、助手消息不落库；审计 kb.ask 成败同口径。
+- **D. 前端**：`/assistant` AI 助手页（全员菜单 platform.assistant order 25：对话气泡流/IME 守卫发送/引用条目 chips/清空会话/思考态）+`/knowledge` 知识库页（ADMIN 菜单 platform.knowledge order 45：条目列表+搜索+新建/编辑抽屉+删除确认）；新图标 book；i18n zh 基线+四语言包同步（键族 assistant.*/kb.*）。
+- **测试**：模块级 KbRetrievalTest/KbAssistantServiceTest（评分/上限/无命中/fixture 确定性/失败不落库）；app 级 KbApiTest（testcontainers：CRUD+尺寸 400+非 ADMIN 写 403+ask 落两消息+引用返回+USER 隔离+清空+model_unavailable 503 桩）；前端两页视图测试+语言包契约（键集一致自动覆盖新键）。
+
+### 验收标准
+
+- ADMIN 可随时增删改知识条目（live 走查创建/编辑/删除各一次，删除经确认对话）；非 ADMIN 菜单无知识库入口、写接口 403。
+- 任意登录用户可在 AI 助手页提问并得到引用知识库的回答：命中条目时回复附引用 chips（标题+分类）；知识库无关提问得到"无相关内容"口径而非编造；多轮追问带上下文；会话刷新不丢、可清空、用户间隔离。
+- fixture 供应商下助手可完整演示（确定性引用式回答）；http 供应商真实模型路径冒烟（合成内容）；模型不可用时 503 上抛且不产生半截会话。
+- 门禁 21/1/0+前后端回归全绿+CI 六项；新模块有失败路径测试（403/400/503/隔离）。
