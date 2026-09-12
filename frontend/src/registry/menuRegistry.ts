@@ -10,6 +10,9 @@ import { KeyedRegistry } from '@/registry/keyed';
  */
 export interface MenuContribution extends MenuItem {
   order: number;
+  /** 多角色显隐（P29）：数组非空时命中任意一个即显示；与 permissionKey 同为
+   * 体验层（服务端接口为边界）。单角色沿用 MenuItem.permissionKey。 */
+  permissionKeys?: string[];
 }
 
 const registry = new KeyedRegistry<MenuContribution>();
@@ -26,6 +29,21 @@ export function revokeMenusByActivation(activationId: string): number {
   return registry.revokeByActivation(activationId);
 }
 
+/** 角色可见性：permissionKey（单角色）与 permissionKeys（多角色，任一命中）。 */
+function visibleToCurrentRoles(menu: MenuContribution): boolean {
+  if (menu.permissionKey && !hasRole(menu.permissionKey)) {
+    return false;
+  }
+  if (
+    menu.permissionKeys &&
+    menu.permissionKeys.length > 0 &&
+    !menu.permissionKeys.some((role) => hasRole(role))
+  ) {
+    return false;
+  }
+  return true;
+}
+
 /** 合并后端菜单与本地注册项：同 key 以后端为准（单一事实源），排序 order→key。 */
 export function mergedMenus(serverMenus: MenuItem[]): MenuItem[] {
   const serverKeys = new Set(serverMenus.map((menu) => menu.key));
@@ -33,7 +51,7 @@ export function mergedMenus(serverMenus: MenuItem[]): MenuItem[] {
     .list()
     .map((entry) => entry.value)
     .filter((menu) => !serverKeys.has(menu.key))
-    .filter((menu) => !menu.permissionKey || hasRole(menu.permissionKey));
+    .filter(visibleToCurrentRoles);
   return [...serverMenus, ...local].sort(
     (a, b) => (a.order ?? 0) - (b.order ?? 0) || a.key.localeCompare(b.key),
   );

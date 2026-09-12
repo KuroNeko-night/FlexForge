@@ -24,8 +24,14 @@ vi.mock('@/api/issues', async () => {
     generatePlugin: vi.fn(),
   };
 });
+vi.mock('vue-router', async () => {
+  const actual = await vi.importActual<typeof import('vue-router')>('vue-router');
+  return { ...actual, useRouter: () => ({ replace: routerReplace }) };
+});
 
 import { createIssue, fetchComments, fetchSpec, listIssues } from '@/api/issues';
+
+const routerReplace = vi.fn();
 
 const listMock = vi.mocked(listIssues);
 const createMock = vi.mocked(createIssue);
@@ -134,17 +140,19 @@ describe('IssuesView 创建与角色（P15）', () => {
   });
 });
 
-describe('IssuesView 用户端工作台（P23 FR-ISSUE-07）', () => {
+describe('IssuesView 用户端工作台（P23 FR-ISSUE-07；P29 整合后重定向）', () => {
   beforeEach(() => {
     resetMocks();
     saveSession('t', { id: 2, username: 'bob', displayName: 'B', roles: ['USER'] });
   });
 
-  it('纯 USER 角色渲染对话工作台而非开发者列表', async () => {
+  it('纯 USER 角色重定向 AI 助手整合页（Issue 模式），不渲染开发者列表', async () => {
     listMock.mockResolvedValue([issue()]);
+    routerReplace.mockClear();
     const wrapper = mount(IssuesView, { global: { stubs } });
     await flushPromises();
-    expect(wrapper.find('[data-testid="issue-chat-workbench"]').exists()).toBe(true);
+    expect(routerReplace).toHaveBeenCalledWith('/assistant');
+    expect(globalThis.sessionStorage?.getItem('flexforge.assistant.mode')).toBe('issues');
     expect(wrapper.find('[data-testid="issue-list"]').exists()).toBe(false);
     clearSession();
   });

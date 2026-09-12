@@ -4,25 +4,51 @@ import { onMounted, ref } from 'vue';
 import { ApiError, apiErrorMessage } from '@/api/client';
 import { askKb, clearKbMessages, fetchKbMessages, type KbMessage } from '@/api/kb';
 import AssistantChat from '@/components/AssistantChat.vue';
-import AppIcon from '@/components/AppIcon.vue';
+import AssistantComposer from '@/components/AssistantComposer.vue';
+import IssueChatWorkbench from '@/components/IssueChatWorkbench.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import StateView from '@/components/StateView.vue';
 import { t } from '@/registry/localeRegistry';
 
 /**
- * AI 助手页（FR-KB-03）：基于知识库检索的问答客服。会话按用户服务端隔离，
- * 回答与引用条目呈现拆在 AssistantChat；模型不可用错误内联呈现且不破坏输入。
- * 发送交互与 IssueClarifyChat 同口径（Enter 发送/Shift+Enter 换行/IME 不提交）。
+ * 助手整合页（FR-KB-06，P29）：滑动分段开关切换「AI 助手」（知识库问答，
+ * P28 行为原样+附件）与「Issue 工作台」（FR-ISSUE-07 用户端对话工作台整体
+ * 内嵌——需求提交侧栏+澄清+确认推送+讨论）。模式记忆会话级（含 /issues
+ * 重定向落点）。服务端契约零变化，本页只是整合呈现层。
  */
+const MODE_KEY = 'flexforge.assistant.mode';
+type Mode = 'assistant' | 'issues';
+
+const mode = ref<Mode>(readStoredMode());
 const messages = ref<KbMessage[]>([]);
 const state = ref<'loading' | 'ready' | 'error' | 'denied'>('loading');
 const error = ref<string | null>(null);
 const askError = ref<string | null>(null);
-const question = ref('');
 const asking = ref(false);
+const sendResetKey = ref(0);
 const clearing = ref(false);
 const confirmClear = ref(false);
+
+function readStoredMode(): Mode {
+  try {
+    return globalThis.sessionStorage?.getItem(MODE_KEY) === 'issues' ? 'issues' : 'assistant';
+  } catch {
+    return 'assistant';
+  }
+}
+
+function switchMode(next: Mode): void {
+  if (mode.value === next) {
+    return;
+  }
+  mode.value = next;
+  try {
+    globalThis.sessionStorage?.setItem(MODE_KEY, next);
+  } catch {
+    /* 存储不可用则仅内存记忆 */
+  }
+}
 
 async function load(): Promise<void> {
   state.value = 'loading';
@@ -39,44 +65,53 @@ async function load(): Promise<void> {
   }
 }
 
-async function submitQuestion(): Promise<void> {
-  const text = question.value.trim();
-  if (asking.value || text === '') {
+async function send(question: string, files: File[]): Promise<void> {
+  if (asking.value) {
     return;
   }
   asking.value = true;
   askError.value = null;
   messages.value = [
     ...messages.value,
-    { id: `local-${messages.value.length}-u`, role: 'user', content: text, references: [] },
+    {
+      id: `local-${messages.value.length}-u`,
+      role: 'user',
+      content: question,
+      references: [],
+      attachments: files.map((file, index) => ({
+        id: `local-${messages.value.length}-${index}`,
+        messageId: 'pending',
+        filename: file.name,
+        contentType: file.type || 'application/octet-stream',
+        sizeBytes: file.size,
+      })),
+    },
   ];
-  question.value = '';
   try {
-    const outcome = await askKb(text);
+    const outcome = await askKb(question, files);
     messages.value = [
-      ...messages.value,
+      ...messages.value.slice(0, -1),
+      {
+        id: `local-${messages.value.length}-u`,
+        role: 'user',
+        content: question,
+        references: [],
+        attachments: outcome.attachments,
+      },
       {
         id: `local-${messages.value.length}-a`,
         role: 'assistant',
         content: outcome.answer,
         references: outcome.references,
+        attachments: [],
       },
     ];
+    sendResetKey.value += 1;
   } catch (e) {
-    // 失败回滚乐观插入，保留输入便于重试（服务端口径：失败不落会话）
     messages.value = messages.value.slice(0, -1);
-    question.value = text;
     askError.value = apiErrorMessage(e, t('assistant.askFailed', '回答失败，请稍后重试'));
   } finally {
     asking.value = false;
-  }
-}
-
-/** Enter 发送；Shift+Enter 换行；IME 组态中的回车是选词不是提交。 */
-function onQuestionKeydown(event: KeyboardEvent): void {
-  if (!event.shiftKey && !event.isComposing) {
-    event.preventDefault();
-    void submitQuestion();
   }
 }
 
@@ -99,10 +134,41 @@ onMounted(load);
 <template>
   <section class="assistant-page" data-testid="assistant-page">
     <header class="page-head">
-      <h2 class="ff-page-title">{{ t('assistant.title', 'AI 助手') }}</h2>
-      <p class="page-sub">{{ t('assistant.subtitle', '基于企业知识库回答问题') }}</p>
+      <h2 class="ff-page-title">
+        {{
+          mode === 'assistant' ? t('assistant.title', 'AI 助手') : t('issues.title', 'Issue 工作台')
+        }}
+      </h2>
+      <div
+        class="mode-switch"
+        role="tablist"
+        :aria-label="t('assistant.modeLabel', '模式切换')"
+        data-testid="assistant-mode"
+      >
+        <span class="mode-thumb" :class="{ 'mode-thumb-right': mode === 'issues' }" />
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="mode === 'assistant'"
+          :class="{ 'mode-active': mode === 'assistant' }"
+          data-testid="mode-assistant"
+          @click="switchMode('assistant')"
+        >
+          {{ t('assistant.modeAssistant', 'AI 助手') }}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="mode === 'issues'"
+          :class="{ 'mode-active': mode === 'issues' }"
+          data-testid="mode-issues"
+          @click="switchMode('issues')"
+        >
+          {{ t('assistant.modeIssues', 'Issue 工作台') }}
+        </button>
+      </div>
       <BaseButton
-        v-if="messages.length > 0"
+        v-if="mode === 'assistant' && messages.length > 0"
         variant="ghost"
         data-testid="assistant-clear"
         :disabled="asking || clearing"
@@ -111,40 +177,26 @@ onMounted(load);
         {{ t('assistant.clear', '清空会话') }}
       </BaseButton>
     </header>
-    <StateView v-if="state !== 'ready'" :state="state" :message="error" />
+
+    <IssueChatWorkbench v-if="mode === 'issues'" data-testid="assistant-issues-mode" />
     <template v-else>
-      <div v-if="messages.length === 0 && !asking" class="chat-empty">
-        <p>
-          {{ t('assistant.hint', '你好，我是 FlexForge AI 助手，可以解答企业制度与平台使用问题') }}
+      <StateView v-if="state !== 'ready'" :state="state" :message="error" />
+      <template v-else>
+        <div v-if="messages.length === 0 && !asking" class="chat-empty">
+          <p>
+            {{
+              t('assistant.hint', '你好，我是 FlexForge AI 助手，可以解答企业制度与平台使用问题')
+            }}
+          </p>
+        </div>
+        <AssistantChat v-else :messages="messages" :asking="asking" />
+        <p v-if="askError" class="ask-error" role="alert" data-testid="assistant-error">
+          {{ askError }}
         </p>
-      </div>
-      <AssistantChat v-else :messages="messages" :asking="asking" />
-      <p v-if="askError" class="ask-error" role="alert" data-testid="assistant-error">
-        {{ askError }}
-      </p>
-      <div class="composer">
-        <textarea
-          v-model="question"
-          rows="2"
-          :placeholder="t('assistant.placeholder', '输入你的问题…')"
-          data-testid="assistant-input"
-          :disabled="asking"
-          @keydown.enter="onQuestionKeydown"
-        />
-        <BaseButton
-          variant="primary"
-          :aria-label="t('common.send', '发送')"
-          :disabled="asking || question.trim() === ''"
-          data-testid="assistant-send"
-          @click="submitQuestion"
-        >
-          <AppIcon name="send" :size="16" />
-        </BaseButton>
-      </div>
-      <p class="composer-hint">
-        {{ t('assistant.composerHint', 'Enter 发送，Shift + Enter 换行') }}
-      </p>
+        <AssistantComposer :asking="asking" :reset-key="sendResetKey" @send="send" />
+      </template>
     </template>
+
     <ConfirmDialog
       :open="confirmClear"
       :title="t('assistant.clearTitle', '清空会话')"
@@ -167,14 +219,10 @@ onMounted(load);
 }
 .page-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--ff-space-3);
   flex-wrap: wrap;
-}
-.page-sub {
-  color: var(--ff-text-muted);
-  font-size: var(--ff-text-sm);
-  flex: 1;
+  margin-bottom: var(--ff-space-3);
 }
 .chat-empty {
   flex: 1;
@@ -188,18 +236,45 @@ onMounted(load);
   font-size: var(--ff-text-sm);
   margin: var(--ff-space-1) 0 0;
 }
-.composer {
-  display: flex;
-  gap: var(--ff-space-2);
-  align-items: flex-end;
+.mode-switch {
+  position: relative;
+  display: inline-flex;
+  border: 1px solid var(--ff-border);
+  border-radius: 999px;
+  background: var(--ff-surface-muted);
+  padding: 3px;
 }
-.composer textarea {
-  flex: 1;
-  resize: vertical;
-}
-.composer-hint {
+.mode-switch button {
+  position: relative;
+  z-index: 1;
+  border: none;
+  background: none;
+  padding: var(--ff-space-1) var(--ff-space-3);
+  border-radius: 999px;
+  font-size: var(--ff-text-sm);
   color: var(--ff-text-muted);
-  font-size: var(--ff-text-xs, 0.75rem);
-  margin: var(--ff-space-1) 0 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.mode-switch .mode-active {
+  color: var(--ff-primary-ink);
+}
+.mode-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: 999px;
+  background: var(--ff-primary);
+  transition: transform var(--ff-motion-fast, 0.15s) var(--ff-ease, ease);
+}
+.mode-thumb-right {
+  transform: translateX(100%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .mode-thumb {
+    transition: none;
+  }
 }
 </style>
