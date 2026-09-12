@@ -118,7 +118,9 @@ public final class KbAttachments {
         return out.toByteArray();
     }
 
-    /** 提取 XML 文档中所有元素的文本内容（docx 的 w:t / xlsx 的 t 节点泛化处理）。 */
+    /** 提取 XML 文档叶子元素的文本（docx 的 w:t / xlsx 的 t 节点）。
+     * 只取无子元素的叶子——live 走查实证父链（document→body→p→t）各层
+     * textContent 均含同一文本，整树收集会成倍重复。 */
     private static String xmlText(byte[] xml) {
         try {
             var factory = javax.xml.parsers.DocumentBuilderFactory.newInstance();
@@ -128,7 +130,11 @@ public final class KbAttachments {
             var nodes = document.getElementsByTagName("*");
             StringBuilder text = new StringBuilder();
             for (int i = 0; i < nodes.getLength(); i++) {
-                String content = nodes.item(i).getTextContent();
+                var element = nodes.item(i);
+                if (hasElementChild(element)) {
+                    continue;
+                }
+                String content = element.getTextContent();
                 if (content != null && !content.isBlank()) {
                     text.append(content.strip()).append('\n');
                 }
@@ -137,6 +143,16 @@ public final class KbAttachments {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private static boolean hasElementChild(org.w3c.dom.Node node) {
+        var children = node.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            if (children.item(i).getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String extractPdf(byte[] data) throws IOException {

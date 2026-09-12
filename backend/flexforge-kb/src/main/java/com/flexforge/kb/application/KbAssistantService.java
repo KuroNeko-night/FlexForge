@@ -146,7 +146,8 @@ public class KbAssistantService {
         }
     }
 
-    /** 附件白名单/数量/尺寸整体校验 + 文本提取（图片与失败=仅存档）。 */
+    /** 附件白名单/数量/尺寸整体校验 + 文本提取（图片与失败=仅存档）；
+     * filename/contentType 防御性截断（客户端可控，落库列宽 255）。 */
     private static List<Prepared> prepare(List<IncomingAttachment> files) {
         if (files == null) {
             return List.of();
@@ -156,12 +157,18 @@ public class KbAssistantService {
         }
         List<Prepared> prepared = new ArrayList<>();
         for (IncomingAttachment file : files) {
-            String filename = sanitizeFilename(file.filename());
+            String filename = capLength(sanitizeFilename(file.filename()), 255);
             KbAttachments.validate(filename, file.data() == null ? 0 : file.data().length);
-            prepared.add(new Prepared(filename, file.contentType(), file.data().length,
-                    file.data(), KbAttachments.extract(filename, file.data())));
+            prepared.add(new Prepared(filename, capLength(
+                    file.contentType() == null ? "application/octet-stream" : file.contentType(),
+                    255), file.data().length, file.data(),
+                    KbAttachments.extract(filename, file.data())));
         }
         return List.copyOf(prepared);
+    }
+
+    private static String capLength(String value, int max) {
+        return value.length() > max ? value.substring(0, max) : value;
     }
 
     /** 剥离客户端路径成分（basename），空名兜底 "attachment"。 */

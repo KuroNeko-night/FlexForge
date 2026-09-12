@@ -70,11 +70,26 @@ class KbAttachmentsTest {
     void extractsDocxAndXlsxText() throws Exception {
         byte[] docx = zipOf("word/document.xml",
                 "<w:document><w:body><w:p><w:t>设备巡检规范</w:t></w:p></w:body></w:document>");
-        assertThat(KbAttachments.extract("规范.docx", docx)).contains("设备巡检规范");
+        String docxText = KbAttachments.extract("规范.docx", docx);
+        assertThat(docxText).contains("设备巡检规范");
+        // 叶子元素口径：父链（document→body→p）不重复贡献文本（live 走查实证）
+        assertThat(countOf(docxText, "设备巡检规范")).isEqualTo(1);
 
         byte[] xlsx = zipOf("xl/sharedStrings.xml",
                 "<sst><si><t>物料编码</t></si><si><t>库存数量</t></si></sst>");
-        assertThat(KbAttachments.extract("清单.xlsx", xlsx)).contains("物料编码", "库存数量");
+        String xlsxText = KbAttachments.extract("清单.xlsx", xlsx);
+        assertThat(xlsxText).contains("物料编码", "库存数量");
+        assertThat(countOf(xlsxText, "物料编码")).isEqualTo(1);
+    }
+
+    private static int countOf(String haystack, String needle) {
+        int count = 0;
+        int idx = 0;
+        while ((idx = haystack.indexOf(needle, idx)) >= 0) {
+            count++;
+            idx += needle.length();
+        }
+        return count;
     }
 
     @Test
