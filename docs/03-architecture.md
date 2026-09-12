@@ -205,8 +205,9 @@ AI 不直接获得数据库管理员权限、服务器命令权限或生产发�
 | `PUT` | `/api/v1/kb/entries/{id}` | 编辑知识条目（ADMIN；审计，P28） |
 | `DELETE` | `/api/v1/kb/entries/{id}` | 删除知识条目（ADMIN；审计，P28） |
 | `GET` | `/api/v1/kb/messages` | 本人助手会话消息（登录；按用户隔离，P28） |
-| `POST` | `/api/v1/kb/ask` | 助手提问（登录；检索注入 Top-K→ModelPort→回复+引用条目，用户与助手消息同事务落库，P28） |
-| `DELETE` | `/api/v1/kb/messages` | 清空本人会话（登录，P28） |
+| `POST` | `/api/v1/kb/ask` | 助手提问（登录；检索注入 Top-K→ModelPort→回复+引用条目，用户与助手消息同事务落库，P28；P29 双 consumes——multipart/form-data 携带附件，白名单+上限+服务端提取注入 kb-assistant-v2） |
+| `GET` | `/api/v1/kb/attachments/{id}` | 下载本人助手会话附件（登录；按消息归属校验，他人 404，Content-Disposition+nosniff，P29） |
+| `DELETE` | `/api/v1/kb/messages` | 清空本人会话（登录，P28；附件随消息级联清理，P29） |
 
 ## 9. 可观测性与失败处理
 

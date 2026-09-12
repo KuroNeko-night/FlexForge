@@ -3,13 +3,13 @@
 > 这是项目当前进度的**唯一可见锚点**。开发者开始工作前先看这里，阶段切换时必须先更新这里，再更新计划和代码。
 
 <!-- FLEXFORGE_STATUS:BEGIN -->
-CURRENT_STAGE_ID: P28
-CURRENT_STAGE_NAME: 知识库与 AI 助手
-STAGE_STATUS: completed
-PROJECT_PROGRESS: 100%
+CURRENT_STAGE_ID: P29
+CURRENT_STAGE_NAME: 助手与 Issue 工作台整合及对话附件
+STAGE_STATUS: in_progress
+PROJECT_PROGRESS: 10%
 LAST_UPDATED: 2026-09-12
 OWNER: project-maintainer
-NEXT_ACTION: P00-P28 全阶段完成（进度 100%）：知识库（ADMIN 维护 3 演示条目：差旅报销规范/平台使用入门/新员工入职指引）+AI 助手全员可用（fixture 演示态，设置页可切回 http——助手自动走真实模型）；演示入口=admin（.env 引导口令）/demo（FLEXFORGE_DEMO_*）/demo-dev（FLEXFORGE_DEMO_DEV_*）；缓排 Issue #56（列表摘要口径）#57（ask 限频）；待用户验收 P28 或裁决新增
+NEXT_ACTION: P29 实施中（用户 2026-09-12 裁决新增）：①/assistant 演进为整合页——AI 助手样式 + Issue 工作台需求提交侧栏（内嵌 IssueChatWorkbench），左右滑动分段开关切换两模式；②助手对话支持附件上传（图片/PDF/表格/Word：白名单+尺寸上限+服务端提取注入——txt/csv/md 直读、docx/xlsx 标准库 zip+XML 提取带炸弹防护、pdf 经 PDFBox，图片仅存储展示）；③平台 issues 菜单收窄为 DEVELOPER+ADMIN（本地菜单 permissionKeys 多角色扩展）、USER 直访 /issues 重定向整合页；语言包四包再升版。先文档立项（docs/09 P29/02/03/13/索引）再编码
 EXIT_GATE: P28 出口复核通过（2026-09-12）：①知识库——admin 走查：4 卡片+分类 chip、删除经确认对话 4→3、超限标题 400、搜索过滤（测试）；demo 无知识库菜单、直访 /knowledge 只读（管理按钮按 ADMIN 响应式显隐）、写接口 403；条目增删改全程审计（created/updated/deleted）。②AI 助手——命中提问（出差回来怎么报销→fixture 引用式回答+引用 chips 差旅报销规范·财务制度；新员工第一天→入职指引·人事制度）；无命中明示暂不编造（量子力学入门/附近好吃的餐厅）；会话成对落库刷新不丢、按用户隔离、清空经确认；EN 切换导航与助手 chrome 全英、回退中文；AI=fixture 演示态（设置页可切 http，助手自动复用同一 ModelPort 路由）。③质量——后端 767/0/0（flexforge-kb 21+FixtureModelPortKb 3+KbApiTest 4 新例）、前端 224/224、门禁 21/1/0、CI 六绿（PR #55 两轮）；语言包四包升版（en 1.1.3/ja·fr·es 1.0.3，384 键）导入激活 live 生效；交叉审查独立子代理 P1×0/P2×2/P3×7 → 修 8+Issue #56/#57+记录 1（PR #55 评论逐条）；live 发现并修复 3 缺陷（检索共现佐证假阳性/审计 result VARCHAR(16) 溢出/视觉修正）；Dockerfile 补 kb 模块、V018 迁移 live 自动应用（18 migrations）；docs（02 FR-KB/03 §6§8/09 P28/13 §3.6-7/维护 §5 kb_*/索引/STATUS/JSON）同步；PR #55 合并 0b91dfe。已知项：.env 存在重复 FLEXFORGE_DEMO_* 旧键（7-8 行 demo-user 对为遗留，13-14 行为现行，待用户清理）。｜历史：P27 出口复核通过（2026-09-11）：①插件页全无"示例"字样（DOM 断言）、无 inventory/safety 卡片、三新代码包在列（工单交叉矩阵/采购金额分布/热门物料榜）、显示已停用（6）折叠；业务导航=设备巡检/任务管线看板/图书借阅/采购订单/来料检验/生产工单。②用户管理=admin+用户本人+demo+demo-dev 四活跃（live_check_user 封禁，18 BLOCKED 默认隐藏）。③demo 登录 Issue 工作台恰 3 演示用例（会议室预订管理=已发布带规格、盘点记录常用筛选=已发布已关闭全生命周期、盘点页移动端适配=梳理中）。④AI=fixture（存量 http 密钥保留可切回）；过期预设"走查场景A"已删。仓库侧 9 包升版改名（analytics 0.2.4/kanban 0.1.3 跳位避测试变体版本位）+3 新 Level 2 包（纯标准库+空数据占位）；ExampleProcessorsP27Test 1/1（含空数据占位分支）；后端 188/0+门禁 21/1/0+CI 六绿；审查 P1×0/P2×1/P3×4 全处置（PR #54 评论）；PR #54 合并 5287f93。演示凭据只在 .env（FLEXFORGE_DEMO_*），不入仓不回显。｜历史：P26 出口复核通过（2026-09-11）：①界面净化——插件页默认无 e2e.*/gen.* 卡片（"显示已停用（5）"开关）、用户页默认无 BLOCKED（17 隐藏仅 3 活跃，"显示已封禁"开关）、侧栏无"fixture 澄清规格"、工作台无 demo_material；live 清理执行（gen.i7f3 停用/e2e×2 卸载/demo-developer+demo-user+p23bug 封禁/demo_material 实体禁用/demo issues 5 CLOSED+7 RETURNED——无规格者不能批准达终态，按 RETURNED 归档为已知限制）；临时号 p26walk/p26iss×3 用后封禁。②系统多语言——352 键×四包（locale-en 1.1.2/ja·fr·es 1.0.2），切 en/ja/fr/es 平台 chrome 全量换语言（导航/表头/按钮/空态/记录动作/状态机），插件菜单/实体字段/数据值保持原文，停用回退中文基线；键集与代码实际使用精确对账（提取器+模板键族契约锁）。③探活——环回 400（环回/私有/保留地址）/真实 DeepSeek 探活通过 200 落库（存量密钥+api.deepseek.com+deepseek-flash）/错模型 400 附可用模型列表且配置不变；守卫拒十进制 IP 字面量编码（审查 P1 堵住）；fixture 不探活。④质量门——flexforge-ai 55/0+app AI 10/0+前端 210/210+门禁 21/1/0+CI 六项绿；交叉审查独立子代理 P1×1/P2×4/P3×7 全处置（PR #53 评论）；S1-S9 不破（密钥不落日志/审计/异常消息，守卫+探活失败路径全测）。docs（02/03/09/13/索引/STATUS/JSON）同步；PR #53 合并 74fd0cc
 BLOCKERS: none
 <!-- FLEXFORGE_STATUS:END -->
@@ -48,6 +48,7 @@ BLOCKERS: none
 | P26 | 界面净化、系统多语言与 AI 上游探活 | completed | 验收四项全过（docs/09 P26）：净化默认过滤+live 清理（issues 归档受规格门约束为已知限制）/系统文案 352 键×四语言包（插件内容不翻译）/探活 400 上抛+URL 守卫（含十进制 IP 堵漏）/门禁 21/1/0+CI 六绿+审查 P1×1/P2×4/P3×7 全处置；live 终验见 EXIT_GATE |
 | P27 | 演示就绪整备 | completed | 验收四项全过（docs/09 P27）：去示例名+多样化 L2（3 新代码包）/账号清理（demo+demo-dev 演示态）/Issue 精选（demo 视角 3 用例）/门禁 21/1/0+CI 六绿+空数据占位测试；审查 P2×1+P3×4 全处置，live 终验见 EXIT_GATE |
 | P28 | 知识库与 AI 助手 | completed | 验收四项全过（docs/09 P28）：知识库 CRUD+权限（ADMIN 维护/登录读/直访只读）/检索注入问答（共现佐证+引用 chips+无命中明示）/会话隔离可清空+fixture 可演示（空回复 503+失败零写入）/门禁 21/1/0+CI 六绿；审查 P2×2+P3×7 修 8+Issue #56/#57，live 终验见 EXIT_GATE |
+| P29 | 助手与 Issue 工作台整合及对话附件 | in_progress | 验收四项（docs/09 P29）：整合页滑动开关双模式（助手样式+需求提交侧栏）/附件上传四类格式白名单+服务端提取注入（docx/xlsx 标准库、pdf PDFBox、图片仅展示）/失败路径（超限/白名单拒/下载隔离）+门禁 21/1/0+CI 六绿 |
 
 ## 更新规则
 

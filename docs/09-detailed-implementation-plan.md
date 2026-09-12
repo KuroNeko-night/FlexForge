@@ -675,3 +675,29 @@
 - 任意登录用户可在 AI 助手页提问并得到引用知识库的回答：命中条目时回复附引用 chips（标题+分类）；知识库无关提问得到"无相关内容"口径而非编造；多轮追问带上下文；会话刷新不丢、可清空、用户间隔离。
 - fixture 供应商下助手可完整演示（确定性引用式回答）；http 供应商真实模型路径冒烟（合成内容）；模型不可用时 503 上抛且不产生半截会话。
 - 门禁 21/1/0+前后端回归全绿+CI 六项；新模块有失败路径测试（403/400/503/隔离）。
+
+## P29：助手与 Issue 工作台整合及对话附件（2026-09-12 用户裁决新增）
+
+> 背景：用户裁决——①AI 助手与 Issue 工作台整合为一个页面："页面样式即是 AI 助手页面的样式加上 Issue 工作台的需求提交侧栏"，两模式经"左右滑动的开关样式"切换；②对话支持上传常见文件格式（图片、PDF、表格文件、Word 文档）。
+> **红线**：
+> - 整合页复用既有组件：助手模式=AssistantChat/助手编排原样；Issue 模式=IssueChatWorkbench 整体内嵌（含可折叠"我的需求"提交侧栏，FR-ISSUE-07 语义不变）；服务端契约零变化（issues API 不动）；
+> - 附件是**助手对话**能力：上传经 multipart /kb/ask（JSON 路径原样兼容），白名单（png/jpg/jpeg/gif/webp/pdf/csv/xlsx/docx/txt/md）+单文件 ≤10MB+单次 ≤3 个；服务端提取注入提示词数据段（txt/csv/md 直读、docx/xlsx 用 java.util.zip+XML 标准库提取——zip 炸弹防护（条目数/解压总长/单条目上限）、pdf 经 PDFBox（§3.9 新依赖登记）、图片仅存储与展示不进提示词）；提取与附件预算硬上限（单文件提取 ≤20000 字符、注入总预算 ≤20000 字符）；
+> - 附件存储入库（V019 kb_attachment，BYTEA——随 pgdata 卷存活，容器重建不丢）；下载仅本人（按消息归属用户校验），Content-Disposition+nosniff；附件内容/提取文本不进日志与审计 result；
+> - 提示词升 kb-assistant-v2（新增「附件参考（数据）」段与对应规则），fixture 解析附件段在回答中确认已收附件（确定性）；模型失败/空回复仍 503 零写入；
+> - 本地菜单 permissionKeys 多角色扩展（menuRegistry）：platform.issues 收窄 DEVELOPER+ADMIN（纯 USER 的 Issue 入口=整合页 Issue 模式），USER 直访 /issues 由视图重定向 /assistant；后端 /menus 契约不动；
+> - 语言包四包再升版（en 1.1.4/ja·fr·es 1.0.4，新键 ~20）。
+> **非目标**：Issue 澄清对话不带附件（clarify 提示词 v3/JSON 双态契约不动——附件分析属助手职责）；图片不做视觉理解（ModelPort 为文本补全契约，视觉需多模态端口扩展留待裁决）；附件不自动转为知识条目（管理员经知识库页手工录入）。
+
+### 实施内容
+
+- **A. 整合页**：AssistantView 演进——页头滑动分段开关（AI 助手|Issue 工作台，pill 平移）；助手模式=现有对话+清空会话；Issue 模式=IssueChatWorkbench 内嵌（提交侧栏+新需求表单+澄清对话+确认推送+讨论区）；IssuesView 纯 USER 路径改重定向；platform.issues 菜单 permissionKeys=['DEVELOPER','ADMIN']。
+- **B. 附件链路**：V019 kb_attachment；KbAttachmentSupport（校验+提取，pdfbox 3.x）；/kb/ask 双 consumes（JSON 兼容+multipart）；GET /kb/attachments/{id}（本人下载）；KbChatRepository.insertExchange 同事务写附件行；提示词 v2 附件段；fixture 附件确认。
+- **C. 前端附件 UI**：composer 附件按钮（accept 白名单+多选）、待发 chips（名称/大小/移除）、消息气泡附件区（图片 blob 缩略图、文件下载 chip）、错误内联。
+- **测试**：KbAttachmentSupportTest（提取四类+zip 炸弹+malformed pdf 降级+白名单/上限）；KbApiTest 增 multipart 例（落库/下载隔离/超限 400/坏扩展 400/附件段入提示词-模块级）；前端整合页（开关切模式/附件 chips/multipart 发送/重定向）。
+
+### 验收标准
+
+- 整合页两模式经滑动开关切换：助手=知识库问答原样（含引用 chips/清空）；Issue=可折叠提交侧栏+新需求→澄清→三段简报→确认推送全链可用；纯 USER 侧栏无 Issue 工作台菜单、直访 /issues 落整合页。
+- 助手对话可附 png/pdf/csv/xlsx/docx/txt：发送后消息呈现附件（图片缩略图/下载 chip）；带 csv/docx/xlsx/pdf 提问时回答引用附件内容（fixture 确认收到附件；http 真实提取注入）；图片仅确认收到。
+- 超限（>10MB/超 3 个/坏扩展）400 可诊断；下载仅本人（他人 404）；模型失败不落半截会话（附件同回滚）。
+- 门禁 21/1/0+前后端回归全绿+CI 六项；新依赖 pdfbox 有 §3.9 登记与说明。
