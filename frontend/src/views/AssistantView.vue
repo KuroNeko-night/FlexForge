@@ -43,6 +43,7 @@ function switchMode(next: Mode): void {
     return;
   }
   mode.value = next;
+  askError.value = null;
   try {
     globalThis.sessionStorage?.setItem(MODE_KEY, next);
   } catch {

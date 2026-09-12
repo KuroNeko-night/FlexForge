@@ -36,7 +36,7 @@ public class FixtureModelPort implements ModelPort {
     private static final Pattern KB_ENTRY_LINE =
             Pattern.compile("^### \\[(.*)] (.+)$");
     private static final Pattern KB_ATTACHMENT_LINE =
-            Pattern.compile("^### (.+?)（.*$");
+            Pattern.compile("^### (.+)（.*）$");
 
     private final String round2 = loadFixtureSpec();
 

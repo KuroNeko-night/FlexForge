@@ -23,9 +23,13 @@ function isImage(attachment: KbAttachment): boolean {
   return attachment.contentType.startsWith('image/');
 }
 
-/** 图片缩略图：认证 fetch → objectURL（卸载时统一回收）。 */
+/** 图片缩略图：认证 fetch → objectURL（消息移除时回收，审查 P3-6）。 */
 async function loadThumbnail(attachment: KbAttachment): Promise<void> {
   if (!isImage(attachment) || thumbnails.value[attachment.id]) {
+    return;
+  }
+  if (attachment.id.startsWith('local-')) {
+    // 乐观占位无服务端对象，不发起注定 404 的请求
     return;
   }
   try {
@@ -47,9 +51,32 @@ watch(
         void loadThumbnail(attachment);
       }
     }
+    // 回滚/清空移除的消息：回收其 objectURL
+    const alive = new Set(
+      messages.flatMap((message) => (message.attachments ?? []).map((a) => a.id)),
+    );
+    for (const [id, url] of Object.entries(thumbnails.value)) {
+      if (!alive.has(id)) {
+        URL.revokeObjectURL(url);
+        const next = { ...thumbnails.value };
+        delete next[id];
+        thumbnails.value = next;
+      }
+    }
   },
   { immediate: true, deep: false },
 );
+
+async function download(attachment: KbAttachment): Promise<void> {
+  if (attachment.id.startsWith('local-')) {
+    return;
+  }
+  try {
+    await downloadKbAttachment(attachment);
+  } catch {
+    /* 下载失败静默（chip 仍在，可重试）；避免未处理拒绝 */
+  }
+}
 
 async function scrollToBottom(): Promise<void> {
   await nextTick();
@@ -93,7 +120,7 @@ onBeforeUnmount(() => {
               :src="thumbnails[attachment.id]"
               :alt="attachment.filename"
             />
-            <button type="button" class="file-chip" @click="downloadKbAttachment(attachment)">
+            <button type="button" class="file-chip" @click="download(attachment)">
               <AppIcon :name="isImage(attachment) ? 'chat' : 'book'" :size="12" />
               {{ attachment.filename }}
             </button>

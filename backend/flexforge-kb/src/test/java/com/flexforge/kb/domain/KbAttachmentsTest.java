@@ -110,8 +110,7 @@ class KbAttachmentsTest {
 
     @Test
     void zipBombEntryIsCappedNotExploded() throws Exception {
-        // 高压缩比条目（2MB 零字节解压后远超单条目上限的构造困难，用条目数与
-        // 解压总长守卫验证：256+ 条目触发条目数守卫）
+        // 高压缩比条目（256+ 条目触发条目数守卫；单条目大解压触发 readCapped）
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (ZipOutputStream zip = new ZipOutputStream(out)) {
             for (int i = 0; i < 300; i++) {
@@ -121,6 +120,30 @@ class KbAttachmentsTest {
             }
         }
         assertThat(KbAttachments.extract("炸弹.docx", out.toByteArray())).isNull();
+
+        // 审查 P2-2：单条目解压 11MB（>10MB 单条目读取上限）→ readCapped 截断
+        // 中断 XML → 解析失败降级 null（不爆炸不死机）
+        ByteArrayOutputStream big = new ByteArrayOutputStream();
+        try (ZipOutputStream zip = new ZipOutputStream(big)) {
+            zip.putNextEntry(new ZipEntry("word/document.xml"));
+            zip.write(("<w:document><w:body><w:p><w:t>" + "词".repeat(3_800_000)
+                    + "</w:t></w:p></w:body></w:document>").getBytes(StandardCharsets.UTF_8));
+            zip.closeEntry();
+        }
+        assertThat(KbAttachments.extract("大文档.docx", big.toByteArray())).isNull();
+    }
+
+    @Test
+    void oversizedPdfDegradesToArchiveOnly() throws Exception {
+        // 审查 P2-3：页数上限守卫（>2000 页降级仅存档，不做全量解析）
+        try (var document = new org.apache.pdfbox.pdmodel.PDDocument()) {
+            for (int i = 0; i < 2001; i++) {
+                document.addPage(new org.apache.pdfbox.pdmodel.PDPage());
+            }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            document.save(out);
+            assertThat(KbAttachments.extract("巨页.pdf", out.toByteArray())).isNull();
+        }
     }
 
     @Test

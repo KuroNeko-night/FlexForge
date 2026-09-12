@@ -85,7 +85,9 @@ public final class KbAttachments {
     }
 
     /** docx/xlsx：定位目标 XML 条目（word/document.xml / xl/sharedStrings.xml），
-     * 提取其中文本节点；zip 炸弹防护=条目数、累计解压长度、单条目读取长度三重上限。 */
+     * 提取其中叶子文本节点；zip 炸弹防护三层=条目数 ≤256、累计压缩长度 ≤20MB
+     * （流式 ZipInputStream 的 size 常为 -1 未知，只累加已知正值——审查 P2-2；
+     * 真正的内存边界是单条目读取上限）、单条目读取 ≤10MB（readCapped 硬截断）。 */
     private static String extractZipXml(String ext, byte[] data) throws IOException {
         String target = "docx".equals(ext) ? "word/document.xml" : "xl/sharedStrings.xml";
         long total = 0;
@@ -93,7 +95,11 @@ public final class KbAttachments {
             ZipEntry entry;
             int count = 0;
             while ((entry = zip.getNextEntry()) != null) {
-                if (++count > ZIP_MAX_ENTRIES || (total += entry.getCompressedSize()) > ZIP_MAX_TOTAL) {
+                if (++count > ZIP_MAX_ENTRIES) {
+                    return null;
+                }
+                long compressed = entry.getCompressedSize();
+                if (compressed > 0 && (total += compressed) > ZIP_MAX_TOTAL) {
                     return null;
                 }
                 if (target.equals(entry.getName())) {
@@ -155,9 +161,19 @@ public final class KbAttachments {
         return false;
     }
 
-    private static String extractPdf(byte[] data) throws IOException {
+    /** PDF 提取：先做页数上限守卫（深嵌套/超多页文档在解析前降级仅存档，
+     * 审查 P2-3——PDFBox 本身无限额，上限是我们自己的责任），解析异常
+     * （含 Error，如深嵌套结构的 StackOverflowError）一律降级 null。 */
+    private static final int PDF_MAX_PAGES = 2000;
+
+    private static String extractPdf(byte[] data) {
         try (var document = org.apache.pdfbox.Loader.loadPDF(data)) {
+            if (document.getNumberOfPages() > PDF_MAX_PAGES) {
+                return null;
+            }
             return new org.apache.pdfbox.text.PDFTextStripper().getText(document);
+        } catch (IOException | RuntimeException | StackOverflowError | OutOfMemoryError e) {
+            return null;
         }
     }
 

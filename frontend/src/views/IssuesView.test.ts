@@ -156,4 +156,26 @@ describe('IssuesView 用户端工作台（P23 FR-ISSUE-07；P29 整合后重定�
     expect(wrapper.find('[data-testid="issue-list"]').exists()).toBe(false);
     clearSession();
   });
+
+  it('身份未知（硬刷新）不误重定向：回填为开发者后渲染面板', async () => {
+    // 子路由挂载先于父壳 fetchMe——session.user=null 模拟未知身份
+    const tokenModule = await import('@/auth/token');
+    tokenModule.session.user = null;
+    listMock.mockResolvedValue([issue()]);
+    routerReplace.mockClear();
+    const wrapper = mount(IssuesView, { global: { stubs } });
+    await flushPromises();
+    expect(routerReplace).not.toHaveBeenCalled();
+    // 身份回填为开发者 → 面板出现，仍不重定向
+    tokenModule.saveSession('t', {
+      id: 1,
+      username: 'dev',
+      displayName: 'D',
+      roles: ['DEVELOPER'],
+    });
+    await flushPromises();
+    expect(wrapper.find('[data-testid="issue-list"]').exists()).toBe(true);
+    expect(routerReplace).not.toHaveBeenCalled();
+    clearSession();
+  });
 });

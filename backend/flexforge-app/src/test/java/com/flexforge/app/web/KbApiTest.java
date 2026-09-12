@@ -271,6 +271,37 @@ class KbApiTest {
         assertThat(messages).isZero();
     }
 
+    @Test
+    void longOfficeMimeAndOversizeMimeAreStoredSafely() throws Exception {
+        // 审查 P2-4：live 曾因 71 字符 Office MIME 超 V019 列宽 500——
+        // V020 拓宽 + 服务端 255 截断的回归锁定
+        String officeMime = "application/vnd.openxmlformats-officedocument"
+                + ".wordprocessingml.document";
+        String storedId = JsonPath.read(mockMvc.perform(
+                        MockMvcRequestBuilders.multipart("/api/v1/kb/ask")
+                                .file(new MockMultipartFile("files", "报告.docx", officeMime,
+                                        "x".getBytes(java.nio.charset.StandardCharsets.UTF_8)))
+                                .param("question", "看看")
+                                .header("Authorization", adminBearer))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(), "$.attachments[0].id");
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/kb/attachments/" + storedId)
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isOk());
+
+        String hugeMime = "x/" + "a".repeat(300);
+        mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/kb/ask")
+                        .file(new MockMultipartFile("files", "怪类型.txt", hugeMime,
+                                "x".getBytes(java.nio.charset.StandardCharsets.UTF_8)))
+                        .param("question", "看看")
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isOk());
+        Integer overlong = jdbc.queryForObject(
+                "SELECT count(*) FROM kb_attachment WHERE char_length(content_type) > 255",
+                Integer.class);
+        assertThat(overlong).isZero();
+    }
+
     private String createEntry(String title, String category, String content) throws Exception {
         String body = "{\"title\":\"" + title + "\",\"category\":"
                 + (category == null ? "null" : "\"" + category + "\"")

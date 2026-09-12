@@ -69,9 +69,10 @@ public class JdbcKbChatRepository implements KbChatRepository {
             return List.of();
         }
         String placeholders = String.join(",", java.util.Collections.nCopies(messageIds.size(), "?"));
+        // created_at 为事务时间戳（同批并列）——id 作第二决胜列保证回放稳定
         return jdbc.query("SELECT id, message_id, filename, content_type, size_bytes"
                         + " FROM kb_attachment WHERE message_id IN (" + placeholders + ")"
-                        + " ORDER BY created_at ASC",
+                        + " ORDER BY created_at ASC, id ASC",
                 ATTACHMENT_ROW, messageIds.toArray());
     }
 

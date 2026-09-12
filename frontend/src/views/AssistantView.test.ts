@@ -170,4 +170,12 @@ describe('AssistantView 清空与模式切换（FR-KB-04/06）', () => {
     await wrapper.find('[data-testid="mode-assistant"]').trigger('click');
     expect(wrapper.find('[data-testid="assistant-input"]').exists()).toBe(true);
   });
+
+  it('会话级模式记忆：预置 issues 后挂载直接进入 Issue 模式', async () => {
+    globalThis.sessionStorage?.setItem('flexforge.assistant.mode', 'issues');
+    fetchMock.mockResolvedValue([]);
+    const wrapper = mountView();
+    await flushPromises();
+    expect(wrapper.find('[data-testid="assistant-issues-mode"]').exists()).toBe(true);
+  });
 });

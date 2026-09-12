@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { ApiError, apiErrorMessage } from '@/api/client';
@@ -43,10 +43,29 @@ const statusFilter = ref<IssueStatusName | ''>('');
 const state = ref<'loading' | 'ready' | 'error' | 'denied' | 'empty'>('loading');
 const error = ref<string | null>(null);
 
-/** 纯 USER 角色：体验入口在 AI 助手整合页（P29），直访重定向。 */
+/** 会话身份已知前的加载态（子路由挂载先于父壳 fetchMe 回填——P29 审查 P1-1：
+ * user 为 null 时不得判定为纯 USER，否则开发者硬刷新被误重定向）。 */
+const userKnown = computed(() => session.user !== null);
+
+/** 纯 USER 角色：体验入口在 AI 助手整合页（P29），身份回填后重定向。 */
 const userOnly = computed(
-  () => !session.user?.roles.includes('DEVELOPER') && !session.user?.roles.includes('ADMIN'),
+  () =>
+    session.user !== null &&
+    !session.user.roles.includes('DEVELOPER') &&
+    !session.user.roles.includes('ADMIN'),
 );
+
+/** 重定向只对"已确认的纯 USER"生效（身份到达前后各判一次）。 */
+function redirectToAssistantIfUser(): void {
+  if (userOnly.value) {
+    try {
+      globalThis.sessionStorage?.setItem('flexforge.assistant.mode', 'issues');
+    } catch {
+      /* 存储不可用则落助手模式 */
+    }
+    void router.replace('/assistant');
+  }
+}
 
 const drawerOpen = ref(false);
 const creating = ref(false);
@@ -100,22 +119,25 @@ async function submitCreate(): Promise<void> {
 }
 
 onMounted(() => {
-  if (userOnly.value) {
-    try {
-      globalThis.sessionStorage?.setItem('flexforge.assistant.mode', 'issues');
-    } catch {
-      /* 存储不可用则落助手模式 */
-    }
-    void router.replace('/assistant');
-    return;
+  redirectToAssistantIfUser();
+  if (!userOnly.value) {
+    void load();
   }
-  void load();
+});
+
+watch(userOnly, () => {
+  if (userOnly.value) {
+    redirectToAssistantIfUser();
+  } else if (userKnown.value && state.value === 'loading') {
+    void load();
+  }
 });
 </script>
 
 <template>
   <section class="issues-view" data-testid="issues-view">
-    <template v-if="!userOnly">
+    <StateView v-if="!userKnown" state="loading" />
+    <template v-else-if="!userOnly">
       <header class="issues-header">
         <h2 class="ff-page-title">{{ t('issues.title', 'Issue 工作台') }}</h2>
         <div class="issues-actions">

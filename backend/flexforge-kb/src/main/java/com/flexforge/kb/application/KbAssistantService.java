@@ -48,9 +48,9 @@ public class KbAssistantService {
     public record IncomingAttachment(String filename, String contentType, byte[] data) {
     }
 
-    /** 校验+提取后的附件（提示词渲染与落库共用）。 */
-    private record Prepared(String filename, String contentType, long sizeBytes, byte[] data,
-                            String extractedText) {
+    /** 校验+提取后的附件（提示词渲染与落库共用；包私有供同包测试构造）。 */
+    record Prepared(String filename, String contentType, long sizeBytes, byte[] data,
+                    String extractedText) {
     }
 
     /** 助手回答与引用条目/附件回执（references 为 [{id,title,category}] 快照）。 */
@@ -147,7 +147,8 @@ public class KbAssistantService {
     }
 
     /** 附件白名单/数量/尺寸整体校验 + 文本提取（图片与失败=仅存档）；
-     * filename/contentType 防御性截断（客户端可控，落库列宽 255）。 */
+     * 白名单按原始（清洗后未截断）文件名判定（审查 P3-1：截断丢扩展名会误拒），
+     * 落库名压缩到 255 且保留扩展名段。 */
     private static List<Prepared> prepare(List<IncomingAttachment> files) {
         if (files == null) {
             return List.of();
@@ -157,8 +158,9 @@ public class KbAssistantService {
         }
         List<Prepared> prepared = new ArrayList<>();
         for (IncomingAttachment file : files) {
-            String filename = capLength(sanitizeFilename(file.filename()), 255);
-            KbAttachments.validate(filename, file.data() == null ? 0 : file.data().length);
+            String sanitized = sanitizeFilename(file.filename());
+            KbAttachments.validate(sanitized, file.data() == null ? 0 : file.data().length);
+            String filename = shrinkFilename(sanitized);
             prepared.add(new Prepared(filename, capLength(
                     file.contentType() == null ? "application/octet-stream" : file.contentType(),
                     255), file.data().length, file.data(),
@@ -171,14 +173,27 @@ public class KbAssistantService {
         return value.length() > max ? value.substring(0, max) : value;
     }
 
-    /** 剥离客户端路径成分（basename），空名兜底 "attachment"。 */
+    /** 超长文件名压缩到 ≤255 且保留扩展名（截前段留尾段扩展）。 */
+    static String shrinkFilename(String name) {
+        if (name.length() <= 255) {
+            return name;
+        }
+        String ext = KbAttachments.extensionOf(name);
+        int keep = ext.isEmpty() ? 254 : 255 - ext.length() - 1;
+        return name.substring(0, keep) + (ext.isEmpty() ? "" : "." + ext);
+    }
+
+    /** 剥离客户端路径成分（basename）与控制字符（审查 P3-2：CR/LF 可污染
+     * Content-Disposition 与提示词数据段），空名兜底 "attachment"。 */
     static String sanitizeFilename(String filename) {
         if (filename == null || filename.isBlank()) {
             return "attachment";
         }
-        String name = filename.replace('\\', '/');
+        String name = filename.replaceAll("\\p{Cntrl}", "");
+        name = name.replace('\\', '/');
         int slash = name.lastIndexOf('/');
-        return slash >= 0 ? name.substring(slash + 1) : name;
+        name = slash >= 0 ? name.substring(slash + 1) : name;
+        return name.isBlank() ? "attachment" : name;
     }
 
     private static String requireQuestion(String question) {
@@ -230,22 +245,32 @@ public class KbAssistantService {
                 .toList();
     }
 
-    /** 附件数据段：每文件标题行（图片/未提取标注）+提取文本；总预算内保序追加。 */
+    /** 附件数据段：每文件标题行（图片/未提取标注）+提取文本；首个附件无条件
+     * 保留（正文按剩余预算截断），后续超预算标注省略（审查 P2-1：原实现
+     * 首块即超限时静默丢弃并谎报"（无附件）"）。 */
     static String attachmentsText(List<Prepared> prepared) {
         if (prepared == null || prepared.isEmpty()) {
             return "（无附件）";
         }
         StringBuilder text = new StringBuilder();
+        boolean omitted = false;
         for (Prepared p : prepared) {
             String ext = KbAttachments.extensionOf(p.filename());
             String note = KbAttachments.isImage(p.filename()) ? "，图片未提取文本"
                     : p.extractedText() == null ? "，未提取到文本" : "";
-            String block = "### " + p.filename() + "（" + ext + note + "）\n"
-                    + (p.extractedText() == null ? "" : p.extractedText()) + "\n\n";
-            if (text.length() + block.length() > ATTACHMENTS_MAX_CHARS) {
+            String header = "### " + p.filename() + "（" + ext + note + "）\n";
+            if (text.length() + header.length() + 2 > ATTACHMENTS_MAX_CHARS) {
+                omitted = true;
                 break;
             }
-            text.append(block);
+            int remaining = ATTACHMENTS_MAX_CHARS - text.length()
+                    - header.length() - "\n\n".length();
+            String body = p.extractedText() == null ? ""
+                    : truncateAtCodePoint(p.extractedText(), Math.max(0, remaining));
+            text.append(header).append(body).append("\n\n");
+        }
+        if (omitted) {
+            text.append("（其余附件内容过长已省略）\n");
         }
         return text.isEmpty() ? "（无附件）" : text.toString().strip();
     }
