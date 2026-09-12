@@ -58,4 +58,21 @@ class KbRetrievalTest {
         assertThat(KbRetrieval.topMatches("  !! ", List.of(entry("t", "c")))).isEmpty();
         assertThat(KbRetrieval.topMatches(null, List.of(entry("t", "c")))).isEmpty();
     }
+
+    @Test
+    void genericSuffixBigramAloneDoesNotMatchMultiWordQuery() {
+        // "量子力学入门"（5 个二元组）与《平台使用入门》仅共享"入门"——单一命中词
+        // 不足以佐证（假阳性防线），但"出差…报销"两个实词共现仍命中
+        List<KbEntryRepository.KbEntryRecord> entries = List.of(
+                entry("平台使用入门", "登录后进入工作台"));
+        assertThat(KbRetrieval.topMatches("量子力学入门", entries)).isEmpty();
+        assertThat(KbRetrieval.topMatches("出差回来怎么报销", List.of(
+                entry("差旅报销规范", "员工出差后提交报销单")))).isNotEmpty();
+    }
+
+    @Test
+    void shortQueryStillMatchesOnSingleTerm() {
+        assertThat(KbRetrieval.topMatches("报销", List.of(
+                entry("差旅报销规范", "内容")))).hasSize(1);
+    }
 }
