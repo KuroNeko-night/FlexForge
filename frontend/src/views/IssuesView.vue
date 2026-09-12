@@ -181,7 +181,7 @@ watch(userOnly, () => {
         </ul>
         <IssueDetail v-if="selected" :issue="selected" @updated="syncIssue" />
         <p v-else class="issue-empty-hint">
-          {{ t('issues.selectHint', '选择左侧 Issue 查看详情与 AI 对话') }}
+          {{ t('issues.selectHint', '从右侧需求列表选择一条，查看详情与 AI 对话') }}
         </p>
       </div>
 
