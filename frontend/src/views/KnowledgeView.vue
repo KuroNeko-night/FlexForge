@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 
 import { ApiError, apiErrorMessage } from '@/api/client';
 import { createKbEntry, deleteKbEntry, listKbEntries, updateKbEntry, type KbEntry } from '@/api/kb';
+import { hasRole } from '@/auth/token';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import KbEntryDrawer, { type EntryPayload } from '@/components/KbEntryDrawer.vue';
@@ -11,8 +12,10 @@ import { t } from '@/registry/localeRegistry';
 
 /**
  * 知识库管理页（FR-KB-01，ADMIN 菜单进入）：条目列表 + 关键词过滤 +
- * 新建/编辑抽屉 + 删除确认。写接口服务端限 ADMIN（S2），本页只做呈现。
+ * 新建/编辑抽屉 + 删除确认。条目登录可读（直访路由呈只读视图）；
+ * 写操作服务端限 ADMIN（S2），管理按钮按角色显隐只是体验层。
  */
+const isAdmin = hasRole('ADMIN');
 const entries = ref<KbEntry[]>([]);
 const state = ref<'loading' | 'ready' | 'error' | 'denied' | 'empty'>('loading');
 const error = ref<string | null>(null);
@@ -36,6 +39,12 @@ const visibleEntries = computed(() => {
     [entry.title, entry.category ?? '', entry.content].join('\n').toLowerCase().includes(keyword),
   );
 });
+
+/** 时间戳本地化呈现（ISO 原文可读性差，P28 视觉走查修正）。 */
+function formatTime(iso: string): string {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? iso : date.toLocaleString();
+}
 
 async function load(): Promise<void> {
   state.value = 'loading';
@@ -123,7 +132,7 @@ onMounted(load);
           :placeholder="t('kb.search', '搜索标题 / 分类 / 内容')"
           data-testid="kb-search"
         />
-        <BaseButton variant="primary" data-testid="kb-create" @click="openCreate">
+        <BaseButton v-if="isAdmin" variant="primary" data-testid="kb-create" @click="openCreate">
           {{ t('kb.create', '新建条目') }}
         </BaseButton>
       </div>
@@ -154,9 +163,9 @@ onMounted(load);
         <p class="kb-preview">{{ entry.content }}</p>
         <div class="kb-meta">
           <span>{{ entry.createdBy }}</span>
-          <span class="kb-updated">{{ entry.updatedAt }}</span>
+          <span class="kb-updated">{{ formatTime(entry.updatedAt) }}</span>
         </div>
-        <div class="kb-actions">
+        <div v-if="isAdmin" class="kb-actions">
           <BaseButton variant="ghost" data-testid="kb-edit" @click="openEdit(entry)">
             {{ t('common.edit', '编辑') }}
           </BaseButton>

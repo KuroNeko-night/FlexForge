@@ -111,6 +111,10 @@ watch(
   color: var(--ff-text-muted);
   margin-bottom: var(--ff-space-1);
 }
+.message[data-role='user'] .role-label {
+  color: inherit;
+  opacity: 0.85;
+}
 .bubble-text {
   margin: 0;
   white-space: pre-wrap;
@@ -132,6 +136,7 @@ watch(
 .refs li {
   font-size: var(--ff-text-xs, 0.75rem);
   background: var(--ff-surface-muted);
+  color: var(--ff-text);
   border: 1px solid var(--ff-border);
   border-radius: 999px;
   padding: 2px var(--ff-space-2);

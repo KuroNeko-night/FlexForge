@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ApiError } from '@/api/client';
 import type { KbEntry } from '@/api/kb';
+import { saveSession } from '@/auth/token';
 import KnowledgeView from '@/views/KnowledgeView.vue';
 
 vi.mock('@/api/kb', () => ({
@@ -42,6 +43,12 @@ function resetMocks(): void {
   createMock.mockReset();
   updateMock.mockReset();
   deleteMock.mockReset();
+  saveSession('t', {
+    id: 1,
+    username: 'admin',
+    displayName: '管理员',
+    roles: ['ADMIN'],
+  });
 }
 
 describe('KnowledgeView 列表与搜索（P28，FR-KB-01）', () => {
@@ -141,5 +148,15 @@ describe('KnowledgeView 失败呈现与删除（P28，FR-KB-04）', () => {
     await flushPromises();
     expect(deleteMock).toHaveBeenCalledWith('kb-1');
     expect(listMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('非管理员直访呈只读视图（无新建/编辑/删除按钮，条目可读）', async () => {
+    saveSession('t', { id: 2, username: 'demo', displayName: '演示', roles: ['USER'] });
+    listMock.mockResolvedValue([entry('kb-1', '差旅报销规范', '财务制度', '内容')]);
+    const wrapper = await mountView();
+    expect(wrapper.findAll('[data-testid="kb-item"]')).toHaveLength(1);
+    expect(wrapper.find('[data-testid="kb-create"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="kb-edit"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="kb-delete"]').exists()).toBe(false);
   });
 });
