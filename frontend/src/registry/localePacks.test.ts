@@ -40,6 +40,8 @@ const REQUIRED_TEMPLATE_KEYS: string[] = [
   'menu.system-management',
   'menu.system-audit',
   'menu.platform.issues',
+  'menu.platform.assistant',
+  'menu.platform.knowledge',
   'menu.platform.plugins',
   'menu.platform.settings',
   ...STATUSES.flatMap((s) => [`issues.status.${s}`, `issues.transition.${s}`]),

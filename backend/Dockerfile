@@ -15,6 +15,7 @@ COPY backend/flexforge-data/pom.xml flexforge-data/
 COPY backend/flexforge-plugin/pom.xml flexforge-plugin/
 COPY backend/flexforge-issue/pom.xml flexforge-issue/
 COPY backend/flexforge-ai/pom.xml flexforge-ai/
+COPY backend/flexforge-kb/pom.xml flexforge-kb/
 COPY backend/flexforge-app/pom.xml flexforge-app/
 RUN ./mvnw -B -ntp -q dependency:go-offline || true
 COPY database /build/database
@@ -27,6 +28,7 @@ COPY backend/flexforge-data/src flexforge-data/src
 COPY backend/flexforge-plugin/src flexforge-plugin/src
 COPY backend/flexforge-issue/src flexforge-issue/src
 COPY backend/flexforge-ai/src flexforge-ai/src
+COPY backend/flexforge-kb/src flexforge-kb/src
 COPY backend/flexforge-app/src flexforge-app/src
 RUN ./mvnw -B -ntp package -DskipTests
 

@@ -46,6 +46,7 @@ FlexForge/
 │   ├── flexforge-data/             动态数据访问：data_record 单 JSONB 存储+实体级记录校验+白名单 SQL 构造+动态 CRUD API（service.data-access，P05）
 │   ├── flexforge-plugin/            插件包校验+版本存储+生命周期：P07 导入链路；P08 生命周期（激活/停用/升级/卸载/stale/重启恢复+MigrationScriptRunner+资产 serve）；P21 预设（PluginPresetService/Controller+PresetRepository，快照保存/收敛应用）；P22 处理器输出契约增 chart（OutputValidator 三型校验）
 │   ├── flexforge-issue/             Issue/评论/标签/状态机/版本化规格（P10）；P11：clarify/generate 编排+ai_task_log
+│   ├── flexforge-kb/                知识库与 AI 助手（P28）：kb_entry/kb_chat_message 仓储+KbRetrieval 关键词评分 Top-K+KbAssistantService（ModelPort 唯一通道、fixture 确定性引用式回答、kb-assistant-v1 提示词）+条目 CRUD/ask/messages API（写仅 ADMIN）
 │   ├── flexforge-ai/                规格 Schema（RequirementSchema v1）+预览派生（P10）；P11：ModelPort+ClarifyEngine+PluginPackageGenerator+prompts（P21 起 v2）；P15：config/（AiEnv/AiConfigRepository/SecretCipher/AiConfigService/AiConfigController）+RoutingModelPort 运行时路由
 │   │   └── src/main/resources/prompts/v2/   提示词与 fixture 资源（clarify.md + fixture-spec.json，版本一一对应；v1 为历史保留，P21 起装载 v2）
 │   └── flexforge-app/              启动、配置、健康检查；web/ 统一错误装配 + requestId 过滤器 + logback 脱敏基线（P02 迭代 2）；Testcontainers 冒烟 + ArchUnit（5 规则）+ R-GOV-06 fixture 测试 + AgentIssueE2eTest/E2eDemoScript（RB-E2E 五场景×3 干净库，P12）
@@ -144,6 +145,7 @@ backend/                模块化单体（每个模块 api -> application -> dom
   flexforge-plugin/     包校验、版本、依赖、激活、回滚、插件迁移 runner
   flexforge-issue/      Issue、评论、标签、状态机
   flexforge-ai/         模型端口、规格 Schema、插件生成器
+  flexforge-kb/         知识库条目、关键词检索、AI 助手会话（P28）
   flexforge-workflow/   可选（P13 之后）
 frontend/               Vue 3 + TS（core/components/views/dynamic）
 database/
@@ -274,3 +276,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-09-11 | §1 树更新：plugins +locale-ja/locale-fr/locale-es（1.0.0）、locale-en 升 1.1.0（344 键全键集）；frontend +localePacks.test/pluginsViewFixtures、components +UserCreateDrawer/UserRolesDrawer/IssueSpecSection/IssueNewRequirementForm、utils +pluginConfirm、api/issues +issueStatusLabel/transitionLabel、registry LANGUAGE_LABELS 扩三语；backend flexforge-ai +ModelUrlGuard/ModelConfigGate/HttpModelConfigGate/ModelEndpoints/AiConfigKernel/AiConfigWiring、app 测试 +AiConfigProbeApiTest | P26：界面净化、系统多语言与 AI 上游探活（用户裁决新增；FR-AUTH-06/FR-PLUGIN-15/FR-SETUP-01/02 增补） |
 | 2026-09-11 | §1 树更新：根 +README.zh-CN.md（中文副本，README.md 重写为英文主文档+徽章+截图+文档表）、docs +assets/（工作台/插件页截图）；§3 文档地图同步 | 用户裁决：远端仓库门面完整化——README 英文为主+中文副本+仓库简介/topics（P26 后续） |
 | 2026-09-11 | §1 树更新：plugins +example-crosstab/example-histogram/example-topitems（Level 2 多样化处理器，P27）；9 包升版改名去"示例"（analytics 0.2.4/kanban 0.1.3 避测试变体版本位）；app 测试 +ExampleProcessorsP27Test、P17/P20/P20Security/P22/FileTools 版本字面量与 manifest 格式适配 | P27：演示就绪整备（用户裁决四项——账号清理/去示例字样/多样化 L2 替代/Issue 精选） |
+| 2026-09-12 | §1/§2 树更新：backend +flexforge-kb 模块（api/application/domain/infrastructure+prompts/kb-assistant-v1）；database/migrations +V018（kb_entry/kb_chat_message）；frontend +api/kb、views +AssistantView/KnowledgeView、router +/assistant//knowledge、菜单 +platform.assistant/platform.knowledge、AppIcon +book；plugins locale-en 升 1.1.3、locale-ja/fr/es 升 1.0.3（新键族 assistant.*/kb.*/menu.platform.assistant/knowledge） | P28：知识库与 AI 助手（用户裁决新增；FR-KB-01..04、docs/03 §6/§8、docs/13 §3.6-7） |

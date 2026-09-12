@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.flexforge</groupId>
+    <artifactId>flexforge-backend</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>flexforge-kb</artifactId>
+  <name>flexforge-kb</name>
+  <description>知识库条目、关键词检索与 AI 助手会话（docs/02 FR-KB-01..04、docs/09 P28）</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.flexforge</groupId>
+      <artifactId>flexforge-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.flexforge</groupId>
+      <artifactId>flexforge-auth</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.flexforge</groupId>
+      <artifactId>flexforge-ai</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

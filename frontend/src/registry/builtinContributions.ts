@@ -21,6 +21,21 @@ function registerLocalMenus(): void {
     route: '/issues',
     order: 20,
   });
+  // AI 助手入口（P28）：登录即可问（知识库检索注入问答，FR-KB-03）
+  registerMenu({
+    key: 'platform.assistant',
+    title: 'AI 助手',
+    route: '/assistant',
+    order: 30,
+  });
+  // 知识库管理入口（P28）：本地注册菜单，仅 ADMIN 可见（服务端 /kb 写接口为边界）
+  registerMenu({
+    key: 'platform.knowledge',
+    title: '知识库',
+    route: '/knowledge',
+    order: 45,
+    permissionKey: 'ADMIN',
+  });
   // 插件管理入口（P12）：本地注册菜单，仅 ADMIN 可见（服务端 /plugins/inventory 为边界）
   registerMenu({
     key: 'platform.plugins',
