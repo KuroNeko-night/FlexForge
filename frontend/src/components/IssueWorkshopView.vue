@@ -3,7 +3,6 @@ import { onMounted, ref } from 'vue';
 
 import { apiErrorMessage } from '@/api/client';
 import {
-  createIssue,
   fetchComments,
   fetchIssue,
   fetchSpec,
@@ -15,33 +14,30 @@ import {
   type IssueRecord,
   type SpecRevision,
 } from '@/api/issues';
-import IssueNewRequirementForm from '@/components/IssueNewRequirementForm.vue';
 import IssueClarifyChat from '@/components/IssueClarifyChat.vue';
-import { parseClarifyBrief } from '@/utils/clarifyBrief';
 import IssueDiscussion from '@/components/IssueDiscussion.vue';
 import IssueWorkbenchSidebar from '@/components/IssueWorkbenchSidebar.vue';
+import IssueWorkshopChat from '@/components/IssueWorkshopChat.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
+import { parseClarifyBrief } from '@/utils/clarifyBrief';
 import { t } from '@/registry/localeRegistry';
 
 /**
- * 用户端需求对话工作台（P23，FR-ISSUE-07）：纯 USER 视角——对话与自己的需求。
- * 侧栏 IssueWorkbenchSidebar（可折叠，已发布分组）；对话复用 IssueClarifyChat
- *（v3 口语化确认进流）；确认推送卡 + 讨论区 IssueDiscussion。开发者信息面
- * 不在本视图（S2 服务端收口）。
+ * Issue 工作台视图（P30 整合页 Issue 模式）：与 AI 助手同构布局——居中工坊
+ * 对话（默认）+ 右侧"我的需求"侧栏（左侧已有全局导航）；侧栏选中进入
+ * per-issue 详情（澄清对话/确认卡/讨论区，P23 语义不变，自原 IssueChatWorkbench
+ * 移植）；创建由工坊 AI 工具完成（表单创建保留为侧栏入口的备用路径）。
  */
 const issues = ref<IssueRecord[]>([]);
 const loading = ref(true);
 const loadError = ref<string | null>(null);
-
 const sidebarCollapsed = ref(false);
 const active = ref<IssueRecord | null>(null);
 const activeBrief = ref<ClarifyBrief | null>(null);
 const comments = ref<IssueComment[]>([]);
-
-const creating = ref(false);
-const createError = ref<string | null>(null);
 const publishing = ref(false);
 const publishError = ref<string | null>(null);
+const workshopRef = ref<InstanceType<typeof IssueWorkshopChat> | null>(null);
 
 async function load(): Promise<void> {
   loading.value = true;
@@ -59,7 +55,27 @@ function syncIssue(next: IssueRecord): void {
   issues.value = issues.value.map((issue) => (issue.id === next.id ? next : issue));
 }
 
-/** 打开一条需求：刷新详情（发布态/状态）+ 简报（成稿后仍在）+ 讨论。 */
+/** 工坊创建了新需求：刷新侧栏（留在工坊对话——确认卡与推送都在对话内，
+ * 侧栏新条目即时可见，点击可进入详情）。 */
+async function onWorkshopCreated(): Promise<void> {
+  await load();
+}
+
+/** 工坊确认卡推送。 */
+async function onWorkshopPublish(issueId: string): Promise<void> {
+  publishing.value = true;
+  publishError.value = null;
+  try {
+    const next = await publishIssue(issueId);
+    syncIssue(next);
+    workshopRef.value?.markPublished(issueId);
+  } catch (e) {
+    publishError.value = apiErrorMessage(e, t('issues.publishFailed', '确认推送失败，请稍后重试'));
+  } finally {
+    publishing.value = false;
+  }
+}
+
 async function open(issue: IssueRecord): Promise<void> {
   active.value = issue;
   activeBrief.value = null;
@@ -86,7 +102,6 @@ async function open(issue: IssueRecord): Promise<void> {
   }
 }
 
-/** 对话产出规格+简报：暂存简报（未发布时确认卡出现）。 */
 function onSpecSaved(spec: SpecRevision, brief: ClarifyBrief | null): void {
   activeBrief.value = brief ?? parseClarifyBrief(spec.briefJson);
 }
@@ -101,7 +116,6 @@ async function confirmPublish(): Promise<void> {
   try {
     const next = await publishIssue(issueId);
     syncIssue(next);
-    // 陈旧守卫：推送期间切换到其他需求时不回写视图（审查 P3-6）
     if (active.value?.id === issueId) {
       active.value = next;
     }
@@ -112,55 +126,26 @@ async function confirmPublish(): Promise<void> {
   }
 }
 
-/** 创建提交（表单状态在 IssueNewRequirementForm，P26 拆出）。 */
-async function submitCreate(payload: { title: string; description: string }): Promise<void> {
-  if (creating.value || !payload.title.trim() || !payload.description.trim()) {
-    return;
-  }
-  creating.value = true;
-  createError.value = null;
-  try {
-    const created = await createIssue({
-      title: payload.title.trim(),
-      description: payload.description.trim(),
-    });
-    issues.value = [created, ...issues.value];
-    await open(created);
-  } catch (e) {
-    createError.value = apiErrorMessage(e, t('common.createFailed', '创建失败，请稍后重试'));
-  } finally {
-    creating.value = false;
-  }
-}
-
 onMounted(load);
 </script>
 
 <template>
-  <section class="workbench" data-testid="issue-chat-workbench">
-    <IssueWorkbenchSidebar
-      :issues="issues"
-      :active-id="active?.id ?? null"
-      :collapsed="sidebarCollapsed"
-      :loading="loading"
-      :error="loadError"
-      @toggle="sidebarCollapsed = !sidebarCollapsed"
-      @create="active = null"
-      @select="open"
-    />
-
+  <div class="workshop-view" data-testid="issue-workshop-view">
     <div class="main">
-      <IssueNewRequirementForm
-        v-if="!active"
-        :creating="creating"
-        :create-error="createError"
-        @create="submitCreate"
-      />
-
-      <!-- 对话视图：标题栏 + 澄清对话 + 确认卡 + 讨论 -->
+      <template v-if="!active">
+        <IssueWorkshopChat
+          ref="workshopRef"
+          :publishing="publishing"
+          @created="onWorkshopCreated"
+          @publish="onWorkshopPublish"
+        />
+      </template>
       <template v-else>
         <header class="chat-head">
           <div class="chat-head-title">
+            <BaseButton variant="ghost" data-testid="workshop-back" @click="active = null">
+              {{ t('issues.backToWorkshop', '返回工坊') }}
+            </BaseButton>
             <h3>{{ active.title }}</h3>
             <span v-if="active.publishedAt" class="published-badge" data-testid="published-badge">
               {{ t('issues.published', '已发布') }}
@@ -209,7 +194,6 @@ onMounted(load);
           }}）
         </p>
 
-        <!-- :key 随需求重建（P24）：切换需求时输入草稿复位，不残留上一需求的评论草稿 -->
         <IssueDiscussion
           :key="active.id"
           :issue-id="active.id"
@@ -218,15 +202,27 @@ onMounted(load);
         />
       </template>
     </div>
-  </section>
+
+    <IssueWorkbenchSidebar
+      :issues="issues"
+      :active-id="active?.id ?? null"
+      :collapsed="sidebarCollapsed"
+      :loading="loading"
+      :error="loadError"
+      @toggle="sidebarCollapsed = !sidebarCollapsed"
+      @create="active = null"
+      @select="open"
+    />
+  </div>
 </template>
 
 <style scoped>
-.workbench {
+.workshop-view {
+  flex: 1;
   display: flex;
   gap: var(--ff-space-4);
   align-items: stretch;
-  min-height: 24rem;
+  min-height: 0;
 }
 .main {
   flex: 1;
@@ -234,34 +230,6 @@ onMounted(load);
   display: flex;
   flex-direction: column;
   gap: var(--ff-space-3);
-}
-.new-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ff-space-2);
-}
-.new-form h3 {
-  margin: 0;
-}
-.new-hint {
-  margin: 0;
-  color: var(--ff-text-muted);
-  font-size: var(--ff-text-sm);
-}
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ff-space-1);
-  font-size: var(--ff-text-sm);
-}
-/* 网格行距由 gap 提供（审查 P3-1：去 margin 叠加）；按钮不随网格列拉伸 */
-.new-form form .ff-btn {
-  justify-self: start;
-}
-.field input,
-.field textarea {
-  padding: var(--ff-space-2);
-  border-radius: var(--ff-radius-md);
 }
 .chat-head {
   display: flex;
@@ -272,6 +240,7 @@ onMounted(load);
   display: flex;
   align-items: center;
   gap: var(--ff-space-2);
+  flex-wrap: wrap;
 }
 .chat-head-title h3 {
   margin: 0;
@@ -315,6 +284,7 @@ onMounted(load);
   display: flex;
   align-items: center;
   gap: var(--ff-space-2);
+  flex-wrap: wrap;
 }
 .confirm-hint {
   font-size: var(--ff-text-sm);
@@ -324,5 +294,10 @@ onMounted(load);
   margin: 0;
   font-size: var(--ff-text-sm);
   color: var(--ff-text-muted);
+}
+.form-error {
+  color: var(--ff-danger);
+  font-size: var(--ff-text-sm);
+  margin: 0;
 }
 </style>

@@ -250,10 +250,16 @@ watch(userOnly, () => {
   color: var(--ff-text-muted);
 }
 .issues-layout {
+  /* P30：需求列表右移（左侧已有全局导航，与整合页右侧栏口径一致）——
+     DOM 序不变，网格列交换 + direction 反转让列表落右、详情落左 */
   display: grid;
-  grid-template-columns: minmax(16rem, 22rem) 1fr;
+  grid-template-columns: 1fr minmax(16rem, 22rem);
+  direction: rtl;
   gap: var(--ff-space-4);
   align-items: start;
+}
+.issues-layout > * {
+  direction: ltr;
 }
 .issue-list {
   list-style: none;

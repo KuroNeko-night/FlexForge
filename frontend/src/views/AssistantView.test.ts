@@ -25,6 +25,9 @@ vi.mock('@/api/issues', () => ({
   publishIssue: vi.fn(),
   issueStatusLabel: (s: string) => s,
   transitionLabel: (s: string) => s,
+  fetchWorkshopMessages: vi.fn().mockResolvedValue([]),
+  sendWorkshopMessage: vi.fn(),
+  clearWorkshopMessages: vi.fn().mockResolvedValue({ removed: 0 }),
 }));
 
 import { askKb, clearKbMessages, fetchKbMessages } from '@/api/kb';
@@ -164,7 +167,7 @@ describe('AssistantView 清空与模式切换（FR-KB-04/06）', () => {
     expect(wrapper.find('[data-testid="mode-assistant"]').attributes('aria-selected')).toBe('true');
     await wrapper.find('[data-testid="mode-issues"]').trigger('click');
     expect(wrapper.find('[data-testid="assistant-issues-mode"]').exists()).toBe(true);
-    expect(wrapper.findComponent({ name: 'IssueChatWorkbench' }).exists()).toBe(true);
+    expect(wrapper.findComponent({ name: 'IssueWorkshopView' }).exists()).toBe(true);
     expect(globalThis.sessionStorage?.getItem('flexforge.assistant.mode')).toBe('issues');
     expect(wrapper.find('h2').text()).toContain('Issue 工作台');
     await wrapper.find('[data-testid="mode-assistant"]').trigger('click');
