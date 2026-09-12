@@ -89,6 +89,7 @@
 5. **模型运行时配置（P15 设置页，用户裁决）**：`GET/PUT /ai/config`（ADMIN）持久化 provider=fixture|http、base-url、model 与 API Key；密钥经 `SecretCipher`（AES-256-GCM，密钥=HMAC-SHA256(`AUTH_JWT_SECRET`, 域分隔标签) 派生）加密后落 `ai_provider_config` 单行表——密钥材料仍以环境变量为根，数据库泄露不直接泄露 API Key；任何读路径只回 `apiKeyConfigured` 布尔与尾 4 位掩码，明文仅存在于加密前内存与 `Authorization` 头（S8：不进日志/任务记录，`ai_task_log` 口径不变）；`AUTH_JWT_SECRET` 轮换后旧密文不可解，按"未配置"降级并提示重新录入（不静默用旧值）；有效配置解析顺序=DB 行 > 环境变量（`FLEXFORGE_AI_*`）> 默认 fixture；审计 `ai.config` 记操作者与结果（不含密钥材料）。
 6. **保存路径上游探活与出站 URL 守卫（P26，FR-SETUP-01）**：provider=http 的保存先过 `ModelUrlGuard`（scheme 仅 http/https；host 为 IP 字面量时拒绝环回/私有/链路本地/保留段，"localhost" 显式拒绝；非字面量主机名不做运行时 DNS——不可解析交探活报错）再探活（GET {base}/models 带 Bearer，10s 超时）：不可达/非 2xx/超时/密钥无效/模型不在列表 → 400 报错上抛（含上游状态码/原因，不含密钥材料）且不落库，审计记 `ai.config` failure。守卫与探活作用于管理员 UI 保存路径（远端可控面）；环境变量配置（`FLEXFORGE_AI_*`，运维信任根）不经守卫。运行时调用端点=根地址自动拼 /chat/completions（OpenAI/DeepSeek 官方口径），旧"完整端点"存量值原样兼容。
 7. **知识库助手注入面（P28，FR-KB-01..04）**：知识条目由 ADMIN 维护（可信度同元数据写路径），用户提问与知识内容在提示词中一律为数据段（同本节第 2 条口径），模板 kb-assistant-v1 声明"仅依据知识库回答、无命中须明示"；条目尺寸（标题 ≤120/分类 ≤40/正文 ≤20000）与注入预算（Top-K≤5、单条 ≤1500、总 ≤6000、会话上下文近 8 条 ≤4000）为硬上限，防止以知识库为放大器的提示词撑爆与成本滥用；助手回答只作为展示文本（不进任何注册/校验/执行路径）；`kb.ask` 失败（模型不可用等）不落半截会话，成败同口径审计，条目内容不进日志与错误消息；条目写接口与提问接口均有失败路径测试（403/400/503）。
+8. **助手对话附件攻击面（P29，FR-KB-05）**：上传仅 multipart `/kb/ask` 通道（登录），白名单扩展名（png/jpg/jpeg/gif/webp/pdf/csv/xlsx/docx/txt/md）+单文件 ≤10MB+单次 ≤3 个（服务端强制，前端只是体验）；附件按 UUID 落 `kb_attachment`（BYTEA，随消息归属校验下载——他人 404 防枚举，Content-Disposition attachment+nosniff，图片经前端 blob 通道呈现不直链）；文本提取有炸弹与解析防护：docx/xlsx 用 `java.util.zip` 限定条目数 ≤256、累计压缩长度 ≤20MB、单条目读取 ≤10MB（流式读取硬截断），PDF 解析前置页数上限（>2000 页降级仅存档）且解析异常（含 StackOverflowError/OOM）降级"仅存档"；提取文本与文件名以数据段注入（总预算 ≤20000 字符，模板 kb-assistant-v2 声明附件内容非指令）；附件字节/提取文本不进日志、审计 result 与错误消息；附件与消息同事务（模型失败整体回滚）；清空会话级联清理附件。
 
 ### 3.7 密钥与敏感数据
 
@@ -108,7 +109,7 @@
 
 1. 锁文件必须提交；新增依赖说明用途、许可证与替代方案（对齐 `docs/repository-maintenance.md` §6）。
 2. 依赖漏洞扫描（本节新增要求）：前端 `npm audit`、后端启用 Dependabot alerts 或 OWASP dependency-check；纳入 `scripts/check-repo-health` 报告项。高危漏洞（CVSS ≥ 7.0）7 天内修复，或开 Issue 登记豁免理由与复查时间。
-3. 不引入无维护、来源不明的包；Docker 基础镜像固定版本。前端图表依赖 chart.js（MIT，canvas 绘制、构建期内置无运行时外链，P22 图表基建；替代方案 ECharts 体积过大、手搓 canvas 不可维护，均不采纳）。前端 XLSX 导出依赖 exceljs（MIT，P23 FR-META-06；前端本地生成无服务端渲染，替代方案 SheetJS CE npm 渠道停更且存已知高危审计项、服务端 POI 引入重量级新攻击面，均不采纳）。
+3. 不引入无维护、来源不明的包；Docker 基础镜像固定版本。前端图表依赖 chart.js（MIT，canvas 绘制、构建期内置无运行时外链，P22 图表基建；替代方案 ECharts 体积过大、手搓 canvas 不可维护，均不采纳）。前端 XLSX 导出依赖 exceljs（MIT，P23 FR-META-06；前端本地生成无服务端渲染，替代方案 SheetJS CE npm 渠道停更且存已知高危审计项、服务端 POI 引入重量级新攻击面，均不采纳）。后端 PDF 文本提取依赖 Apache PDFBox 3.x（Apache-2.0，P29 FR-KB-05 助手附件；纯标准库无法解析 PDF 字节流，PDFBox 为 JVM 生态事实标准且自带解析限额配置；替代方案自研 PDF 解析不可维护、前端 pdf.js 提取绕过服务端边界，均不采纳；解析资源边界（页数上限+异常隔离降级）由平台侧配置，传递依赖 fontbox/commons-logging 随锁文件固定）。
 - `@fontsource/space-grotesk` 5.3.x、`@fontsource/noto-sans-sc` 5.3.x（P25 字体系统）：MIT，自托管字体文件（unicode-range 分片按需加载），无运行时外链，CSP 不变；npm audit high+ 0。
 
 ### 3.10 数据库与迁移

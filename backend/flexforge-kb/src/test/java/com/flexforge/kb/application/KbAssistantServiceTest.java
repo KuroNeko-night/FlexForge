@@ -192,6 +192,90 @@ class KbAssistantServiceTest {
         assertThat(recent.get(2).content()).isEqualTo("那发票呢");
     }
 
+    @Test
+    void attachmentsAreValidatedExtractedInjectedAndPersisted() {
+        seed("报销规范", null, "内容");
+        RecordingModelPort port = new RecordingModelPort();
+        KbAssistantService assistant = service(port);
+        KbAssistantService.AskOutcome outcome = assistant.ask("demo", "帮我核对附件里的数据", List.of(
+                new KbAssistantService.IncomingAttachment(
+                        "报销单.csv", "text/csv", "物料,金额\nA01,300".getBytes()),
+                new KbAssistantService.IncomingAttachment(
+                        "截图.png", "image/png", new byte[] {1, 2, 3})));
+        // 提示词数据段含提取文本与图片标注；附件行随用户消息落库
+        assertThat(port.prompts.get(0)).contains("## 附件参考（数据）");
+        assertThat(port.prompts.get(0)).contains("### 报销单.csv（csv）");
+        assertThat(port.prompts.get(0)).contains("A01,300");
+        assertThat(port.prompts.get(0)).contains("### 截图.png（png，图片未提取文本）");
+        assertThat(outcome.attachments()).hasSize(2);
+        assertThat(chat.attachments.size()).isEqualTo(2);
+        KbChatRepository.KbAttachmentRecord csv = chat.attachments.get(0);
+        assertThat(csv.filename()).isEqualTo("报销单.csv");
+        assertThat(csv.extractedText()).contains("A01");
+        assertThat(chat.attachments.get(1).extractedText()).isNull();
+        // 回放与归属
+        assertThat(assistant.attachmentsOf(
+                List.of(chat.rows.get(0).id()))).hasSize(2);
+        assertThat(assistant.findOwnedAttachment(csv.id()).ownerId()).isEqualTo("demo");
+    }
+
+    @Test
+    void fixtureAcknowledgesAttachmentsWhenNoKnowledgeHit() {
+        KbAssistantService.AskOutcome outcome = service(new FixtureModelPort()).ask(
+                "demo", "总结一下", List.of(new KbAssistantService.IncomingAttachment(
+                        "报告.pdf", "application/pdf", new byte[] {1, 2, 3})));
+        assertThat(outcome.answer()).contains("暂无");
+        assertThat(outcome.answer()).contains("已收到附件：报告.pdf");
+    }
+
+    @Test
+    void attachmentCountAndWhitelistAreEnforced() {
+        KbAssistantService assistant = service(new FixtureModelPort());
+        assertThatThrownBy(() -> assistant.ask("demo", "q", List.of(
+                new KbAssistantService.IncomingAttachment("a.txt", "text/plain", "x".getBytes()),
+                new KbAssistantService.IncomingAttachment("b.txt", "text/plain", "x".getBytes()),
+                new KbAssistantService.IncomingAttachment("c.txt", "text/plain", "x".getBytes()),
+                new KbAssistantService.IncomingAttachment("d.txt", "text/plain", "x".getBytes()))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("3 个附件");
+        assertThatThrownBy(() -> assistant.ask("demo", "q", List.of(
+                new KbAssistantService.IncomingAttachment("a.exe", "application/x-msdownload",
+                        "x".getBytes()))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("不支持的附件类型");
+        assertThat(chat.rows).isEmpty();
+        assertThat(chat.attachments).isEmpty();
+    }
+
+    @Test
+    void nearLimitAttachmentIsNeverDroppedSilently() {
+        // 审查 P2-1：提取接近 20000 上限时不得整体丢弃并谎报"（无附件）"
+        String huge = "内".repeat(KbAssistantService.ATTACHMENTS_MAX_CHARS - 10);
+        String text = KbAssistantService.attachmentsText(List.of(
+                new KbAssistantService.Prepared("大附件.txt", "text/plain", huge.length(),
+                        huge.getBytes(), huge),
+                new KbAssistantService.Prepared("第二个.txt", "text/plain", 1,
+                        "x".getBytes(), "x")));
+        assertThat(text).startsWith("### 大附件.txt");
+        assertThat(text).doesNotContain("（无附件）");
+        assertThat(text.length()).isLessThanOrEqualTo(KbAssistantService.ATTACHMENTS_MAX_CHARS + 30);
+        assertThat(text).contains("已省略");
+    }
+
+    @Test
+    void filenameSanitizeShrinkAndWhitelistOrdering() {
+        // 控制字符剥离（P3-2）+ 超长名保扩展名（P3-1：白名单按原始名判定）
+        assertThat(KbAssistantService.sanitizeFilename("..\\..\\ev\r\nil.pdf")).isEqualTo("evil.pdf");
+        String longName = "长".repeat(300) + ".pdf";
+        String shrunk = KbAssistantService.shrinkFilename(longName);
+        assertThat(shrunk.length()).isLessThanOrEqualTo(255);
+        assertThat(shrunk).endsWith(".pdf");
+        KbAssistantService assistant = service(new FixtureModelPort());
+        assistant.ask("demo", "q", List.of(new KbAssistantService.IncomingAttachment(
+                longName, "application/pdf", "x".getBytes())));
+        assertThat(chat.attachments.get(0).filename()).endsWith(".pdf");
+    }
+
     /** 截取提示词某数据段（标记起至下一 "## " 段或文末）。 */
     private static String section(String prompt, String marker) {
         int start = prompt.indexOf(marker);

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 
 import { ApiError, apiErrorMessage } from '@/api/client';
 import {
@@ -9,7 +10,6 @@ import {
   type IssueRecord,
   type IssueStatusName,
 } from '@/api/issues';
-import IssueChatWorkbench from '@/components/IssueChatWorkbench.vue';
 import IssueDetail from '@/components/IssueDetail.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseDrawer from '@/components/ui/BaseDrawer.vue';
@@ -20,9 +20,11 @@ import { t } from '@/registry/localeRegistry';
 /**
  * Issue 工作台（P15，FR-ISSUE-01..06 前端消费面）：列表 + 筛选 + 创建，
  * 选中后由 IssueDetail 承载 AI 对话（clarify）/规格/迁移/生成与评论。
- * P23（FR-ISSUE-07）角色分置：纯 USER 渲染对话工作台（对话+我的需求侧栏），
- * 开发者/管理员保留完整信息面；安全边界在服务端（本分支只是体验层）。
+ * P23（FR-ISSUE-07）角色分置；P29 整合：纯 USER 的对话工作台迁至 AI 助手
+ * 整合页（/assistant Issue 模式），本视图直访时重定向；开发者/管理员保留
+ * 完整信息面；安全边界在服务端（本分支只是体验层）。
  */
+const router = useRouter();
 const STATUS_OPTIONS: IssueStatusName[] = [
   'SUBMITTED',
   'APPROVED',
@@ -41,10 +43,29 @@ const statusFilter = ref<IssueStatusName | ''>('');
 const state = ref<'loading' | 'ready' | 'error' | 'denied' | 'empty'>('loading');
 const error = ref<string | null>(null);
 
-/** 纯 USER 角色：用户端对话工作台（开发者信息面不进入）。 */
+/** 会话身份已知前的加载态（子路由挂载先于父壳 fetchMe 回填——P29 审查 P1-1：
+ * user 为 null 时不得判定为纯 USER，否则开发者硬刷新被误重定向）。 */
+const userKnown = computed(() => session.user !== null);
+
+/** 纯 USER 角色：体验入口在 AI 助手整合页（P29），身份回填后重定向。 */
 const userOnly = computed(
-  () => !session.user?.roles.includes('DEVELOPER') && !session.user?.roles.includes('ADMIN'),
+  () =>
+    session.user !== null &&
+    !session.user.roles.includes('DEVELOPER') &&
+    !session.user.roles.includes('ADMIN'),
 );
+
+/** 重定向只对"已确认的纯 USER"生效（身份到达前后各判一次）。 */
+function redirectToAssistantIfUser(): void {
+  if (userOnly.value) {
+    try {
+      globalThis.sessionStorage?.setItem('flexforge.assistant.mode', 'issues');
+    } catch {
+      /* 存储不可用则落助手模式 */
+    }
+    void router.replace('/assistant');
+  }
+}
 
 const drawerOpen = ref(false);
 const creating = ref(false);
@@ -97,13 +118,26 @@ async function submitCreate(): Promise<void> {
   }
 }
 
-onMounted(load);
+onMounted(() => {
+  redirectToAssistantIfUser();
+  if (!userOnly.value) {
+    void load();
+  }
+});
+
+watch(userOnly, () => {
+  if (userOnly.value) {
+    redirectToAssistantIfUser();
+  } else if (userKnown.value && state.value === 'loading') {
+    void load();
+  }
+});
 </script>
 
 <template>
   <section class="issues-view" data-testid="issues-view">
-    <IssueChatWorkbench v-if="userOnly" />
-    <template v-else>
+    <StateView v-if="!userKnown" state="loading" />
+    <template v-else-if="!userOnly">
       <header class="issues-header">
         <h2 class="ff-page-title">{{ t('issues.title', 'Issue 工作台') }}</h2>
         <div class="issues-actions">

@@ -9,9 +9,12 @@ import { t } from '@/registry/localeRegistry';
 
 /**
  * Issue 评论区（P16 从 IssueDetail 拆出）：列表 + 发表；评论是登录用户能力，
- * 失败信息就地呈现。父级负责随 Issue 切换重载（传入 comments）。
+ * 失败信息就地呈现。父级负责随 Issue 切换重载（传入 comments；缺省空表——
+ * 测试/异步挂载路径的未传防御，P29 审查回归中发现）。
  */
-const props = defineProps<{ issueId: string; comments: IssueComment[] }>();
+const props = withDefaults(defineProps<{ issueId: string; comments?: IssueComment[] }>(), {
+  comments: () => [],
+});
 const emit = defineEmits<{ reloaded: [comments: IssueComment[]] }>();
 
 const body = ref('');

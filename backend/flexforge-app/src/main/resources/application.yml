@@ -3,9 +3,10 @@ spring:
     name: flexforge
   servlet:
     multipart:
-      # 插件包上传上限（docs/09 P07 / docs/13 §3.5）；解压后 50MB 上限在 ArchiveInspector 强制
+      # 插件包上传上限（docs/09 P07 / docs/13 §3.5）；解压后 50MB 上限在 ArchiveInspector 强制。
+      # 请求总上限按助手附件单次 3×10MB 放宽（P29 FR-KB-05）；单文件上限不变。
       max-file-size: 10MB
-      max-request-size: 12MB
+      max-request-size: 35MB
   datasource:
     # 凭据只经环境变量注入，默认值仅限本机开发（docs/13 S4、repository-maintenance §9）
     url: ${DB_URL:jdbc:postgresql://localhost:5432/flexforge}

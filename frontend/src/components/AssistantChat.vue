@@ -1,17 +1,82 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue';
+import { nextTick, onBeforeUnmount, ref, watch } from 'vue';
 
-import type { KbMessage } from '@/api/kb';
+import {
+  downloadKbAttachment,
+  fetchKbAttachmentBlob,
+  type KbAttachment,
+  type KbMessage,
+} from '@/api/kb';
 import AppIcon from '@/components/AppIcon.vue';
 import { t } from '@/registry/localeRegistry';
 
 /**
- * 助手对话呈现（P28，QG-4 行数从 AssistantView 拆出）：消息流 + 引用条目
- * chips + 思考态；新消息/思考态出现时自动滚到底部（容器自持，父层无滚动逻辑）。
+ * 助手对话呈现（P28 拆出；P29 增附件区）：消息流 + 引用条目 chips + 附件
+ * （图片经认证 blob 通道出缩略图、文件为下载 chip）+ 思考态；新消息自动滚底。
  */
 const props = defineProps<{ messages: KbMessage[]; asking: boolean }>();
 
 const chatLog = ref<HTMLElement | null>(null);
+const thumbnails = ref<Record<string, string>>({});
+
+function isImage(attachment: KbAttachment): boolean {
+  return attachment.contentType.startsWith('image/');
+}
+
+/** 图片缩略图：认证 fetch → objectURL（消息移除时回收，审查 P3-6）。 */
+async function loadThumbnail(attachment: KbAttachment): Promise<void> {
+  if (!isImage(attachment) || thumbnails.value[attachment.id]) {
+    return;
+  }
+  if (attachment.id.startsWith('local-')) {
+    // 乐观占位无服务端对象，不发起注定 404 的请求
+    return;
+  }
+  try {
+    const blob = await fetchKbAttachmentBlob(attachment.id);
+    thumbnails.value = {
+      ...thumbnails.value,
+      [attachment.id]: URL.createObjectURL(blob),
+    };
+  } catch {
+    /* 缩略图失败保留下载 chip 形态 */
+  }
+}
+
+watch(
+  () => props.messages,
+  (messages) => {
+    for (const message of messages) {
+      for (const attachment of message.attachments ?? []) {
+        void loadThumbnail(attachment);
+      }
+    }
+    // 回滚/清空移除的消息：回收其 objectURL
+    const alive = new Set(
+      messages.flatMap((message) => (message.attachments ?? []).map((a) => a.id)),
+    );
+    for (const [id, url] of Object.entries(thumbnails.value)) {
+      if (!alive.has(id)) {
+        URL.revokeObjectURL(url);
+        const next = { ...thumbnails.value };
+        delete next[id];
+        thumbnails.value = next;
+      }
+    }
+  },
+  { immediate: true, deep: false },
+);
+
+async function download(attachment: KbAttachment): Promise<void> {
+  if (attachment.id.startsWith('local-')) {
+    return;
+  }
+  try {
+    await downloadKbAttachment(attachment);
+  } catch {
+    /* 下载失败静默（chip 仍在，可重试）；避免未处理拒绝 */
+  }
+}
 
 async function scrollToBottom(): Promise<void> {
   await nextTick();
@@ -24,6 +89,12 @@ watch(
     void scrollToBottom();
   },
 );
+
+onBeforeUnmount(() => {
+  for (const url of Object.values(thumbnails.value)) {
+    URL.revokeObjectURL(url);
+  }
+});
 </script>
 
 <template>
@@ -37,6 +108,24 @@ watch(
         <span class="role-label">{{
           message.role === 'assistant' ? 'AI' : t('assistant.me', '我')
         }}</span>
+        <ul
+          v-if="message.attachments && message.attachments.length > 0"
+          class="files"
+          data-testid="assistant-files"
+        >
+          <li v-for="attachment in message.attachments" :key="attachment.id">
+            <img
+              v-if="thumbnails[attachment.id]"
+              class="file-thumb"
+              :src="thumbnails[attachment.id]"
+              :alt="attachment.filename"
+            />
+            <button type="button" class="file-chip" @click="download(attachment)">
+              <AppIcon :name="isImage(attachment) ? 'chat' : 'book'" :size="12" />
+              {{ attachment.filename }}
+            </button>
+          </li>
+        </ul>
         <p class="bubble-text">{{ message.content }}</p>
         <p v-if="message.references.length > 0" class="refs-label">
           {{ t('assistant.references', '引用条目') }}
@@ -114,6 +203,36 @@ watch(
 .message[data-role='user'] .role-label {
   color: inherit;
   opacity: 0.85;
+}
+.files {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ff-space-2);
+  margin: 0 0 var(--ff-space-2);
+  padding: 0;
+}
+.file-thumb {
+  max-width: 10rem;
+  max-height: 7rem;
+  border-radius: var(--ff-radius-sm);
+  border: 1px solid var(--ff-border);
+  display: block;
+}
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ff-space-1);
+  font-size: var(--ff-text-xs, 0.75rem);
+  background: var(--ff-surface-muted);
+  border: 1px solid var(--ff-border);
+  border-radius: 999px;
+  padding: 2px var(--ff-space-2);
+  cursor: pointer;
+}
+.message[data-role='user'] .file-chip {
+  background: color-mix(in srgb, var(--ff-primary-ink) 12%, transparent);
+  color: inherit;
 }
 .bubble-text {
   margin: 0;

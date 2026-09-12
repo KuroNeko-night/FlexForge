@@ -14,12 +14,14 @@ let registered = false;
 
 /** 本地菜单注册（视图路由入口；permissionKey 仅显隐，服务端为边界）。 */
 function registerLocalMenus(): void {
-  // Issue 工作台入口（P15）：登录即可用（创建/评论/作者 clarify；迁移与生成服务端限 DEVELOPER）
+  // Issue 工作台入口（P15）：P29 整合后纯 USER 的体验入口在 AI 助手整合页
+  // （Issue 模式），本菜单收窄 DEVELOPER+ADMIN（完整信息面；服务端 API 为边界）
   registerMenu({
     key: 'platform.issues',
     title: 'Issue 工作台',
     route: '/issues',
     order: 20,
+    permissionKeys: ['DEVELOPER', 'ADMIN'],
   });
   // AI 助手入口（P28）：登录即可问（知识库检索注入问答，FR-KB-03）
   registerMenu({

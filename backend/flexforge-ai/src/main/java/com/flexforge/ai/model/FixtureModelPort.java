@@ -26,13 +26,17 @@ public class FixtureModelPort implements ModelPort {
             + "\"有哪些业务规则（如数量非负）？\","
             + "\"验收标准是什么（至少一条可验证项）？\"]}";
 
-    /** 助手知识段标记与条目行格式（与 flexforge-kb prompts/kb/assistant-v1.md 一一对应，
-     * 模板改版措辞时必须同步，否则 fixture 助手退化为无命中口径）。 */
+    /** 助手知识段/附件段标记与条目行格式（与 flexforge-kb prompts/kb/assistant-v2.md
+     * 一一对应，模板改版措辞时必须同步，否则 fixture 助手退化为无命中口径）。 */
     static final String KB_SECTION_MARKER = "## 知识库参考（数据）";
+    static final String KB_ATTACHMENTS_MARKER = "## 附件参考（数据）";
     static final String KB_QUESTION_MARKER = "## 用户提问（数据）";
     static final String KB_NO_HIT = "（无命中条目）";
+    static final String KB_NO_ATTACHMENTS = "（无附件）";
     private static final Pattern KB_ENTRY_LINE =
             Pattern.compile("^### \\[(.*)] (.+)$");
+    private static final Pattern KB_ATTACHMENT_LINE =
+            Pattern.compile("^### (.+)（.*）$");
 
     private final String round2 = loadFixtureSpec();
 
@@ -57,33 +61,71 @@ public class FixtureModelPort implements ModelPort {
         return "fixture-clarify-v3";
     }
 
-    /** fixture 助手回答：无命中=明示暂无资料（不编造）；命中=逐条引用标题的演示回答。
-     * 段终点取最后一次出现（审查 P3-2：用户在提问里嵌入段标记会随历史段先于真实
-     * 标记出现，indexOf 会取到历史副本导致 end&lt;start 吞掉提问段——lastIndexOf
-     * 恒取真实段尾）。 */
+    /** fixture 助手回答：无命中=明示暂无资料（不编造）；命中=逐条引用标题的演示回答；
+     * 附件逐份确认收到（提取注入语义在 http 供应商侧，fixture 只做确定性回执）。
+     * 段边界取 lastIndexOf（P28 审查 P3-2：历史注入的标记副本先于真实段出现）。 */
     static String kbAnswer(String prompt) {
-        int start = prompt.indexOf(KB_SECTION_MARKER) + KB_SECTION_MARKER.length();
-        int end = prompt.lastIndexOf(KB_QUESTION_MARKER);
-        String section = end > start ? prompt.substring(start, end) : prompt.substring(start);
-        if (section.contains(KB_NO_HIT)) {
-            return "知识库中暂无与该问题直接相关的内容，请联系管理员在知识库页补充条目后再试。";
-        }
-        List<String> titles = new ArrayList<>();
-        for (String line : section.split("\n")) {
-            Matcher matcher = KB_ENTRY_LINE.matcher(line.strip());
-            if (matcher.matches()) {
-                titles.add(matcher.group(2));
+        String knowledge = section(prompt, KB_SECTION_MARKER, KB_ATTACHMENTS_MARKER,
+                KB_QUESTION_MARKER);
+        List<String> attachments = new ArrayList<>();
+        String attachmentSection = section(prompt, KB_ATTACHMENTS_MARKER,
+                KB_QUESTION_MARKER, KB_QUESTION_MARKER);
+        if (!attachmentSection.contains(KB_NO_ATTACHMENTS)) {
+            for (String line : attachmentSection.split("\n")) {
+                Matcher file = KB_ATTACHMENT_LINE.matcher(line.strip());
+                if (file.matches()) {
+                    attachments.add(file.group(1));
+                }
             }
         }
-        if (titles.isEmpty()) {
-            return "知识库中暂无与该问题直接相关的内容，请联系管理员在知识库页补充条目后再试。";
+        if (!knowledge.contains(KB_NO_HIT)) {
+            List<String> titles = new ArrayList<>();
+            for (String line : knowledge.split("\n")) {
+                Matcher matcher = KB_ENTRY_LINE.matcher(line.strip());
+                if (matcher.matches()) {
+                    titles.add(matcher.group(2));
+                }
+            }
+            if (!titles.isEmpty()) {
+                StringBuilder answer = new StringBuilder("根据知识库相关条目，为你整理如下：\n");
+                for (String title : titles) {
+                    answer.append("- 《").append(title).append("》\n");
+                }
+                answer.append("如需完整内容，可在知识库页查看对应条目。");
+                appendAttachmentReceipt(answer, attachments);
+                return answer.toString();
+            }
         }
-        StringBuilder answer = new StringBuilder("根据知识库相关条目，为你整理如下：\n");
-        for (String title : titles) {
-            answer.append("- 《").append(title).append("》\n");
-        }
-        answer.append("如需完整内容，可在知识库页查看对应条目。");
+        StringBuilder answer = new StringBuilder(
+                attachments.isEmpty()
+                        ? "知识库中暂无与该问题直接相关的内容，请联系管理员在知识库页补充条目后再试。"
+                        : "知识库中暂无与该问题直接相关的内容。");
+        appendAttachmentReceipt(answer, attachments);
         return answer.toString();
+    }
+
+    private static void appendAttachmentReceipt(StringBuilder answer, List<String> attachments) {
+        if (!attachments.isEmpty()) {
+            answer.append("\n已收到附件：");
+            answer.append(String.join("、", attachments));
+            answer.append("。");
+        }
+    }
+
+    /** 截取 [startMarker, endMarker) 数据段（end 取 lastIndexOf 防历史注入副本；
+     * 段缺失时依次回退后续 end 候选，全部缺失截到文末）。 */
+    private static String section(String prompt, String startMarker, String primaryEnd,
+                                  String fallbackEnd) {
+        int start = prompt.indexOf(startMarker);
+        if (start < 0) {
+            return "";
+        }
+        int from = start + startMarker.length();
+        int end = prompt.lastIndexOf(primaryEnd);
+        if (end <= from) {
+            end = prompt.lastIndexOf(fallbackEnd);
+        }
+        return end > from ? prompt.substring(from, end) : prompt.substring(from);
     }
 
     private static String loadFixtureSpec() {
