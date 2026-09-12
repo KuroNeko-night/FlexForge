@@ -108,6 +108,10 @@ describe('IssueWorkshopView 工坊对话（FR-ISSUE-09）', () => {
     expect(publishMock).toHaveBeenCalledWith('i9');
     expect(wrapper.text()).toContain('需求已确认推送');
   });
+});
+
+describe('IssueWorkshopView 工坊失败路径（FR-ISSUE-09）', () => {
+  beforeEach(resetMocks);
 
   it('发送失败内联报错且原稿保留', async () => {
     listMock.mockResolvedValue([]);
