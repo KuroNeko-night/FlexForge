@@ -27,6 +27,11 @@
       <groupId>com.flexforge</groupId>
       <artifactId>flexforge-ai</artifactId>
     </dependency>
+    <!-- 业务检查工具读取插件注册的实体元数据（P30 FR-KB-07） -->
+    <dependency>
+      <groupId>com.flexforge</groupId>
+      <artifactId>flexforge-meta</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>

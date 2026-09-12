@@ -715,6 +715,7 @@
 ### 实施内容
 
 - **A. 后端**：V021 issue_workshop_message（seq 身份列同 kb 口径）；prompts/workshop-v1.md（双态 JSON+数据段）；WorkshopTool 接口+CreateIssueWorkshopTool；IssueWorkshopService（历史注入/解析重试/工具执行/创建后 clarify 落规格/失败降级）；/issues/workshop GET/POST/DELETE（登录、按用户隔离）；FixtureModelPort 增工坊脚本（首轮追问、次轮工具调用，确定性派生标题）。
+- **A2. 助手业务工具（用户补充）**：AssistantTool 接口（预留扩展位）+ list_entities/inspect_entity（kb→meta 只读，实体/字段 displayName 呈现）；提示词 kb-assistant-v3 增工具协议与业务实体索引数据段；工具环路 AssistantToolLoop（{"tool":...} JSON 识别、每问 ≤2 次、结果数据段回灌）；fixture 脚本（命中实体索引→inspect、问业务清单→list、工具结果确定性作答）；开发 Skill 增 §7.5 业务适配指南（插件作者零代码，displayName 质量即适配）。
 - **B. 前端**：整合页头部开关右置加大（等宽网格）；Issue 模式新视图=工坊对话（引导气泡+消息流+创建成功卡[确认推送]）+右侧需求侧栏；侧栏选中→per-issue 详情（澄清/确认卡/讨论）；开发者面板列表右移；语言包四包升版。
 - **测试**：模块 IssueWorkshopServiceTest（追问/工具/重试/未知工具/上限/隔离）+app IssueWorkshopApiTest（fixture 全流程+落库+清空）；前端新视图测试（引导/开关/创建卡/侧栏右置/选中详情）+IssueChatWorkbench 测试迁移。
 

@@ -13,9 +13,11 @@ import org.springframework.stereotype.Service;
 import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
+import java.nio.charset.StandardCharsets;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -67,40 +69,45 @@ public class KbAssistantService {
     public record Reference(String id, String title, String category) {
     }
 
-    private final KbEntryRepository entries;
-    private final KbChatRepository chat;
-    private final ModelPort model;
-    private final AuditEventPort audit;
-    private final Clock clock;
+    /** 助手协作者内核（参数上限口径，P30 增工具注册表后收敛）。 */
+    @PublicApi
+    record KbKernel(KbEntryRepository entries, KbChatRepository chat, ModelPort model,
+                    AuditEventPort audit, Clock clock) {
+    }
 
-    public KbAssistantService(KbEntryRepository entries, KbChatRepository chat,
-                              ModelPort model, AuditEventPort audit, Clock clock) {
-        this.entries = entries;
-        this.chat = chat;
-        this.model = model;
-        this.audit = audit;
-        this.clock = clock;
+    private final KbKernel kernel;
+    private final Map<String, AssistantTool> tools = new java.util.HashMap<>();
+    private final BusinessEntityTools business;
+
+    public KbAssistantService(KbKernel kernel, List<AssistantTool> toolBeans,
+                              BusinessEntityTools business) {
+        this.kernel = kernel;
+        this.business = business;
+        for (AssistantTool tool : toolBeans) {
+            tools.put(tool.name(), tool);
+        }
     }
 
     /** 某用户会话消息（升序，最近 HISTORY_LOAD_LIMIT 条）。 */
     public List<KbChatRepository.KbMessageRecord> messagesOf(String userId) {
-        return chat.recentOf(userId, HISTORY_LOAD_LIMIT);
+        return kernel.chat().recentOf(userId, HISTORY_LOAD_LIMIT);
     }
 
     /** 消息附件视图（会话回放；不含字节载荷）。 */
     public List<KbChatRepository.KbAttachmentView> attachmentsOf(List<String> messageIds) {
-        return chat.attachmentsOf(messageIds);
+        return kernel.chat().attachmentsOf(messageIds);
     }
 
     /** 附件下载载荷（本人校验在调用方比对 ownerId）。 */
     public KbChatRepository.OwnedAttachment findOwnedAttachment(String attachmentId) {
-        return chat.findOwned(attachmentId);
+        return kernel.chat().findOwned(attachmentId);
     }
 
     /** 清空本人会话（返回删除条数；附件经 FK 级联清理）。 */
     public int clear(String operator) {
-        int removed = chat.deleteAllOf(operator);
-        audit.record(AuditEvents.of(operator, "kb.clear", operator, "cleared", clock));
+        int removed = kernel.chat().deleteAllOf(operator);
+        kernel.audit().record(AuditEvents.of(operator, "kb.clear", operator,
+                "cleared", kernel.clock()));
         return removed;
     }
 
@@ -110,18 +117,19 @@ public class KbAssistantService {
     }
 
     /** 提问：附件先整体校验再提取；模型失败（含不可用/空回复）原样上抛，
-     * 不产生任何会话写入（FR-KB-04/05）。 */
+     * 不产生任何会话写入（FR-KB-04/05）。业务结构类问题经工具环路取数
+     * （FR-KB-07：工具结果只作数据段回灌，上限 MAX_TOOL_CALLS 次）。 */
     public AskOutcome ask(String operator, String question, List<IncomingAttachment> files) {
         String trimmed = requireQuestion(question);
         List<Prepared> prepared = prepare(files);
         List<KbEntryRepository.KbEntryRecord> matched =
-                KbRetrieval.topMatches(trimmed, entries.listAll());
+                KbRetrieval.topMatches(trimmed, kernel.entries().listAll());
         List<Reference> references = matched.stream()
                 .map(e -> new Reference(e.id(), e.title(), e.category())).toList();
-        String prompt = KbPromptTemplates.render(promptParams(
-                operator, matched, trimmed, attachmentsText(prepared)));
+        String prompt = KbPromptTemplates.render(promptParams(operator, matched, trimmed, attachmentsText(prepared)));
         try {
-            String answer = demandAnswer(prompt);
+            String answer = AssistantToolLoop.answer(new AssistantToolLoop.Loop(
+                    kernel.model(), tools), prompt);
             String stored = answer.length() > ANSWER_STORE_MAX
                     ? truncateAtCodePoint(answer, ANSWER_STORE_MAX) : answer;
             String userMessageId = "kcm-" + UUID.randomUUID();
@@ -138,10 +146,12 @@ public class KbAssistantService {
                             "kcm-" + UUID.randomUUID(), operator, "assistant", stored,
                             referencesJson(references)),
                     rows);
-            audit.record(AuditEvents.of(operator, "kb.ask", operator, "success", clock));
+            kernel.audit().record(AuditEvents.of(operator, "kb.ask", operator, "success",
+                    kernel.clock()));
             return new AskOutcome(stored, references, receipt);
         } catch (RuntimeException e) {
-            audit.record(AuditEvents.of(operator, "kb.ask", operator, "failure", clock));
+            kernel.audit().record(AuditEvents.of(operator, "kb.ask", operator, "failure",
+                    kernel.clock()));
             throw e;
         }
     }
@@ -215,25 +225,15 @@ public class KbAssistantService {
         params.put("history", historyText(userId));
         params.put("knowledge", knowledgeText(matched));
         params.put("attachments", attachments);
+        params.put("entities", business.entityIndex());
         params.put("question", question);
         return params;
-    }
-
-    /** 模型调用与空回复守卫（P28 审查 P2-2）。 */
-    private String demandAnswer(String prompt) {
-        String answer = model.complete(new ModelPort.ModelRequest(
-                KbPromptTemplates.VERSION, prompt)).text().strip();
-        if (answer.isEmpty()) {
-            throw new ModelUnavailableException(
-                    ModelUnavailableException.REASON_OFFLINE, "模型返回空回复");
-        }
-        return answer;
     }
 
     private void persistExchange(KbChatRepository.KbMessageRecord userMessage,
                                  KbChatRepository.KbMessageRecord assistantMessage,
                                  List<KbChatRepository.KbAttachmentRecord> rows) {
-        chat.insertExchange(userMessage, assistantMessage, rows);
+        kernel.chat().insertExchange(userMessage, assistantMessage, rows);
     }
 
     private static List<KbChatRepository.KbAttachmentRecord> attachmentRows(
@@ -278,7 +278,7 @@ public class KbAssistantService {
     /** 会话历史数据段：近 HISTORY_MESSAGES 条，超 HISTORY_MAX_CHARS 从最旧行裁剪。 */
     private String historyText(String userId) {
         List<KbChatRepository.KbMessageRecord> recent =
-                chat.recentOf(userId, HISTORY_MESSAGES);
+                kernel.chat().recentOf(userId, HISTORY_MESSAGES);
         if (recent.isEmpty()) {
             return "（无）";
         }

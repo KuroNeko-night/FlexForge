@@ -33,6 +33,14 @@ public class FixtureModelPort implements ModelPort {
     static final String KB_QUESTION_MARKER = "## 用户提问（数据）";
     static final String KB_NO_HIT = "（无命中条目）";
     static final String KB_NO_ATTACHMENTS = "（无附件）";
+    /** 工坊段标记（flexforge-issue prompts/workshop-v1.md 一一对应，P30）。 */
+    static final String WORKSHOP_MESSAGE_MARKER = "## 用户消息（数据）";
+    static final String WORKSHOP_HISTORY_MARKER = "## 对话记录（数据）";
+    /** 助手业务段标记（flexforge-kb prompts/kb/assistant-v3.md 一一对应，P30）。 */
+    static final String KB_ENTITY_INDEX_MARKER = "## 业务实体索引（数据）";
+    static final String KB_TOOL_RESULT_MARKER = "## 工具结果（数据）";
+    private static final Pattern KB_ENTITY_PAIR =
+            Pattern.compile("(.+?)\\(([a-z0-9_]+)\\)");
     private static final Pattern KB_ENTRY_LINE =
             Pattern.compile("^### \\[(.*)] (.+)$");
     private static final Pattern KB_ATTACHMENT_LINE =
@@ -42,9 +50,12 @@ public class FixtureModelPort implements ModelPort {
 
     @Override
     public ModelReply complete(ModelRequest request) {
-        // 助手提示词优先识别（clarify 模板不含知识库段，两路径互不干扰）
+        // 助手/工坊提示词优先识别（clarify 模板不含这两个段标记，路径互不干扰）
         if (request.prompt().contains(KB_SECTION_MARKER)) {
             return new ModelReply(kbAnswer(request.prompt()));
+        }
+        if (request.prompt().contains(WORKSHOP_MESSAGE_MARKER)) {
+            return new ModelReply(workshopAnswer(request.prompt()));
         }
         // 确定性脚本：提示词带非空用户回答（第二轮）则产出规格，否则追问。
         // 轮次判定依赖 clarify.md 模板中"## 用户回答（数据）"段标记——模板改版
@@ -63,38 +74,69 @@ public class FixtureModelPort implements ModelPort {
 
     /** fixture 助手回答：无命中=明示暂无资料（不编造）；命中=逐条引用标题的演示回答；
      * 附件逐份确认收到（提取注入语义在 http 供应商侧，fixture 只做确定性回执）。
-     * 段边界取 lastIndexOf（P28 审查 P3-2：历史注入的标记副本先于真实段出现）。 */
+     * 段边界取 lastIndexOf（P28 审查 P3-2：历史注入的标记副本先于真实段出现）。
+     * P30：业务实体索引段+工具结果段——业务结构类问题先回工具调用 JSON，
+     * 拿到工具结果后按其内容确定性作答。 */
     static String kbAnswer(String prompt) {
+        if (prompt.contains(KB_TOOL_RESULT_MARKER)) {
+            return toolResultAnswer(prompt);
+        }
+        String toolCall = businessToolCall(prompt);
+        if (toolCall != null) {
+            return toolCall;
+        }
         String knowledge = section(prompt, KB_SECTION_MARKER, KB_ATTACHMENTS_MARKER,
                 KB_QUESTION_MARKER);
-        List<String> attachments = new ArrayList<>();
+        List<String> attachments = attachmentNames(prompt);
+        List<String> titles = knowledgeHitTitles(knowledge);
+        if (!titles.isEmpty()) {
+            return knowledgeAnswer(titles, attachments, false);
+        }
+        return knowledgeAnswer(List.of(), attachments, true);
+    }
+
+    /** 附件回执名单（"（无附件）"占位不算）。 */
+    private static List<String> attachmentNames(String prompt) {
         String attachmentSection = section(prompt, KB_ATTACHMENTS_MARKER,
                 KB_QUESTION_MARKER, KB_QUESTION_MARKER);
-        if (!attachmentSection.contains(KB_NO_ATTACHMENTS)) {
-            for (String line : attachmentSection.split("\n")) {
-                Matcher file = KB_ATTACHMENT_LINE.matcher(line.strip());
-                if (file.matches()) {
-                    attachments.add(file.group(1));
-                }
+        List<String> attachments = new ArrayList<>();
+        if (attachmentSection.contains(KB_NO_ATTACHMENTS)) {
+            return attachments;
+        }
+        for (String line : attachmentSection.split("\n")) {
+            Matcher file = KB_ATTACHMENT_LINE.matcher(line.strip());
+            if (file.matches()) {
+                attachments.add(file.group(1));
             }
         }
-        if (!knowledge.contains(KB_NO_HIT)) {
-            List<String> titles = new ArrayList<>();
-            for (String line : knowledge.split("\n")) {
-                Matcher matcher = KB_ENTRY_LINE.matcher(line.strip());
-                if (matcher.matches()) {
-                    titles.add(matcher.group(2));
-                }
+        return attachments;
+    }
+
+    /** 知识段命中条目标题（"（无命中条目）"或无条目行=空表）。 */
+    private static List<String> knowledgeHitTitles(String knowledge) {
+        if (knowledge.contains(KB_NO_HIT)) {
+            return List.of();
+        }
+        List<String> titles = new ArrayList<>();
+        for (String line : knowledge.split("\n")) {
+            Matcher matcher = KB_ENTRY_LINE.matcher(line.strip());
+            if (matcher.matches()) {
+                titles.add(matcher.group(2));
             }
-            if (!titles.isEmpty()) {
-                StringBuilder answer = new StringBuilder("根据知识库相关条目，为你整理如下：\n");
-                for (String title : titles) {
-                    answer.append("- 《").append(title).append("》\n");
-                }
-                answer.append("如需完整内容，可在知识库页查看对应条目。");
-                appendAttachmentReceipt(answer, attachments);
-                return answer.toString();
+        }
+        return titles;
+    }
+
+    private static String knowledgeAnswer(List<String> titles, List<String> attachments,
+                                          boolean noHit) {
+        if (!noHit) {
+            StringBuilder answer = new StringBuilder("根据知识库相关条目，为你整理如下：\n");
+            for (String title : titles) {
+                answer.append("- 《").append(title).append("》\n");
             }
+            answer.append("如需完整内容，可在知识库页查看对应条目。");
+            appendAttachmentReceipt(answer, attachments);
+            return answer.toString();
         }
         StringBuilder answer = new StringBuilder(
                 attachments.isEmpty()
@@ -110,6 +152,102 @@ public class FixtureModelPort implements ModelPort {
             answer.append(String.join("、", attachments));
             answer.append("。");
         }
+    }
+
+    /** fixture 工坊脚本（P30）：对话记录里没有用户发言→追问三件事；有→从当前
+     * 用户消息确定性派生 title/description 输出 create_issue 工具调用。
+     * 段边界取标记定位（历史与当前消息分节，消息内嵌 "用户：" 字面量不干扰）。 */
+    static String workshopAnswer(String prompt) {
+        int historyStart = prompt.indexOf(WORKSHOP_HISTORY_MARKER);
+        int messageStart = prompt.indexOf(WORKSHOP_MESSAGE_MARKER);
+        String history = historyStart >= 0 && messageStart > historyStart
+                ? prompt.substring(historyStart + WORKSHOP_HISTORY_MARKER.length(), messageStart)
+                : "";
+        if (!history.contains("用户：")) {
+            return "{\"reply\":\"好的，我们先明确三件事：\\n"
+                    + "1. 需要管理什么数据，有哪些字段（名称/类型/是否必填）？\\n"
+                    + "2. 有什么业务规则（如数量非负）？\\n"
+                    + "3. 验收标准是什么（至少一条可验证项）？\"}";
+        }
+        String message = messageStart >= 0
+                ? prompt.substring(messageStart + WORKSHOP_MESSAGE_MARKER.length()).strip() : "";
+        int sectionBreak = message.indexOf("\n## ");
+        if (sectionBreak >= 0) {
+            message = message.substring(0, sectionBreak).strip();
+        }
+        String title = message.length() > 20 ? message.substring(0, 20) : message;
+        String description = message.length() > 400
+                ? message.substring(0, 400) : message;
+        return "{\"tool\":\"create_issue\",\"title\":" + quote(title)
+                + ",\"description\":" + quote(description) + "}";
+    }
+
+    /** JSON 字符串转义（fixture 内构造少量字段的确定性输出）。 */
+    private static String quote(String value) {
+        StringBuilder out = new StringBuilder("\"");
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            switch (c) {
+                case '"' -> out.append("\\\"");
+                case '\\' -> out.append("\\\\");
+                case '\n' -> out.append("\\n");
+                case '\r' -> out.append("");
+                case '\t' -> out.append("\\t");
+                default -> out.append(c);
+            }
+        }
+        return out.append('"').toString();
+    }
+
+    /** 业务工具判定：提问命中索引中的实体（显示名或 name）→ inspect_entity；
+     * 问"有哪些业务"且索引非空 → list_entities；否则 null（走普通回答路径）。 */
+    static String businessToolCall(String prompt) {
+        int indexStart = prompt.indexOf(KB_ENTITY_INDEX_MARKER);
+        if (indexStart < 0) {
+            return null;
+        }
+        String index = sectionAfter(prompt, indexStart + KB_ENTITY_INDEX_MARKER.length());
+        if (index.contains("（暂无业务实体）")) {
+            return null;
+        }
+        String question = questionSection(prompt);
+        Matcher pair = KB_ENTITY_PAIR.matcher(index);
+        while (pair.find()) {
+            if (question.contains(pair.group(1)) || question.contains(pair.group(2))) {
+                return "{\"tool\":\"inspect_entity\",\"entity\":" + quote(pair.group(2)) + "}";
+            }
+        }
+        if (question.contains("业务") && (question.contains("哪些") || question.contains("什么"))) {
+            return "{\"tool\":\"list_entities\"}";
+        }
+        return null;
+    }
+
+    /** 工具结果作答：摘出业务行与字段行，注明来源为平台业务结构。 */
+    static String toolResultAnswer(String prompt) {
+        int start = prompt.indexOf(KB_TOOL_RESULT_MARKER) + KB_TOOL_RESULT_MARKER.length();
+        String result = sectionAfter(prompt, start);
+        StringBuilder answer = new StringBuilder("根据平台业务结构，为你整理如下：\n");
+        for (String line : result.split("\n")) {
+            String stripped = line.strip();
+            if (!stripped.isEmpty() && (stripped.startsWith("业务：")
+                    || stripped.startsWith("- ") || stripped.contains("、（"))) {
+                answer.append(stripped).append('\n');
+            }
+        }
+        answer.append("以上信息来自业务实体元数据。");
+        return answer.toString();
+    }
+
+    /** 截取标记之后到下一个 "## " 段或文末的文本。 */
+    private static String sectionAfter(String prompt, int from) {
+        int end = prompt.indexOf("\n## ", from);
+        return end > from ? prompt.substring(from, end) : prompt.substring(from);
+    }
+
+    private static String questionSection(String prompt) {
+        int start = prompt.lastIndexOf(KB_QUESTION_MARKER);
+        return start < 0 ? "" : sectionAfter(prompt, start + KB_QUESTION_MARKER.length());
     }
 
     /** 截取 [startMarker, endMarker) 数据段（end 取 lastIndexOf 防历史注入副本；
