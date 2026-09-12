@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -205,6 +206,69 @@ class KbApiTest {
                 "SELECT count(*) FROM sys_audit_event WHERE action = 'kb.ask'"
                         + " AND result = 'failure'", Integer.class);
         assertThat(failureAudits).isEqualTo(1);
+    }
+
+    @Test
+    void multipartAskStoresExtractsAndServesAttachmentsToOwnerOnly() throws Exception {
+        createEntry("差旅报销规范", "财务制度", "员工出差后提交报销单");
+        String askBody = mockMvc.perform(
+                        MockMvcRequestBuilders.multipart("/api/v1/kb/ask")
+                                .file(new MockMultipartFile("files", "报销单.csv",
+                                        "text/csv", "物料,金额\nA01,300"
+                                                .getBytes(java.nio.charset.StandardCharsets.UTF_8)))
+                                .file(new MockMultipartFile("files", "现场.png",
+                                        "image/png", new byte[] {1, 2, 3}))
+                                .param("question", "帮我核对附件里的数据")
+                                .header("Authorization", adminBearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.answer").value(
+                        org.hamcrest.Matchers.containsString("报销单.csv")))
+                .andExpect(jsonPath("$.attachments.length()").value(2))
+                .andReturn().getResponse().getContentAsString();
+        String attachmentId = JsonPath.read(askBody, "$.attachments[0].id");
+
+        // 回放带附件视图
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/kb/messages")
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].attachments.length()").value(2));
+
+        // 本人下载 200，他人 404 防枚举
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/kb/attachments/" + attachmentId)
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isOk());
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/kb/attachments/" + attachmentId)
+                        .header("Authorization", userBearer))
+                .andExpect(status().isNotFound());
+
+        Integer rows = jdbc.queryForObject(
+                "SELECT count(*) FROM kb_attachment", Integer.class);
+        assertThat(rows).isEqualTo(2);
+        String extracted = jdbc.queryForObject(
+                "SELECT extracted_text FROM kb_attachment WHERE filename = '报销单.csv'",
+                String.class);
+        assertThat(extracted).contains("A01,300");
+    }
+
+    @Test
+    void multipartAskRejectsBadExtensionAndOversizeFile() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/kb/ask")
+                        .file(new MockMultipartFile("files", "工具.exe",
+                                "application/x-msdownload", "x".getBytes()))
+                        .param("question", "看看这个")
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("validation_error"));
+        byte[] big = new byte[10 * 1024 * 1024 + 1];
+        mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/kb/ask")
+                        .file(new MockMultipartFile("files", "超大.pdf",
+                                "application/pdf", big))
+                        .param("question", "看看这个")
+                        .header("Authorization", adminBearer))
+                .andExpect(status().isBadRequest());
+        Integer messages = jdbc.queryForObject(
+                "SELECT count(*) FROM kb_chat_message", Integer.class);
+        assertThat(messages).isZero();
     }
 
     private String createEntry(String title, String category, String content) throws Exception {

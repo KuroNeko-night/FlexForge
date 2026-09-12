@@ -50,6 +50,7 @@ public final class FakeKbRepositories {
 
     public static class ChatStore implements KbChatRepository {
         public final List<KbMessageRecord> rows = new ArrayList<>();
+        public final List<KbAttachmentRecord> attachments = new ArrayList<>();
 
         @Override
         public List<KbMessageRecord> recentOf(String userId, int limit) {
@@ -58,14 +59,43 @@ public final class FakeKbRepositories {
         }
 
         @Override
-        public void insertExchange(KbMessageRecord userMessage, KbMessageRecord assistantMessage) {
+        public void insertExchange(KbMessageRecord userMessage, KbMessageRecord assistantMessage,
+                                   List<KbAttachmentRecord> attachmentRows) {
             rows.add(userMessage);
             rows.add(assistantMessage);
+            attachments.addAll(attachmentRows);
+        }
+
+        @Override
+        public List<KbAttachmentView> attachmentsOf(List<String> messageIds) {
+            return attachments.stream()
+                    .filter(a -> messageIds.contains(a.messageId()))
+                    .map(a -> new KbAttachmentView(a.id(), a.messageId(), a.filename(),
+                            a.contentType(), a.sizeBytes()))
+                    .toList();
+        }
+
+        @Override
+        public OwnedAttachment findOwned(String attachmentId) {
+            return attachments.stream()
+                    .filter(a -> a.id().equals(attachmentId))
+                    .findFirst()
+                    .map(a -> new OwnedAttachment(ownerOf(a.messageId()), a.filename(),
+                            a.contentType(), a.data()))
+                    .orElse(null);
+        }
+
+        private String ownerOf(String messageId) {
+            return rows.stream().filter(m -> m.id().equals(messageId))
+                    .findFirst().map(KbMessageRecord::userId).orElse("unknown");
         }
 
         @Override
         public int deleteAllOf(String userId) {
             int before = rows.size();
+            List<String> removedIds = rows.stream().filter(m -> m.userId().equals(userId))
+                    .map(KbMessageRecord::id).toList();
+            attachments.removeIf(a -> removedIds.contains(a.messageId()));
             rows.removeIf(m -> m.userId().equals(userId));
             return before - rows.size();
         }

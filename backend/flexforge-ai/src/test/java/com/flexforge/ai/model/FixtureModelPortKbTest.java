@@ -39,4 +39,26 @@ class FixtureModelPortKbTest {
         String prompt = SECTION + "\n" + FixtureModelPort.KB_NO_HIT + "\n" + QUESTION + "\n问题";
         assertThat(FixtureModelPort.kbAnswer(prompt)).contains("暂无");
     }
+
+    @Test
+    void attachmentsAreAcknowledgedDeterministically() {
+        String prompt = "头部\n"
+                + SECTION + "\n### [财务制度] 差旅报销规范\n内容\n"
+                + FixtureModelPort.KB_ATTACHMENTS_MARKER
+                + "\n### 报销单.csv（csv）\nA01,300\n\n### 截图.png（png，图片未提取文本）\n\n"
+                + QUESTION + "\n帮我核对";
+        assertThat(FixtureModelPort.kbAnswer(prompt))
+                .contains("《差旅报销规范》")
+                .contains("已收到附件：报销单.csv、截图.png");
+    }
+
+    @Test
+    void noAttachmentsPlaceholderIsNotAcknowledged() {
+        String prompt = SECTION + "\n" + FixtureModelPort.KB_NO_HIT + "\n"
+                + FixtureModelPort.KB_ATTACHMENTS_MARKER + "\n" + FixtureModelPort.KB_NO_ATTACHMENTS
+                + "\n" + QUESTION + "\n问题";
+        assertThat(FixtureModelPort.kbAnswer(prompt))
+                .contains("暂无")
+                .doesNotContain("已收到附件");
+    }
 }

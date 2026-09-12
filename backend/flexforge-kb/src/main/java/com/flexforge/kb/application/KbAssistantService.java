@@ -5,6 +5,7 @@ import com.flexforge.ai.model.ModelUnavailableException;
 import com.flexforge.common.PublicApi;
 import com.flexforge.common.audit.AuditEventPort;
 import com.flexforge.common.audit.AuditEvents;
+import com.flexforge.kb.domain.KbAttachments;
 import com.flexforge.kb.domain.KbChatRepository;
 import com.flexforge.kb.domain.KbEntryRepository;
 import com.flexforge.kb.domain.KbRetrieval;
@@ -14,35 +15,52 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * AI 助手编排（FR-KB-02/03/04，docs/13 §3.6-7）：检索 Top-K → 模板
- * kb-assistant-v1 渲染 → ModelPort（http/fixture 路由唯一通道）→ 用户与
- * 助手消息同事务落库（模型失败不落半截会话）。会话按 user_id 隔离，
+ * AI 助手编排（FR-KB-02..05，docs/13 §3.6-7/8）：检索 Top-K + 附件提取 →
+ * 模板 kb-assistant-v2 渲染 → ModelPort（http/fixture 路由唯一通道）→ 用户与
+ * 助手消息及附件同事务落库（模型失败不落半截会话）。会话按 user_id 隔离，
  * 调用方传认证主体标识，不接受客户端指定他人会话。
  */
 @PublicApi
 @Service
 public class KbAssistantService {
 
-    /** 提问与注入预算（FR-KB-02/03、docs/13 §3.6-7 硬上限）。 */
+    /** 提问与注入预算（FR-KB-02/03/05、docs/13 §3.6-7/8 硬上限）。 */
     public static final int QUESTION_MAX = 2000;
     public static final int HISTORY_MESSAGES = 8;
     public static final int HISTORY_MAX_CHARS = 4000;
     public static final int ENTRY_EXCERPT_MAX = 1500;
     public static final int KNOWLEDGE_MAX_CHARS = 6000;
     public static final int ANSWER_STORE_MAX = 8000;
+    public static final int ATTACHMENTS_MAX_CHARS = 20_000;
     /** 会话查询上限（UI 回放用）。 */
     public static final int HISTORY_LOAD_LIMIT = 100;
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
 
-    /** 助手回答与引用条目（references 为 [{id,title,category}] 快照）。 */
+    /** 上传附件入参（控制器从 multipart 构造）。 */
     @PublicApi
-    public record AskOutcome(String answer, List<Reference> references) {
+    public record IncomingAttachment(String filename, String contentType, byte[] data) {
+    }
+
+    /** 校验+提取后的附件（提示词渲染与落库共用）。 */
+    private record Prepared(String filename, String contentType, long sizeBytes, byte[] data,
+                            String extractedText) {
+    }
+
+    /** 助手回答与引用条目/附件回执（references 为 [{id,title,category}] 快照）。 */
+    @PublicApi
+    public record AskOutcome(String answer, List<Reference> references,
+                             List<KbChatRepository.KbAttachmentView> attachments) {
+
+        public AskOutcome(String answer, List<Reference> references) {
+            this(answer, references, List.of());
+        }
     }
 
     @PublicApi
@@ -69,33 +87,91 @@ public class KbAssistantService {
         return chat.recentOf(userId, HISTORY_LOAD_LIMIT);
     }
 
-    /** 清空本人会话（返回删除条数）。 */
+    /** 消息附件视图（会话回放；不含字节载荷）。 */
+    public List<KbChatRepository.KbAttachmentView> attachmentsOf(List<String> messageIds) {
+        return chat.attachmentsOf(messageIds);
+    }
+
+    /** 附件下载载荷（本人校验在调用方比对 ownerId）。 */
+    public KbChatRepository.OwnedAttachment findOwnedAttachment(String attachmentId) {
+        return chat.findOwned(attachmentId);
+    }
+
+    /** 清空本人会话（返回删除条数；附件经 FK 级联清理）。 */
     public int clear(String operator) {
         int removed = chat.deleteAllOf(operator);
         audit.record(AuditEvents.of(operator, "kb.clear", operator, "cleared", clock));
         return removed;
     }
 
-    /** 提问：模型失败（含不可用/空回复）原样上抛，不产生任何会话写入（FR-KB-04）。 */
+    /** 提问（无附件路径，P28 契约兼容）。 */
     public AskOutcome ask(String operator, String question) {
+        return ask(operator, question, List.of());
+    }
+
+    /** 提问：附件先整体校验再提取；模型失败（含不可用/空回复）原样上抛，
+     * 不产生任何会话写入（FR-KB-04/05）。 */
+    public AskOutcome ask(String operator, String question, List<IncomingAttachment> files) {
         String trimmed = requireQuestion(question);
+        List<Prepared> prepared = prepare(files);
         List<KbEntryRepository.KbEntryRecord> matched =
                 KbRetrieval.topMatches(trimmed, entries.listAll());
         List<Reference> references = matched.stream()
                 .map(e -> new Reference(e.id(), e.title(), e.category())).toList();
-        String prompt = KbPromptTemplates.render(promptParams(operator, matched, trimmed));
-        // 模型失败与落库失败同 catch 审计 failure（成败同口径，FR-KB-04）
+        String prompt = KbPromptTemplates.render(promptParams(
+                operator, matched, trimmed, attachmentsText(prepared)));
         try {
             String answer = demandAnswer(prompt);
             String stored = answer.length() > ANSWER_STORE_MAX
                     ? truncateAtCodePoint(answer, ANSWER_STORE_MAX) : answer;
-            persistExchange(operator, trimmed, stored, referencesJson(references));
+            String userMessageId = "kcm-" + UUID.randomUUID();
+            List<KbChatRepository.KbAttachmentRecord> rows = attachmentRows(
+                    prepared, userMessageId);
+            List<KbChatRepository.KbAttachmentView> receipt = rows.stream()
+                    .map(r -> new KbChatRepository.KbAttachmentView(
+                            r.id(), r.messageId(), r.filename(), r.contentType(), r.sizeBytes()))
+                    .toList();
+            persistExchange(
+                    new KbChatRepository.KbMessageRecord(
+                            userMessageId, operator, "user", trimmed, null),
+                    new KbChatRepository.KbMessageRecord(
+                            "kcm-" + UUID.randomUUID(), operator, "assistant", stored,
+                            referencesJson(references)),
+                    rows);
             audit.record(AuditEvents.of(operator, "kb.ask", operator, "success", clock));
-            return new AskOutcome(stored, references);
+            return new AskOutcome(stored, references, receipt);
         } catch (RuntimeException e) {
             audit.record(AuditEvents.of(operator, "kb.ask", operator, "failure", clock));
             throw e;
         }
+    }
+
+    /** 附件白名单/数量/尺寸整体校验 + 文本提取（图片与失败=仅存档）。 */
+    private static List<Prepared> prepare(List<IncomingAttachment> files) {
+        if (files == null) {
+            return List.of();
+        }
+        if (files.size() > KbAttachments.MAX_FILES) {
+            throw new IllegalArgumentException("单次最多 " + KbAttachments.MAX_FILES + " 个附件");
+        }
+        List<Prepared> prepared = new ArrayList<>();
+        for (IncomingAttachment file : files) {
+            String filename = sanitizeFilename(file.filename());
+            KbAttachments.validate(filename, file.data() == null ? 0 : file.data().length);
+            prepared.add(new Prepared(filename, file.contentType(), file.data().length,
+                    file.data(), KbAttachments.extract(filename, file.data())));
+        }
+        return List.copyOf(prepared);
+    }
+
+    /** 剥离客户端路径成分（basename），空名兜底 "attachment"。 */
+    static String sanitizeFilename(String filename) {
+        if (filename == null || filename.isBlank()) {
+            return "attachment";
+        }
+        String name = filename.replace('\\', '/');
+        int slash = name.lastIndexOf('/');
+        return slash >= 0 ? name.substring(slash + 1) : name;
     }
 
     private static String requireQuestion(String question) {
@@ -109,19 +185,19 @@ public class KbAssistantService {
         return trimmed;
     }
 
-    /** 提示词参数：LinkedHashMap 固定替换顺序（审查 P3-1：Map.of 迭代序未定义，
-     * 提问含字面 {{history}} 占位时可能被后续 pass 二次替换破坏可复现性）。 */
+    /** 提示词参数：LinkedHashMap 固定替换顺序（P28 审查 P3-1）。 */
     private Map<String, String> promptParams(String userId,
                                              List<KbEntryRepository.KbEntryRecord> matched,
-                                             String question) {
+                                             String question, String attachments) {
         Map<String, String> params = new java.util.LinkedHashMap<>();
         params.put("history", historyText(userId));
         params.put("knowledge", knowledgeText(matched));
+        params.put("attachments", attachments);
         params.put("question", question);
         return params;
     }
 
-    /** 模型调用与空回复守卫（审查 P2-2：空串落库会触发 CHECK 违约 500）。 */
+    /** 模型调用与空回复守卫（P28 审查 P2-2）。 */
     private String demandAnswer(String prompt) {
         String answer = model.complete(new ModelPort.ModelRequest(
                 KbPromptTemplates.VERSION, prompt)).text().strip();
@@ -132,23 +208,39 @@ public class KbAssistantService {
         return answer;
     }
 
-    private void persistExchange(String operator, String question, String stored,
-                                 String referencesJson) {
-        chat.insertExchange(
-                new KbChatRepository.KbMessageRecord(
-                        "kcm-" + UUID.randomUUID(), operator, "user", question, null),
-                new KbChatRepository.KbMessageRecord(
-                        "kcm-" + UUID.randomUUID(), operator, "assistant", stored,
-                        referencesJson));
+    private void persistExchange(KbChatRepository.KbMessageRecord userMessage,
+                                 KbChatRepository.KbMessageRecord assistantMessage,
+                                 List<KbChatRepository.KbAttachmentRecord> rows) {
+        chat.insertExchange(userMessage, assistantMessage, rows);
     }
 
-    /** 按码点边界截断（审查 P3-4：substring 劈开代理对会产生非法半字符）。 */
-    static String truncateAtCodePoint(String text, int maxChars) {
-        int end = Math.min(maxChars, text.length());
-        if (end > 0 && Character.isHighSurrogate(text.charAt(end - 1))) {
-            end--;
+    private static List<KbChatRepository.KbAttachmentRecord> attachmentRows(
+            List<Prepared> prepared, String messageId) {
+        return prepared.stream()
+                .map(p -> new KbChatRepository.KbAttachmentRecord(
+                        "kba-" + UUID.randomUUID(), messageId, p.filename(),
+                        p.contentType(), p.sizeBytes(), p.data(), p.extractedText()))
+                .toList();
+    }
+
+    /** 附件数据段：每文件标题行（图片/未提取标注）+提取文本；总预算内保序追加。 */
+    static String attachmentsText(List<Prepared> prepared) {
+        if (prepared == null || prepared.isEmpty()) {
+            return "（无附件）";
         }
-        return text.substring(0, end);
+        StringBuilder text = new StringBuilder();
+        for (Prepared p : prepared) {
+            String ext = KbAttachments.extensionOf(p.filename());
+            String note = KbAttachments.isImage(p.filename()) ? "，图片未提取文本"
+                    : p.extractedText() == null ? "，未提取到文本" : "";
+            String block = "### " + p.filename() + "（" + ext + note + "）\n"
+                    + (p.extractedText() == null ? "" : p.extractedText()) + "\n\n";
+            if (text.length() + block.length() > ATTACHMENTS_MAX_CHARS) {
+                break;
+            }
+            text.append(block);
+        }
+        return text.isEmpty() ? "（无附件）" : text.toString().strip();
     }
 
     /** 会话历史数据段：近 HISTORY_MESSAGES 条，超 HISTORY_MAX_CHARS 从最旧行裁剪。 */
@@ -198,6 +290,15 @@ public class KbAssistantService {
         int firstLine = clipped.indexOf('\n');
         return firstLine >= 0 && firstLine + 1 < clipped.length()
                 ? clipped.substring(firstLine + 1) : clipped;
+    }
+
+    /** 按码点边界截断（P28 审查 P3-4：substring 劈开代理对会产生非法半字符）。 */
+    static String truncateAtCodePoint(String text, int maxChars) {
+        int end = Math.min(maxChars, text.length());
+        if (end > 0 && Character.isHighSurrogate(text.charAt(end - 1))) {
+            end--;
+        }
+        return text.substring(0, end);
     }
 
     private static String referencesJson(List<Reference> references) {
