@@ -21,6 +21,7 @@
     <module>flexforge-plugin</module>
     <module>flexforge-issue</module>
     <module>flexforge-ai</module>
+    <module>flexforge-kb</module>
     <module>flexforge-app</module>
   </modules>
 
@@ -97,6 +98,11 @@
       <dependency>
         <groupId>com.flexforge</groupId>
         <artifactId>flexforge-ai</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.flexforge</groupId>
+        <artifactId>flexforge-kb</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
