@@ -122,6 +122,17 @@ const MENU_ICON_NAMES: Record<string, string> = {
   settings: 'sliders',
 };
 
+/** 菜单 key 关键字 → 图标兜底（P28 增 assistant/knowledge，按序首个命中）。 */
+const KEY_ICON_FALLBACKS: Array<[string, string]> = [
+  ['issues', 'chat'],
+  ['assistant', 'chat'],
+  ['knowledge', 'book'],
+  ['plugins', 'package'],
+  ['settings', 'sliders'],
+  ['system', 'users'],
+  ['data', 'database'],
+];
+
 /** 菜单图标（P16）：优先消费后端 icon 契约字段，未下发时按 key/路由兜底。 */
 function iconFor(menu: MenuItem): string {
   const declared = menu.icon ? MENU_ICON_NAMES[menu.icon] : undefined;
@@ -131,22 +142,8 @@ function iconFor(menu: MenuItem): string {
   if (menu.route?.startsWith('/data/')) {
     return 'layers';
   }
-  if (menu.key.includes('issues')) {
-    return 'chat';
-  }
-  if (menu.key.includes('plugins')) {
-    return 'package';
-  }
-  if (menu.key.includes('settings')) {
-    return 'sliders';
-  }
-  if (menu.key.includes('system')) {
-    return 'users';
-  }
-  if (menu.key.includes('data')) {
-    return 'database';
-  }
-  return 'grid';
+  const hit = KEY_ICON_FALLBACKS.find(([keyword]) => menu.key.includes(keyword));
+  return hit ? hit[1] : 'grid';
 }
 
 /** 导航分组（P16）：业务实体入口与平台管理分区呈现，组内保持 order 序。 */

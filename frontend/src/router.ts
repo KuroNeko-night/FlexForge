@@ -1,10 +1,12 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 
 import { session } from '@/auth/token';
+import AssistantView from '@/views/AssistantView.vue';
 import AuditView from '@/views/AuditView.vue';
 import DynamicEntityView from '@/views/DynamicEntityView.vue';
 import HomeView from '@/views/HomeView.vue';
 import IssuesView from '@/views/IssuesView.vue';
+import KnowledgeView from '@/views/KnowledgeView.vue';
 import LoginView from '@/views/LoginView.vue';
 import SettingsView from '@/views/SettingsView.vue';
 import PlaceholderView from '@/views/PlaceholderView.vue';
@@ -32,6 +34,8 @@ export const router = createRouter({
         { path: '', redirect: { name: 'home' } },
         { path: 'workbench', name: 'home', component: HomeView },
         { path: 'issues', name: 'issues', component: IssuesView },
+        { path: 'assistant', name: 'assistant', component: AssistantView },
+        { path: 'knowledge', name: 'knowledge', component: KnowledgeView },
         { path: 'tools', name: 'file-tools', component: ToolsView },
         { path: 'data/:entity', name: 'entity-list', component: DynamicEntityView },
         { path: 'data/:entity/new', name: 'entity-new', component: DynamicEntityView },
