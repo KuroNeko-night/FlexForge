@@ -15,7 +15,9 @@ import { t } from '@/registry/localeRegistry';
  * 新建/编辑抽屉 + 删除确认。条目登录可读（直访路由呈只读视图）；
  * 写操作服务端限 ADMIN（S2），管理按钮按角色显隐只是体验层。
  */
-const isAdmin = hasRole('ADMIN');
+// 响应式角色（审查 P2-1：硬刷新时子路由 setup 先于父壳 fetchMe 回填 session.user，
+// 常量快照会让 ADMIN 暂时看到只读视图；computed 随 reactive session 自动更新）
+const isAdmin = computed(() => hasRole('ADMIN'));
 const entries = ref<KbEntry[]>([]);
 const state = ref<'loading' | 'ready' | 'error' | 'denied' | 'empty'>('loading');
 const error = ref<string | null>(null);

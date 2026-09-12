@@ -1,6 +1,7 @@
 package com.flexforge.kb.application;
 
 import com.flexforge.ai.model.ModelPort;
+import com.flexforge.ai.model.ModelUnavailableException;
 import com.flexforge.common.PublicApi;
 import com.flexforge.common.audit.AuditEventPort;
 import com.flexforge.common.audit.AuditEvents;
@@ -75,8 +76,29 @@ public class KbAssistantService {
         return removed;
     }
 
-    /** 提问：模型失败（含不可用）原样上抛，不产生任何会话写入（FR-KB-04）。 */
+    /** 提问：模型失败（含不可用/空回复）原样上抛，不产生任何会话写入（FR-KB-04）。 */
     public AskOutcome ask(String operator, String question) {
+        String trimmed = requireQuestion(question);
+        List<KbEntryRepository.KbEntryRecord> matched =
+                KbRetrieval.topMatches(trimmed, entries.listAll());
+        List<Reference> references = matched.stream()
+                .map(e -> new Reference(e.id(), e.title(), e.category())).toList();
+        String prompt = KbPromptTemplates.render(promptParams(operator, matched, trimmed));
+        // 模型失败与落库失败同 catch 审计 failure（成败同口径，FR-KB-04）
+        try {
+            String answer = demandAnswer(prompt);
+            String stored = answer.length() > ANSWER_STORE_MAX
+                    ? truncateAtCodePoint(answer, ANSWER_STORE_MAX) : answer;
+            persistExchange(operator, trimmed, stored, referencesJson(references));
+            audit.record(AuditEvents.of(operator, "kb.ask", operator, "success", clock));
+            return new AskOutcome(stored, references);
+        } catch (RuntimeException e) {
+            audit.record(AuditEvents.of(operator, "kb.ask", operator, "failure", clock));
+            throw e;
+        }
+    }
+
+    private static String requireQuestion(String question) {
         if (question == null || question.isBlank()) {
             throw new IllegalArgumentException("问题不能为空");
         }
@@ -84,32 +106,49 @@ public class KbAssistantService {
         if (trimmed.length() > QUESTION_MAX) {
             throw new IllegalArgumentException("问题超过 " + QUESTION_MAX + " 字符上限");
         }
-        List<KbEntryRepository.KbEntryRecord> matched =
-                KbRetrieval.topMatches(trimmed, entries.listAll());
-        String prompt = KbPromptTemplates.render(Map.of(
-                "history", historyText(operator),
-                "knowledge", knowledgeText(matched),
-                "question", trimmed));
-        String answer;
-        try {
-            answer = model.complete(new ModelPort.ModelRequest(
-                    KbPromptTemplates.VERSION, prompt)).text().strip();
-        } catch (RuntimeException e) {
-            audit.record(AuditEvents.of(operator, "kb.ask", operator, "failure", clock));
-            throw e;
+        return trimmed;
+    }
+
+    /** 提示词参数：LinkedHashMap 固定替换顺序（审查 P3-1：Map.of 迭代序未定义，
+     * 提问含字面 {{history}} 占位时可能被后续 pass 二次替换破坏可复现性）。 */
+    private Map<String, String> promptParams(String userId,
+                                             List<KbEntryRepository.KbEntryRecord> matched,
+                                             String question) {
+        Map<String, String> params = new java.util.LinkedHashMap<>();
+        params.put("history", historyText(userId));
+        params.put("knowledge", knowledgeText(matched));
+        params.put("question", question);
+        return params;
+    }
+
+    /** 模型调用与空回复守卫（审查 P2-2：空串落库会触发 CHECK 违约 500）。 */
+    private String demandAnswer(String prompt) {
+        String answer = model.complete(new ModelPort.ModelRequest(
+                KbPromptTemplates.VERSION, prompt)).text().strip();
+        if (answer.isEmpty()) {
+            throw new ModelUnavailableException(
+                    ModelUnavailableException.REASON_OFFLINE, "模型返回空回复");
         }
-        List<Reference> references = matched.stream()
-                .map(e -> new Reference(e.id(), e.title(), e.category())).toList();
-        String stored = answer.length() > ANSWER_STORE_MAX
-                ? answer.substring(0, ANSWER_STORE_MAX) : answer;
+        return answer;
+    }
+
+    private void persistExchange(String operator, String question, String stored,
+                                 String referencesJson) {
         chat.insertExchange(
                 new KbChatRepository.KbMessageRecord(
-                        "kcm-" + UUID.randomUUID(), operator, "user", trimmed, null),
+                        "kcm-" + UUID.randomUUID(), operator, "user", question, null),
                 new KbChatRepository.KbMessageRecord(
                         "kcm-" + UUID.randomUUID(), operator, "assistant", stored,
-                        referencesJson(references)));
-        audit.record(AuditEvents.of(operator, "kb.ask", operator, "success", clock));
-        return new AskOutcome(answer, references);
+                        referencesJson));
+    }
+
+    /** 按码点边界截断（审查 P3-4：substring 劈开代理对会产生非法半字符）。 */
+    static String truncateAtCodePoint(String text, int maxChars) {
+        int end = Math.min(maxChars, text.length());
+        if (end > 0 && Character.isHighSurrogate(text.charAt(end - 1))) {
+            end--;
+        }
+        return text.substring(0, end);
     }
 
     /** 会话历史数据段：近 HISTORY_MESSAGES 条，超 HISTORY_MAX_CHARS 从最旧行裁剪。 */

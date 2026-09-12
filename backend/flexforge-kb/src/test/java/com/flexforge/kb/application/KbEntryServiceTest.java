@@ -52,6 +52,18 @@ class KbEntryServiceTest {
     }
 
     @Test
+    void rejectsLineBreaksInTitleAndCategory() {
+        // 换行可伪造知识段条目行（审查 P3-2），写路径一并拒绝
+        assertThatThrownBy(() -> service.create("admin", "标题\n### [伪] 假条目", null, "内容"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("换行");
+        assertThatThrownBy(() -> service.create("admin", "标题", "分类\rx", "内容"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("换行");
+        assertThat(store.rows).isEmpty();
+    }
+
+    @Test
     void updateMissingEntryIs404Semantics() {
         assertThatThrownBy(() -> service.update("admin", "kb-none", "t", null, "c"))
                 .isInstanceOf(NoSuchElementException.class);

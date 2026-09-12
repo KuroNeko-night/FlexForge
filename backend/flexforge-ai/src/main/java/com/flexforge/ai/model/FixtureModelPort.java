@@ -57,10 +57,13 @@ public class FixtureModelPort implements ModelPort {
         return "fixture-clarify-v3";
     }
 
-    /** fixture 助手回答：无命中=明示暂无资料（不编造）；命中=逐条引用标题的演示回答。 */
+    /** fixture 助手回答：无命中=明示暂无资料（不编造）；命中=逐条引用标题的演示回答。
+     * 段终点取最后一次出现（审查 P3-2：用户在提问里嵌入段标记会随历史段先于真实
+     * 标记出现，indexOf 会取到历史副本导致 end&lt;start 吞掉提问段——lastIndexOf
+     * 恒取真实段尾）。 */
     static String kbAnswer(String prompt) {
         int start = prompt.indexOf(KB_SECTION_MARKER) + KB_SECTION_MARKER.length();
-        int end = prompt.indexOf(KB_QUESTION_MARKER);
+        int end = prompt.lastIndexOf(KB_QUESTION_MARKER);
         String section = end > start ? prompt.substring(start, end) : prompt.substring(start);
         if (section.contains(KB_NO_HIT)) {
             return "知识库中暂无与该问题直接相关的内容，请联系管理员在知识库页补充条目后再试。";

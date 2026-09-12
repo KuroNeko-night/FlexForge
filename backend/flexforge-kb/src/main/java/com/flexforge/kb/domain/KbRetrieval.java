@@ -57,7 +57,9 @@ public final class KbRetrieval {
         return termCount >= 4 ? MIN_DISTINCT_TERMS_MULTI : 1;
     }
 
-    /** 问题 → 检索词集：非字母数字切分；含 CJK 的段展开二元组（单字段保留单字）。 */
+    /** 问题 → 检索词集：非字母数字切分；含 CJK 的段展开二元组（单字段保留单字）。
+     * 上限在二元组展开中逐项检查（审查 P3-3：原实现按整 token 检查，单个超长
+     * CJK 段可一次性越限，"防评分面放大"弱于声明）。 */
     static Set<String> termsOf(String question) {
         Set<String> terms = new LinkedHashSet<>();
         if (question == null) {
@@ -87,6 +89,9 @@ public final class KbRetrieval {
             return;
         }
         for (int i = 0; i + 1 < token.length(); i++) {
+            if (terms.size() >= MAX_TERMS) {
+                return;
+            }
             terms.add(token.substring(i, i + 2));
         }
     }

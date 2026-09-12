@@ -2,6 +2,7 @@ package com.flexforge.kb.application;
 
 import com.flexforge.ai.model.FixtureModelPort;
 import com.flexforge.ai.model.ModelPort;
+import com.flexforge.ai.model.ModelUnavailableException;
 import com.flexforge.kb.domain.FakeKbRepositories;
 import com.flexforge.kb.domain.KbChatRepository;
 import com.flexforge.kb.domain.KbEntryRepository;
@@ -23,8 +24,8 @@ class KbAssistantServiceTest {
     private final FakeKbRepositories.ChatStore chat = new FakeKbRepositories.ChatStore();
     private final FakeKbRepositories.AuditSink audit = new FakeKbRepositories.AuditSink();
 
-    /** 录制提示词的固定回答桩（失败场景由 failing 标记切换）。 */
-    static final class RecordingModelPort implements ModelPort {
+    /** 录制提示词的固定回答桩（失败场景由 failing 标记切换；空回复场景子类覆写）。 */
+    static class RecordingModelPort implements ModelPort {
         final List<String> prompts = new java.util.ArrayList<>();
         boolean failing;
 
@@ -97,6 +98,36 @@ class KbAssistantServiceTest {
                     assertThat(e.action()).isEqualTo("kb.ask");
                     assertThat(e.result()).isEqualTo("failure");
                 });
+    }
+
+    @Test
+    void emptyModelAnswerIs503SemanticsWithoutPartialConversation() {
+        seed("差旅报销规范", null, "内容");
+        RecordingModelPort blank = new RecordingModelPort() {
+            @Override
+            public ModelReply complete(ModelRequest request) {
+                super.complete(request);
+                return new ModelReply("   ");
+            }
+        };
+        assertThatThrownBy(() -> service(blank).ask("demo", "报销流程"))
+                .isInstanceOf(ModelUnavailableException.class);
+        assertThat(chat.rows).isEmpty();
+        assertThat(audit.events).singleElement()
+                .satisfies(e -> assertThat(e.result()).isEqualTo("failure"));
+    }
+
+    @Test
+    void truncateAtCodePointKeepsSurrogatePairsWhole() {
+        String emoji = "😀".repeat(4001);
+        String clipped = KbAssistantService.truncateAtCodePoint(emoji, 8000);
+        // 偶数边界恰好落在代理对之后；尾字符必须是完整对的低位（不得残留孤立高位）
+        assertThat(clipped.length()).isEqualTo(8000);
+        assertThat(Character.isHighSurrogate(clipped.charAt(clipped.length() - 1))).isFalse();
+        // 奇数边界落在代理对中间 → 回退一位保整对
+        String retreated = KbAssistantService.truncateAtCodePoint(emoji, 8001);
+        assertThat(retreated.length()).isEqualTo(8000);
+        assertThat(KbAssistantService.truncateAtCodePoint("短文本", 100)).isEqualTo("短文本");
     }
 
     @Test

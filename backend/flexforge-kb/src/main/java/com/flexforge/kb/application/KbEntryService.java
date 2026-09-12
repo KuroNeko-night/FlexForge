@@ -55,6 +55,10 @@ public class KbEntryService {
         KbEntryRepository.KbEntryRecord saved = repository.update(
                 new KbEntryRepository.KbEntryRecord(id, title.strip(), normalized,
                         content.strip(), operator, null));
+        if (saved == null) {
+            // 竞态窗口：校验存在后条目被并发删除（审查 P3-5）——按 404 口径而非空 200
+            throw new NoSuchElementException("知识条目不存在: " + id);
+        }
         audit.record(AuditEvents.of(operator, "kb.entry.update", id, "updated", clock));
         return saved;
     }
@@ -71,16 +75,21 @@ public class KbEntryService {
         }
     }
 
-    /** 分类空白归一为 null；标题/正文尺寸与空白校验（IAE 消息面向用户，可直接回显）。 */
+    /** 分类空白归一为 null；标题/正文尺寸与空白校验（IAE 消息面向用户，可直接回显）。
+     * 标题与分类禁换行（审查 P3-2：换行可伪造知识段"### [x] 标题"条目行）。 */
     private String validate(String title, String category, String content) {
         requireText(title, "标题", TITLE_MAX);
+        requireSingleLine(title, "标题");
         requireText(content, "正文", CONTENT_MAX);
         String normalized = category == null ? null : category.strip();
         if (normalized != null && normalized.isEmpty()) {
             normalized = null;
         }
-        if (normalized != null && normalized.length() > CATEGORY_MAX) {
-            throw new IllegalArgumentException("分类超过 " + CATEGORY_MAX + " 字符上限");
+        if (normalized != null) {
+            requireSingleLine(normalized, "分类");
+            if (normalized.length() > CATEGORY_MAX) {
+                throw new IllegalArgumentException("分类超过 " + CATEGORY_MAX + " 字符上限");
+            }
         }
         return normalized;
     }
@@ -91,6 +100,12 @@ public class KbEntryService {
         }
         if (value.strip().length() > max) {
             throw new IllegalArgumentException(label + "超过 " + max + " 字符上限");
+        }
+    }
+
+    private static void requireSingleLine(String value, String label) {
+        if (value.indexOf('\n') >= 0 || value.indexOf('\r') >= 0) {
+            throw new IllegalArgumentException(label + "不能包含换行");
         }
     }
 }

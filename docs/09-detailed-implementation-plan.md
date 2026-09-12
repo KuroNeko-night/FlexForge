@@ -665,8 +665,8 @@
 
 - **A. 数据与模块**：V018 迁移（`kb_entry`：id/title/category/content/created_by/时间戳+尺寸 CHECK；`kb_chat_message`：id/user_id/role/content/references_json/时间戳+索引）；新 Maven 模块 `flexforge-kb`（api/application/domain/infrastructure 四层，依赖 common/auth/ai——ArchUnit 模块规则自动覆盖）。
 - **B. 条目管理**：`GET /kb/entries`（登录可读，全量倒序，上限 200）+`POST/PUT/DELETE /kb/entries[...]`（ADMIN，尺寸校验 400、删除确认前端统一对话）；审计 kb.entry.create/update/delete。
-- **C. 检索与助手编排**：KbRetrieval（问题分词→标题×2/正文×1 评分→Top-K≤5，单条注入≤1500 字符、总注入≤6000 字符，无命中不注入）；KbAssistantService（会话近 8 条≤4000 字符入上下文→模板 kb-assistant-v1 渲染→ModelPort→回复+引用条目落库）；fixture 确定性回答（解析提示词知识段标记，引用式应答，演示零外部依赖）；模型不可用 503 上抛、助手消息不落库；审计 kb.ask 成败同口径。
-- **D. 前端**：`/assistant` AI 助手页（全员菜单 platform.assistant order 25：对话气泡流/IME 守卫发送/引用条目 chips/清空会话/思考态）+`/knowledge` 知识库页（ADMIN 菜单 platform.knowledge order 45：条目列表+搜索+新建/编辑抽屉+删除确认）；新图标 book；i18n zh 基线+四语言包同步（键族 assistant.*/kb.*）。
+- **C. 检索与助手编排**：KbRetrieval（问题分词→标题×2/正文×1 评分+共现佐证（多词问题需≥2 不同命中词，防通用二元组假阳性）→Top-K≤5，单条注入≤1500 字符、总注入≤6000 字符，无命中不注入条目、置无命中占位标记（fixture 契约依赖））；KbAssistantService（会话近 8 条≤4000 字符入上下文→模板 kb-assistant-v1 渲染→ModelPort→回复+引用条目落库）；fixture 确定性回答（解析提示词知识段标记，引用式应答，演示零外部依赖）；模型不可用/空回复 503 上抛、助手消息不落库；审计 kb.ask 成败同口径（含落库失败）。
+- **D. 前端**：`/assistant` AI 助手页（全员菜单 platform.assistant order 30：对话气泡流/IME 守卫发送/引用条目 chips/清空会话/思考态）+`/knowledge` 知识库页（ADMIN 菜单 platform.knowledge order 45：条目列表+搜索+新建/编辑抽屉+删除确认；登录直访呈只读视图、管理按钮按 ADMIN 响应式显隐）；新图标 book；i18n zh 基线+四语言包同步（键族 assistant.*/kb.*）。
 - **测试**：模块级 KbRetrievalTest/KbAssistantServiceTest（评分/上限/无命中/fixture 确定性/失败不落库）；app 级 KbApiTest（testcontainers：CRUD+尺寸 400+非 ADMIN 写 403+ask 落两消息+引用返回+USER 隔离+清空+model_unavailable 503 桩）；前端两页视图测试+语言包契约（键集一致自动覆盖新键）。
 
 ### 验收标准
