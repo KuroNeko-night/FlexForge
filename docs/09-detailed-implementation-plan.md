@@ -701,3 +701,25 @@
 - 助手对话可附 png/pdf/csv/xlsx/docx/txt：发送后消息呈现附件（图片缩略图/下载 chip）；带 csv/docx/xlsx/pdf 提问时回答引用附件内容（fixture 确认收到附件；http 真实提取注入）；图片仅确认收到。
 - 超限（>10MB/超 3 个/坏扩展）400 可诊断；下载仅本人（他人 404）；模型失败不落半截会话（附件同回滚）。
 - 门禁 21/1/0+前后端回归全绿+CI 六项；新依赖 pdfbox 有 §3.9 登记与说明。
+
+## P30：工坊式需求对话与整合页布局统一（2026-09-12 用户裁决新增）
+
+> 背景：用户裁决四点——①滑动开关偏小且"Issue 工作台"文字溢出，标题随模式改名致开关位置跳动 → 开关右置加大（等宽网格防溢出）；②Issue 模式与 AI 助手统一布局（对话居中），需求侧栏保留但移到右侧（左侧已有全局导航）；③Issue 工作台对话化：对话开场先输出模板引导文本，澄清完成后 **AI 自己调用工具创建 issue**（提示词内实现工具调用协议并为 AI 预留工具接口）；④开发者完整信息面只改列表侧栏位置（右移），本步简化面向用户。
+> **红线**：
+> - 工坊（workshop）对话按用户隔离落库（V021 issue_workshop_message，issue_id 可空关联创建结果）；开场引导为平台模板文案（非模型调用，i18n）；
+> - 工具调用协议=提示词 JSON 双态（{"reply":...} 追问 / {"tool":"create_issue","title","description"}），执行面收敛在 `WorkshopTool` 接口（预留扩展位，Spring 注入注册表；未知工具按非法输出重试→400 model_output_invalid）；create_issue 经既有 IssueService.create（title ≤120 等校验复用、creator=认证用户、审计不变），创建后以对话摘要跑既有 clarify v3 产规格草稿+三段简报并落新版本（失败降级"已创建，规格未成"不回滚创建）；确认推送仍是用户动作（FR-ISSUE-07 语义不变）；
+> - 模型输出工具参数为"待校验数据"（S7/§3.6-2）：title/description 走服务端既有校验，对话内容为数据段非指令；
+> - per-issue 详情视图（澄清对话/确认卡/讨论区）从原 IssueChatWorkbench 移植，组件退役并由新视图承载其测试语义；开发者 /issues 完整信息面仅列表列右移。
+> **非目标**：不做通用 function-calling 端口（ModelPort 仍文本契约）；工具面只有 create_issue；工坊对话不带附件（与助手分工不变）。
+
+### 实施内容
+
+- **A. 后端**：V021 issue_workshop_message（seq 身份列同 kb 口径）；prompts/workshop-v1.md（双态 JSON+数据段）；WorkshopTool 接口+CreateIssueWorkshopTool；IssueWorkshopService（历史注入/解析重试/工具执行/创建后 clarify 落规格/失败降级）；/issues/workshop GET/POST/DELETE（登录、按用户隔离）；FixtureModelPort 增工坊脚本（首轮追问、次轮工具调用，确定性派生标题）。
+- **B. 前端**：整合页头部开关右置加大（等宽网格）；Issue 模式新视图=工坊对话（引导气泡+消息流+创建成功卡[确认推送]）+右侧需求侧栏；侧栏选中→per-issue 详情（澄清/确认卡/讨论）；开发者面板列表右移；语言包四包升版。
+- **测试**：模块 IssueWorkshopServiceTest（追问/工具/重试/未知工具/上限/隔离）+app IssueWorkshopApiTest（fixture 全流程+落库+清空）；前端新视图测试（引导/开关/创建卡/侧栏右置/选中详情）+IssueChatWorkbench 测试迁移。
+
+### 验收标准
+
+- 开关右侧固定、两段等宽无溢出、切换无跳动；Issue 模式=对话居中+右侧"我的需求"侧栏，开发者 /issues 列表在右。
+- 工坊全流程（fixture 与 http 双供应商）：开场引导 → 用户描述 → AI 追问 → 信息足够后 AI 调用 create_issue（自动建需求+规格草稿+简报）→ 对话内确认卡可"确认并推送"；创建的需出现在右侧侧栏。
+- 工具参数过服务端校验（超长 400 可诊断）；模型非法输出重试后 400；会话按用户隔离可清空；门禁 21/1/0+CI 六绿。

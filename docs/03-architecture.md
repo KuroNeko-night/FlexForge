@@ -198,6 +198,9 @@ AI 不直接获得数据库管理员权限、服务器命令权限或生产发�
 | `GET` | `/api/v1/issues/{id}/spec` / `spec/revisions` | 最新规格 / 版本历史 |
 | `GET` | `/api/v1/issues/{id}/preview` | 预览将要生成的插件资源（开发者，P10） |
 | `POST` | `/api/v1/issues/{id}/publish` | 用户确认并推送需求（本人；门=最新规格 valid 且简报三段齐备；幂等，FR-ISSUE-07，P23） |
+| `GET` | `/api/v1/issues/workshop` | 本人需求工坊会话消息（登录；按用户隔离，P30） |
+| `POST` | `/api/v1/issues/workshop` | 工坊发言（登录；双态 JSON→追问或 create_issue 工具执行+创建后 clarify 落规格，FR-ISSUE-09，P30） |
+| `DELETE` | `/api/v1/issues/workshop` | 清空本人工坊会话（登录，P30） |
 | `GET` | `/api/v1/ai/config` | AI 模型运行时配置（ADMIN；只回 provider/base-url/model 与密钥掩码位，P15） |
 | `PUT` | `/api/v1/ai/config` | 更新 AI 运行时配置（ADMIN；API Key AES-GCM 加密落库，审计，P15；http 保存时探活上游 GET {base}/models——不可用 400 报错上抛不落库，URL 守卫拒环回/私有/保留地址，P26） |
 | `GET` | `/api/v1/kb/entries` | 知识库条目列表（登录可读，全量倒序，上限 200，P28） |
