@@ -33,6 +33,8 @@ public class IssueWorkshopService {
     public static final int HISTORY_MAX_CHARS = 4000;
     public static final int DIGEST_MAX_CHARS = 3000;
     public static final int HISTORY_LOAD_LIMIT = 100;
+    /** 模型回复落库上限（V021 CHECK <=8000；审查 P2-4，与 kb ANSWER_STORE_MAX 同口径）。 */
+    public static final int REPLY_STORE_MAX = 8000;
     private static final int MAX_ATTEMPTS = 2;
 
     private static final JsonMapper JSON = JsonMapper.builder().build();
@@ -97,7 +99,7 @@ public class IssueWorkshopService {
             Parsed parsed = parse(kernel.model().complete(new ModelPort.ModelRequest(
                     WorkshopPromptTemplates.VERSION, current)).text());
             if (parsed.reply() != null) {
-                persist(operator, message, parsed.reply(), null);
+                persist(operator, message, capReply(parsed.reply()), null);
                 return new WorkshopOutcome(parsed.reply(), null, null);
             }
             if (parsed.toolName() != null) {
@@ -138,9 +140,9 @@ public class IssueWorkshopService {
         } catch (RuntimeException e) {
             tail = "规格生成未完成，可从右侧需求列表进入对话重试。";
         }
-        String reply = "已创建需求《" + result.title() + "》。" + tail;
-        persist(operator, message, reply, result.issueId());
-        return new WorkshopOutcome(reply, result.issueId(), result.title());
+        String createdReply = capReply("已创建需求《" + result.title() + "》。" + tail);
+        persist(operator, message, createdReply, result.issueId());
+        return new WorkshopOutcome(createdReply, result.issueId(), result.title());
     }
 
     private void persist(String operator, String message, String reply, String issueId) {
@@ -205,6 +207,29 @@ public class IssueWorkshopService {
 
     private static String feedback(String prompt, String message) {
         return prompt + "\n\n## 上次输出问题\n" + message + "\n请重新输出符合契约的一个 JSON 对象。";
+    }
+
+    /** 码点安全截断（审查 P2-4/P3-10：substring 劈开代理对会产非法半字符）。 */
+    static String truncateFromTail(String text, int maxChars) {
+        if (text.length() <= maxChars) {
+            return text;
+        }
+        int start = text.length() - maxChars;
+        if (Character.isLowSurrogate(text.charAt(start))) {
+            start++;
+        }
+        return text.substring(start);
+    }
+
+    static String capReply(String reply) {
+        if (reply.length() <= REPLY_STORE_MAX) {
+            return reply;
+        }
+        int end = REPLY_STORE_MAX;
+        if (Character.isHighSurrogate(reply.charAt(end - 1))) {
+            end--;
+        }
+        return reply.substring(0, end);
     }
 
     private static String requireMessage(String message) {

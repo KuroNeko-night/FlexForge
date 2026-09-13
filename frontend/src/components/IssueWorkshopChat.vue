@@ -16,9 +16,10 @@ import { t } from '@/registry/localeRegistry';
 /**
  * 需求工坊对话（FR-ISSUE-09，P30）：与 AI 助手同构的气泡对话——开场平台模板
  * 引导文案；澄清完成后 AI 调用 create_issue 工具，创建消息附"确认并推送"卡
- * （推送由父层执行，成功后 markPublished 收卡）；会话按用户隔离、可清空。
+ * （推送由父层执行；发布态以父层服务端列表 publishedIds 为准——跨挂载不
+ * 复活，审查 P2-1）；会话按用户隔离、可清空。
  */
-const props = defineProps<{ publishing: boolean }>();
+const props = defineProps<{ publishing: boolean; publishedIds?: Set<string> }>();
 const emit = defineEmits<{ created: [issueId: string]; publish: [issueId: string] }>();
 
 const messages = ref<WorkshopMessage[]>([]);
@@ -33,6 +34,11 @@ const published = ref<Set<string>>(new Set());
 
 const createdMessage = computed(
   () => messages.value.filter((m) => m.role === 'assistant' && m.issueId).at(-1) ?? null,
+);
+
+/** 确认卡可见性：本轮会话已推送 ∪ 父层服务端发布态（双源合并）。 */
+const publishedMerged = computed(
+  () => new Set([...published.value, ...(props.publishedIds ?? new Set())]),
 );
 
 async function load(): Promise<void> {
@@ -146,7 +152,7 @@ defineExpose({ markPublished, reload: load });
       <IssueWorkshopLog v-else :messages="messages" :sending="sending" />
 
       <div
-        v-if="createdMessage?.issueId && !published.has(createdMessage.issueId)"
+        v-if="createdMessage?.issueId && !publishedMerged.has(createdMessage.issueId)"
         class="confirm-card"
         data-testid="workshop-created-card"
       >

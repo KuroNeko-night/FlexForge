@@ -26,17 +26,27 @@ public class BusinessEntityTools {
         this.registry = registry;
     }
 
-    /** 业务实体索引（进提示词数据段："显示名(name)" 逗号连接）。 */
+    /** 业务实体索引（进提示词数据段："显示名(name)" 顿号连接；
+     * 超过 50 条静默截断——追加省略标记让模型知情，审查 P3-6）。 */
+    static final int INDEX_LIMIT = 50;
+
     public String entityIndex() {
         StringBuilder index = new StringBuilder();
-        for (var record : registry.listEntities(
-                PageQuery.of(1, 50, null, java.util.Set.of()), EntityStatus.ENABLED).items()) {
+        var items = registry.listEntities(
+                PageQuery.of(1, INDEX_LIMIT, null, java.util.Set.of()), EntityStatus.ENABLED).items();
+        for (var record : items) {
             if (index.length() > 0) {
                 index.append("、");
             }
             index.append(record.displayName()).append('(').append(record.name()).append(')');
         }
-        return index.length() == 0 ? "（暂无业务实体）" : index.toString();
+        if (index.length() == 0) {
+            return "（暂无业务实体）";
+        }
+        if (items.size() >= INDEX_LIMIT) {
+            index.append("（仅列前 ").append(INDEX_LIMIT).append(" 个）");
+        }
+        return index.toString();
     }
 
     /** list_entities：列出全部业务实体（显示名/name/来源插件）。 */
@@ -102,6 +112,10 @@ public class BusinessEntityTools {
     String inspect(String entityName) {
         EntityDefinition definition = registry.findEntityByName(entityName)
                 .orElseThrow(() -> new IllegalArgumentException("业务实体不存在: " + entityName));
+        // 与索引同口径只暴露启用中的业务（审查 P3-5：停用实体不进助手工具面）
+        if (definition.status() != EntityStatus.ENABLED) {
+            throw new IllegalArgumentException("业务实体不存在: " + entityName);
+        }
         StringBuilder out = new StringBuilder("业务：").append(definition.displayName())
                 .append('(').append(definition.name()).append(')');
         if (definition.pluginId() != null) {

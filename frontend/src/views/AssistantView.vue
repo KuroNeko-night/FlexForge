@@ -239,7 +239,8 @@ onMounted(load);
 }
 .mode-switch {
   display: grid;
-  grid-template-columns: repeat(2, minmax(9rem, auto));
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   border: 1px solid var(--ff-border);
   border-radius: 999px;
   background: var(--ff-surface-muted);

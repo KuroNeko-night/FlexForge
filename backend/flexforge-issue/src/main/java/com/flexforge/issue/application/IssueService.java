@@ -37,6 +37,11 @@ public class IssueService {
         if (description == null || description.isBlank()) {
             throw new IllegalArgumentException("description 必填");
         }
+        // P30：description 来源扩至模型输出（工坊工具）——服务端统一长度上限
+        // （此前仅前端表单 maxlength 约束，docs/13 §3.6-9 口径由此成立）
+        if (description.length() > 4000) {
+            throw new IllegalArgumentException("description ≤4000 字符");
+        }
         requireValidLabels(labels);
         String id = "iss-" + UUID.randomUUID();
         IssueRepository.IssueRecord issue =

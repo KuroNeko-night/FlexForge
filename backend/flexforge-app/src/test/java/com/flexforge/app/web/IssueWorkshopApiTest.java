@@ -75,34 +75,44 @@ class IssueWorkshopApiTest {
                 .andExpect(jsonPath("$.reply").value(
                         org.hamcrest.Matchers.containsString("字段")))
                 .andExpect(jsonPath("$.issueId").doesNotExist());
+        assertCreatedIssueWithSpec();
+        assertReplayIsolationAndClear();
+    }
 
-        // 次条消息：信息足够 → 工具创建 + clarify 落规格
+    /** 次条消息：信息足够 → 工具创建 + clarify 落规格（fixture 确定性分支断言，
+     * 审查 P3-11：明确"规格草稿与三段简报已生成"而非仅"已创建需求"）。 */
+    private String assertCreatedIssueWithSpec() throws Exception {
         String created = mockMvc.perform(post(
                         "{\"message\":\"设备点检：字段有设备名称、点检结果、备注，结果必填；验收标准是列表可建可筛\"}",
                         userBearer))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.reply").value(
                         org.hamcrest.Matchers.containsString("已创建需求")))
+                .andExpect(jsonPath("$.reply").value(
+                        org.hamcrest.Matchers.containsString("规格草稿与三段简报已生成")))
                 .andExpect(jsonPath("$.issueId").isNotEmpty())
                 .andReturn().getResponse().getContentAsString();
         String issueId = JsonPath.read(created, "$.issueId");
-
         Integer specs = jdbc.queryForObject(
                 "SELECT count(*) FROM requirement_spec WHERE issue_id = ?", Integer.class, issueId);
-        assertThat(specs).isGreaterThanOrEqualTo(1);
+        assertThat(specs).isEqualTo(1);
+        String briefJson = jdbc.queryForObject(
+                "SELECT brief_json FROM requirement_spec WHERE issue_id = ?"
+                        + " ORDER BY revision DESC LIMIT 1", String.class, issueId);
+        assertThat(briefJson).contains("colloquial").contains("agentPrompt");
+        return issueId;
+    }
 
-        // 回放：assistant 消息携带 issueId；他人隔离
+    private void assertReplayIsolationAndClear() throws Exception {
+        // 回放：assistant 消息携带 issueId；他人隔离；清空
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/issues/workshop")
                         .header("Authorization", userBearer))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(4))
-                .andExpect(jsonPath("$[3].issueId").value(issueId));
+                .andExpect(jsonPath("$.length()").value(4));
         mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/issues/workshop")
                         .header("Authorization", adminBearer))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
-
-        // 清空
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/v1/issues/workshop")
                         .header("Authorization", userBearer))
                 .andExpect(status().isOk())

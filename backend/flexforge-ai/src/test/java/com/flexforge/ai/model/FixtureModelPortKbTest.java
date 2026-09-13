@@ -101,6 +101,28 @@ class FixtureModelPortKbTest {
     }
 
     @Test
+    void listToolResultIsSummarizedNotDropped() {
+        // 审查 P2-6：list_entities 的索引行（半角括号顿号连接）此前被全角条件全灭
+        String prompt = FixtureModelPort.KB_TOOL_RESULT_MARKER
+                + "\n[list_entities]\n采购订单(purchase_order)、图书借阅(library_book)\n\n"
+                + QUESTION + "\n刚才那个问题";
+        assertThat(FixtureModelPort.kbAnswer(prompt))
+                .contains("采购订单(purchase_order)")
+                .contains("图书借阅(library_book)")
+                .doesNotContain("[list_entities]");
+    }
+
+    @Test
+    void entityPairRegexHandlesDisplayNameWithParentheses() {
+        // 审查 P3-4：displayName 含括号段（"v2"）不吞并相邻实体
+        String prompt = FixtureModelPort.KB_ENTITY_INDEX_MARKER
+                + "\n采购订单(v2)(purchase_order)、图书(library_book)\n"
+                + QUESTION + "\n采购订单业务有哪些字段";
+        assertThat(FixtureModelPort.kbAnswer(prompt))
+                .isEqualTo("{\"tool\":\"inspect_entity\",\"entity\":\"purchase_order\"}");
+    }
+
+    @Test
     void workshopFirstMessageAsksAndSecondTriggersCreateIssue() {
         String first = FixtureModelPort.WORKSHOP_HISTORY_MARKER + "\n（无）\n"
                 + FixtureModelPort.WORKSHOP_MESSAGE_MARKER + "\n我想要个点检需求";

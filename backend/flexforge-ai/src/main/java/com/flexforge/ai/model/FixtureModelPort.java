@@ -40,7 +40,7 @@ public class FixtureModelPort implements ModelPort {
     static final String KB_ENTITY_INDEX_MARKER = "## 业务实体索引（数据）";
     static final String KB_TOOL_RESULT_MARKER = "## 工具结果（数据）";
     private static final Pattern KB_ENTITY_PAIR =
-            Pattern.compile("(.+?)\\(([a-z0-9_]+)\\)");
+            Pattern.compile("([^((（]*)\\(([a-z0-9_]+)\\)(、|$)");
     private static final Pattern KB_ENTRY_LINE =
             Pattern.compile("^### \\[(.*)] (.+)$");
     private static final Pattern KB_ATTACHMENT_LINE =
@@ -158,8 +158,8 @@ public class FixtureModelPort implements ModelPort {
      * 用户消息确定性派生 title/description 输出 create_issue 工具调用。
      * 段边界取标记定位（历史与当前消息分节，消息内嵌 "用户：" 字面量不干扰）。 */
     static String workshopAnswer(String prompt) {
-        int historyStart = prompt.indexOf(WORKSHOP_HISTORY_MARKER);
-        int messageStart = prompt.indexOf(WORKSHOP_MESSAGE_MARKER);
+        int historyStart = prompt.lastIndexOf(WORKSHOP_HISTORY_MARKER);
+        int messageStart = prompt.lastIndexOf(WORKSHOP_MESSAGE_MARKER);
         String history = historyStart >= 0 && messageStart > historyStart
                 ? prompt.substring(historyStart + WORKSHOP_HISTORY_MARKER.length(), messageStart)
                 : "";
@@ -182,7 +182,8 @@ public class FixtureModelPort implements ModelPort {
                 + ",\"description\":" + quote(description) + "}";
     }
 
-    /** JSON 字符串转义（fixture 内构造少量字段的确定性输出）。 */
+    /** JSON 字符串转义（fixture 内构造少量字段的确定性输出）；
+     * 其余控制字符统一转 unicode 转义序列（审查 P3-3：U+000B 等会产出非法 JSON）。 */
     private static String quote(String value) {
         StringBuilder out = new StringBuilder("\"");
         for (int i = 0; i < value.length(); i++) {
@@ -193,16 +194,24 @@ public class FixtureModelPort implements ModelPort {
                 case '\n' -> out.append("\\n");
                 case '\r' -> out.append("");
                 case '\t' -> out.append("\\t");
-                default -> out.append(c);
+                default -> {
+                    if (c < 0x20) {
+                        out.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        out.append(c);
+                    }
+                }
             }
         }
         return out.append('"').toString();
     }
 
     /** 业务工具判定：提问命中索引中的实体（显示名或 name）→ inspect_entity；
-     * 问"有哪些业务"且索引非空 → list_entities；否则 null（走普通回答路径）。 */
+     * 问"有哪些业务"且索引非空 → list_entities；否则 null（走普通回答路径）。
+     * 段定位取 lastIndexOf（审查 P3-2：与 kb 主路径同口径，用户消息注入的
+     * 标记字面量先于真实段出现时不误导）。 */
     static String businessToolCall(String prompt) {
-        int indexStart = prompt.indexOf(KB_ENTITY_INDEX_MARKER);
+        int indexStart = prompt.lastIndexOf(KB_ENTITY_INDEX_MARKER);
         if (indexStart < 0) {
             return null;
         }
@@ -211,27 +220,75 @@ public class FixtureModelPort implements ModelPort {
             return null;
         }
         String question = questionSection(prompt);
-        Matcher pair = KB_ENTITY_PAIR.matcher(index);
-        while (pair.find()) {
-            if (question.contains(pair.group(1)) || question.contains(pair.group(2))) {
-                return "{\"tool\":\"inspect_entity\",\"entity\":" + quote(pair.group(2)) + "}";
+        String inspect = inspectCallFor(index, question);
+        return inspect != null ? inspect : listCallFor(question);
+    }
+
+    /** 提问命中索引实体 → inspect_entity 工具调用 JSON（未命中 null）。
+     * 按顿号分段、取段尾 (name) 为实体名（审查 P3-4：displayName 含括号段
+     * 时正则跨段误配，如 采购订单(v2)(purchase_order) 的 v2 被当实体名）。 */
+    private static String inspectCallFor(String index, String question) {
+        for (String raw : index.split("、")) {
+            String segment = raw.strip();
+            String entityName = entityNameOf(segment);
+            if (entityName == null) {
+                continue;
+            }
+            if (questionMentions(displayOf(segment, entityName), entityName, question)) {
+                return "{\"tool\":\"inspect_entity\",\"entity\":" + quote(entityName) + "}";
             }
         }
+        return null;
+    }
+
+    /** 命中判定：显示名（或其首个括号段前缀，如 采购订单(v2) → 采购订单）
+     * 或实体名出现在提问中。 */
+    private static boolean questionMentions(String display, String entityName,
+                                            String question) {
+        if (display.isEmpty()) {
+            return question.contains(entityName);
+        }
+        int paren = display.indexOf('(');
+        String prefix = paren > 0 ? display.substring(0, paren) : display;
+        return question.contains(display) || question.contains(entityName)
+                || (!prefix.isEmpty() && question.contains(prefix));
+    }
+
+    private static String listCallFor(String question) {
         if (question.contains("业务") && (question.contains("哪些") || question.contains("什么"))) {
             return "{\"tool\":\"list_entities\"}";
         }
         return null;
     }
 
-    /** 工具结果作答：摘出业务行与字段行，注明来源为平台业务结构。 */
+    private static String displayOf(String segment, String entityName) {
+        return segment.endsWith("(" + entityName + ")")
+                ? segment.substring(0, segment.length() - entityName.length() - 2) : segment;
+    }
+
+    /** 段尾半角括号内的实体名（采购订单(v2)(purchase_order) → purchase_order）。 */
+    private static String entityNameOf(String segment) {
+        if (!segment.endsWith(")")) {
+            return null;
+        }
+        int open = segment.lastIndexOf('(');
+        if (open < 0) {
+            return null;
+        }
+        String name = segment.substring(open + 1, segment.length() - 1);
+        return name.matches("[a-z0-9_]+") ? name : null;
+    }
+
+    /** 工具结果作答：保留正文行（跳过 [tool] 结果头行），注明来源为平台业务结构
+     * ——inspect 形态（业务：/字段行）与 list 形态（索引行）都覆盖（审查 P2-6：
+     * 原全角括号条件吞掉了 list 结果全部行）。 */
     static String toolResultAnswer(String prompt) {
-        int start = prompt.indexOf(KB_TOOL_RESULT_MARKER) + KB_TOOL_RESULT_MARKER.length();
+        int start = prompt.lastIndexOf(KB_TOOL_RESULT_MARKER) + KB_TOOL_RESULT_MARKER.length();
         String result = sectionAfter(prompt, start);
         StringBuilder answer = new StringBuilder("根据平台业务结构，为你整理如下：\n");
         for (String line : result.split("\n")) {
             String stripped = line.strip();
-            if (!stripped.isEmpty() && (stripped.startsWith("业务：")
-                    || stripped.startsWith("- ") || stripped.contains("、（"))) {
+            if (!stripped.isEmpty() && !stripped.startsWith("[")) {
                 answer.append(stripped).append('\n');
             }
         }

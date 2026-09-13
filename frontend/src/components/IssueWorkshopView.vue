@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 import { apiErrorMessage } from '@/api/client';
 import {
@@ -26,7 +26,7 @@ import { t } from '@/registry/localeRegistry';
  * Issue 工作台视图（P30 整合页 Issue 模式）：与 AI 助手同构布局——居中工坊
  * 对话（默认）+ 右侧"我的需求"侧栏（左侧已有全局导航）；侧栏选中进入
  * per-issue 详情（澄清对话/确认卡/讨论区，P23 语义不变，自原 IssueChatWorkbench
- * 移植）；创建由工坊 AI 工具完成（表单创建保留为侧栏入口的备用路径）。
+ * 移植）；创建统一走工坊对话（AI 工具建需求），侧栏"新建需求"回到工坊。
  */
 const issues = ref<IssueRecord[]>([]);
 const loading = ref(true);
@@ -38,6 +38,11 @@ const comments = ref<IssueComment[]>([]);
 const publishing = ref(false);
 const publishError = ref<string | null>(null);
 const workshopRef = ref<InstanceType<typeof IssueWorkshopChat> | null>(null);
+
+/** 已发布需求 id 集（服务端列表为准——工坊确认卡跨挂载不复活，审查 P2-1）。 */
+const publishedIds = computed(
+  () => new Set(issues.value.filter((issue) => issue.publishedAt).map((issue) => issue.id)),
+);
 
 async function load(): Promise<void> {
   loading.value = true;
@@ -136,15 +141,19 @@ onMounted(load);
         <IssueWorkshopChat
           ref="workshopRef"
           :publishing="publishing"
+          :published-ids="publishedIds"
           @created="onWorkshopCreated"
           @publish="onWorkshopPublish"
         />
+        <p v-if="publishError" class="form-error" role="alert" data-testid="workshop-publish-error">
+          {{ publishError }}
+        </p>
       </template>
       <template v-else>
         <header class="chat-head">
           <div class="chat-head-title">
             <BaseButton variant="ghost" data-testid="workshop-back" @click="active = null">
-              {{ t('issues.backToWorkshop', '返回工坊') }}
+              {{ t('issues.workshopBack', '返回工坊') }}
             </BaseButton>
             <h3>{{ active.title }}</h3>
             <span v-if="active.publishedAt" class="published-badge" data-testid="published-badge">

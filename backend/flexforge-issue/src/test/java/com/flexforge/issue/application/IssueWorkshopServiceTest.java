@@ -134,6 +134,29 @@ class IssueWorkshopServiceTest {
     }
 
     @Test
+    void oversizedModelReplyIsCappedBeforePersist() {
+        // 审查 P2-4：模型回复不受控——落库前截断到 8000（V021 CHECK 口径）
+        String huge = "{\"reply\":\"" + "答".repeat(9000) + "\"}";
+        IssueWorkshopService workshop = service(
+                new ScriptedModel(huge), new RecordingTool(), clarifyStub(true, false));
+        IssueWorkshopService.WorkshopOutcome outcome = workshop.send("demo", "消息");
+        assertThat(store.rows.get(1).content().length())
+                .isLessThanOrEqualTo(IssueWorkshopService.REPLY_STORE_MAX);
+        assertThat(outcome.reply().length()).isLessThanOrEqualTo(9000);
+        // 码点安全：截断不劈代理对
+        String emojiReply = "{\"reply\":\"" + "😀".repeat(4001) + "\"}";
+        WorkshopStore store2 = new WorkshopStore();
+        IssueWorkshopService workshop2 = new IssueWorkshopService(
+                new IssueWorkshopService.WorkshopKernel(store2, clarifyStub(true, false),
+                        new ScriptedModel(emojiReply), event -> {
+                        }, CLOCK),
+                List.of());
+        workshop2.send("demo", "消息");
+        String stored = store2.rows.get(1).content();
+        assertThat(Character.isHighSurrogate(stored.charAt(stored.length() - 1))).isFalse();
+    }
+
+    @Test
     void toolCallCreatesIssueAndSavesSpecViaClarify() {
         RecordingTool tool = new RecordingTool();
         IssueWorkshopService workshop = service(
@@ -203,6 +226,30 @@ class IssueWorkshopServiceTest {
         assertThat(tool.calls).hasSize(2);
         assertThat(tool.calls.get(1)).containsEntry("title", "合法标题");
         assertThat(outcome.issueId()).isEqualTo("iss-1");
+    }
+
+    @Test
+    void oversizeDescriptionIsRejectedWithFeedback() {
+        // P2-5：description 服务端 4000 上限（此前仅前端表单约束）
+        RecordingTool tool = new RecordingTool() {
+            @Override
+            public ToolResult execute(String operator, Map<String, String> args) {
+                calls.add(Map.copyOf(args));
+                if (args.getOrDefault(WorkshopTool.DESCRIPTION_ARG, "").length() > 4000) {
+                    throw new IllegalArgumentException("description ≤4000 字符");
+                }
+                return new ToolResult("iss-2", "ok", "需求已创建");
+            }
+        };
+        IssueWorkshopService workshop = service(
+                new ScriptedModel(
+                        "{\"tool\":\"create_issue\",\"title\":\"t\",\"description\":\""
+                                + "描".repeat(4001) + "\"}",
+                        "{\"tool\":\"create_issue\",\"title\":\"t\",\"description\":\"短\"}"),
+                tool, clarifyStub(true, false));
+        IssueWorkshopService.WorkshopOutcome outcome = workshop.send("demo", "消息");
+        assertThat(tool.calls).hasSize(2);
+        assertThat(outcome.issueId()).isEqualTo("iss-2");
     }
 
     @Test

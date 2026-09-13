@@ -707,7 +707,7 @@
 > 背景：用户裁决四点——①滑动开关偏小且"Issue 工作台"文字溢出，标题随模式改名致开关位置跳动 → 开关右置加大（等宽网格防溢出）；②Issue 模式与 AI 助手统一布局（对话居中），需求侧栏保留但移到右侧（左侧已有全局导航）；③Issue 工作台对话化：对话开场先输出模板引导文本，澄清完成后 **AI 自己调用工具创建 issue**（提示词内实现工具调用协议并为 AI 预留工具接口）；④开发者完整信息面只改列表侧栏位置（右移），本步简化面向用户。
 > **红线**：
 > - 工坊（workshop）对话按用户隔离落库（V021 issue_workshop_message，issue_id 可空关联创建结果）；开场引导为平台模板文案（非模型调用，i18n）；
-> - 工具调用协议=提示词 JSON 双态（{"reply":...} 追问 / {"tool":"create_issue","title","description"}），执行面收敛在 `WorkshopTool` 接口（预留扩展位，Spring 注入注册表；未知工具按非法输出重试→400 model_output_invalid）；create_issue 经既有 IssueService.create（title ≤120 等校验复用、creator=认证用户、审计不变），创建后以对话摘要跑既有 clarify v3 产规格草稿+三段简报并落新版本（失败降级"已创建，规格未成"不回滚创建）；确认推送仍是用户动作（FR-ISSUE-07 语义不变）；
+> - 工具调用协议=提示词 JSON 双态（{"reply":...} 追问 / {"tool":"create_issue","title","description"}），执行面收敛在 `WorkshopTool` 接口（预留扩展位，Spring 注入注册表；未知工具按非法输出重试→400 validation_error）；create_issue 经既有 IssueService.create（title ≤120 等校验复用、creator=认证用户、审计不变），创建后以对话摘要跑既有 clarify v3 产规格草稿+三段简报并落新版本（失败降级"已创建，规格未成"不回滚创建）；确认推送仍是用户动作（FR-ISSUE-07 语义不变）；
 > - 模型输出工具参数为"待校验数据"（S7/§3.6-2）：title/description 走服务端既有校验，对话内容为数据段非指令；
 > - per-issue 详情视图（澄清对话/确认卡/讨论区）从原 IssueChatWorkbench 移植，组件退役并由新视图承载其测试语义；开发者 /issues 完整信息面仅列表列右移。
 > **非目标**：不做通用 function-calling 端口（ModelPort 仍文本契约）；工具面只有 create_issue；工坊对话不带附件（与助手分工不变）。
