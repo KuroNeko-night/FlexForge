@@ -89,6 +89,35 @@ export function listIssues(status?: string, page = 1, pageSize = 50): Promise<Is
   return apiFetch<IssueRecord[]>(`/issues${query}`);
 }
 
+/** 需求工坊（FR-ISSUE-09，P30）：对话式创建，澄清完成后 AI 调用工具建 issue。 */
+export interface WorkshopMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  issueId: string | null;
+}
+
+export interface WorkshopOutcome {
+  reply: string;
+  issueId: string | null;
+  issueTitle: string | null;
+}
+
+export function fetchWorkshopMessages(): Promise<WorkshopMessage[]> {
+  return apiFetch<WorkshopMessage[]>('/issues/workshop');
+}
+
+export function sendWorkshopMessage(message: string): Promise<WorkshopOutcome> {
+  return apiFetch<WorkshopOutcome>('/issues/workshop', {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  });
+}
+
+export function clearWorkshopMessages(): Promise<{ removed: number }> {
+  return apiFetch<{ removed: number }>('/issues/workshop', { method: 'DELETE' });
+}
+
 export function createIssue(payload: {
   title: string;
   description: string;

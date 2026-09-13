@@ -5,7 +5,7 @@ import { ApiError, apiErrorMessage } from '@/api/client';
 import { askKb, clearKbMessages, fetchKbMessages, type KbMessage } from '@/api/kb';
 import AssistantChat from '@/components/AssistantChat.vue';
 import AssistantComposer from '@/components/AssistantComposer.vue';
-import IssueChatWorkbench from '@/components/IssueChatWorkbench.vue';
+import IssueWorkshopView from '@/components/IssueWorkshopView.vue';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
 import StateView from '@/components/StateView.vue';
@@ -146,7 +146,6 @@ onMounted(load);
         :aria-label="t('assistant.modeLabel', '模式切换')"
         data-testid="assistant-mode"
       >
-        <span class="mode-thumb" :class="{ 'mode-thumb-right': mode === 'issues' }" />
         <button
           type="button"
           role="tab"
@@ -177,9 +176,10 @@ onMounted(load);
       >
         {{ t('assistant.clear', '清空会话') }}
       </BaseButton>
+      <span class="head-spacer" />
     </header>
 
-    <IssueChatWorkbench v-if="mode === 'issues'" data-testid="assistant-issues-mode" />
+    <IssueWorkshopView v-if="mode === 'issues'" data-testid="assistant-issues-mode" />
     <template v-else>
       <StateView v-if="state !== 'ready'" :state="state" :message="error" />
       <template v-else>
@@ -238,44 +238,31 @@ onMounted(load);
   margin: var(--ff-space-1) 0 0;
 }
 .mode-switch {
-  position: relative;
-  display: inline-flex;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   border: 1px solid var(--ff-border);
   border-radius: 999px;
   background: var(--ff-surface-muted);
-  padding: 3px;
+  padding: 4px;
+  margin-left: auto;
 }
 .mode-switch button {
-  position: relative;
-  z-index: 1;
   border: none;
   background: none;
-  padding: var(--ff-space-1) var(--ff-space-3);
+  padding: var(--ff-space-2) var(--ff-space-4);
   border-radius: 999px;
-  font-size: var(--ff-text-sm);
+  font-size: var(--ff-text-md);
   color: var(--ff-text-muted);
   cursor: pointer;
   white-space: nowrap;
+  transition: color var(--ff-motion-fast, 0.15s) var(--ff-ease, ease);
 }
 .mode-switch .mode-active {
+  background: var(--ff-primary);
   color: var(--ff-primary-ink);
 }
-.mode-thumb {
-  position: absolute;
-  top: 3px;
-  bottom: 3px;
-  left: 3px;
-  width: calc(50% - 3px);
-  border-radius: 999px;
-  background: var(--ff-primary);
-  transition: transform var(--ff-motion-fast, 0.15s) var(--ff-ease, ease);
-}
-.mode-thumb-right {
-  transform: translateX(100%);
-}
-@media (prefers-reduced-motion: reduce) {
-  .mode-thumb {
-    transition: none;
-  }
+.head-spacer {
+  flex: 1;
 }
 </style>

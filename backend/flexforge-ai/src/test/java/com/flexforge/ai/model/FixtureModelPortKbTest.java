@@ -61,4 +61,78 @@ class FixtureModelPortKbTest {
                 .contains("暂无")
                 .doesNotContain("已收到附件");
     }
+
+    @Test
+    void businessQuestionTriggersInspectToolCallFromEntityIndex() {
+        String prompt = "头部\n"
+                + SECTION + "\n" + FixtureModelPort.KB_NO_HIT + "\n"
+                + FixtureModelPort.KB_ATTACHMENTS_MARKER + "\n" + FixtureModelPort.KB_NO_ATTACHMENTS + "\n"
+                + FixtureModelPort.KB_ENTITY_INDEX_MARKER
+                + "\n采购订单(purchase_order)、图书借阅(library_book)\n"
+                + QUESTION + "\n采购订单业务有哪些字段";
+        assertThat(FixtureModelPort.kbAnswer(prompt))
+                .isEqualTo("{\"tool\":\"inspect_entity\",\"entity\":\"purchase_order\"}");
+    }
+
+    @Test
+    void businessListQuestionTriggersListTool() {
+        String prompt = FixtureModelPort.KB_ENTITY_INDEX_MARKER
+                + "\n采购订单(purchase_order)\n" + QUESTION + "\n平台上有哪些业务";
+        assertThat(FixtureModelPort.kbAnswer(prompt))
+                .isEqualTo("{\"tool\":\"list_entities\"}");
+    }
+
+    @Test
+    void emptyEntityIndexDoesNotTriggerTools() {
+        String prompt = FixtureModelPort.KB_ENTITY_INDEX_MARKER
+                + "\n（暂无业务实体）\n" + QUESTION + "\n有哪些业务";
+        assertThat(FixtureModelPort.kbAnswer(prompt)).contains("暂无");
+    }
+
+    @Test
+    void toolResultIsSummarizedDeterministically() {
+        String prompt = "头部\n" + FixtureModelPort.KB_TOOL_RESULT_MARKER
+                + "\n[inspect_entity]\n业务：采购订单(purchase_order)\n- 单号(order_no)：text，必填\n\n"
+                + QUESTION + "\n刚才那个问题";
+        assertThat(FixtureModelPort.kbAnswer(prompt))
+                .contains("平台业务结构")
+                .contains("采购订单")
+                .contains("业务实体元数据");
+    }
+
+    @Test
+    void listToolResultIsSummarizedNotDropped() {
+        // 审查 P2-6：list_entities 的索引行（半角括号顿号连接）此前被全角条件全灭
+        String prompt = FixtureModelPort.KB_TOOL_RESULT_MARKER
+                + "\n[list_entities]\n采购订单(purchase_order)、图书借阅(library_book)\n\n"
+                + QUESTION + "\n刚才那个问题";
+        assertThat(FixtureModelPort.kbAnswer(prompt))
+                .contains("采购订单(purchase_order)")
+                .contains("图书借阅(library_book)")
+                .doesNotContain("[list_entities]");
+    }
+
+    @Test
+    void entityPairRegexHandlesDisplayNameWithParentheses() {
+        // 审查 P3-4：displayName 含括号段（"v2"）不吞并相邻实体
+        String prompt = FixtureModelPort.KB_ENTITY_INDEX_MARKER
+                + "\n采购订单(v2)(purchase_order)、图书(library_book)\n"
+                + QUESTION + "\n采购订单业务有哪些字段";
+        assertThat(FixtureModelPort.kbAnswer(prompt))
+                .isEqualTo("{\"tool\":\"inspect_entity\",\"entity\":\"purchase_order\"}");
+    }
+
+    @Test
+    void workshopFirstMessageAsksAndSecondTriggersCreateIssue() {
+        String first = FixtureModelPort.WORKSHOP_HISTORY_MARKER + "\n（无）\n"
+                + FixtureModelPort.WORKSHOP_MESSAGE_MARKER + "\n我想要个点检需求";
+        assertThat(FixtureModelPort.workshopAnswer(first)).contains("\"reply\"").contains("字段");
+
+        String second = FixtureModelPort.WORKSHOP_HISTORY_MARKER
+                + "\n用户：我想要个点检需求\n助手：好的…\n"
+                + FixtureModelPort.WORKSHOP_MESSAGE_MARKER + "\n字段有设备与结果，验收可建可筛";
+        assertThat(FixtureModelPort.workshopAnswer(second))
+                .contains("\"tool\":\"create_issue\"")
+                .contains("字段有设备与结果");
+    }
 }

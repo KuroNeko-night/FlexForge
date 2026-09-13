@@ -181,7 +181,7 @@ watch(userOnly, () => {
         </ul>
         <IssueDetail v-if="selected" :issue="selected" @updated="syncIssue" />
         <p v-else class="issue-empty-hint">
-          {{ t('issues.selectHint', '选择左侧 Issue 查看详情与 AI 对话') }}
+          {{ t('issues.selectHint', '从右侧需求列表选择一条，查看详情与 AI 对话') }}
         </p>
       </div>
 
@@ -250,10 +250,16 @@ watch(userOnly, () => {
   color: var(--ff-text-muted);
 }
 .issues-layout {
+  /* P30：需求列表右移（左侧已有全局导航，与整合页右侧栏口径一致）——
+     DOM 序不变，网格列交换 + direction 反转让列表落右、详情落左 */
   display: grid;
-  grid-template-columns: minmax(16rem, 22rem) 1fr;
+  grid-template-columns: 1fr minmax(16rem, 22rem);
+  direction: rtl;
   gap: var(--ff-space-4);
   align-items: start;
+}
+.issues-layout > * {
+  direction: ltr;
 }
 .issue-list {
   list-style: none;

@@ -45,8 +45,25 @@ class KbAssistantServiceTest {
     }
 
     private KbAssistantService service(ModelPort model) {
-        return new KbAssistantService(entries, chat, model, audit,
-                FakeKbRepositories.FIXED_CLOCK);
+        return service(model, java.util.List.of());
+    }
+
+    private KbAssistantService service(ModelPort model,
+                                       java.util.List<AssistantTool> toolBeans) {
+        return new KbAssistantService(
+                new KbAssistantService.KbKernel(
+                        entries, chat, model, audit, FakeKbRepositories.FIXED_CLOCK),
+                toolBeans, stubBusinessTools("采购订单(purchase_order)、图书(library_book)"));
+    }
+
+    /** 固定实体索引的业务工具桩（元数据查询在 API 级用真实 MetaRegistry 覆盖）。 */
+    static BusinessEntityTools stubBusinessTools(String index) {
+        return new BusinessEntityTools(null) {
+            @Override
+            public String entityIndex() {
+                return index;
+            }
+        };
     }
 
     private void seed(String title, String category, String content) {
@@ -274,6 +291,85 @@ class KbAssistantServiceTest {
         assistant.ask("demo", "q", List.of(new KbAssistantService.IncomingAttachment(
                 longName, "application/pdf", "x".getBytes())));
         assertThat(chat.attachments.get(0).filename()).endsWith(".pdf");
+    }
+
+    @Test
+    void businessToolLoopExecutesToolAndFeedsResultBack() {
+        // 桩模型：首轮输出工具调用 JSON，次轮基于工具结果作答
+        RecordingModelPort port = new RecordingModelPort() {
+            int round;
+
+            @Override
+            public ModelReply complete(ModelRequest request) {
+                super.complete(request);
+                return new ModelReply(round++ == 0
+                        ? "{\"tool\":\"inspect_entity\",\"entity\":\"purchase_order\"}"
+                        : "根据平台业务结构：采购订单包含单号、金额等字段。");
+            }
+        };
+        final String[] received = new String[1];
+        AssistantTool inspect = new AssistantTool() {
+            @Override
+            public String name() {
+                return "inspect_entity";
+            }
+
+            @Override
+            public String description() {
+                return "test";
+            }
+
+            @Override
+            public String apply(java.util.Map<String, String> parameters) {
+                received[0] = parameters.get("entity");
+                return "业务：采购订单(purchase_order)\n- 单号(order_no)：text，必填";
+            }
+        };
+        KbAssistantService.AskOutcome outcome =
+                service(port, List.of(inspect)).ask("demo", "采购订单业务有哪些字段");
+        assertThat(received[0]).isEqualTo("purchase_order");
+        // 第二轮提示词携带工具结果数据段（供模型引用）
+        assertThat(port.prompts.get(1)).contains("## 工具结果（数据）");
+        assertThat(port.prompts.get(1)).contains("单号(order_no)");
+        assertThat(outcome.answer()).contains("采购订单包含单号");
+        assertThat(chat.rows).hasSize(2);
+    }
+
+    @Test
+    void fixtureAnswersBusinessStructureQuestionsViaTools() {
+        // fixture 脚本：命中实体索引 → 工具调用 → 工具结果确定性作答
+        class RecordingFixture extends FixtureModelPort {
+            final List<String> prompts = new java.util.ArrayList<>();
+
+            @Override
+            public ModelReply complete(ModelRequest request) {
+                prompts.add(request.prompt());
+                return super.complete(request);
+            }
+        }
+        RecordingFixture fixture = new RecordingFixture();
+        AssistantTool inspect = new AssistantTool() {
+            @Override
+            public String name() {
+                return "inspect_entity";
+            }
+
+            @Override
+            public String description() {
+                return "test";
+            }
+
+            @Override
+            public String apply(java.util.Map<String, String> parameters) {
+                return "业务：采购订单(purchase_order)\n- 单号(order_no)：text，必填\n- 金额(amount)：number";
+            }
+        };
+        KbAssistantService.AskOutcome outcome = service(fixture, List.of(inspect))
+                .ask("demo", "采购订单业务有哪些内容");
+        assertThat(fixture.prompts).hasSize(2);
+        assertThat(fixture.prompts.get(1)).contains("## 工具结果（数据）");
+        assertThat(outcome.answer()).contains("平台业务结构");
+        assertThat(outcome.answer()).contains("业务实体元数据");
     }
 
     /** 截取提示词某数据段（标记起至下一 "## " 段或文末）。 */
