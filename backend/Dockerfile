@@ -32,7 +32,7 @@ COPY backend/flexforge-kb/src flexforge-kb/src
 COPY backend/flexforge-app/src flexforge-app/src
 RUN ./mvnw -B -ntp package -DskipTests
 
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 # P20 数据处理器运行时（ADR-0002 Level 2）：python3 仅标准库、无 pip 安装面（S6 修订）
 RUN apk add --no-cache python3
