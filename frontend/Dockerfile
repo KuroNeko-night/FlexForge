@@ -1,6 +1,6 @@
 # 开发模式镜像（P01 骨架）：Vite dev server + 同源代理到 backend 服务。
 # 生产构建与静态服务在 P06 前端动态渲染定稿后再引入 nginx（docs/09 P06）。
-FROM node:24-alpine
+FROM node:26-alpine
 WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
