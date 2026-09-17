@@ -1,5 +1,5 @@
 # 构建层与运行层基础镜像版本固定（docs/13 §3.9 供应链基线）
-FROM maven:3.9-eclipse-temurin-17 AS build
+FROM maven:3-eclipse-temurin-26 AS build
 WORKDIR /build/backend
 # 先复制构建描述并预取依赖，源码变更时可复用依赖层缓存
 COPY backend/mvnw backend/pom.xml ./
