@@ -326,6 +326,9 @@ defineExpose({ markPublished, reload: load });
 .composer textarea {
   flex: 1;
   resize: vertical;
+  /* 用户竖向拖拽上限（审查 P3-3：主列 overflow:hidden 后拖过头会把发送钮
+     挤出可裁剪区；30vh 内 chat-log 仍有收缩余量） */
+  max-height: 30vh;
 }
 .composer-hint {
   color: var(--ff-text-muted);

@@ -151,7 +151,7 @@ onMounted(load);
       </template>
       <template v-else>
         <!-- P32 分区重排：详情自管滚动；sticky 头部保上下文，澄清/确认/讨论三区卡片分组 -->
-        <div class="detail" data-testid="issue-detail">
+        <div class="detail" data-testid="workshop-issue-detail">
           <header class="detail-head">
             <div class="detail-head-row">
               <BaseButton variant="ghost" data-testid="workshop-back" @click="active = null">
