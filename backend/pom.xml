@@ -34,7 +34,7 @@
     <testcontainers.version>2.0.5</testcontainers.version>
     <archunit.version>1.4.1</archunit.version>
     <nimbus-jose-jwt.version>10.4.1</nimbus-jose-jwt.version>
-    <pdfbox.version>3.0.5</pdfbox.version>
+    <pdfbox.version>3.0.8</pdfbox.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <checkstyle.version>10.26.1</checkstyle.version>
   </properties>
