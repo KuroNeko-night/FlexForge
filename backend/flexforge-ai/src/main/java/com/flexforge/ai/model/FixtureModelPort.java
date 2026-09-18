@@ -36,7 +36,7 @@ public class FixtureModelPort implements ModelPort {
     /** 工坊段标记（flexforge-issue prompts/workshop-v1.md 一一对应，P30）。 */
     static final String WORKSHOP_MESSAGE_MARKER = "## 用户消息（数据）";
     static final String WORKSHOP_HISTORY_MARKER = "## 对话记录（数据）";
-    /** 助手业务段标记（flexforge-kb prompts/kb/assistant-v3.md 一一对应，P30）。 */
+    /** 助手业务段标记（flexforge-kb prompts/kb/assistant-v4.md 一一对应，P30-P31）。 */
     static final String KB_ENTITY_INDEX_MARKER = "## 业务实体索引（数据）";
     static final String KB_TOOL_RESULT_MARKER = "## 工具结果（数据）";
     private static final Pattern KB_ENTITY_PAIR =
@@ -206,10 +206,11 @@ public class FixtureModelPort implements ModelPort {
         return out.append('"').toString();
     }
 
-    /** 业务工具判定：提问命中索引中的实体（显示名或 name）→ inspect_entity；
-     * 问"有哪些业务"且索引非空 → list_entities；否则 null（走普通回答路径）。
-     * 段定位取 lastIndexOf（审查 P3-2：与 kb 主路径同口径，用户消息注入的
-     * 标记字面量先于真实段出现时不误导）。 */
+    /** 业务工具判定：数据类提问（到货/进度等+命中实体）→ query_records；
+     *  结构类提问命中索引实体（显示名或 name）→ inspect_entity；问"有哪些业务"
+     *  且索引非空 → list_entities；否则 null（走普通回答路径）。
+     *  段定位取 lastIndexOf（审查 P3-2：与 kb 主路径同口径，用户消息注入的
+     *  标记字面量先于真实段出现时不误导）。 */
     static String businessToolCall(String prompt) {
         int indexStart = prompt.lastIndexOf(KB_ENTITY_INDEX_MARKER);
         if (indexStart < 0) {
@@ -220,8 +221,49 @@ public class FixtureModelPort implements ModelPort {
             return null;
         }
         String question = questionSection(prompt);
+        String recordQuery = recordQueryCallFor(index, question);
+        if (recordQuery != null) {
+            return recordQuery;
+        }
         String inspect = inspectCallFor(index, question);
         return inspect != null ? inspect : listCallFor(question);
+    }
+
+    /** 数据类提问判定：问具体记录内容（到货/何时/进度/金额/数量/状态等）且命中
+     *  索引实体 → query_records 工具调用 JSON（不带过滤，交真实工具查最新记录；
+     *  未命中返回 null 走结构类判定）。 */
+    private static String recordQueryCallFor(String index, String question) {
+        if (!asksRecordData(question)) {
+            return null;
+        }
+        for (String raw : index.split("、")) {
+            String segment = raw.strip();
+            String entityName = entityNameOf(segment);
+            if (entityName == null) {
+                continue;
+            }
+            if (questionMentions(displayOf(segment, entityName), entityName, question)) {
+                return "{\"tool\":\"query_records\",\"entity\":" + quote(entityName) + "}";
+            }
+        }
+        return null;
+    }
+
+    /** 记录级关键词（P31 演示口径：到货时间为典型场景）；结构类问句负向条件
+     *  见 {@link #asksRecordData}。 */
+    private static boolean mentionsRecordData(String question) {
+        return question.contains("到货") || question.contains("什么时候") || question.contains("何时")
+                || question.contains("几号") || question.contains("进度") || question.contains("金额")
+                || question.contains("多少条") || question.contains("状态如何");
+    }
+
+    /** 结构类问句（问"字段/类型/结构"）不路由记录查询（审查 P3-4：
+     *  如"金额字段是什么类型"应走 inspect_entity）。 */
+    private static boolean asksRecordData(String question) {
+        if (question.contains("字段") || question.contains("类型") || question.contains("结构")) {
+            return false;
+        }
+        return mentionsRecordData(question);
     }
 
     /** 提问命中索引实体 → inspect_entity 工具调用 JSON（未命中 null）。
@@ -279,20 +321,27 @@ public class FixtureModelPort implements ModelPort {
         return name.matches("[a-z0-9_]+") ? name : null;
     }
 
-    /** 工具结果作答：保留正文行（跳过 [tool] 结果头行），注明来源为平台业务结构
-     * ——inspect 形态（业务：/字段行）与 list 形态（索引行）都覆盖（审查 P2-6：
-     * 原全角括号条件吞掉了 list 结果全部行）。 */
+    /** 工具结果作答：保留正文行（跳过 [tool] 结果头行）；结果含行首「业务数据：」
+     *  标记（query_records 输出头，行首匹配防记录内容字段值伪造，审查 P3-5）时
+     *  注明来源为平台业务真实记录，否则按业务结构口径——inspect 形态（业务：/
+     *  字段行）与 list 形态（索引行）都覆盖（审查 P2-6：原全角括号条件吞掉了
+     *  list 结果全部行）。 */
     static String toolResultAnswer(String prompt) {
         int start = prompt.lastIndexOf(KB_TOOL_RESULT_MARKER) + KB_TOOL_RESULT_MARKER.length();
         String result = sectionAfter(prompt, start);
-        StringBuilder answer = new StringBuilder("根据平台业务结构，为你整理如下：\n");
+        boolean recordData = result.lines().anyMatch(line -> line.startsWith("业务数据："));
+        StringBuilder answer = new StringBuilder(recordData
+                ? "根据平台业务的真实数据记录，为你整理如下：\n"
+                : "根据平台业务结构，为你整理如下：\n");
         for (String line : result.split("\n")) {
             String stripped = line.strip();
             if (!stripped.isEmpty() && !stripped.startsWith("[")) {
                 answer.append(stripped).append('\n');
             }
         }
-        answer.append("以上信息来自业务实体元数据。");
+        answer.append(recordData
+                ? "以上信息来自平台业务数据记录（实时查询）。"
+                : "以上信息来自业务实体元数据。");
         return answer.toString();
     }
 

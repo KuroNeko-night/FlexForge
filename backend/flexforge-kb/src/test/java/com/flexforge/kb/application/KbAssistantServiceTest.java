@@ -56,9 +56,10 @@ class KbAssistantServiceTest {
                 toolBeans, stubBusinessTools("采购订单(purchase_order)、图书(library_book)"));
     }
 
-    /** 固定实体索引的业务工具桩（元数据查询在 API 级用真实 MetaRegistry 覆盖）。 */
+    /** 固定实体索引的业务工具桩（query_records 组合路径在 KbToolLoopTest
+     *  用真实工具+fixture 模型覆盖，审查 P3-3）。 */
     static BusinessEntityTools stubBusinessTools(String index) {
-        return new BusinessEntityTools(null) {
+        return new BusinessEntityTools(null, null) {
             @Override
             public String entityIndex() {
                 return index;

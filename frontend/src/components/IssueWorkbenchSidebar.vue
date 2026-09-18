@@ -99,6 +99,9 @@ const drafts = computed(() => props.issues.filter((issue) => !issue.publishedAt)
   border-radius: var(--ff-radius-md);
   background: var(--ff-surface);
   transition: width var(--ff-motion-base) ease;
+  /* P31 应用壳滚动模型：高度受壳约束（条目多时列表自身滚动，不撑长界面） */
+  min-height: 0;
+  overflow: hidden;
 }
 .sidebar.collapsed {
   width: 3rem;
@@ -142,6 +145,8 @@ const drafts = computed(() => props.issues.filter((issue) => !issue.publishedAt)
   flex-direction: column;
   gap: var(--ff-space-1);
   overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 .issue-entry {
   display: flex;

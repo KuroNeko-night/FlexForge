@@ -122,7 +122,11 @@ textarea:disabled {
 .workbench {
   display: grid;
   grid-template-columns: 15rem 1fr;
-  min-height: 100vh;
+  /* 应用壳滚动模型（NFR-UX-02，P31）：视口高度锁定、行可收缩——全局侧栏
+     固定不随内容滚动，主区独立滚动；100dvh 优先（移动端地址栏），回退 100vh */
+  grid-template-rows: minmax(0, 1fr);
+  height: 100vh;
+  height: 100dvh;
   /* extension.theme-asset 消费面（FR-PLUGIN-11）：贡献以 CSS 变量注入，
      缺省不设变量即平台默认外观；animation/icon 变量为 P09 示例预留 */
   background-image: var(--ff-theme-background, none);
@@ -138,6 +142,18 @@ textarea:disabled {
   padding: var(--ff-space-4) var(--ff-space-3);
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+/* 菜单超长时导航自身滚动（P31：侧栏视口固定，brand 与用户区不随之滚走）；
+   负 margin+等量 padding 把盒外左移的激活强调条收回滚动容器盒内（审查 P2-1：
+   overflow-y 非 visible 会让 overflow-x 变 auto，负向溢出条目会被静默裁剪） */
+.workbench-side nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin-left: calc(var(--ff-space-3) * -1);
+  padding-left: var(--ff-space-3);
 }
 .side-group-title {
   margin: var(--ff-space-3) var(--ff-space-2) var(--ff-space-1);
@@ -224,7 +240,9 @@ textarea:disabled {
 
 .workbench-main {
   padding: 1.5rem 2rem;
-  overflow-x: auto;
+  /* P31 应用壳滚动模型：主区独立滚动（宽表格横向 + 长内容纵向） */
+  min-height: 0;
+  overflow: auto;
   animation: ff-fade-in var(--ff-motion-slow) var(--ff-ease) both;
 }
 

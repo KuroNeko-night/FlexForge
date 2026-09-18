@@ -11,12 +11,13 @@ import java.util.Map;
  * 助手提示词模板装载（docs/09 P28/P29 红线：提示词文件化，代码不散落字符串）。
  * 与 flexforge-ai 的 clarify 模板分版本演进（版本常量随审计记录），文件位于
  * 本模块资源 prompts/kb/；参数值视为数据段原样嵌入（docs/13 §3.6-7/8）。
- * v2=P29：附件数据段；v3=P30：工具调用协议（list_entities/inspect_entity）+业务实体索引数据段；v1/v2 为历史保留。
+ * v2=P29：附件数据段；v3=P30：工具调用协议（list_entities/inspect_entity）+业务实体索引数据段；
+ * v4=P31：增 query_records 记录查询（业务数据问题先查真实记录）；v1-v3 为历史保留。
  */
 @PublicApi
 public final class KbPromptTemplates {
 
-    public static final String VERSION = "kb-assistant-v3";
+    public static final String VERSION = "kb-assistant-v4";
 
     private static final String TEMPLATE = load();
 
@@ -33,7 +34,7 @@ public final class KbPromptTemplates {
     }
 
     private static String load() {
-        String path = "/prompts/kb/assistant-v3.md";
+        String path = "/prompts/kb/assistant-v4.md";
         try (InputStream in = KbPromptTemplates.class.getResourceAsStream(path)) {
             if (in == null) {
                 throw new IllegalStateException("助手提示词模板缺失: " + path);
