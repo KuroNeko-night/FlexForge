@@ -123,6 +123,38 @@ class FixtureModelPortKbTest {
     }
 
     @Test
+    void recordDataQuestionTriggersQueryRecordsCall() {
+        // P31：到货类记录提问优先于结构类判定（同句含实体名+数据关键词）
+        String prompt = FixtureModelPort.KB_ENTITY_INDEX_MARKER
+                + "\n采购订单(purchase_order)、图书借阅(library_book)\n"
+                + QUESTION + "\n采购订单 PO-001 预计什么时候到货";
+        assertThat(FixtureModelPort.kbAnswer(prompt))
+                .isEqualTo("{\"tool\":\"query_records\",\"entity\":\"purchase_order\"}");
+    }
+
+    @Test
+    void recordDataQuestionWithoutEntityFallsBackToStructureOrPlainAnswer() {
+        String prompt = FixtureModelPort.KB_ENTITY_INDEX_MARKER
+                + "\n采购订单(purchase_order)\n"
+                + QUESTION + "\n快递什么时候到货";
+        assertThat(FixtureModelPort.kbAnswer(prompt))
+                .doesNotContain("query_records");
+    }
+
+    @Test
+    void recordToolResultIsAnsweredInDataProvenanceTone() {
+        // P31：「业务数据：」标记头 → 真实记录口径作答（区别于元数据口径）
+        String prompt = FixtureModelPort.KB_TOOL_RESULT_MARKER
+                + "\n[query_records]\n业务数据：采购订单(purchase_order) 共 1 条记录（按创建时间倒序，显示前 1 条）：\n"
+                + "- 编号 rec-1，单号=PO-001，预计到货日期=2026-09-30\n\n"
+                + QUESTION + "\n刚才那个问题";
+        assertThat(FixtureModelPort.kbAnswer(prompt))
+                .contains("真实数据记录")
+                .contains("单号=PO-001")
+                .contains("实时查询");
+    }
+
+    @Test
     void workshopFirstMessageAsksAndSecondTriggersCreateIssue() {
         String first = FixtureModelPort.WORKSHOP_HISTORY_MARKER + "\n（无）\n"
                 + FixtureModelPort.WORKSHOP_MESSAGE_MARKER + "\n我想要个点检需求";
