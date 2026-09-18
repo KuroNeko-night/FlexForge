@@ -30,7 +30,7 @@
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <spring-boot.version>4.0.7</spring-boot.version>
+    <spring-boot.version>4.1.1</spring-boot.version>
     <testcontainers.version>2.0.5</testcontainers.version>
     <archunit.version>1.4.1</archunit.version>
     <nimbus-jose-jwt.version>10.4.1</nimbus-jose-jwt.version>
