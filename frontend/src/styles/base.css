@@ -145,11 +145,15 @@ textarea:disabled {
   min-height: 0;
   overflow: hidden;
 }
-/* 菜单超长时导航自身滚动（P31：侧栏视口固定，brand 与用户区不随之滚走） */
+/* 菜单超长时导航自身滚动（P31：侧栏视口固定，brand 与用户区不随之滚走）；
+   负 margin+等量 padding 把盒外左移的激活强调条收回滚动容器盒内（审查 P2-1：
+   overflow-y 非 visible 会让 overflow-x 变 auto，负向溢出条目会被静默裁剪） */
 .workbench-side nav {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  margin-left: calc(var(--ff-space-3) * -1);
+  padding-left: var(--ff-space-3);
 }
 .side-group-title {
   margin: var(--ff-space-3) var(--ff-space-2) var(--ff-space-1);

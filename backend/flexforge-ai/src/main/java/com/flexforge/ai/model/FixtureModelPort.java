@@ -233,7 +233,7 @@ public class FixtureModelPort implements ModelPort {
      *  索引实体 → query_records 工具调用 JSON（不带过滤，交真实工具查最新记录；
      *  未命中返回 null 走结构类判定）。 */
     private static String recordQueryCallFor(String index, String question) {
-        if (!mentionsRecordData(question)) {
+        if (!asksRecordData(question)) {
             return null;
         }
         for (String raw : index.split("、")) {
@@ -249,11 +249,21 @@ public class FixtureModelPort implements ModelPort {
         return null;
     }
 
-    /** 记录级关键词（P31 演示口径：到货时间为典型场景）。 */
+    /** 记录级关键词（P31 演示口径：到货时间为典型场景）；结构类问句负向条件
+     *  见 {@link #asksRecordData}。 */
     private static boolean mentionsRecordData(String question) {
         return question.contains("到货") || question.contains("什么时候") || question.contains("何时")
                 || question.contains("几号") || question.contains("进度") || question.contains("金额")
                 || question.contains("多少条") || question.contains("状态如何");
+    }
+
+    /** 结构类问句（问"字段/类型/结构"）不路由记录查询（审查 P3-4：
+     *  如"金额字段是什么类型"应走 inspect_entity）。 */
+    private static boolean asksRecordData(String question) {
+        if (question.contains("字段") || question.contains("类型") || question.contains("结构")) {
+            return false;
+        }
+        return mentionsRecordData(question);
     }
 
     /** 提问命中索引实体 → inspect_entity 工具调用 JSON（未命中 null）。
@@ -311,14 +321,15 @@ public class FixtureModelPort implements ModelPort {
         return name.matches("[a-z0-9_]+") ? name : null;
     }
 
-    /** 工具结果作答：保留正文行（跳过 [tool] 结果头行）；结果含「业务数据：」标记
-     *  （query_records 输出头）时注明来源为平台业务真实记录，否则按业务结构口径
-     *  ——inspect 形态（业务：/字段行）与 list 形态（索引行）都覆盖（审查 P2-6：
-     *  原全角括号条件吞掉了 list 结果全部行）。 */
+    /** 工具结果作答：保留正文行（跳过 [tool] 结果头行）；结果含行首「业务数据：」
+     *  标记（query_records 输出头，行首匹配防记录内容字段值伪造，审查 P3-5）时
+     *  注明来源为平台业务真实记录，否则按业务结构口径——inspect 形态（业务：/
+     *  字段行）与 list 形态（索引行）都覆盖（审查 P2-6：原全角括号条件吞掉了
+     *  list 结果全部行）。 */
     static String toolResultAnswer(String prompt) {
         int start = prompt.lastIndexOf(KB_TOOL_RESULT_MARKER) + KB_TOOL_RESULT_MARKER.length();
         String result = sectionAfter(prompt, start);
-        boolean recordData = result.contains("业务数据：");
+        boolean recordData = result.lines().anyMatch(line -> line.startsWith("业务数据："));
         StringBuilder answer = new StringBuilder(recordData
                 ? "根据平台业务的真实数据记录，为你整理如下：\n"
                 : "根据平台业务结构，为你整理如下：\n");

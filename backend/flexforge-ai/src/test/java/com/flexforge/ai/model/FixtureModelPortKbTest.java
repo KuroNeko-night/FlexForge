@@ -142,6 +142,26 @@ class FixtureModelPortKbTest {
     }
 
     @Test
+    void structureQuestionWithRecordKeywordStillRoutesToInspect() {
+        // 审查 P3-4："金额字段是什么类型"是结构问句，不因关键词误入记录查询
+        String prompt = FixtureModelPort.KB_ENTITY_INDEX_MARKER
+                + "\n采购订单(purchase_order)\n"
+                + QUESTION + "\n采购订单的金额字段是什么类型";
+        assertThat(FixtureModelPort.kbAnswer(prompt))
+                .isEqualTo("{\"tool\":\"inspect_entity\",\"entity\":\"purchase_order\"}");
+    }
+
+    @Test
+    void recordToolResultLineStartMarkerOnlyCounts() {
+        // 审查 P3-5：字段值行内出现"业务数据："字面量不改写元数据结果口径
+        String prompt = FixtureModelPort.KB_TOOL_RESULT_MARKER
+                + "\n[inspect_entity]\n业务：采购订单(purchase_order)\n- 备注(note)：业务数据：见附表\n";
+        assertThat(FixtureModelPort.kbAnswer(prompt))
+                .contains("业务实体元数据")
+                .doesNotContain("真实数据记录");
+    }
+
+    @Test
     void recordToolResultIsAnsweredInDataProvenanceTone() {
         // P31：「业务数据：」标记头 → 真实记录口径作答（区别于元数据口径）
         String prompt = FixtureModelPort.KB_TOOL_RESULT_MARKER

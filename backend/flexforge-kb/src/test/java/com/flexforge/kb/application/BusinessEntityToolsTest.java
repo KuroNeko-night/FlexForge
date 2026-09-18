@@ -123,7 +123,7 @@ class BusinessEntityToolsTest {
         }
     }
 
-    private static EntityRecord entity(String name, String display, EntityStatus status) {
+    static EntityRecord entity(String name, String display, EntityStatus status) {
         return new EntityRecord("e-" + name, name, display, status,
                 "example.plugin", Instant.EPOCH, Instant.EPOCH);
     }
@@ -272,9 +272,10 @@ class BusinessEntityToolsTest {
             data.rows.add(record("rec-" + i, "e-purchase_order", wide.toString()));
         }
         String out = tools(meta, data).queryRecords("purchase_order", "", "", "", 10);
-        assertThat(out).contains("（其余记录已省略）");
+        assertThat(out).contains("其余已省略）");
+        // 真实不变量：截断后总长 ≤ 预算 + 截断标记行（审查 P3-7 收紧上界）
         assertThat(out.length()).isLessThanOrEqualTo(
-                BusinessEntityTools.RECORDS_TOTAL_MAX_CHARS + "（其余记录已省略）".length() * 2);
+                BusinessEntityTools.RECORDS_TOTAL_MAX_CHARS + "（仅显示前  条，其余已省略）\n".length());
     }
 
     @Test
@@ -299,6 +300,30 @@ class BusinessEntityToolsTest {
                 .queryRecords("purchase_order", "code", "", " ", 5))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("缺少 value 参数");
+    }
+
+    @Test
+    void queryRecordsRequiresFieldWhenValueGiven() {
+        // 审查 P3-6：value 无 field 若静默丢弃，模型会误以为过滤已生效
+        StubRepository meta = new StubRepository();
+        meta.rows.add(entity("purchase_order", "采购订单", EntityStatus.ENABLED));
+        assertThatThrownBy(() -> tools(meta, new StubRecordRepository())
+                .queryRecords("purchase_order", " ", "", "PO-001", 5))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("缺少 field 参数");
+    }
+
+    @Test
+    void queryRecordsRejectsNonIntegerLimit() {
+        StubRepository meta = new StubRepository();
+        meta.rows.add(entity("purchase_order", "采购订单", EntityStatus.ENABLED));
+        BusinessEntityTools.QueryRecordsTool tool = new BusinessEntityTools.QueryRecordsTool(
+                tools(meta, new StubRecordRepository()));
+        assertThatThrownBy(() -> tool.apply(java.util.Map.of(
+                BusinessEntityTools.QueryRecordsTool.ENTITY_PARAMETER, "purchase_order",
+                BusinessEntityTools.QueryRecordsTool.LIMIT_PARAMETER, "很多")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("limit 参数须为整数");
     }
 
     @Test

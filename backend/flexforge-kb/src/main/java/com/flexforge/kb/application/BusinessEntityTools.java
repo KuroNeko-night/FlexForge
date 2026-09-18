@@ -150,7 +150,7 @@ public class BusinessEntityTools {
 
     /** query_records：按创建时间倒序查询启用实体的真实记录（field/op/value 可选
      * 单条件过滤——字段/操作符/类型兼容由 DataQueryParams 白名单校验，非法值
-     * IAE 回灌提示词；总输出超预算截断并标注）。 */
+     * IAE 回灌提示词；总输出超预算截断并按实际渲染行数标注）。 */
     String queryRecords(String entityName, String field, String op, String value, int limit) {
         if (entityName == null || entityName.isBlank()) {
             throw new IllegalArgumentException("缺少 entity 参数（实体名）");
@@ -159,40 +159,52 @@ public class BusinessEntityTools {
         Map<String, String> filters = filtersOf(field, op, value);
         int pageSize = pageSizeOf(limit);
         PageResult<RecordEntry> page;
+        EntityDefinition definition;
         try {
             page = records.query(name, new DynamicRecordService.DataQuery(
                     1, pageSize, DynamicRecordService.SORT_CREATED_AT,
                     PageQuery.SortDirection.DESC, filters));
+            // 渲染需要字段 displayName；查询成功后实体被并发停用的窄窗口也按
+            // 不存在回灌（审查 P3-1：裸 NSEE 会击穿 IAE 包装直达 500）
+            definition = registry.findEntityByName(name)
+                    .orElseThrow(() -> new IllegalArgumentException("业务实体不存在: " + name));
         } catch (NoSuchElementException e) {
             // 与 inspect 同口径：停用/不存在一律按不存在回灌（不泄露存在性）
             throw new IllegalArgumentException("业务实体不存在: " + name);
         }
-        EntityDefinition definition = registry.findEntityByName(name).orElseThrow();
-        StringBuilder out = new StringBuilder("业务数据：").append(definition.displayName())
-                .append('(').append(definition.name()).append(')');
+        String head = "业务数据：" + definition.displayName() + '(' + definition.name() + ')';
         if (page.total() == 0) {
-            return out.append(" 暂无记录。").toString();
+            return head + " 暂无记录。";
         }
-        out.append(" 共 ").append(page.total()).append(" 条记录（按创建时间倒序，显示前 ")
-                .append(page.items().size()).append(" 条）：\n");
+        StringBuilder out = new StringBuilder(head)
+                .append(" 共 ").append(page.total()).append(" 条记录（按创建时间倒序）：\n");
+        int rendered = 0;
         for (RecordEntry record : page.items()) {
-            String line = recordLine(definition, record);
+            String line = "- " + recordLine(definition, record) + '\n';
             if (out.length() + line.length() > RECORDS_TOTAL_MAX_CHARS) {
-                out.append("（其余记录已省略）\n");
+                // 截断标注按实际渲染行数报数，与头部不矛盾（审查 P3-6）
+                out.append("（仅显示前 ").append(rendered).append(" 条，其余已省略）\n");
                 break;
             }
-            out.append("- ").append(line).append('\n');
+            out.append(line);
+            rendered++;
         }
         return out.toString();
     }
 
-    /** 单条件过滤参数（"字段.操作符"→值；op 缺省 contains；field 有值时 value 必填）。 */
+    /** 单条件过滤参数（"字段.操作符"→值；op 缺省 contains；field/value 须成对，
+     *  只给其一按参数错误回灌——静默丢弃会让模型误以为过滤已生效，审查 P3-6）。 */
     private static Map<String, String> filtersOf(String field, String op, String value) {
-        if (field == null || field.isBlank()) {
-            return Map.of();
-        }
-        if (value == null || value.isBlank()) {
+        boolean hasField = field != null && !field.isBlank();
+        boolean hasValue = value != null && !value.isBlank();
+        if (hasField && !hasValue) {
             throw new IllegalArgumentException("带 field 过滤时缺少 value 参数（过滤值）");
+        }
+        if (!hasField && hasValue) {
+            throw new IllegalArgumentException("带 value 过滤时缺少 field 参数（字段名）");
+        }
+        if (!hasField) {
+            return Map.of();
         }
         String operator = op == null || op.isBlank() ? "contains" : op.strip();
         return Map.of(field.strip() + "." + operator, value.strip());
@@ -221,7 +233,8 @@ public class BusinessEntityTools {
         return line.toString();
     }
 
-    /** 字段值渲染：标量原样、数组顿号连接、对象紧凑 JSON（null/缺失返回 null）。 */
+    /** 字段值渲染：标量原样、数组顿号连接（null 项跳过，审查 P3-6）、对象紧凑 JSON
+     *  （null/缺失返回 null）。 */
     private static String scalarText(JsonNode node) {
         if (node == null || node.isNull()) {
             return null;
@@ -229,6 +242,9 @@ public class BusinessEntityTools {
         if (node.isArray()) {
             StringBuilder joined = new StringBuilder();
             for (JsonNode child : node) {
+                if (child.isNull()) {
+                    continue;
+                }
                 if (joined.length() > 0) {
                     joined.append('、');
                 }
