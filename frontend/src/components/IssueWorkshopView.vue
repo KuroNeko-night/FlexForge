@@ -150,65 +150,72 @@ onMounted(load);
         </p>
       </template>
       <template v-else>
-        <header class="chat-head">
-          <div class="chat-head-title">
-            <BaseButton variant="ghost" data-testid="workshop-back" @click="active = null">
-              {{ t('issues.workshopBack', '返回工坊') }}
-            </BaseButton>
-            <h3>{{ active.title }}</h3>
-            <span v-if="active.publishedAt" class="published-badge" data-testid="published-badge">
-              {{ t('issues.published', '已发布') }}
-            </span>
-            <span class="status-chip">{{ issueStatusLabel(active.status) }}</span>
-          </div>
-          <p class="chat-head-desc">{{ active.description }}</p>
-        </header>
+        <!-- P32 分区重排：详情自管滚动；sticky 头部保上下文，澄清/确认/讨论三区卡片分组 -->
+        <div class="detail" data-testid="workshop-issue-detail">
+          <header class="detail-head">
+            <div class="detail-head-row">
+              <BaseButton variant="ghost" data-testid="workshop-back" @click="active = null">
+                {{ t('issues.workshopBack', '返回工坊') }}
+              </BaseButton>
+              <h3>{{ active.title }}</h3>
+              <span v-if="active.publishedAt" class="published-badge" data-testid="published-badge">
+                {{ t('issues.published', '已发布') }}
+              </span>
+              <span class="status-chip">{{ issueStatusLabel(active.status) }}</span>
+            </div>
+            <p class="detail-desc">{{ active.description }}</p>
+          </header>
 
-        <IssueClarifyChat
-          :key="active.id"
-          :issue-id="active.id"
-          :can-clarify="true"
-          @spec-saved="onSpecSaved"
-        />
+          <section class="detail-section" data-testid="issue-detail-clarify">
+            <IssueClarifyChat
+              :key="active.id"
+              :issue-id="active.id"
+              :can-clarify="true"
+              @spec-saved="onSpecSaved"
+            />
+          </section>
 
-        <div
-          v-if="activeBrief && !active.publishedAt"
-          class="confirm-card"
-          data-testid="confirm-card"
-        >
-          <h4>{{ t('issues.confirmHeading', '需求确认') }}</h4>
-          <p>{{ activeBrief.colloquial }}</p>
-          <div class="confirm-actions">
-            <BaseButton
-              variant="primary"
-              :disabled="publishing"
-              data-testid="confirm-publish"
-              @click="confirmPublish"
-            >
-              {{
-                publishing
-                  ? t('issues.publishing', '推送中…')
-                  : t('issues.confirmPublish', '确认并推送')
-              }}
-            </BaseButton>
-            <span class="confirm-hint">{{
-              t('issues.confirmHint', '推送后进入开发者需求队列，可继续在讨论区补充')
-            }}</span>
+          <div
+            v-if="activeBrief && !active.publishedAt"
+            class="confirm-card"
+            data-testid="confirm-card"
+          >
+            <h4>{{ t('issues.confirmHeading', '需求确认') }}</h4>
+            <p>{{ activeBrief.colloquial }}</p>
+            <div class="confirm-actions">
+              <BaseButton
+                variant="primary"
+                :disabled="publishing"
+                data-testid="confirm-publish"
+                @click="confirmPublish"
+              >
+                {{
+                  publishing
+                    ? t('issues.publishing', '推送中…')
+                    : t('issues.confirmPublish', '确认并推送')
+                }}
+              </BaseButton>
+              <span class="confirm-hint">{{
+                t('issues.confirmHint', '推送后进入开发者需求队列，可继续在讨论区补充')
+              }}</span>
+            </div>
+            <p v-if="publishError" class="form-error" role="alert">{{ publishError }}</p>
           </div>
-          <p v-if="publishError" class="form-error" role="alert">{{ publishError }}</p>
+          <p v-else-if="active.publishedAt" class="published-note">
+            {{ t('issues.publishedNote', '需求已确认推送 · 开发者可见') }}（{{
+              issueStatusLabel(active.status)
+            }}）
+          </p>
+
+          <section class="detail-section" data-testid="issue-detail-discussion">
+            <IssueDiscussion
+              :key="active.id"
+              :issue-id="active.id"
+              :comments="comments"
+              @reloaded="comments = $event"
+            />
+          </section>
         </div>
-        <p v-else-if="active.publishedAt" class="published-note">
-          {{ t('issues.publishedNote', '需求已确认推送 · 开发者可见') }}（{{
-            issueStatusLabel(active.status)
-          }}）
-        </p>
-
-        <IssueDiscussion
-          :key="active.id"
-          :issue-id="active.id"
-          :comments="comments"
-          @reloaded="comments = $event"
-        />
       </template>
     </div>
 
@@ -239,29 +246,54 @@ onMounted(load);
   display: flex;
   flex-direction: column;
   gap: var(--ff-space-3);
-  /* P31 应用壳滚动模型：工坊对话自适应填满（内部消息流自滚），per-issue
-     详情长内容在主列内滚动，不撑长界面 */
+  /* P32 滚动收敛：工坊对话与详情各自管理内部滚动，主列不产生外层滚动 */
+  min-height: 0;
+  overflow: hidden;
+}
+.detail {
+  flex: 1;
   min-height: 0;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ff-space-3);
 }
-.chat-head {
+/* sticky 头部卡：滚动中标题/状态/描述不丢上下文（P32 排版反馈核心项） */
+.detail-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: var(--ff-space-1);
+  padding: var(--ff-space-3);
+  background: var(--ff-surface);
+  border: 1px solid var(--ff-border-soft);
+  border-radius: var(--ff-radius-md);
+  box-shadow: var(--ff-shadow-1);
 }
-.chat-head-title {
+.detail-head-row {
   display: flex;
   align-items: center;
   gap: var(--ff-space-2);
   flex-wrap: wrap;
 }
-.chat-head-title h3 {
-  margin: 0;
-}
-.chat-head-desc {
+.detail-desc {
   margin: 0;
   color: var(--ff-text-muted);
   font-size: var(--ff-text-sm);
+}
+/* 分区卡片：澄清/讨论两组的视觉边界（组件自带小节标题，不重复加键） */
+.detail-section {
+  padding: var(--ff-space-3);
+  background: var(--ff-surface);
+  border: 1px solid var(--ff-border-soft);
+  border-radius: var(--ff-radius-md);
+}
+/* 讨论组件原为分隔条形态（上边框+上内距），入卡片后去掉避免双重边界 */
+.detail-section :deep(.discussion) {
+  padding-top: 0;
+  border-top: none;
 }
 .status-chip {
   padding: 0 var(--ff-space-2);
@@ -287,7 +319,8 @@ onMounted(load);
   background: var(--ff-primary-soft);
 }
 .confirm-card h4,
-.confirm-card p {
+.confirm-card p,
+.detail-head-row h3 {
   margin: 0;
 }
 .confirm-card p {

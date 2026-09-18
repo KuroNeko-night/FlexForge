@@ -165,3 +165,19 @@ describe('IssueWorkshopView 需求详情与推送（P23 语义移植）', () => 
     expect(wrapper.find('[data-testid="workshop-chat"]').exists()).toBe(true);
   });
 });
+
+describe('IssueWorkshopView 详情分区锚点（P32 分区重排）', () => {
+  beforeEach(resetMocks);
+
+  it('详情三分区（头部/澄清/讨论）存在', async () => {
+    // 审查 P3-1：为分区 testid 补存在性断言，防后续重构静默丢分区
+    listMock.mockResolvedValue([issue()]);
+    detailMock.mockResolvedValue(issue());
+    const wrapper = await mountView();
+    await wrapper.find('[data-testid="issue-entry-i1"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('[data-testid="workshop-issue-detail"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="issue-detail-clarify"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="issue-detail-discussion"]').exists()).toBe(true);
+  });
+});

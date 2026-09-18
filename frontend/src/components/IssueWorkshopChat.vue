@@ -245,14 +245,20 @@ defineExpose({ markPublished, reload: load });
   font-size: var(--ff-text-sm);
 }
 .state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--ff-text-muted);
-  text-align: center;
-  padding: var(--ff-space-3) 0;
+  font-size: var(--ff-text-sm);
 }
 .state-error {
   color: var(--ff-danger);
 }
 .chat-empty {
+  /* P32：空态/加载态拉伸填满工坊列，输入区恒落列底（与 AI 助手同构，
+     NFR-UX-02——此前空态内容按自然高度堆叠，composer 悬在列中部） */
+  flex: 1;
   display: flex;
   gap: var(--ff-space-2);
   align-items: flex-start;
@@ -320,6 +326,9 @@ defineExpose({ markPublished, reload: load });
 .composer textarea {
   flex: 1;
   resize: vertical;
+  /* 用户竖向拖拽上限（审查 P3-3：主列 overflow:hidden 后拖过头会把发送钮
+     挤出可裁剪区；30vh 内 chat-log 仍有收缩余量） */
+  max-height: 30vh;
 }
 .composer-hint {
   color: var(--ff-text-muted);
