@@ -164,8 +164,12 @@ describe('IssueWorkshopView 需求详情与推送（P23 语义移植）', () => 
     await wrapper.find('[data-testid="new-requirement"]').trigger('click');
     expect(wrapper.find('[data-testid="workshop-chat"]').exists()).toBe(true);
   });
+});
 
-  it('详情三分区锚点（P32 分区重排：头部/澄清/讨论）', async () => {
+describe('IssueWorkshopView 详情分区锚点（P32 分区重排）', () => {
+  beforeEach(resetMocks);
+
+  it('详情三分区（头部/澄清/讨论）存在', async () => {
     // 审查 P3-1：为分区 testid 补存在性断言，防后续重构静默丢分区
     listMock.mockResolvedValue([issue()]);
     detailMock.mockResolvedValue(issue());
