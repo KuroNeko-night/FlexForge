@@ -239,6 +239,10 @@ onMounted(load);
   display: flex;
   flex-direction: column;
   gap: var(--ff-space-3);
+  /* P31 应用壳滚动模型：工坊对话自适应填满（内部消息流自滚），per-issue
+     详情长内容在主列内滚动，不撑长界面 */
+  min-height: 0;
+  overflow-y: auto;
 }
 .chat-head {
   display: flex;
