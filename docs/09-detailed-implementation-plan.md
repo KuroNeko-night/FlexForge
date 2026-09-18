@@ -724,3 +724,25 @@
 - 开关右侧固定、两段等宽无溢出、切换无跳动；Issue 模式=对话居中+右侧"我的需求"侧栏，开发者 /issues 列表在右。
 - 工坊全流程（fixture 与 http 双供应商）：开场引导 → 用户描述 → AI 追问 → 信息足够后 AI 调用 create_issue（自动建需求+规格草稿+简报）→ 对话内确认卡可"确认并推送"；创建的需出现在右侧侧栏。
 - 工具参数过服务端校验（超长 400 可诊断）；模型非法输出重试后 400；会话按用户隔离可清空；门禁 21/1/0+CI 六绿。
+
+## P31：助手业务数据查询与应用壳滚动模型（2026-09-18 用户验收反馈裁决新增）
+
+> 背景：P30 验收反馈两点——①助手能读业务插件字段结构，但读不到"具体记录"（问"xxx 订单预计什么时候到货"无法回答）；②多容器滚动模型不稳：系统侧栏随内容一起滚动、AI 对话框随页面移动、Issue 工作台侧栏条目多时硬撑界面长度。
+> **红线**：
+> - query_records 只读：唯一取数路径=既有 `DynamicRecordService.query`（kb→data 新增模块依赖，公开契约调用，无新 SQL 面）；过滤字段/操作符/类型兼容复用 DataQueryParams 白名单（NFR-SEC-02）；启用实体之外按不存在（同 inspect 口径）；
+> - 输出预算：每问 ≤10 条、单字段值 ≤60 字符、总输出超预算截断并标注（防数据拖库）；记录可见性=/api/v1/data 查询（已认证可读，不放宽）；工具结果仍数据段回灌、不进日志审计（S7/§3.6-11）；写/删不在助手工具面；
+> - 提示词升 kb-assistant-v4：业务数据问题先查真实记录、不得编造；协议新增 query_records（entity 必填，field/op/value/limit 可选单条件）；
+> - 应用壳滚动模型（NFR-UX-02）：壳层视口高度（100dvh 兜底 100vh）+ grid 行 minmax(0,1fr)——全局导航侧栏固定（菜单超长自身滚动）、主区独立滚动；对话页输入区固定视口底部、消息流内滚；右侧需求侧栏受壳约束、列表自身滚动；per-issue 详情在主列内滚动。
+> **非目标**：不做多条件组合过滤（单条件 field/op/value 足覆盖演示与常见问答，多条件留待真实需要再裁）；不改 /kb/ask 服务端契约（工具是提示词内部协议）；不动开发者 /issues 面板结构（仅随壳层滚动模型受益）。
+
+### 实施内容
+
+- **A. 后端**：flexforge-kb 依赖 flexforge-data；BusinessEntityTools 增 QueryRecordsTool（query_records：entity/field/op/value/limit 参数解析、NoSuchElement→IAE 回灌、字段 displayName 渲染、值截断与总预算）；提示词 assistant-v4.md（工具协议三工具+业务数据问题先查记录）+KbPromptTemplates.VERSION 升 v4；FixtureModelPort 增记录问答脚本（数据类提问命中实体→query_records 调用；工具结果含业务数据标记→数据口径作答）。
+- **B. 前端（纯 CSS，无契约变化）**：base.css 工作台壳高度链（.workbench 视口高+行 minmax、.workbench-side nav 自滚、.workbench-main 自滚）；IssueWorkshopView 主列内滚+侧栏约束（.sidebar-list min-height）；AssistantView 消息区/输入区随高度链生效（组件内部 flex 已备）。
+- **测试**：BusinessEntityToolsTest 增 query_records 例（渲染/截断/未知实体/停用/limit 上限/过滤透传）；FixtureModelPortKbTest 增记录问答例（提问→工具 JSON、结果→数据口径作答）；前端既有测试回归（布局纯 CSS 不新增用例，浏览器走查覆盖）。
+
+### 验收标准
+
+- 助手（fixture 与 http 双供应商）能回答记录级业务问题：提问到货类问题 → query_records 查真实记录 → 基于真实数据作答并注明来源业务；无记录/无该实体时如实说明不编造。
+- 三处布局稳定：任意长内容下全局导航侧栏视口固定（菜单自身滚动）、助手/工坊输入区固定视口底部（消息流内滚）、右侧需求侧栏不撑长界面（列表自身滚动）。
+- 门禁 21/1/0 + CI 六绿；NFR-SEC-02/S1-S9 不破（无新 SQL 面、无权限放宽、预算硬截断有测试）。
