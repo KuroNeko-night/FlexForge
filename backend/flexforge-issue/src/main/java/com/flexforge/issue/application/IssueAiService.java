@@ -145,7 +145,7 @@ public class IssueAiService {
                     issueId + "/" + pkg.pluginId(), "success", clock));
             return new GenerateOutcome(pkg.pluginId(), pkg.version(), preview.versionId(),
                     activation.id(), updated);
-        } catch (RuntimeException e) {
+        } catch (java.io.IOException | RuntimeException e) {
             long durationMs = (System.nanoTime() - started) / 1_000_000;
             taskLog.insert(new AiTaskLogPort.TaskLogEntry(issueId, "generate",
                     "deterministic-generator", PromptTemplates.VERSION, 1, 0, false,
@@ -155,15 +155,16 @@ public class IssueAiService {
         }
     }
 
-    private void markDevFailed(String operator, String issueId, RuntimeException cause) {
+    private void markDevFailed(String operator, String issueId, Exception cause) {
         if (requireIssue(issueId).status() == IssueStatus.APPROVED) {
-            String reason = cause.getMessage() == null ? "生成失败" : cause.getMessage();
+            String reason = cause instanceof java.io.IOException || cause.getMessage() == null
+                    ? "生成失败" : cause.getMessage();
             kernel.workflow().transition(operator, issueId, IssueStatus.DEV_FAILED,
                     reason.length() > 500 ? reason.substring(0, 500) : reason);
         }
     }
 
-    private static String errorCodeOf(RuntimeException e) {
+    private static String errorCodeOf(Exception e) {
         return e.getClass().getSimpleName();
     }
 
