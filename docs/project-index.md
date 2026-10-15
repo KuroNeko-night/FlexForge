@@ -40,12 +40,12 @@ FlexForge/
 │   ├── Dockerfile                  多阶段构建，非 root 运行
 │   ├── flexforge-common/           平台契约：ApiConstants/RequestIds/@PublicApi/@ExperimentalApi + contract/api/audit/registry 子包（P02 迭代 1）
 │   ├── flexforge-runtime/          PluginContext + 内存 ServiceRegistry/ExtensionRegistry/事件发布器 + 注册-撤销测试（P02 迭代 1）
-│   ├── flexforge-auth/             登录/JWT/RBAC/当前用户：BCrypt+防暴破+JwtAuthFilter+@RequireRole（P03）
+│   ├── flexforge-auth/             登录/JWT/RBAC/当前用户：BCrypt+有界过期 LoginGuard+登录入参审计+JwtAuthFilter+@RequireRole（P03；#30 P2-1/2）
 │   ├── flexforge-system/           用户/角色/菜单/审计：管理接口+菜单聚合（extension.navigation 消费方）+审计查询+落库（P03）
 │   ├── flexforge-meta/             元数据写模型：FieldTypeRegistry 单点+MetaRegistry 缓存/版本+实体/字段/视图配置 API（service.meta，P04）
 │   ├── flexforge-data/             动态数据访问：data_record 单 JSONB 存储+实体级记录校验+白名单 SQL 构造+动态 CRUD API（service.data-access，P05）
 │   ├── flexforge-plugin/            插件包校验+版本存储+生命周期：P07 导入链路；P08 生命周期（激活/停用/升级/卸载/stale/重启恢复+MigrationScriptRunner+资产 serve）；P21 预设（PluginPresetService/Controller+PresetRepository，快照保存/收敛应用）；P22 处理器输出契约增 chart（OutputValidator 三型校验）
-│   ├── flexforge-issue/             Issue/评论/标签/状态机/版本化规格（P10）；P11：clarify/generate 编排+ai_task_log
+│   ├── flexforge-issue/             Issue/评论/标签/状态机/版本化规格（P10）；P11：clarify/generate 编排+ai_task_log（#30 P2-5：生成 I/O 失败同样记录并补偿 DEV_FAILED；app 测试 IssueGenerateIoFailureApiTest）
 │   ├── flexforge-kb/                知识库与 AI 助手（P28，P29-P31 扩）：kb_entry/kb_chat_message/kb_attachment 仓储+KbRetrieval 共现佐证 Top-K+KbAttachments 附件提取（docx/xlsx zip+XML、pdf PDFBox、炸弹防护）+KbAssistantService/AssistantToolLoop（ModelPort 唯一通道、kb-assistant-v4 工具环路）+AssistantTool 业务检查与数据查询（list/inspect 经 meta、query_records 经 DynamicRecordService 只读）+条目 CRUD/ask/附件下载 API（写仅 ADMIN）
 │   ├── flexforge-ai/                规格 Schema（RequirementSchema v1）+预览派生（P10）；P11：ModelPort+ClarifyEngine+PluginPackageGenerator+prompts（P21 起 v2）；P15：config/（AiEnv/AiConfigRepository/SecretCipher/AiConfigService/AiConfigController）+RoutingModelPort 运行时路由
 │   │   └── src/main/resources/prompts/v2/   提示词与 fixture 资源（clarify.md + fixture-spec.json，版本一一对应；v1 为历史保留，P21 起装载 v2）
@@ -64,7 +64,7 @@ FlexForge/
 │       ├── assets/agent-skill/SKILL.md   FlexForge 插件开发 Agent Skill（P24 FR-ISSUE-08 唯一事实源；?raw 内联分发，简报卡下载）
 │       ├── styles/                 tokens.css（设计令牌+基建原语，P18 现代极简重订：zinc/indigo 阶取 Tailwind v4 公开值+浅色侧栏派生+--ff-scrim）+ base.css（全局控件/表格/浅色平面侧栏基线，P16 拆分/P18 重订）
 │       ├── components/             六类 renderers + StateView（五状态）+ DynamicTable/DynamicForm + LayoutRenderer/EntityCards + ui/（BaseButton/BaseSwitch/ComponentCard/BaseDrawer/ConfirmDialog 统一确认，P16）+ IssueDetail/IssueDevPanel/IssueComments + PluginCard（P21 重构：当前版本+开关+版本收纳）+ UploadDropzone（拖拽+自动校验，P16）+ AppIcon（内联图标集，P16）+ AppLogo + KanbanView（P17 声明式看板/P19 拖拽换列）+ ViewToggle（P17 表格看板切换）+ ListPager/RecordActionsBar（P19 拆分）+ ProcessorDrawer（P20 数据处理器执行/结果渲染） + IssueClarifyChat（P21 对话拆分：气泡/动效/打字指示）+ PluginPresetBar（P21 预设条） + ChartCanvas（P22 图表基建：chart.js 封装条形/饼+令牌调色板+数据表兜底） + IssueWorkbenchSidebar/IssueDiscussion（P23 用户端工作台部件，P30 起由 IssueWorkshopView 组合）+ UserBatchBar（P24 批量操作条：内嵌危险确认）+ UserCreateDrawer/UserRolesDrawer/IssueSpecSection（P26 QG-4 拆分；IssueNewRequirementForm 已随 P30 工坊化退役）+ AssistantChat/AssistantComposer（P28-P29 助手对话/附件输入）+ IssueWorkshopView/IssueWorkshopChat/IssueWorkshopLog（P30 工坊对话+右侧需求侧栏）+ utils/pluginConfirm（确认规格纯映射）
-│       ├── composables/            useEntityMetadata（metaVersion 比对 → stale 刷新）+ useConfirmAction（P16 统一确认抽 composable）+ useKanbanMove（P19 拖拽编排）/useEntityProcessors（P20 处理器入口） + usePluginPresets（P21 预设单飞与结果呈现） + useUserBatch（P24 用户批量停启用选择与提交）
+│       ├── composables/            useEntityMetadata（metaVersion 比对 → stale 刷新）+ useConfirmAction（P16 统一确认抽 composable）+ useKanbanMove（P19 拖拽编排）/useEntityProcessors（P20 处理器入口） + usePluginPresets（P21 预设单飞与结果呈现） + useUserBatch（P24 用户批量停启用选择与提交）+ useUserPage/useUserPage.test（#51 用户分页与过期响应守卫；视图回归 UsersViewPaging.test）
 │       ├── utils/                  csv.ts（P19：RFC 4180 转义+BOM 本地导出，无新端点）+ viewColumns.ts（P19 列解析单点：表格/导出共用，QG-4）
 │       └── views/                  Login/Workbench/Home/DynamicEntity（列表/详情/新建/编辑+看板呈现与拖拽换列 P19+CSV 导出 P19）/Issues（Issue 工作台+创建抽屉，P15）/Plugins（清单+写操作，P15）/Users（用户管理+批量停启用 P24）/Audit（审计日志，P24）/Placeholder（居中空态 P24）
 ├── database/
@@ -282,3 +282,4 @@ scripts/                check-repo-health 等可重复脚本
 | 2026-09-12 | 审查处置补记：§1 树更正（IssueWorkshopView/Chat/Log 替退役组件、flexforge-kb 行更新为 P29-P30 形态）；工坊回复 8000 截断+码点安全；IssueService description ≤4000 服务端上限；fixture 段定位 lastIndexOf+索引分段解析；i18n 键名统一 workshopBack；BusinessEntityTools/AssistantToolLoop 补真实测试 | PR #59 交叉审查处置 |
 | 2026-09-18 | §1 树更新：flexforge-kb 行 +QueryRecordsTool（kb→data 依赖、prompts/kb assistant-v4）；前端无文件增删（应用壳滚动模型=base.css/IssueWorkshopView 纯 CSS） | P31：助手业务数据查询与应用壳滚动模型（用户验收反馈两项；FR-KB-08、NFR-UX-02、docs/13 §3.6-11） |
 | 2026-09-18 | 无文件增删（IssueWorkshopView 详情模板重构为 .detail/.detail-head/.detail-section 分区、IssueWorkshopChat 空态 flex；纯呈现层） | P32：工坊输入区固定与 per-issue 详情分区重排（用户验收反馈两项；NFR-UX-02 实现补全、docs/09 P32） |
+| 2026-10-15 | auth 登录有界计数/入参审计；issue 生成 I/O 失败补偿；app +IssueGenerateIoFailureApiTest；frontend +useUserPage/useUserPage.test/UsersViewPaging.test、UsersView 接 ListPager；docs/02/09/13 与状态同步 | 用户授权定向修复 #30 P2-1/2/5、#51 第 2 项（关联 #10）；其他排期不动；既有依赖审计阻塞由 #78 单独跟踪，未修改依赖 |
