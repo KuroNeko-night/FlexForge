@@ -49,7 +49,9 @@ public class AuthService {
     }
 
     public LoginResult login(String username, String password) {
+        requireLoginInput(username, password);
         if (kernel.guard().isLocked(username)) {
+            audit.record(AuditEvents.of(username, "auth.login", username, "failure", clock));
             throw new AccountLockedException(clock.instant().plus(kernel.properties().getLoginLockDuration()));
         }
         Optional<UserRecord> found = users.findWithRoles(username);
@@ -69,6 +71,16 @@ public class AuthService {
                 kernel.tokens().issue(user.id(), user.roles(), kernel.properties().getJwtTtl());
         audit.record(AuditEvents.of(username, "auth.login", Long.toString(user.id()), "success", clock));
         return new LoginResult(issued.token(), issued.expiresAt(), toCurrentUser(user));
+    }
+
+    private void requireLoginInput(String username, String password) {
+        if (username == null || username.isBlank() || username.length() > 64
+                || username.chars().anyMatch(Character::isISOControl)
+                || password == null || password.isBlank() || password.length() > 128) {
+            audit.record(AuditEvents.of("invalid-input", "auth.login", "invalid-input",
+                    "failure", clock));
+            throw new IllegalArgumentException("登录输入不合法");
+        }
     }
 
     public CurrentUser currentUser(AuthPrincipal principal) {

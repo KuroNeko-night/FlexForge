@@ -186,6 +186,44 @@ class AuthFlowTest {
     }
 
     @Test
+    void invalidLoginInputsAreAuditedWithoutEchoingRawInput() throws Exception {
+        List<Map<String, String>> inputs = List.of(
+                Map.of("username", "x".repeat(65), "password", "wrong-pass"),
+                Map.of("username", "line\nbreak", "password", "wrong-pass"),
+                Map.of("username", "someone", "password", "x".repeat(129)),
+                Map.of("username", "", "password", "wrong-pass"),
+                Map.of("username", "someone"));
+        long before = auditRows("auth.login", "failure").stream()
+                .filter(row -> "invalid-input".equals(row.get("actor"))).count();
+        var json = tools.jackson.databind.json.JsonMapper.builder().build();
+        for (Map<String, String> input : inputs) {
+            mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json.writeValueAsBytes(input)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("validation_error"))
+                    .andExpect(jsonPath("$.message").value("登录输入不合法"));
+        }
+        var rejected = auditRows("auth.login", "failure").stream()
+                .filter(row -> "invalid-input".equals(row.get("actor"))).toList();
+        assertThat(rejected).hasSize((int) before + inputs.size())
+                .allSatisfy(row -> assertThat(row.get("object_id")).isEqualTo("invalid-input"));
+    }
+
+    @Test
+    void maximumLengthLoginInputsStillUseNormalAuthentication() throws Exception {
+        var json = tools.jackson.databind.json.JsonMapper.builder().build();
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsBytes(Map.of(
+                                "username", "x".repeat(64), "password", "x".repeat(128)))))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("用户名或密码错误"));
+        assertThat(auditRows("auth.login", "failure"))
+                .anySatisfy(row -> assertThat(row.get("actor")).isEqualTo("x".repeat(64)));
+    }
+
+    @Test
     void configuredTtlCoversRequest() {
         // docs/09 P03：TTL 可配置；默认值存在且为正（演示环境覆盖由 .env 配置）
         assertThat(authProperties.getJwtTtl().toMinutes()).isGreaterThan(0);

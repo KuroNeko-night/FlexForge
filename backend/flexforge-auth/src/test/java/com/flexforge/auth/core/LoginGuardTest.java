@@ -95,6 +95,55 @@ class LoginGuardTest {
         assertThat(guard.isLocked("alice")).isFalse();
     }
 
+    @Test
+    void partialFailuresExpireAndAreCollectedOnOtherUsersAccess() {
+        MutableClock clock = new MutableClock();
+        LoginGuard guard = guard(2, Duration.ofMinutes(10), clock);
+        guard.onFailure("alice");
+        clock.advance(Duration.ofMinutes(10));
+
+        assertThat(guard.isLocked("bob")).isFalse();
+        assertThat(guard.onSuccess("alice")).isFalse();
+        assertThat(guard.onFailure("alice")).isEmpty();
+    }
+
+    @Test
+    void capacityRejectsNewNamesWithoutEvictingLocksOrCounters() {
+        MutableClock clock = new MutableClock();
+        LoginGuard guard = guard(2, Duration.ofMinutes(10), clock);
+        guard.onFailure("locked");
+        guard.onFailure("locked");
+        for (int i = 1; i < LoginGuard.MAX_TRACKED_USERNAMES; i++) {
+            guard.onFailure("user-" + i);
+        }
+
+        assertThat(guard.isLocked("overflow")).isTrue();
+        assertThat(guard.onFailure("overflow")).isPresent();
+        assertThat(guard.onSuccess("overflow")).isFalse();
+        assertThat(guard.isLocked("locked")).isTrue();
+        assertThat(guard.onFailure("user-1")).isPresent();
+        assertThat(guard.onSuccess("user-2")).isTrue();
+        assertThat(guard.isLocked("overflow")).isFalse();
+        assertThat(guard.onFailure("overflow")).isEmpty();
+
+        clock.advance(Duration.ofMinutes(10));
+        assertThat(guard.isLocked("new-user")).isFalse();
+        assertThat(guard.onSuccess("locked")).isFalse();
+        assertThat(guard.onSuccess("overflow")).isFalse();
+    }
+
+    @Test
+    void repeatedFailuresDoNotExtendAnExistingLock() {
+        MutableClock clock = new MutableClock();
+        LoginGuard guard = guard(1, Duration.ofMinutes(10), clock);
+        Instant until = guard.onFailure("alice").orElseThrow();
+        clock.advance(Duration.ofMinutes(9));
+
+        assertThat(guard.onFailure("alice")).contains(until);
+        clock.advance(Duration.ofMinutes(1));
+        assertThat(guard.isLocked("alice")).isFalse();
+    }
+
     private static LoginGuard guard(int attempts, Duration lockDuration, Clock clock) {
         AuthProperties properties = new AuthProperties();
         properties.setLoginLockAttempts(attempts);
