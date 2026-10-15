@@ -1,25 +1,25 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 
-import { ApiError, apiErrorMessage } from '@/api/client';
-import { assignRoles, createUser, listUsers, updateStatus, type SystemUser } from '@/api/system';
+import { ApiError } from '@/api/client';
+import { assignRoles, createUser, updateStatus, type SystemUser } from '@/api/system';
 import { session } from '@/auth/token';
 import BaseButton from '@/components/ui/BaseButton.vue';
 import BaseSwitch from '@/components/ui/BaseSwitch.vue';
 import StateView from '@/components/StateView.vue';
+import ListPager from '@/components/ListPager.vue';
 import UserBatchBar from '@/components/UserBatchBar.vue';
 import UserCreateDrawer from '@/components/UserCreateDrawer.vue';
 import UserRolesDrawer from '@/components/UserRolesDrawer.vue';
 import { useUserBatch } from '@/composables/useUserBatch';
+import { useUserPage } from '@/composables/useUserPage';
 import { t } from '@/registry/localeRegistry';
 
 /**
  * 系统管理：用户管理页（docs/09 P12.5 缺陷③ + P13 停启用）。
  * 消费 P03/P13 后端 API（list/create/roles/status，ADMIN）；基建组件构成交互。
  */
-const users = ref<SystemUser[]>([]);
-const state = ref<'loading' | 'ready' | 'error' | 'denied' | 'empty'>('loading');
-const error = ref<string | null>(null);
+const { users, state, error, pageNumber, pageSize, total, load: loadPage } = useUserPage();
 const statusError = ref<string | null>(null);
 const statusPending = ref<number | null>(null);
 const selfId = computed(() => session.user?.id ?? null);
@@ -34,21 +34,18 @@ const rolesError = ref<string | null>(null);
 const batch = useUserBatch(load);
 
 async function load(): Promise<void> {
-  state.value = 'loading';
-  try {
-    const page = await listUsers();
-    users.value = page.items;
-    state.value = page.items.length === 0 ? 'empty' : 'ready';
-    // 批量选择不跨快照残留（P24）：剔除已不存在的选择
-    batch.prune(page.items.map((user) => user.id));
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 403) {
-      state.value = 'denied';
-      return;
-    }
-    state.value = 'error';
-    error.value = apiErrorMessage(e, null);
-  }
+  await loadPage();
+  batch.prune(visibleUsers.value.map((user) => user.id));
+}
+
+async function changePage(delta: number): Promise<void> {
+  if (state.value === 'loading' || batch.running.value || statusPending.value !== null) return;
+  const next = pageNumber.value + delta;
+  if (next < 1 || next > Math.max(1, Math.ceil(total.value / pageSize))) return;
+  batch.clear();
+  statusError.value = null;
+  pageNumber.value = next;
+  await load();
 }
 
 /** 本页可选账号（自己不可批量变更——与单人路径同守卫；默认视图不含已封禁）。 */
@@ -170,6 +167,9 @@ onMounted(load);
     </header>
     <StateView v-if="state !== 'ready'" :state="state" :message="error">
       <p v-if="state === 'empty'">{{ t('users.empty', '尚无用户') }}</p>
+      <BaseButton v-if="state === 'error'" data-testid="users-retry" @click="load()">
+        {{ t('common.retry', '重试') }}
+      </BaseButton>
     </StateView>
     <UserBatchBar
       v-else
@@ -232,6 +232,14 @@ onMounted(load);
         </tr>
       </tbody>
     </table>
+    <ListPager
+      v-if="state === 'ready' || state === 'empty'"
+      :page="pageNumber"
+      :total="total"
+      :page-size="pageSize"
+      @prev="changePage(-1)"
+      @next="changePage(1)"
+    />
     <p v-if="statusError" class="form-error" role="alert">{{ statusError }}</p>
 
     <UserCreateDrawer

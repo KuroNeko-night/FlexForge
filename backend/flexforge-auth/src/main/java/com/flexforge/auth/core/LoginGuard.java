@@ -16,7 +16,9 @@ import java.util.Optional;
  */
 public final class LoginGuard {
 
-    private record Attempts(int failures, Instant lockedUntil) {
+    static final int MAX_TRACKED_USERNAMES = 10_000;
+
+    private record Attempts(int failures, Instant expiresAt) {
     }
 
     private final int lockAttempts;
@@ -33,32 +35,39 @@ public final class LoginGuard {
 
     /** 当前是否被锁定（锁定到期自动失效）。 */
     public synchronized boolean isLocked(String username) {
+        removeExpired(clock.instant());
         Attempts attempts = attemptsByUsername.get(username);
-        if (attempts == null || attempts.lockedUntil() == null) {
-            return false;
+        if (attempts == null) {
+            // Saturation must not evict live counters or unlock a victim (Issue #30).
+            return attemptsByUsername.size() >= MAX_TRACKED_USERNAMES;
         }
-        if (!attempts.lockedUntil().isAfter(clock.instant())) {
-            attemptsByUsername.remove(username);
-            return false;
-        }
-        return true;
+        return attempts.failures() >= lockAttempts;
     }
 
     /** 登录失败计数；返回本次失败触发的锁定截止时间（未触发锁定返回 empty）。 */
     public synchronized Optional<Instant> onFailure(String username) {
-        Attempts attempts = attemptsByUsername.getOrDefault(username, new Attempts(0, null));
-        int failures = attempts.failures() + 1;
-        if (failures >= lockAttempts) {
-            Instant lockedUntil = clock.instant().plus(lockDuration);
-            attemptsByUsername.put(username, new Attempts(failures, lockedUntil));
-            return Optional.of(lockedUntil);
+        Instant now = clock.instant();
+        removeExpired(now);
+        Attempts attempts = attemptsByUsername.get(username);
+        if (attempts != null && attempts.failures() >= lockAttempts) {
+            return Optional.of(attempts.expiresAt());
         }
-        attemptsByUsername.put(username, new Attempts(failures, attempts.lockedUntil()));
-        return Optional.empty();
+        Instant expiresAt = now.plus(lockDuration);
+        if (attempts == null && attemptsByUsername.size() >= MAX_TRACKED_USERNAMES) {
+            return Optional.of(expiresAt);
+        }
+        int failures = attempts == null ? 1 : attempts.failures() + 1;
+        attemptsByUsername.put(username, new Attempts(failures, expiresAt));
+        return failures >= lockAttempts ? Optional.of(expiresAt) : Optional.empty();
     }
 
     /** 登录成功重置；若此前存在失败计数/锁定记录返回 true。 */
     public synchronized boolean onSuccess(String username) {
+        removeExpired(clock.instant());
         return attemptsByUsername.remove(username) != null;
+    }
+
+    private void removeExpired(Instant now) {
+        attemptsByUsername.values().removeIf(attempts -> !attempts.expiresAt().isAfter(now));
     }
 }

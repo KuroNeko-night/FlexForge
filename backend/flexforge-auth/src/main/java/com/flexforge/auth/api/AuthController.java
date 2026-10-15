@@ -47,10 +47,6 @@ public class AuthController {
 
     @PostMapping("/login")
     public LoginResponse login(@RequestBody LoginRequest request) {
-        if (request.username() == null || request.username().isBlank()
-                || request.password() == null || request.password().isBlank()) {
-            throw new IllegalArgumentException("username 与 password 必填");
-        }
         AuthService.LoginResult result = authService.login(request.username(), request.password());
         UserInfo user = new UserInfo(result.user().id(), result.user().username(),
                 result.user().displayName(), result.user().roles());
